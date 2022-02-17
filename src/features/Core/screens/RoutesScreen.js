@@ -1,0 +1,210 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
+import { useDriver, useMountedState, useResourceCollection } from 'hooks';
+import { logError, isArray, isEmpty, getCurrentLocation, pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
+import useFleetbase, { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
+import { tailwind } from 'tailwind';
+import { format } from 'date-fns';
+import { Order, Collection } from '@fleetbase/sdk';
+import MapView, { Marker } from 'react-native-maps';
+import DefaultHeader from 'ui/headers/DefaultHeader';
+import OrdersFilterBar from 'ui/OrdersFilterBar';
+import config from 'config';
+
+const { width, height } = Dimensions.get('window');
+const ASPECT_RATIO = width / height;
+const LATITUDE_DELTA = 0.0922;
+const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
+
+const RoutesScreen = ({ navigation }) => {
+    const isMounted = useMountedState();
+    const fleetbase = useFleetbase();
+    const map = useRef();
+    const [driver] = useDriver();
+
+    const [date, setDateValue] = useState(new Date());
+    const [params, setParams] = useState({
+        driver: driver.id,
+        on: format(date, 'dd-MM-yyyy'),
+    });
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isQuerying, setIsQuerying] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [userLocation, setUserLocation] = useState(null);
+    const [stops, setStops] = useState([]);
+    const [firstStop, setFirstStop] = useState(null);
+    const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, FleetbaseAdapter);
+
+    const setParam = (key, value) => {
+        if (key === 'on') {
+            setDateValue(value);
+            value = format(value, 'dd-MM-yyyy');
+        }
+
+        params[key] = value;
+        setParams(params);
+    };
+
+    const onRefresh = () => {
+        setIsRefreshing(true);
+
+        fleetbase.orders
+            .query(params)
+            .then(setOrders)
+            .catch(logError)
+            .finally(() => setIsRefreshing(false));
+    };
+
+    const getAllOrderStops = (orders = []) => {
+        if (!isArray(orders)) {
+            return 0;
+        }
+
+        let stops = new Collection();
+
+        for (let index = 0; index < orders.length; index++) {
+            const order = orders.objectAt(index);
+
+            if (order.status === 'canceled' || order.status === 'completed' || !order.isAttributeFilled('payload')) {
+                return;
+            }
+
+            if (!isEmpty(order.getAttribute('payload.pickup'))) {
+                stops.pushObject(order.getAttribute('payload.pickup'));
+            }
+
+            const waypoints = order.getAttribute('payload.waypoints', []);
+
+            for (let i = 0; i < waypoints.length; i++) {
+                const waypoint = waypoints[i];
+                stops.pushObject(waypoints);
+            }
+
+            if (!isEmpty(order.getAttribute('payload.dropoff'))) {
+                stops.pushObject(order.getAttribute('payload.dropoff'));
+            }
+        }
+
+        return stops;
+    };
+
+    const focusStop = (stop) => {
+        if (!stop) {
+            return;
+        }
+
+        const destination = {
+            latitude: stop.location.coordinates[1] - 0.0005,
+            longitude: stop.location.coordinates[0],
+        };
+        
+        const latitudeZoom = 1;
+        const longitudeZoom = 1;
+        const latitudeDelta = LATITUDE_DELTA / latitudeZoom;
+        const longitudeDelta = LONGITUDE_DELTA / longitudeZoom;
+
+        map?.current?.animateToRegion({
+            ...destination,
+            latitudeDelta,
+            longitudeDelta,
+        });
+    };
+
+    useEffect(() => {
+        if (isLoaded) {
+            setIsQuerying(true);
+        }
+
+        fleetbase.orders
+            .query(params)
+            .then((orders) => {
+                const stops = getAllOrderStops(orders);
+
+                setStops(stops);
+                setFirstStop(stops[0] ?? null);
+
+                return orders;
+            })
+            .then(setOrders)
+            .catch(logError)
+            .finally(() => {
+                setIsQuerying(false);
+                setIsLoaded(true);
+            });
+
+        getCurrentLocation().then(setUserLocation).catch(logError);
+    }, [isMounted, date]);
+
+    useEffect(() => {
+        focusStop(firstStop);
+    }, [firstStop]);
+
+    // const stops = getAllOrderStops(orders);
+    // const firstStop = stops[0] ?? null;
+    const canRenderMap = firstStop || userLocation;
+
+    console.log('firstStop', firstStop);
+    console.log('userLocation', userLocation);
+
+    return (
+        <View style={[tailwind('bg-gray-800 h-full'), { paddingBottom: 147 }]}>
+            <DefaultHeader>
+                <OrdersFilterBar
+                    onSelectSort={(sort) => setParam('sort', sort)}
+                    onSelectFilter={(filters) => setParam('filter', filter)}
+                    onSelectDate={(date) => setParam('on', date)}
+                    isLoading={isQuerying}
+                    containerStyle={tailwind('px-0 pb-0')}
+                />
+                <View>
+                    <Text style={tailwind('font-semibold text-lg text-gray-50 w-full mb-1')}>{`${format(date, 'eeee')} orders`}</Text>
+                    <View>
+                        <View style={tailwind('flex flex-row items-center mb-1')}>
+                            <Text style={tailwind('text-base text-gray-100')}>{pluralize(getActiveOrdersCount(orders), 'order')}</Text>
+                            <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
+                            <Text style={tailwind('text-base text-gray-100')}>{`${getTotalStops(orders)} stops`}</Text>
+                            <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
+                            <Text style={tailwind('text-base text-gray-100')}>{formatDuration(getTotalDuration(orders))}</Text>
+                            <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
+                            <Text style={tailwind('text-base text-gray-100')}>{formatKm(getTotalDistance(orders) / 1000)}</Text>
+                        </View>
+                    </View>
+                </View>
+            </DefaultHeader>
+            {canRenderMap && (
+                <MapView
+                    ref={map}
+                    minZoomLevel={12}
+                    maxZoomLevel={20}
+                    style={tailwind('w-full h-full rounded-md shadow-sm')}
+                    showsUserLocation={true}
+                    showsMyLocationButton={true}
+                    showsPointsOfInterest={true}
+                    showsTraffic={true}
+                    initialRegion={{
+                        latitude: firstStop ? firstStop.location.coordinates[1] : userLocation.position.coords.latitude,
+                        longitude: firstStop ? firstStop.location.coordinates[0] : userLocation.position.coords.longitude,
+                        latitudeDelta: 1.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                >
+                    {stops.map((waypoint, i) => (
+                        <Marker
+                            key={i}
+                            coordinate={{
+                                latitude: waypoint.location.coordinates[1],
+                                longitude: waypoint.location.coordinates[0],
+                            }}
+                        >
+                            <View style={tailwind('bg-green-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
+                                <Text style={tailwind('font-bold text-white')}>{i + 1}</Text>
+                            </View>
+                        </Marker>
+                    ))}
+                </MapView>
+            )}
+        </View>
+    );
+};
+
+export default RoutesScreen;
