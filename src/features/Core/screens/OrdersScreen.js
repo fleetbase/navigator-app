@@ -10,6 +10,7 @@ import { Order } from '@fleetbase/sdk';
 import DefaultHeader from 'ui/headers/DefaultHeader';
 import OrdersFilterBar from 'ui/OrdersFilterBar';
 import OrderCard from 'ui/OrderCard';
+import SimpleOrdersMetrics from 'ui/SimpleOrdersMetrics';
 import config from 'config';
 
 const OrdersScreen = ({ navigation }) => {
@@ -19,7 +20,7 @@ const OrdersScreen = ({ navigation }) => {
 
     const [date, setDateValue] = useState(new Date());
     const [params, setParams] = useState({
-        driver: driver.id,
+        driver: driver?.id,
         on: format(date, 'dd-MM-yyyy'),
     });
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -72,21 +73,8 @@ const OrdersScreen = ({ navigation }) => {
                     isLoading={isQuerying}
                     containerStyle={tailwind('px-0 pb-0')}
                 />
+                <SimpleOrdersMetrics orders={orders} date={date} containerClass={tailwind('px-0')} />
             </DefaultHeader>
-            <View style={tailwind('px-4 mt-3')}>
-                <Text style={tailwind('font-semibold text-lg text-gray-50 w-full mb-1')}>{`${format(date, 'eeee')} orders`}</Text>
-                <View>
-                    <View style={tailwind('flex flex-row items-center mb-1')}>
-                        <Text style={tailwind('text-base text-gray-100')}>{pluralize(getActiveOrdersCount(orders), 'order')}</Text>
-                        <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
-                        <Text style={tailwind('text-base text-gray-100')}>{`${getTotalStops(orders)} stops`}</Text>
-                        <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
-                        <Text style={tailwind('text-base text-gray-100')}>{formatDuration(getTotalDuration(orders))}</Text>
-                        <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
-                        <Text style={tailwind('text-base text-gray-100')}>{formatKm(getTotalDistance(orders) / 1000)}</Text>
-                    </View>
-                </View>
-            </View>
             <ScrollView
                 showsHorizontalScrollIndicator={false}
                 showsVerticalScrollIndicator={false}
@@ -94,7 +82,7 @@ const OrdersScreen = ({ navigation }) => {
                 stickyHeaderIndices={[1]}
                 style={tailwind('w-full h-full')}
             >
-                <View style={tailwind('w-full h-full')}>
+                <View style={tailwind('w-full h-full mt-2')}>
                     {orders.map((order, index) => (
                         <OrderCard key={index} order={order} onPress={() => navigation.push('OrderScreen', { data: order.serialize() })} />
                     ))}

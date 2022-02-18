@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { SafeAreaView, View, ActivityIndicator } from 'react-native';
-import { hasRequiredKeys, logError } from 'utils';
+import { EventRegister } from 'react-native-event-listeners';
+import { hasRequiredKeys, logError, getColorCode } from 'utils';
 import { useDriver, useMountedState } from 'hooks';
 import { set } from 'utils/Storage';
 import { setI18nConfig } from 'utils/Localize';
@@ -8,6 +9,8 @@ import { tailwind } from 'tailwind';
 import RNBootSplash from 'react-native-bootsplash';
 import SetupWarningScreen from 'exceptions/SetupWarningScreen';
 import config from 'config';
+
+const { addEventListener } = EventRegister;
 
 /**
  * BootScreen is a simple initialization screen, will load
@@ -42,7 +45,6 @@ const BootScreen = ({ navigation }) => {
     useEffect(() => {
         checkForAuthenticatedDriver()
             .then(() => {
-                console.log('logged in as', driver);
                 return navigation.navigate('MainScreen');
             })
             .catch(() => {
@@ -53,12 +55,19 @@ const BootScreen = ({ navigation }) => {
                     RNBootSplash.hide();
                 }, 300);
             });
-    }, [isMounted]);
+
+        // addEventListener('signout', () => {
+        //     console.log('signout emited!');
+        //     return navigation.reset('LoginScreen').then(() => {
+        //         setDriver(undefined);
+        //     });
+        // });
+    }, [isMounted, driver]);
 
     return (
         <SafeAreaView style={tailwind('bg-gray-900')}>
             <View style={tailwind('flex items-center justify-center w-full h-full bg-gray-900')}>
-                <ActivityIndicator size="large" color={tailwind('text-gray-50')} />
+                <ActivityIndicator size="large" color={getColorCode('text-blue-500')} />
             </View>
         </SafeAreaView>
     );

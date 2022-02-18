@@ -74,17 +74,6 @@ export default class AuthUtil {
     }
 
     /**
-     * Ends session for driver, alias of signOut util.
-     *
-     * @static
-     * @return {void}
-     * @memberof AuthUtil
-     */
-    static signOut() {
-        return endSession();
-    }
-
-    /**
      * Sync current mobile device to driver on Fleetbase/Storefront.
      *
      * @static

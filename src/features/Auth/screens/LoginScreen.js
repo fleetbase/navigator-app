@@ -5,7 +5,7 @@ import { getUniqueId } from 'react-native-device-info';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { useLocale, useDriver, useFleetbase } from 'hooks';
-import { logError, translate, config, syncDevice } from 'utils';
+import { logError, translate, config, syncDevice, getColorCode } from 'utils';
 import { getLocation } from 'utils/Geo';
 import { set, get } from 'utils/Storage';
 import FastImage from 'react-native-fast-image';
@@ -109,9 +109,9 @@ const LoginScreen = ({ navigation, route }) => {
                                     />
                                 </View>
                                 <TouchableOpacity style={tailwind('mb-3')} onPress={sendVerificationCode}>
-                                    <View style={[tailwind('btn border border-blue-800 bg-blue-100 rounded-lg'), config('ui.loginScreen.sendVerificationCodeButtonStyle')]}>
-                                        {isLoading && <ActivityIndicator color={'rgba(59, 130, 246, 1)'} style={tailwind('mr-2')} />}
-                                        <Text style={[tailwind('font-semibold text-blue-900 text-lg text-center'), config('ui.loginScreen.sendVerificationCodeButtonTextStyle')]}>
+                                    <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.sendVerificationCodeButtonStyle')]}>
+                                        {isLoading && <ActivityIndicator color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
+                                        <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.sendVerificationCodeButtonTextStyle')]}>
                                             {translate('Auth.LoginScreen.sendVerificationCodeButtonText')}
                                         </Text>
                                     </View>
@@ -142,9 +142,9 @@ const LoginScreen = ({ navigation, route }) => {
                                     </View>
                                 </View>
                                 <TouchableOpacity onPress={verifyCode}>
-                                    <View style={[tailwind('btn border border-green-50 bg-green-50 rounded-lg'), config('ui.loginScreen.verifyCodeButtonStyle')]}>
-                                        {isLoading && <ActivityIndicator color={'rgba(16, 185, 129, 1)'} style={tailwind('mr-2')} />}
-                                        <Text style={[tailwind('font-semibold text-green-900 text-lg text-center'), config('ui.loginScreen.verifyCodeButtonTextStyle')]}>
+                                    <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.verifyCodeButtonStyle')]}>
+                                        {isLoading && <ActivityIndicator color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
+                                        <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.verifyCodeButtonTextStyle')]}>
                                             {translate('Auth.LoginScreen.verifyCodeButtonText')}
                                         </Text>
                                     </View>
