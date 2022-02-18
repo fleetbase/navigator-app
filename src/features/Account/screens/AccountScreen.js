@@ -4,7 +4,7 @@ import { getUniqueId } from 'react-native-device-info';
 import { EventRegister } from 'react-native-event-listeners';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faBox, faChevronRight, faLockOpen, faUser, faMapMarked, faCreditCard, faIdBadge } from '@fortawesome/free-solid-svg-icons';
-import { useDriver, signOut } from 'utils/Auth';
+import { useDriver } from 'utils/Auth';
 import { config, translate } from 'utils';
 import { useLocale } from 'hooks';
 import DefaultHeader from 'ui/headers/DefaultHeader';
@@ -20,6 +20,14 @@ const AccountScreen = ({ navigation, route }) => {
 
     const displayHeaderComponent = config(driver ? 'ui.accountScreen.displaySignedInHeaderComponent' : 'ui.accountScreen.displaySignedOutHeaderComponent') ?? true;
     const containerHeight = displayHeaderComponent === true ? fullHeight - 224 : fullHeight;
+
+    const signOut = () => {
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'BootScreen' }],
+        });
+        setDriver(null);
+    };
 
     const RenderHeader = (props) => {
         return <DefaultHeader {...props} />;
@@ -49,6 +57,8 @@ const AccountScreen = ({ navigation, route }) => {
         );
     };
 
+    console.log('driver photo_url', driver.getAttribute('photo_url'));
+
     return (
         <RenderBackground>
             {displayHeaderComponent === true && (
@@ -62,7 +72,7 @@ const AccountScreen = ({ navigation, route }) => {
             )}
             <View
                 style={[
-                    tailwind('bg-white'),
+                    tailwind('bg-gray-800'),
                     config('ui.accountScreen.containerStyle'),
                     driver ? config('ui.accountScreen.signedInContainerStyle') : config('ui.accountScreen.signedOutContainerStyle'),
                     { height: containerHeight },
@@ -111,31 +121,31 @@ const AccountScreen = ({ navigation, route }) => {
                 )}
                 {driver && (
                     <View style={tailwind('w-full h-full relative')}>
-                        <View style={tailwind('p-4 bg-gray-50 border-b border-gray-100 relative')}>
+                        <View style={tailwind('p-4 bg-gray-800 border-b border-gray-700 relative')}>
                             <View style={tailwind('flex flex-row')}>
-                                <View style={tailwind('mr-4')}>
-                                    <FastImage source={{ uri: driver.getAttribute('photo_url') }} style={tailwind('w-12 h-12 rounded-full')} />
+                                <View style={tailwind('mr-3')}>
+                                    <FastImage source={{ uri: driver.getAttribute('photo_url') }} style={tailwind('w-14 h-14 rounded-full')} />
                                 </View>
                                 <View>
-                                    <Text style={tailwind('text-lg font-semibold')}>
+                                    <Text style={tailwind('text-lg font-semibold text-gray-50')}>
                                         {translate('Account.AccountScreen.userGreetingTitle', {
                                             driverName: driver.getAttribute('name'),
                                         })}
                                     </Text>
-                                    <Text style={tailwind('text-gray-500')}>{driver.getAttribute('phone')}</Text>
+                                    <Text style={tailwind('text-gray-50')}>{driver.getAttribute('phone')}</Text>
                                 </View>
                             </View>
                         </View>
-                        <View style={tailwind('mb-4 bg-white')}>
+                        <View style={tailwind('mb-4')}>
                             <View style={tailwind('flex flex-row p-4')}>
-                                <Text style={tailwind('font-semibold text-base')}>{translate('Account.AccountScreen.accountMenuTitle')}</Text>
+                                <Text style={tailwind('font-semibold text-base text-gray-50')}>{translate('Account.AccountScreen.accountMenuTitle')}</Text>
                             </View>
                             <View>
                                 <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { attributes: driver.serialize() })}>
-                                    <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-200')}>
+                                    <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
                                         <View style={tailwind('flex flex-row items-center')}>
-                                            <FontAwesomeIcon icon={faUser} size={18} style={tailwind('mr-3 text-gray-600')} />
-                                            <Text style={tailwind('text-gray-700 text-base')}>{translate('Account.AccountScreen.profileLinkText')}</Text>
+                                            <FontAwesomeIcon icon={faUser} size={18} style={tailwind('mr-3 text-gray-50')} />
+                                            <Text style={tailwind('text-gray-50 text-base')}>{translate('Account.AccountScreen.profileLinkText')}</Text>
                                         </View>
                                         <View>
                                             <FontAwesomeIcon icon={faChevronRight} size={18} style={tailwind('text-gray-600')} />
@@ -147,9 +157,9 @@ const AccountScreen = ({ navigation, route }) => {
                         <View style={tailwind('p-4')}>
                             <View style={tailwind('flex flex-row items-center justify-center')}>
                                 <TouchableOpacity style={tailwind('flex-1')} onPress={signOut}>
-                                    <View style={tailwind('btn border border-gray-200')}>
+                                    <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
                                         {isLoading && <ActivityIndicator style={tailwind('mr-2')} />}
-                                        <Text style={tailwind('font-semibold text-black text-base')}>{translate('Account.AccountScreen.signoutButtonText')}</Text>
+                                        <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Account.AccountScreen.signoutButtonText')}</Text>
                                     </View>
                                 </TouchableOpacity>
                             </View>

@@ -27,7 +27,7 @@ const OrderCard = ({ order, onPress, wrapperStyle, containerStyle }) => {
                         <OrderStatusBadge status={order.getAttribute('status')} />
                     </View>
                 </View>
-                <View style={tailwind('px-4 py-2')}>
+                <View style={tailwind('p-4')}>
                     <OrderWaypoints order={order} />
                 </View>
             </TouchableOpacity>
