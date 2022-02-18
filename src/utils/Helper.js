@@ -3,6 +3,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import { countries } from 'countries-list';
 import { set } from './Storage';
 import { getCurrentLocation } from './Geo';
+import { useNavigation } from '@react-navigation/native';
 import configuration from 'config';
 
 const { emit } = EventRegister;
@@ -246,17 +247,6 @@ export default class HelperUtil {
      */
     static hasResouceProperties(mixed) {
         return !HelperUtil.isVoid(mixed) && mixed?.id && typeof mixed?.serialize === 'function' && typeof mixed?.resource === 'string';
-    }
-
-    /**
-     * Ends the current session from storage, and resets user location.
-     *
-     * @static
-     * @memberof HelperUtil
-     */
-    static endSession() {
-        set('authenticated', null);
-        emit('signedout', true);
     }
 
     /**

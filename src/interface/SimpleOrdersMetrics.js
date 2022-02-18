@@ -1,0 +1,31 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text } from 'react-native';
+import { pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
+import { Order } from '@fleetbase/sdk';
+import { tailwind } from 'tailwind';
+import { format } from 'date-fns';
+
+const SimpleOrdersMetrics = ({ orders, date, wrapperClass, containerClass }) => {
+    date = date ?? new Date();
+
+    return (
+        <View style={[wrapperClass]}>
+            <View style={[tailwind('px-4'), containerClass]}>
+                <Text style={tailwind('font-semibold text-lg text-gray-50 w-full mb-1')}>{`${format(date, 'eeee')} orders`}</Text>
+                <View>
+                    <View style={tailwind('flex flex-row items-center mb-1')}>
+                        <Text style={tailwind('text-base text-gray-100')}>{pluralize(getActiveOrdersCount(orders), 'order')}</Text>
+                        <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
+                        <Text style={tailwind('text-base text-gray-100')}>{`${getTotalStops(orders)} stops`}</Text>
+                        <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
+                        <Text style={tailwind('text-base text-gray-100')}>{formatDuration(getTotalDuration(orders))}</Text>
+                        <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
+                        <Text style={tailwind('text-base text-gray-100')}>{formatKm(getTotalDistance(orders) / 1000)}</Text>
+                    </View>
+                </View>
+            </View>
+        </View>
+    );
+};
+
+export default SimpleOrdersMetrics;
