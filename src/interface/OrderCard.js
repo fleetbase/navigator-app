@@ -7,8 +7,8 @@ import OrderStatusBadge from './OrderStatusBadge';
 import OrderWaypoints from './OrderWaypoints';
 
 const OrderCard = ({ order, onPress, wrapperStyle, containerStyle }) => {
-    const scheduledAt = order.isAttributeFilled('scheduled_at') ? format(new Date(order.getAttribute('scheduled_at')), 'PPpp') : null;
-    const createdAt = format(new Date(order.getAttribute('created_at')), 'PPpp');
+    const scheduledAt = order.scheduledAt ? format(order.scheduledAt, 'PPpp') : null;
+    const createdAt = order.createdAt ? format(order.createdAt, 'PPpp') : null;
 
     return (
         <View style={[tailwind('p-2'), wrapperStyle]}>
@@ -23,8 +23,9 @@ const OrderCard = ({ order, onPress, wrapperStyle, containerStyle }) => {
                             <Text style={tailwind('text-gray-100')}>{formatKm(order.getAttribute('distance') / 1000)}</Text>
                         </View>
                     </View>
-                    <View style={tailwind('flex flex-col items-start justify-start')}>
+                    <View style={tailwind('flex flex-col items-end justify-start')}>
                         <OrderStatusBadge status={order.getAttribute('status')} />
+                        {order.getAttribute('status') === 'created' && order.isDispatched && <OrderStatusBadge status={'dispatched'} wrapperStyle={tailwind('mt-1')} />}
                     </View>
                 </View>
                 <View style={tailwind('p-4')}>

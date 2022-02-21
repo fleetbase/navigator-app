@@ -16,8 +16,8 @@ import useFleetbase from 'hooks/use-fleetbase';
 // import CartStack from 'cart/CartStack';
 import AccountStack from 'account/AccountStack';
 import OrdersStack from 'core/OrdersStack';
+import ScheduleStack from 'core/ScheduleStack';
 import RoutesScreen from './RoutesScreen';
-import ScheduleScreen from './ScheduleScreen';
 import WalletScreen from './WalletScreen';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -88,8 +88,8 @@ const MainScreen = ({ navigation, route }) => {
         >
             <Tab.Screen key="orders" name="Orders" component={OrdersStack} />
             <Tab.Screen key="routes" name="Routes" component={RoutesScreen} />
-            <Tab.Screen key="schedule" name="Schedule" component={ScheduleScreen} />
-            <Tab.Screen key="wallet" name="Wallet" component={WalletScreen} />
+            <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} />
+            {/* <Tab.Screen key="wallet" name="Wallet" component={WalletScreen} /> */}
             <Tab.Screen key="account" name="Account" component={AccountStack} />
         </Tab.Navigator>
     );

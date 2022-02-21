@@ -22,7 +22,7 @@ import {
 } from './Helper';
 import { calculatePercentage, haversine } from './Calculate';
 import { syncDevice } from './Auth';
-import { formatCurrency, capitalize, pluralize, formatDuration, formatKm } from './Format';
+import { formatCurrency, capitalize, pluralize, formatDuration, formatKm, formatMetaValue, titleize, humanize } from './Format';
 import { geocode, getCurrentLocation, getLocation, getDistance } from './Geo';
 import { translate } from './Localize';
 import getCurrency from './get-currency';
@@ -37,8 +37,8 @@ const getActiveOrdersCount = (orders = []) => {
     for (let index = 0; index < orders.length; index++) {
         const order = orders.objectAt(index);
 
-        if (order.getAttribute('status') === 'canceled' || order.getAttribute('status') === 'completed') {
-            return;
+        if (order.getAttribute('status') === 'canceled' || order.getAttribute('status') === 'completed' || !order.isAttributeFilled('payload')) {
+            continue;
         }
 
         count += 1;
@@ -58,7 +58,7 @@ const getTotalStops = (orders = []) => {
         const order = orders.objectAt(index);
 
         if (order.getAttribute('status') === 'canceled' || order.getAttribute('status') === 'completed' || !order.isAttributeFilled('payload')) {
-            return;
+            continue;
         }
 
         stops += order.getAttribute('payload.waypoints.length') + 2;
@@ -78,7 +78,7 @@ const getTotalDuration = (orders = []) => {
         const order = orders.objectAt(index);
 
         if (order.getAttribute('status') === 'canceled' || order.getAttribute('status') === 'completed' || !order.isAttributeFilled('payload')) {
-            return;
+            continue;
         }
 
         duration += order.getAttribute('time');
@@ -98,7 +98,7 @@ const getTotalDistance = (orders = []) => {
         const order = orders.objectAt(index);
 
         if (order.getAttribute('status') === 'canceled' || order.getAttribute('status') === 'completed' || !order.isAttributeFilled('payload')) {
-            return;
+            continue;
         }
 
         distance += order.getAttribute('distance');
@@ -128,6 +128,9 @@ export {
     formatCurrency,
     capitalize,
     pluralize,
+    titleize,
+    humanize,
+    formatMetaValue,
     formatDuration,
     formatKm,
     geocode,
@@ -145,5 +148,5 @@ export {
     getActiveOrdersCount,
     getTotalStops,
     getTotalDuration,
-    getTotalDistance
+    getTotalDistance,
 };

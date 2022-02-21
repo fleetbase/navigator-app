@@ -22,6 +22,7 @@ const OrdersScreen = ({ navigation }) => {
     const [params, setParams] = useState({
         driver: driver?.id,
         on: format(date, 'dd-MM-yyyy'),
+        sort: '-created_at'
     });
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isQuerying, setIsQuerying] = useState(false);
@@ -64,7 +65,7 @@ const OrdersScreen = ({ navigation }) => {
     }, [isMounted, date]);
 
     return (
-        <View style={[tailwind('bg-gray-800 h-full'), { paddingBottom: 147 }]}>
+        <View style={[tailwind('bg-gray-800 h-full')]}>
             <DefaultHeader>
                 <OrdersFilterBar
                     onSelectSort={(sort) => setParam('sort', sort)}

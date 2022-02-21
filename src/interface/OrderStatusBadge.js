@@ -14,6 +14,9 @@ const OrderStatusBadge = ({ status, onPress, wrapperStyle, containerStyle, style
         case 'operational':
         case 'active':
         case 'created':
+        case 'completed':
+        case 'enroute':
+        case 'driver_enroute':
             statusWrapperStyle = tailwind('bg-green-100 border-green-300');
             statusTextStyle = tailwind('text-green-800');
             break;
@@ -38,12 +41,6 @@ const OrderStatusBadge = ({ status, onPress, wrapperStyle, containerStyle, style
             statusTextStyle = tailwind('text-yellow-800');
             break;
 
-        case 'enroute':
-        case 'driver_enroute':
-            statusWrapperStyle = tailwind('bg-orange-100 border-orange-300');
-            statusTextStyle = tailwind('text-orange-800');
-            break;
-
         case 'info':
         case 'in_progress':
             statusWrapperStyle = tailwind('bg-blue-100 border-blue-300');
@@ -51,6 +48,8 @@ const OrderStatusBadge = ({ status, onPress, wrapperStyle, containerStyle, style
             break;
 
         default:
+            statusWrapperStyle = tailwind('bg-yellow-100 border-yellow-300');
+            statusTextStyle = tailwind('text-yellow-800');
             break;
     }
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import OrdersScreen from './screens/OrdersScreen';
+import ScheduleScreen from './screens/ScheduleScreen';
 import OrderScreen from 'shared/OrderScreen';
 import EntityScreen from 'shared/EntityScreen';
 
@@ -25,11 +25,11 @@ const verticalAnimation = {
     },
 };
 
-const OrdersStack = ({ route }) => {
+const ScheduleStack = ({ route }) => {
     return (
         <SafeAreaProvider>
             <RootStack.Navigator>
-                <RootStack.Screen name="OrdersScreen" component={OrdersScreen} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
+                <RootStack.Screen name="ScheduleScreen" component={ScheduleScreen} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
                 <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} />
                 <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
             </RootStack.Navigator>
@@ -37,4 +37,4 @@ const OrdersStack = ({ route }) => {
     );
 };
 
-export default OrdersStack;
+export default ScheduleStack;

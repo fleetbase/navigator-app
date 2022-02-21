@@ -13,7 +13,7 @@
     "generate-launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background-color=111827 --logo-width=100 --flavor=main"
   },
   "dependencies": {
-    "@fleetbase/sdk": "../fleetbase-js",
+    "@fleetbase/sdk": "1.2.2",
     "@fortawesome/free-brands-svg-icons": "^5.15.4",
     "@freakycoder/react-native-bounceable": "^0.2.5",
     "@react-native-async-storage/async-storage": "^1.15.5",
@@ -37,6 +37,7 @@
     "react-native-animated-radio-button": "^2.0.6",
     "react-native-bootsplash": "^4.0.2",
     "react-native-bouncy-checkbox": "^2.1.2",
+    "react-native-calendars": "^1.1278.0",
     "react-native-collapsible": "^1.6.0",
     "react-native-config": "^1.4.2",
     "react-native-device-info": "^8.1.3",

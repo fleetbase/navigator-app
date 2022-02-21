@@ -67,7 +67,7 @@ const RoutesScreen = ({ navigation }) => {
             const order = orders.objectAt(index);
 
             if (order.status === 'canceled' || order.status === 'completed' || !order.isAttributeFilled('payload')) {
-                return;
+                continue;
             }
 
             if (!isEmpty(order.getAttribute('payload.pickup'))) {
