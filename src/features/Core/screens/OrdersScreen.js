@@ -22,7 +22,7 @@ const OrdersScreen = ({ navigation }) => {
     const [params, setParams] = useState({
         driver: driver?.id,
         on: format(date, 'dd-MM-yyyy'),
-        sort: '-created_at'
+        sort: '-created_at',
     });
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isQuerying, setIsQuerying] = useState(false);
@@ -66,10 +66,15 @@ const OrdersScreen = ({ navigation }) => {
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
-            <DefaultHeader>
+            <DefaultHeader
+                onSearchResultPress={(order, closeDialog) => {
+                    closeDialog();
+                    navigation.push('OrderScreen', { data: order.serialize() });
+                }}
+            >
                 <OrdersFilterBar
                     onSelectSort={(sort) => setParam('sort', sort)}
-                    onSelectFilter={(filters) => setParam('filter', filter)}
+                    onSelectFilter={(filters) => setParam('filter', filters)}
                     onSelectDate={(date) => setParam('on', date)}
                     isLoading={isQuerying}
                     containerStyle={tailwind('px-0 pb-0')}
