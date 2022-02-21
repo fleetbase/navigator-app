@@ -425,9 +425,18 @@ export default class HelperUtil {
      * @return {String}
      * @memberof HelperUtil
      */
-    static getColorCode(string) {
+    static getColorCode(string, defaultColorCode = '#ffffff') {
         const styles = require('../../styles.json');
-        const property = styles[string] ?? null;
+        let property = styles[string] ?? null;
+
+        if (property === null) {
+            // getColorCode('gray-900');
+            property = styles[`text-${string}`] ?? null;
+        }
+
+        if (property === null) {
+            return defaultColorCode;
+        }
 
         const rgba2rgb = (rgbaString) => {
             const decimals = rgbaString.replace('rgba', 'rgb').split(',');
