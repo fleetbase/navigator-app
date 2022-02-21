@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, Image, TouchableOpacity, TextInput, ActivityIndicator, Dimensions, Modal } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { logError, debounce, stripHtml, translate } from 'utils';
+import { logError, debounce, stripHtml, translate, getColorCode } from 'utils';
 import { useFleetbase, useLocale, useMountedState, useStorage } from 'hooks';
 import tailwind from 'tailwind';
+import OrderCard from 'ui/OrderCard';
 
 const windowHeight = Dimensions.get('window').height;
 const dialogHeight = windowHeight / 2;
@@ -14,6 +16,7 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
     buttonTitle = buttonTitle ?? `Search orders`;
     buttonIcon = buttonIcon ?? faSearch;
 
+    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const fleetbase = useFleetbase();
     const isMounted = useMountedState();
@@ -69,12 +72,12 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
             </TouchableOpacity>
 
             <Modal animationType={'slide'} transparent={true} visible={isDialogOpen} onRequestClose={closeDialog}>
-                <View style={[tailwind('w-full h-full bg-white'), { paddingTop: insets.top }]}>
+                <View style={[tailwind('w-full h-full bg-gray-800'), { paddingTop: insets.top }]}>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between')}>
                         <View style={tailwind('flex-1 pr-4')}>
                             <View style={tailwind('relative overflow-hidden')}>
                                 <View style={tailwind('absolute top-0 bottom-0 left-0 h-full flex items-center justify-center z-10')}>
-                                    <FontAwesomeIcon icon={buttonIcon} style={[tailwind('text-gray-800 ml-3'), buttonIconStyle]} />
+                                    <FontAwesomeIcon icon={buttonIcon} style={[tailwind('text-gray-700 ml-3'), buttonIconStyle]} />
                                 </View>
                                 <TextInput
                                     value={query}
@@ -85,16 +88,17 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
                                     autoFocus={true}
                                     clearButtonMode={'while-editing'}
                                     textAlign={'left'}
-                                    style={tailwind('bg-gray-100 rounded-md pl-10 pr-2 h-10')}
+                                    style={tailwind('bg-gray-900 text-white rounded-md pl-10 shadow-lg pr-2 h-10')}
                                     placeholder={buttonTitle}
+                                    placeholderTextColor={getColorCode('text-gray-700')}
                                 />
                             </View>
                         </View>
 
                         <View>
                             <TouchableOpacity onPress={closeDialog}>
-                                <View style={tailwind('rounded-full bg-red-50 w-8 h-8 flex items-center justify-center')}>
-                                    <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-900')} />
+                                <View style={tailwind('rounded-full bg-gray-900 w-10 h-10 flex items-center justify-center')}>
+                                    <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-400')} />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -107,17 +111,15 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
                     )}
                     <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                         {results.map((order, index) => (
-                            <TouchableOpacity key={index} onPress={() => handleResultPress(order)}>
-                                <View style={tailwind('px-5 py-4 border-b border-gray-100')}>
-                                    <View style={tailwind('flex flex-row')}>
-                                        <View style={tailwind('flex-1')}>
-                                            <Text style={tailwind('font-semibold text-base')} numberOfLines={1}>
-                                                {order.id}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                            <OrderCard
+                                key={index}
+                                order={order}
+                                onPress={() => handleResultPress(order)}
+                                containerStyle={tailwind('bg-transparent border-0')}
+                                wrapperStyle={tailwind('border-b border-gray-900')}
+                                headerStyle={tailwind('border-0')}
+                                waypointsContainerStyle={tailwind('px-4 py-1')}
+                            />
                         ))}
                         <View style={tailwind('w-full h-40')}></View>
                     </ScrollView>
