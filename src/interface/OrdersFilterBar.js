@@ -38,6 +38,14 @@ const OrdersFilterBar = ({ onSelectSort, onSelectFilter, onSelectDate, onSelectT
         setStatusValue,
     };
 
+    const sortOptions = [
+        { label: 'Newest first', value: '-created_at' },
+        { label: 'Oldest first', value: 'created_at' },
+        { label: 'Default', value: null },
+    ];
+
+    const filterOptions = [{ label: 'Status', options: ['created', 'driver_enroute', 'canceled', 'completed'], param: 'status' }];
+
     const openDialog = (action = 'sort') => {
         setCurrentAction(action);
         actionSheetRef.current?.setModalVisible();
@@ -83,10 +91,10 @@ const OrdersFilterBar = ({ onSelectSort, onSelectFilter, onSelectDate, onSelectT
                     <View style={tailwind('pr-2')}>
                         <TouchableOpacity
                             onPress={() => openDialog('sort')}
-                            style={[tailwind(`btn bg-gray-800 border ${sort ? 'border-blue-300 bg-blue-50' : 'border-gray-700'} rounded-full px-4 py-2`), { width: 'auto' }]}
+                            style={[tailwind(`btn bg-gray-800 border ${sort ? 'border-blue-500' : 'border-gray-700'} rounded-full px-4 py-2`), { width: 'auto' }]}
                         >
                             <View style={tailwind('flex flex-row items-center')}>
-                                <FontAwesomeIcon icon={faSort} size={12} style={tailwind('text-gray-300 mr-1')} />
+                                <FontAwesomeIcon icon={faSort} size={12} style={tailwind(`${sort ? 'text-blue-500' : 'text-gray-300'} mr-1`)} />
                                 <Text style={tailwind(`${sort ? 'text-blue-500' : 'text-gray-300'} font-semibold`)}>{translate('terms.sort')}</Text>
                             </View>
                         </TouchableOpacity>
@@ -94,7 +102,10 @@ const OrdersFilterBar = ({ onSelectSort, onSelectFilter, onSelectDate, onSelectT
                     <View style={tailwind('pr-2')}>
                         <TouchableOpacity
                             onPress={() => openDialog('filter')}
-                            style={[tailwind(`btn bg-gray-800 border ${!isObjectEmpty(filter) ? 'border-blue-300 bg-blue-50' : 'border-gray-700'} rounded-full px-4 py-2`), { width: 'auto' }]}
+                            style={[
+                                tailwind(`btn bg-gray-800 border ${!isObjectEmpty(filter) ? 'border-blue-500' : 'border-gray-700'} rounded-full px-4 py-2`),
+                                { width: 'auto' },
+                            ]}
                         >
                             <View style={tailwind('flex flex-row items-center')}>
                                 <FontAwesomeIcon icon={faFilter} size={10} style={tailwind('text-gray-300 mr-1')} />
@@ -105,29 +116,47 @@ const OrdersFilterBar = ({ onSelectSort, onSelectFilter, onSelectDate, onSelectT
                 </View>
             </ScrollView>
             <ActionSheet
-                containerStyle={[{ height: dialogHeight + 150 }]}
+                ref={actionSheetRef}
+                containerStyle={{ height: windowHeight / 2, backgroundColor: getColorCode('bg-gray-800') }}
+                parentContainer={[tailwind('bg-gray-800')]}
+                indicatorColor={getColorCode('bg-gray-900')}
+                overlayColor={getColorCode('bg-gray-900')}
                 gestureEnabled={true}
                 bounceOnOpen={true}
+                closeOnTouchBackdrop={false}
                 nestedScrollEnabled={true}
+                statusBarTranslucent={true}
+                defaultOverlayOpacity={0.7}
                 onMomentumScrollEnd={() => actionSheetRef.current?.handleChildScrollEnd()}
-                ref={actionSheetRef}
             >
                 <View>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between mb-2')}>
                         <View style={tailwind('flex flex-row items-center')}>
-                            <Text style={tailwind('text-lg font-semibold')}>{capitalize(currentAction)}</Text>
+                            <Text style={tailwind('text-lg font-semibold text-gray-50')}>{capitalize(currentAction)}</Text>
                         </View>
 
                         <View>
                             <TouchableOpacity onPress={() => actionSheetRef.current?.hide()}>
-                                <View style={tailwind('rounded-full bg-red-50 w-8 h-8 flex items-center justify-center')}>
-                                    <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-900')} />
+                                <View style={tailwind('rounded-full bg-gray-900 w-10 h-10 flex items-center justify-center')}>
+                                    <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-400')} />
                                 </View>
                             </TouchableOpacity>
                         </View>
                     </View>
                     <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
-                        <View style={tailwind('w-full h-40')}></View>
+                        <View style={tailwind('w-full')}>
+                            {currentAction === 'sort' && (
+                                <View style={tailwind('px-5')}>
+                                    {sortOptions.map((sortOption, index) => (
+                                        <TouchableOpacity style={tailwind('mb-4')} onPress={() => setValue(sortOption.value, 'sort')}>
+                                            <View key={index} style={tailwind('btn bg-gray-900 border border-gray-700 rounded-lg shadow-sm justify-start px-4')}>
+                                                <Text style={tailwind('text-gray-50 text-lg')}>{sortOption.label}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
                     </ScrollView>
                 </View>
             </ActionSheet>

@@ -72,11 +72,14 @@ const ScheduleScreen = ({ navigation }) => {
             });
     }, [isMounted, date]);
 
-    console.log('[ SELECTED DATE ]', format(date, DATE_FORMAT));
-
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
-            <DefaultHeader />
+            <DefaultHeader
+                onSearchResultPress={(order, closeDialog) => {
+                    closeDialog();
+                    navigation.push('OrderScreen', { data: order.serialize() });
+                }}
+            />
             <Agenda
                 items={items}
                 selected={format(date, DATE_FORMAT)}
