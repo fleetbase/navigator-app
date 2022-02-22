@@ -201,6 +201,14 @@ const EntityScreen = ({ navigation, route }) => {
                                             <Text style={tailwind('text-gray-100')}>{formatCurrency((entity.getAttribute('declared_value') ?? 0) / 100, entity.getAttribute('currency'))}</Text>
                                         </View>
                                     </View>
+                                    <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                                        <View style={tailwind('flex-1')}>
+                                            <Text style={tailwind('text-gray-100')}>Currency</Text>
+                                        </View>
+                                        <View style={tailwind('flex-1 flex-col items-end')}>
+                                            <Text style={tailwind('text-gray-100 uppercase')}>{entity.getAttribute('currency')}</Text>
+                                        </View>
+                                    </View>
                                 </View>
                             </View>
                         </View>
