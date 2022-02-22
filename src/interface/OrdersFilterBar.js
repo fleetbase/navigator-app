@@ -148,7 +148,7 @@ const OrdersFilterBar = ({ onSelectSort, onSelectFilter, onSelectDate, onSelectT
                             {currentAction === 'sort' && (
                                 <View style={tailwind('px-5')}>
                                     {sortOptions.map((sortOption, index) => (
-                                        <TouchableOpacity style={tailwind('mb-4')} onPress={() => setValue(sortOption.value, 'sort')}>
+                                        <TouchableOpacity key={index} style={tailwind('mb-4')} onPress={() => setValue(sortOption.value, 'sort')}>
                                             <View key={index} style={tailwind('btn bg-gray-900 border border-gray-700 rounded-lg shadow-sm justify-start px-4')}>
                                                 <Text style={tailwind('text-gray-50 text-lg')}>{sortOption.label}</Text>
                                             </View>

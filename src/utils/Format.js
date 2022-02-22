@@ -1,8 +1,11 @@
+import React from 'react';
 import { isVoid } from './Helper';
 import { isValid as isValidDate, format as formatDate } from 'date-fns';
+import FastImage from 'react-native-fast-image';
 import getCurrency from './get-currency';
 import countryLocaleMap from 'country-locale-map';
 import Inflector from 'inflector-js';
+import tailwind from 'tailwind';
 
 /**
  *  Utility class for formatting strings.
@@ -98,6 +101,8 @@ export default class FormatUtil {
             { k: 'dstn_port', v: 'DSTN Port' },
             { k: 'eta', v: 'ETA' },
             { k: 'etd', v: 'ETD' },
+            { k: 'id', v: 'ID' },
+            { k: 'uuid', v: 'UUID' },
         ];
 
         for (let index = 0; index < specialWords.length; index++) {
@@ -187,6 +192,18 @@ export default class FormatUtil {
      * @memberof HelperUtil
      */
     static formatMetaValue(value) {
+        if (typeof value === 'boolean') {
+            return value ? 'True' : 'False';
+        }
+
+        if (isVoid(value)) {
+            return 'N/A';
+        }
+
+        if (typeof value === 'string' && (value.endsWith('.png') || value.endsWith('.jpg') || value.endsWith('.jpeg') || value.endsWith('.gif'))) {
+            return <FastImage source={{ uri: value }} style={tailwind('w-14 h-14 rounded-md')} />
+        }
+
         if (isValidDate(new Date(value))) {
             return formatDate(new Date(value), 'PPpp');
         }
