@@ -3,10 +3,10 @@ import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventRegister } from 'react-native-event-listeners';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes, faCheck, faStoreAlt, faMapMarkerAlt, faCogs, faHandHoldingHeart, faSatelliteDish, faShippingFast, faCar, faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faCheck, faMapMarkerAlt, faCogs, faHandHoldingHeart, faSatelliteDish, faShippingFast, faMoneyBillWave, faLocationArrow } from '@fortawesome/free-solid-svg-icons';
 import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
 import { useMountedState, useLocale, useResourceStorage } from 'hooks';
-import { formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue } from 'utils';
+import { config, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue } from 'utils';
 import { Order } from '@fleetbase/sdk';
 import { format, formatDistance as formatDateDistance, add, isValid as isValidDate } from 'date-fns';
 import ActionSheet from 'react-native-actions-sheet';
@@ -23,6 +23,10 @@ const { width, height } = Dimensions.get('window');
 
 const isObjectEmpty = (obj) => isEmpty(obj) || Object.values(obj).length === 0;
 
+console.log('MAPBOX_ACCESS_TOKEN', config('MAPBOX_ACCESS_TOKEN'));
+console.log('MAPBOX_SECRET_TOKEN', config('MAPBOX_SECRET_TOKEN'));
+console.log('GOOGLE_MAPS_KEY', config('GOOGLE_MAPS_KEY'));
+
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
 
@@ -38,31 +42,21 @@ const OrderScreen = ({ navigation, route }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [nextActivity, setNextActivity] = useState(null);
 
-    const orderStatusMap = {
-        created: { icon: faCheck, color: 'green' },
-        preparing: { icon: faCogs, color: 'yellow' },
-        ready: { icon: faHandHoldingHeart, color: 'indigo' },
-        dispatched: { icon: faSatelliteDish, color: 'indigo' },
-        driver_assigned: { icon: faShippingFast, color: 'green' },
-        driver_started: { icon: faShippingFast, color: 'yellow' },
-        driver_enroute: { icon: faShippingFast, color: 'yellow' },
-        completed: { icon: faCheck, color: 'green' },
-    };
-
-    const icon = orderStatusMap[order.getAttribute('status')]?.icon ?? faCheck;
-    const color = orderStatusMap[order.getAttribute('status')]?.color ?? 'green';
-
     const isPickupOrder = order.getAttribute('meta.is_pickup');
     const currency = order.getAttribute('meta.currency');
-    const subtotal = order.getAttribute('meta.subtotal');
-    const total = order.getAttribute('meta.total');
-    const tip = order.getAttribute('meta.tip');
-    const deliveryTip = order.getAttribute('meta.delivery_tip');
+    const subtotal = order.getAttribute('meta.subtotal', 0);
+    const total = order.getAttribute('meta.total', 0);
+    const tip = order.getAttribute('meta.tip', 0);
+    const deliveryTip = order.getAttribute('meta.delivery_tip', 0);
     const isCod = order.getAttribute('payload.cod_amount') > 0;
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints'));
     const scheduledAt = order.isAttributeFilled('scheduled_at') ? format(new Date(order.getAttribute('scheduled_at')), 'PPpp') : null;
     const createdAt = format(new Date(order.getAttribute('created_at')), 'PPpp');
     const customer = order.getAttribute('customer');
+    const destination = [order.getAttribute('payload.pickup'), ...order.getAttribute('payload.waypoints', []), order.getAttribute('payload.dropoff')].find((place) => {
+        return place.id === order.getAttribute('payload.current_waypoint');
+    });
+    const canNavigate = order.getAttribute('payload.current_waypoint') !== null && destination && order.isInProgress && config('MAPBOX_ACCESS_TOKEN') !== null;
 
     const formattedTip = (() => {
         if (typeof tip === 'string' && tip.endsWith('%')) {
@@ -90,16 +84,31 @@ const OrderScreen = ({ navigation, route }) => {
 
         for (let index = 0; index < entities.length; index++) {
             const entity = entities[index];
-            subtotal += entity.price;
+            subtotal += parseInt(entity.price);
         }
 
         return subtotal;
     };
 
+    const calculateDeliverySubtotal = () => {
+        const purchaseRate = order.getAttribute('purchase_rate');
+        let subtotal = 0;
+
+        if (purchaseRate) {
+            subtotal = purchaseRate.amount;
+        } else if (order?.meta?.delivery_free) {
+            subtotal = order.getAttribute('meta.delivery_fee');
+        }
+
+        return parseInt(subtotal);
+    };
+
     const calculateTotal = () => {
         let subtotal = calculateEntitiesSubtotal();
+        let deliveryFee = calculateDeliverySubtotal();
+        let tips = parseInt(deliveryTip ? deliveryTip : 0) + parseInt(tip ? tip : 0);
 
-        return subtotal;
+        return subtotal + deliveryFee + tips;
     };
 
     // deliver states -> created -> preparing -> dispatched -> driver_enroute -> completed
@@ -260,22 +269,39 @@ const OrderScreen = ({ navigation, route }) => {
                     </View>
                 </View>
                 <View style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')}>
-                    {order.isNotStarted && (
-                        <TouchableOpacity style={tailwind('flex-1')} onPress={startOrder}>
-                            <View style={tailwind('btn bg-green-900 border border-green-700')}>
-                                {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
-                                <Text style={tailwind('font-semibold text-green-50 text-base')}>Start Order</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                    {order.isInProgress && (
-                        <TouchableOpacity style={tailwind('flex-1')} onPress={updateOrderActivity}>
-                            <View style={tailwind('btn bg-green-900 border border-green-700')}>
-                                {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
-                                <Text style={tailwind('font-semibold text-green-50 text-base')}>Update Activity</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
+                    <View style={tailwind('flex-1')}>
+                        {order.isNotStarted && (
+                            <TouchableOpacity style={tailwind('')} onPress={startOrder}>
+                                <View style={tailwind('btn bg-green-900 border border-green-700')}>
+                                    {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
+                                    <Text style={tailwind('font-semibold text-green-50 text-base')}>Start Order</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        {order.isInProgress && (
+                            <TouchableOpacity style={tailwind('')} onPress={updateOrderActivity}>
+                                <View style={tailwind('btn bg-green-900 border border-green-700')}>
+                                    {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
+                                    <Text style={tailwind('font-semibold text-green-50 text-base')}>Update Activity</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        {canNavigate && (
+                            <TouchableOpacity style={tailwind('mt-2')} onPress={() => navigation.push('NavigationScreen', { _order: order.serialize(), _destination: destination })}>
+                                <View style={tailwind('btn bg-blue-900 border border-blue-700 py-0 px-4 w-full')}>
+                                    <View style={tailwind('flex flex-row justify-start')}>
+                                        <View style={tailwind('border-r border-blue-700 py-2 pr-4 flex flex-row items-center')}>
+                                            <FontAwesomeIcon icon={faLocationArrow} style={tailwind('text-blue-50 mr-2')} />
+                                            <Text style={tailwind('font-semibold text-blue-50 text-base')}>Navigate</Text>
+                                        </View>
+                                        <View style={tailwind('flex-1 py-2 px-2 flex items-center')}>
+                                            <Text numberOfLines={1} style={tailwind('text-blue-50 text-base')}>{destination.address}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </View>
             <ScrollView
@@ -408,7 +434,9 @@ const OrderScreen = ({ navigation, route }) => {
                                                     <Text style={tailwind('text-gray-100')}>{titleize(key)}</Text>
                                                 </View>
                                                 <View style={tailwind('flex-1 flex-col items-end')}>
-                                                    <Text style={tailwind('text-gray-100')}>{formatMetaValue(order.meta[key])}</Text>
+                                                    <Text style={tailwind('text-gray-100')} numberOfLines={1}>
+                                                        {formatMetaValue(order.meta[key])}
+                                                    </Text>
                                                 </View>
                                             </View>
                                         ))}
@@ -580,9 +608,7 @@ const OrderScreen = ({ navigation, route }) => {
                                     {!isPickupOrder && (
                                         <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                                             <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryFee')}</Text>
-                                            <Text style={tailwind('text-gray-100')}>
-                                                {formatCurrency(order.getAttribute('meta.delivery_fee') / 100, order.getAttribute('meta.currency'))}
-                                            </Text>
+                                            <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
                                         </View>
                                     )}
                                     {tip && (
