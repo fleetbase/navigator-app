@@ -1,3 +1,4 @@
+install! 'cocoapods', :disable_input_output_paths => true
 require_relative '../node_modules/react-native/scripts/react_native_pods'
 require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
@@ -33,7 +34,13 @@ target 'StorefrontApp' do
   # you should disable the next line.
   # use_flipper!()
 
+  pre_install do |installer|
+    $RNMBNAV.pre_install(installer)
+    # any other pre install hooks here
+  end
+
   post_install do |installer|
     react_native_post_install(installer)
+    $RNMBNAV.post_install(installer)
   end
 end

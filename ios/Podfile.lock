@@ -40,6 +40,29 @@ PODS:
   - libwebp/mux (1.2.1):
     - libwebp/demux
   - libwebp/webp (1.2.1)
+  - Mapbox-iOS-SDK (6.4.1):
+    - MapboxMobileEvents (~> 0.10.12)
+  - MapboxAccounts (2.3.1)
+  - MapboxCommon (9.2.0)
+  - MapboxCoreNavigation (1.3.0):
+    - MapboxAccounts (~> 2.3.0)
+    - MapboxDirections (~> 1.2.0)
+    - MapboxMobileEvents (~> 0.10.2)
+    - MapboxNavigationNative (~> 31.0)
+    - Turf (~> 1.0)
+  - MapboxDirections (1.2.0):
+    - Polyline (~> 5.0)
+    - Turf (~> 1.0)
+  - MapboxMobileEvents (0.10.14)
+  - MapboxNavigation (1.3.0):
+    - Mapbox-iOS-SDK (~> 6.0)
+    - MapboxCoreNavigation (= 1.3.0)
+    - MapboxMobileEvents (~> 0.10.2)
+    - MapboxSpeech (~> 1.0)
+    - Solar (~> 2.1)
+  - MapboxNavigationNative (31.0.1):
+    - MapboxCommon (= 9.2.0)
+  - MapboxSpeech (1.0.0)
   - MMKV (1.2.10):
     - MMKVCore (~> 1.2.10)
   - MMKVCore (1.2.12)
@@ -49,6 +72,7 @@ PODS:
     - RNPermissions
   - Permission-Notifications (3.0.5):
     - RNPermissions
+  - Polyline (5.0.2)
   - RCT-Folly (2020.01.13.00):
     - boost-for-react-native
     - DoubleConversion
@@ -259,6 +283,9 @@ PODS:
     - React-Core
   - react-native-image-resizer (1.4.5):
     - React-Core
+  - react-native-mapbox-navigation (1.1.0):
+    - MapboxNavigation (~> 1.3.0)
+    - React-Core
   - react-native-maps (0.28.0):
     - React-Core
   - react-native-mmkv-storage (0.6.4):
@@ -396,6 +423,8 @@ PODS:
   - SDWebImageWebPCoder (0.8.4):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.10)
+  - Solar (2.1.0)
+  - Turf (1.2.0)
   - Yoga (1.14.0)
   - YoutubePlayer-in-WKWebView (0.3.8)
 
@@ -426,6 +455,7 @@ DEPENDENCIES:
   - react-native-google-maps (from `../node_modules/react-native-maps`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-image-resizer (from `../node_modules/react-native-image-resizer`)
+  - "react-native-mapbox-navigation (from `../node_modules/@homee/react-native-mapbox-navigation`)"
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-mmkv-storage (from `../node_modules/react-native-mmkv-storage`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -464,10 +494,22 @@ SPEC REPOS:
     - Google-Maps-iOS-Utils
     - GoogleMaps
     - libwebp
+    - Mapbox-iOS-SDK
+    - MapboxAccounts
+    - MapboxCommon
+    - MapboxCoreNavigation
+    - MapboxDirections
+    - MapboxMobileEvents
+    - MapboxNavigation
+    - MapboxNavigationNative
+    - MapboxSpeech
     - MMKV
     - MMKVCore
+    - Polyline
     - SDWebImage
     - SDWebImageWebPCoder
+    - Solar
+    - Turf
     - YoutubePlayer-in-WKWebView
 
 EXTERNAL SOURCES:
@@ -519,6 +561,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-picker"
   react-native-image-resizer:
     :path: "../node_modules/react-native-image-resizer"
+  react-native-mapbox-navigation:
+    :path: "../node_modules/@homee/react-native-mapbox-navigation"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
   react-native-mmkv-storage:
@@ -591,11 +635,21 @@ SPEC CHECKSUMS:
   Google-Maps-iOS-Utils: c32891ff472eaaa1fca032beedafa1a013af7875
   GoogleMaps: 32ca02de09de357a10ac773f2c70f1986751392d
   libwebp: 98a37e597e40bfdb4c911fc98f2c53d0b12d05fc
+  Mapbox-iOS-SDK: f870f83cbdc7aa4a74afcee143aafb0dae390c82
+  MapboxAccounts: e40ef575df5d8b7ef33d0504ff2d393f4fde0455
+  MapboxCommon: 2c4ef00c10cba35302835423f4d63c6f3dea4bc4
+  MapboxCoreNavigation: 77b3db040855684b0f2cd9064e5d9bd51c9f5739
+  MapboxDirections: 383df0cd65784897c2269750a42d9654c832f0ce
+  MapboxMobileEvents: 5a172cc9bbf8ac0e45ba86095cbee685ede248cc
+  MapboxNavigation: 222274f1330cf9336529ade519a14df4042dfd9f
+  MapboxNavigationNative: 0bc54a7cf20a892a96eca07e1f05776f496491f5
+  MapboxSpeech: 4b3aea42e35d056fae1d7ad847a9fc0f412d911e
   MMKV: 76033b9ace2006623308910a3afcc0e25eba3140
   MMKVCore: df0565f6b58463604731a68ba6cd89bc0b2d1d55
   Permission-Contacts: 4bd4bdbbcec21ce0175e02cc4925070a773204cf
   Permission-LocationWhenInUse: e1168a583654f1d2d34d3a18c4c6518ce409ad2a
   Permission-Notifications: 16ccd862111103378a7bab9fb1c5c71addffc348
+  Polyline: fce41d72e1146c41c6d081f7656827226f643dff
   RCT-Folly: ec7a233ccc97cc556cf7237f0db1ff65b986f27c
   RCTRequired: 6d3e854f0e7260a648badd0d44fc364bc9da9728
   RCTTypeSafety: c1f31d19349c6b53085766359caac425926fafaa
@@ -613,6 +667,7 @@ SPEC CHECKSUMS:
   react-native-google-maps: 46dea4aa4acb7300beff508f64d9f8c84e9fb106
   react-native-image-picker: 14910ea6b6a38bd45d1a69cb643b157e6ac142cb
   react-native-image-resizer: d9fb629a867335bdc13230ac2a58702bb8c8828f
+  react-native-mapbox-navigation: cf8c60d72039a19bedd3f74d0f5ecab035dbbe53
   react-native-maps: 2d405b4e8cee0282e4c02bac434d81450dfea877
   react-native-mmkv-storage: ef0108761e775232be39fda2f41fef040406d858
   react-native-safe-area-context: 584dc04881deb49474363f3be89e4ca0e854c057
@@ -645,9 +700,11 @@ SPEC CHECKSUMS:
   RNSVG: 551acb6562324b1d52a4e0758f7ca0ec234e278f
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: f93010f3f6c031e2f8fb3081ca4ee6966c539815
+  Solar: 2dc6e7cc39186cb0c8228fa08df76fb50c7d8f24
+  Turf: aaa060138b11a8e979a19e6d81091d156a31bc58
   Yoga: 575c581c63e0d35c9a83f4b46d01d63abc1100ac
   YoutubePlayer-in-WKWebView: 4fca3b4f6f09940077bfbae7bddb771f2b43aacd
 
-PODFILE CHECKSUM: 347e7dad0d91db5ab4c106c2eee4ce33d51407f3
+PODFILE CHECKSUM: 52e8daf9bff6c9107d52afb0d36f8beb94c2af39
 
 COCOAPODS: 1.11.2
