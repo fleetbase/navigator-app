@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faEye } from '@fortawesome/free-solid-svg-icons';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 import { isEmpty, getDistance } from 'utils';
+import OrderStatusBadge from 'ui/OrderStatusBadge';
 import Collapsible from 'react-native-collapsible';
 
+const COLLAPSE_POINT = 2;
+
 const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
-    const [isWaypointsCollapsed, setIsWaypointsCollapsed] = useState(false);
+    const [isWaypointsCollapsed, setIsWaypointsCollapsed] = useState(true);
 
     const getCurrentLeg = (order) => {
         const payload = order.getAttribute('payload');
@@ -77,6 +82,10 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
         }
     };
 
+    const toggleWaypointCollapse = () => {
+        setIsWaypointsCollapsed(!isWaypointsCollapsed);
+    };
+
     const currentLeg = getCurrentLeg(order);
     const firstWaypoint = getFirstWaypoint(order);
     const lastWaypoint = getLastWaypoint(order);
@@ -84,10 +93,10 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
     const payload = order.getAttribute('payload');
 
     return (
-        <View style={[tailwind(''), wrapperStyle]}>
+        <View style={[tailwind('overflow-hidden'), wrapperStyle]}>
             <View style={[tailwind('w-full'), containerStyle]} onPress={onPress}>
                 <View style={tailwind('z-20 relative')}>
-                    <View style={tailwind(`ml-4 absolute border-l-2 border-white opacity-75 h-full`)} />
+                    <View style={[{ height: isWaypointsCollapsed ? '94.5%' : '96.5%' }, tailwind(`ml-4 absolute border-l-2 border-white opacity-75`)]} />
                     {payload && (
                         <View style={tailwind('')}>
                             {firstWaypoint && (
@@ -104,11 +113,21 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
                                                 <Text style={tailwind('text-xs text-gray-50')}>{firstWaypoint.phone}</Text>
                                             </TouchableOpacity>
                                         )}
+                                        {firstWaypoint.tracking_number && (
+                                            <View style={tailwind('mt-1 flex flex-row')}>
+                                                <OrderStatusBadge
+                                                    status={firstWaypoint.tracking_number.status_code}
+                                                    wrapperStyle={tailwind('flex-grow-0')}
+                                                    style={tailwind('px-2 py-0.5')}
+                                                    textStyle={tailwind('text-xs')}
+                                                />
+                                            </View>
+                                        )}
                                     </View>
                                 </View>
                             )}
                             {middleWaypoints &&
-                                middleWaypoints.length < 5 &&
+                                middleWaypoints.length < COLLAPSE_POINT &&
                                 middleWaypoints.map((waypoint, i) => (
                                     <View key={i} style={tailwind('w-full flex-row items-start mb-4')}>
                                         <View style={tailwind('mr-3')}>
@@ -123,19 +142,29 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
                                                     <Text style={tailwind('text-xs text-gray-50')}>{waypoint.phone}</Text>
                                                 </TouchableOpacity>
                                             )}
+                                            {waypoint.tracking_number && (
+                                                <View style={tailwind('mt-1 flex flex-row')}>
+                                                    <OrderStatusBadge
+                                                        status={waypoint.tracking_number.status_code}
+                                                        wrapperStyle={tailwind('flex-grow-0')}
+                                                        style={tailwind('px-2 py-0.5')}
+                                                        textStyle={tailwind('text-xs')}
+                                                    />
+                                                </View>
+                                            )}
                                         </View>
                                     </View>
                                 ))}
-                            {middleWaypoints && middleWaypoints.length > 5 && (
+                            {middleWaypoints && middleWaypoints.length >= COLLAPSE_POINT && (
                                 <View>
                                     <View style={tailwind('w-full flex-row items-start mb-4')}>
-                                        <TouchableOpacity style={tailwind('w-full')} onPress={this.toggleWaypointCollapse}>
-                                            <View style={tailwind('px-3 py-2 w-full bg-yellow-500 text-yellow-900 rounded shadow-sm flex')}>
+                                        <TouchableOpacity style={tailwind('w-full')} onPress={toggleWaypointCollapse}>
+                                            <View style={tailwind('px-3 py-2 w-full bg-yellow-400 border border-yellow-500 rounded shadow-sm flex')}>
                                                 <View style={tailwind('flex flex-row')}>
-                                                    <FontAwesomeIcon icon={faEye} style={tailwind('mr-2')} />
-                                                    <Text style={tailwind('font-bold')}>{isWaypointsCollapsed ? 'Tap to expand' : 'Tap to collapse'}</Text>
+                                                    <FontAwesomeIcon icon={faEye} style={tailwind('mr-2 text-yellow-900')} />
+                                                    <Text style={tailwind('font-bold text-yellow-900')}>{isWaypointsCollapsed ? 'Tap to expand' : 'Tap to collapse'}</Text>
                                                 </View>
-                                                <Text>{middleWaypoints.length + 1} more waypoints</Text>
+                                                <Text style={tailwind('text-yellow-900')}>{middleWaypoints.length + 1} more waypoints</Text>
                                             </View>
                                         </TouchableOpacity>
                                     </View>
@@ -153,6 +182,16 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
                                                         <TouchableOpacity onPress={() => startCall(waypoint.phone)}>
                                                             <Text style={tailwind('text-xs text-gray-50')}>{waypoint.phone}</Text>
                                                         </TouchableOpacity>
+                                                    )}
+                                                    {waypoint.tracking_number && (
+                                                        <View style={tailwind('mt-1 flex flex-row')}>
+                                                            <OrderStatusBadge
+                                                                status={waypoint.tracking_number.status_code}
+                                                                wrapperStyle={tailwind('flex-grow-0')}
+                                                                style={tailwind('px-2 py-0.5')}
+                                                                textStyle={tailwind('text-xs')}
+                                                            />
+                                                        </View>
                                                     )}
                                                 </View>
                                             </View>
@@ -173,6 +212,16 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
                                             <TouchableOpacity onPress={() => startCall(lastWaypoint.phone)}>
                                                 <Text style={tailwind('text-xs text-gray-50')}>{lastWaypoint.phone}</Text>
                                             </TouchableOpacity>
+                                        )}
+                                        {lastWaypoint.tracking_number && (
+                                            <View style={tailwind('mt-1 flex flex-row')}>
+                                                <OrderStatusBadge
+                                                    status={lastWaypoint.tracking_number.status_code}
+                                                    wrapperStyle={tailwind('flex-grow-0')}
+                                                    style={tailwind('px-2 py-0.5')}
+                                                    textStyle={tailwind('text-xs')}
+                                                />
+                                            </View>
                                         )}
                                     </View>
                                 </View>
