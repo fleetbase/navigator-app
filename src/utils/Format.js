@@ -201,7 +201,7 @@ export default class FormatUtil {
         }
 
         if (typeof value === 'string' && (value.endsWith('.png') || value.endsWith('.jpg') || value.endsWith('.jpeg') || value.endsWith('.gif'))) {
-            return <FastImage source={{ uri: value }} style={tailwind('w-14 h-14 rounded-md')} />
+            return <FastImage source={{ uri: value }} style={tailwind('w-14 h-14 rounded-md')} />;
         }
 
         if (isValidDate(new Date(value))) {
@@ -214,6 +214,77 @@ export default class FormatUtil {
 
         return value;
     }
+
+    /**
+     * Get styles for statuses
+     *
+     * @static
+     * @param {String} status
+     * @return {Object}
+     * @memberof FormatUtil
+     */
+    static getStatusColors(status, inverted = false) {
+        status = status?.toLowerCase();
+
+        let statusWrapperStyle = tailwind();
+        let statusTextStyle = tailwind();
+        let color = 'yellow';
+
+        switch (status) {
+            case 'live':
+            case 'success':
+            case 'operational':
+            case 'active':
+            case 'completed':
+                statusWrapperStyle = inverted ? tailwind('bg-green-900 border-green-700') : tailwind('bg-green-100 border-green-300');
+                statusTextStyle = inverted ? tailwind('text-green-50') : tailwind('text-green-800');
+                color = 'green';
+                break;
+
+            case 'dispatched':
+            case 'assigned':
+                statusWrapperStyle = inverted ? tailwind('bg-indigo-900 border-indigo-700') : tailwind('bg-indigo-100 border-indigo-300');
+                statusTextStyle = inverted ? tailwind('text-indigo-50') : tailwind('text-indigo-800');
+                color = 'indigo';
+                break;
+
+            case 'disabled':
+            case 'canceled':
+            case 'incomplete':
+            case 'unable':
+            case 'failed':
+                statusWrapperStyle = inverted ? tailwind('bg-red-900 border-red-700') : tailwind('bg-red-100 border-red-300');
+                statusTextStyle = inverted ? tailwind('text-red-50') : tailwind('text-red-800');
+                color = 'red';
+                break;
+
+            case 'created':
+            case 'warning':
+            case 'preparing':
+            case 'pending':
+            case 'enroute':
+            case 'driver_enroute':
+                statusWrapperStyle = inverted ? tailwind('bg-yellow-900 border-yellow-700') : tailwind('bg-yellow-100 border-yellow-300');
+                statusTextStyle = inverted ? tailwind('text-yellow-50') : tailwind('text-yellow-800');
+                color = 'yellow';
+                break;
+
+            case 'info':
+            case 'in_progress':
+                statusWrapperStyle = inverted ? tailwind('bg-blue-900 border-blue-700') : tailwind('bg-blue-100 border-blue-300');
+                statusTextStyle = inverted ? tailwind('text-blue-50') : tailwind('text-blue-800');
+                color = 'blue';
+                break;
+
+            default:
+                statusWrapperStyle = inverted ? tailwind('bg-yellow-900 border-yellow-700') : tailwind('bg-yellow-100 border-yellow-300');
+                statusTextStyle = inverted ? tailwind('text-yellow-50') : tailwind('text-yellow-800');
+                color = 'yellow';
+                break;
+        }
+
+        return { statusWrapperStyle, statusTextStyle, color };
+    }
 }
 
 const formatCurrency = FormatUtil.currency;
@@ -225,5 +296,6 @@ const pluralize = FormatUtil.pluralize;
 const titleize = FormatUtil.titleize;
 const humanize = FormatUtil.humanize;
 const formatMetaValue = FormatUtil.formatMetaValue;
+const getStatusColors = FormatUtil.getStatusColors;
 
-export { formatCurrency, formatKm, formatDuration, capitalize, pluralize, titleize, humanize, formatMetaValue };
+export { formatCurrency, formatKm, formatDuration, capitalize, pluralize, titleize, humanize, formatMetaValue, getStatusColors };

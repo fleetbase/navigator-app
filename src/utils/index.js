@@ -22,7 +22,7 @@ import {
 } from './Helper';
 import { calculatePercentage, haversine } from './Calculate';
 import { syncDevice } from './Auth';
-import { formatCurrency, capitalize, pluralize, formatDuration, formatKm, formatMetaValue, titleize, humanize } from './Format';
+import { formatCurrency, capitalize, pluralize, formatDuration, formatKm, formatMetaValue, titleize, humanize, getStatusColors } from './Format';
 import { geocode, getCurrentLocation, getLocation, getDistance } from './Geo';
 import { translate } from './Localize';
 import getCurrency from './get-currency';
@@ -133,6 +133,7 @@ export {
     formatMetaValue,
     formatDuration,
     formatKm,
+    getStatusColors,
     geocode,
     getCurrentLocation,
     getLocation,

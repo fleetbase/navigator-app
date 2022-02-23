@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
@@ -7,11 +7,19 @@ import { format } from 'date-fns';
 import { isEmpty, getDistance } from 'utils';
 import MapView, { Marker } from 'react-native-maps';
 
-const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle }) => {
+const { width, height } = Dimensions.get('window');
+const ASPECT_RATIO = width / height;
+const LATITUDE_DELTA = 0.0922;
+const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
+
+const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapReady }) => {
+
+    const map = useRef();
+    const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
+
     const getCurrentLeg = (order) => {
         const payload = order.getAttribute('payload');
         const { waypoints, current_waypoint } = payload;
-        const isMultiDropOrder = !isEmpty(payload.waypoints);
 
         if (!isMultiDropOrder) {
             return false;
@@ -29,7 +37,7 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle }) => {
             return payload.pickup;
         }
 
-        const firstWaypoint = payload.waypoints[0] || null;
+        const firstWaypoint = payload.waypoints[0] ?? null;
 
         if (firstWaypoint) {
             firstWaypoint.completed = firstWaypoint.status_code === 'COMPLETED';
@@ -83,15 +91,25 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle }) => {
     const middleWaypoints = getMiddleWaypoints(order) ?? [];
     const payload = order.getAttribute('payload');
 
+    const initialRegionCoordinates = {
+        latitude: firstWaypoint.location.coordinates[1],
+        longitude: firstWaypoint.location.coordinates[0]
+    };
+
     return (
         <View style={[tailwind(''), wrapperStyle]}>
             <MapView
+                ref={map}
+                onMapReady={() => {
+                    if (typeof onMapReady === 'function') {
+                        onMapReady(map);
+                    }
+                }}
                 minZoomLevel={12}
                 maxZoomLevel={20}
                 style={tailwind('w-full h-60 rounded-md shadow-sm')}
                 initialRegion={{
-                    latitude: order.getAttribute('payload.pickup.location.coordinates.1'),
-                    longitude: order.getAttribute('payload.pickup.location.coordinates.0'),
+                    ...initialRegionCoordinates,
                     latitudeDelta: 1.0922,
                     longitudeDelta: 0.0421,
                 }}
@@ -104,7 +122,6 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle }) => {
                         }}
                     >
                         <View style={tailwind('bg-blue-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
-                            {/* <FontAwesomeIcon icon={faMapMarkerAlt} size={18} color={'#fff'} /> */}
                             <Text style={tailwind('font-bold text-white')}>1</Text>
                         </View>
                     </Marker>
@@ -119,7 +136,6 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle }) => {
                         }}
                     >
                         <View style={tailwind('bg-green-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
-                            {/* <FontAwesomeIcon icon={faMapMarkerAlt} size={18} color={'#fff'} /> */}
                             <Text style={tailwind('font-bold text-white')}>{i + 2}</Text>
                         </View>
                     </Marker>
@@ -133,7 +149,6 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle }) => {
                         }}
                     >
                         <View style={tailwind('bg-red-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
-                            {/* <FontAwesomeIcon icon={faMapMarkerAlt} size={18} color={'#fff'} /> */}
                             <Text style={tailwind('font-bold text-white')}>{middleWaypoints.length + 2}</Text>
                         </View>
                     </Marker>
