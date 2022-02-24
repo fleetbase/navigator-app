@@ -2,11 +2,11 @@ import React, { useState, useEffect, createRef } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faBarcode, faPen } from '@fortawesome/free-solid-svg-icons';
 import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
 import { useMountedState, useLocale, useResourceStorage } from 'hooks';
 import { formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue } from 'utils';
-import { Entity } from '@fleetbase/sdk';
+import { Entity, Order } from '@fleetbase/sdk';
 import { format } from 'date-fns';
 import FastImage from 'react-native-fast-image';
 import OrderStatusBadge from 'ui/OrderStatusBadge';
@@ -15,14 +15,15 @@ import tailwind from 'tailwind';
 const isObjectEmpty = (obj) => isEmpty(obj) || Object.values(obj).length === 0;
 
 const EntityScreen = ({ navigation, route }) => {
-    const { data } = route.params;
+    const { _entity, _order } = route.params;
 
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
     const [locale] = useLocale();
 
-    const [entity, setEntity] = useState(new Entity(data, FleetbaseAdapter));
+    const [order, setOrder] = useState(new Order(_order, FleetbaseAdapter));
+    const [entity, setEntity] = useState(new Entity(_entity, FleetbaseAdapter));
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -64,10 +65,26 @@ const EntityScreen = ({ navigation, route }) => {
             >
                 <View style={tailwind('flex w-full h-full pb-60')}>
                     <View style={tailwind('bg-gray-800')}>
-                        <View style={tailwind('flex flex-col justify-center items-center w-full')}>
-                            <FastImage source={{ uri: entity.getAttribute('photo_url') }} style={{ width: 150, height: 150, margin: 20 }} />
-                            <Text style={tailwind('text-lg text-white')}>{entity.getAttribute('name')}</Text>
-                            <Text style={tailwind('text-gray-100')}>{entity.getAttribute('description')}</Text>
+                        <View>
+                            <View style={tailwind('flex flex-col justify-center items-center w-full')}>
+                                <FastImage source={{ uri: entity.getAttribute('photo_url') }} style={{ width: 150, height: 150, margin: 20 }} />
+                                <Text style={tailwind('text-lg text-white')}>{entity.getAttribute('name')}</Text>
+                                <Text style={tailwind('text-gray-100')}>{entity.getAttribute('description')}</Text>
+                            </View>
+                            <View style={tailwind('mb-4 mt-2 px-6')}>
+                                <View style={tailwind('flex rounded-md bg-blue-900 border border-blue-700')}>
+                                    <View style={tailwind('flex flex-row')}>
+                                        <TouchableOpacity onPress={() => navigation.push('ProofScreen', { _entity: entity.serialize(), _order: order.serialize() })} style={tailwind('flex-1 px-3 py-2 flex items-center justify-center')}>
+                                            <FontAwesomeIcon icon={faBarcode} style={tailwind('text-blue-50 mb-1')} />
+                                            <Text style={tailwind('text-blue-50')}>Add Proof of Delivery</Text>
+                                        </TouchableOpacity>
+                                        {/* <TouchableOpacity style={tailwind('flex-1 px-3 py-2 flex items-center justify-center')}>
+                                            <FontAwesomeIcon icon={faPen} style={tailwind('text-blue-50 mb-1')} />
+                                            <Text style={tailwind('text-blue-50')}>Edit Details</Text>
+                                        </TouchableOpacity> */}
+                                    </View>
+                                </View>
+                            </View>
                         </View>
                         <View style={tailwind('mt-2')}>
                             <View style={tailwind('flex flex-col items-center')}>
@@ -147,7 +164,9 @@ const EntityScreen = ({ navigation, route }) => {
                                             <Text style={tailwind('text-gray-100')}>Weight</Text>
                                         </View>
                                         <View style={tailwind('flex-1 flex-col items-end')}>
-                                            <Text style={tailwind('text-gray-100')}>{entity.isAttributeFilled('weight') ? `${entity.getAttribute('weight')} ${entity.getAttribute('weight_unit')}` : 'N/A'}</Text>
+                                            <Text style={tailwind('text-gray-100')}>
+                                                {entity.isAttributeFilled('weight') ? `${entity.getAttribute('weight')} ${entity.getAttribute('weight_unit')}` : 'N/A'}
+                                            </Text>
                                         </View>
                                     </View>
                                     <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
@@ -155,7 +174,10 @@ const EntityScreen = ({ navigation, route }) => {
                                             <Text style={tailwind('text-gray-100')}>Dimensions (L x W x H)</Text>
                                         </View>
                                         <View style={tailwind('flex-1 flex-col items-end')}>
-                                            <Text style={tailwind('text-gray-100')}>{entity.getAttribute('length', 0) ?? 0} x {entity.getAttribute('width', 0) ?? 0} x {entity.getAttribute('height', 0) ?? 0} {entity.getAttribute('dimensions_unit')}</Text>
+                                            <Text style={tailwind('text-gray-100')}>
+                                                {entity.getAttribute('length', 0) ?? 0} x {entity.getAttribute('width', 0) ?? 0} x {entity.getAttribute('height', 0) ?? 0}{' '}
+                                                {entity.getAttribute('dimensions_unit')}
+                                            </Text>
                                         </View>
                                     </View>
                                     <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
@@ -198,7 +220,9 @@ const EntityScreen = ({ navigation, route }) => {
                                             <Text style={tailwind('text-gray-100')}>Declared Value</Text>
                                         </View>
                                         <View style={tailwind('flex-1 flex-col items-end')}>
-                                            <Text style={tailwind('text-gray-100')}>{formatCurrency((entity.getAttribute('declared_value') ?? 0) / 100, entity.getAttribute('currency'))}</Text>
+                                            <Text style={tailwind('text-gray-100')}>
+                                                {formatCurrency((entity.getAttribute('declared_value') ?? 0) / 100, entity.getAttribute('currency'))}
+                                            </Text>
                                         </View>
                                     </View>
                                     <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
