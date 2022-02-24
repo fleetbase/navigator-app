@@ -5,6 +5,7 @@ import OrdersScreen from './screens/OrdersScreen';
 import OrderScreen from 'shared/OrderScreen';
 import EntityScreen from 'shared/EntityScreen';
 import NavigationScreen from 'shared/NavigationScreen';
+import ProofScreen from 'shared/ProofScreen';
 
 const RootStack = createStackNavigator();
 
@@ -34,6 +35,7 @@ const OrdersStack = ({ route }) => {
                 <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} />
                 <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
                 <RootStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <RootStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false, ...verticalAnimation }} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );
