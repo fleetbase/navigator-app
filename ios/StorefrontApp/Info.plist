@@ -60,11 +60,11 @@
 		<key>NSContactsUsageDescription</key>
 		<string>This app may need to access your contacts for sharing</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string></string>
+		<string>This app will track your location to update operations</string>
 		<key>NSLocationAlwaysUsageDescription</key>
-		<string></string>
+		<string>>This app will track your location to update operations</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string></string>
+		<string>>This app will track your location to update operations</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>This app allows you to upload photos from your photo library</string>
 		<key>NSMicrophoneUsageDescription</key>
