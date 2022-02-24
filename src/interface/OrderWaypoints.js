@@ -164,7 +164,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
                                                     <FontAwesomeIcon icon={faEye} style={tailwind('mr-2 text-yellow-900')} />
                                                     <Text style={tailwind('font-bold text-yellow-900')}>{isWaypointsCollapsed ? 'Tap to expand' : 'Tap to collapse'}</Text>
                                                 </View>
-                                                <Text style={tailwind('text-yellow-900')}>{middleWaypoints.length + 1} more waypoints</Text>
+                                                <Text style={tailwind('text-yellow-900')}>{middleWaypoints.length} more waypoints</Text>
                                             </View>
                                         </TouchableOpacity>
                                     </View>

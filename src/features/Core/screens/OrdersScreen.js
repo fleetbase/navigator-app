@@ -39,30 +39,37 @@ const OrdersScreen = ({ navigation }) => {
         setParams(params);
     };
 
-    const onRefresh = () => {
-        setIsRefreshing(true);
+    const loadOrders = (options = {}) => {
+        if (options.isRefreshing) {
+            setIsRefreshing(true);
+        }
 
-        fleetbase.orders
-            .query(params)
-            .then(setOrders)
-            .catch(logError)
-            .finally(() => setIsRefreshing(false));
-    };
-
-    useEffect(() => {
-        if (isLoaded) {
+        if (options.isQuerying) {
             setIsQuerying(true);
         }
 
-        fleetbase.orders
+        return fleetbase.orders
             .query(params)
             .then(setOrders)
             .catch(logError)
             .finally(() => {
+                setIsRefreshing(false);
                 setIsQuerying(false);
                 setIsLoaded(true);
             });
+    };
+
+    useEffect(() => {
+        loadOrders({ isQuerying: isLoaded });
     }, [isMounted, date]);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadOrders();
+        });
+
+        return unsubscribe;
+    }, [isMounted]);
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
@@ -84,7 +91,7 @@ const OrdersScreen = ({ navigation }) => {
             <ScrollView
                 showsHorizontalScrollIndicator={false}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={getColorCode('text-blue-200')} />}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadOrders({ isRefreshing: true })} tintColor={getColorCode('text-blue-200')} />}
                 stickyHeaderIndices={[1]}
                 style={tailwind('w-full h-full')}
             >
