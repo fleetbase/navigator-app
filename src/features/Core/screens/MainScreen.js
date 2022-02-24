@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text } from 'react-native';
 import { getUniqueId } from 'react-native-device-info';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClipboardList, faUser, faRoute, faCalendarDay, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { EventRegister } from 'react-native-event-listeners';
-import { getCurrentLocation } from 'utils/Geo';
+import { getCurrentLocation, requestTrackingPermissions } from 'utils/Geo';
 import { useResourceStorage, get } from 'utils/Storage';
 import { syncDevice } from 'utils/Auth';
 import { logError, getColorCode } from 'utils';
 import { tailwind } from 'tailwind';
-import { useDriver } from 'hooks';
+import { useDriver, useMountedState } from 'hooks';
 import useFleetbase from 'hooks/use-fleetbase';
-// import BrowserStack from 'browser/BrowserStack';
-// import CartStack from 'cart/CartStack';
+import RNLocation from 'react-native-location';
+import BackgroundTimer from 'react-native-background-timer';
 import AccountStack from 'account/AccountStack';
 import OrdersStack from 'core/OrdersStack';
 import ScheduleStack from 'core/ScheduleStack';
@@ -24,35 +24,47 @@ const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
 
 const MainScreen = ({ navigation, route }) => {
-    // const { info } = route.params;
-
     const fleetbase = useFleetbase();
+    const isMounted = useMountedState();
 
-    const [isRequestingPermission, setIsRequestingPermission] = useState(false);
     const [driver, setDriver] = useDriver();
 
     useEffect(() => {
-        // Set location
+        // set location
         getCurrentLocation();
 
-        // Sync device
+        // sync device
         syncDevice(driver);
 
         // Listen for incoming remote notification events
-        const watchNotifications = addEventListener('onNotification', (notification) => {
+        const notifications = addEventListener('onNotification', (notification) => {
             const { data } = notification;
             const { id, type } = data;
-
-            // if (type.startsWith('order_')) {
-            //     // navigateToOrder(id);
-            //     NavigationService.transitionToOrder(id);
-            // }
         });
 
         return () => {
-            removeEventListener(watchNotifications);
+            removeEventListener(notifications);
         };
-    }, []);
+    }, [isMounted]);
+
+    // track driver location
+    useEffect(async () => {
+        const granted = await requestTrackingPermissions();
+
+        let tracking;
+
+        if (granted) {
+            tracking = RNLocation.subscribeToLocationUpdates(([position]) => {
+                return driver.track(position).catch(logError);
+            });
+        }
+
+        return () => {
+            if (typeof tracking === 'function') {
+                tracking();
+            }
+        };
+    }, [isMounted]);
 
     return (
         <Tab.Navigator
