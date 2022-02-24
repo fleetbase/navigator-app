@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes, faLocationArrow } from '@fortawesome/free-solid-svg-icons';
 import { Order, Place } from '@fleetbase/sdk';
 import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
-import { useMountedState, useLocale } from 'hooks';
+import { useMountedState, useLocale, useDriver } from 'hooks';
 import { getCurrentLocation, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, isArray, getColorCode, titleize, formatMetaValue } from 'utils';
 import { format } from 'date-fns';
 import MapboxNavigation from '@homee/react-native-mapbox-navigation';
@@ -19,6 +19,7 @@ const NavigationScreen = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
+    const [driver, setDriver] = useDriver();
     const [locale] = useLocale();
 
     const [order, setOrder] = useState(new Order(_order, FleetbaseAdapter));
@@ -28,10 +29,17 @@ const NavigationScreen = ({ navigation, route }) => {
 
     const coords = {
         origin: origin?.coordinates?.reverse(),
-        destination: destination?.getAttribute('location.coordinates')
+        destination: destination?.getAttribute('location.coordinates'),
     };
 
     const isReady = isArray(coords?.origin) && isArray(coords?.destination);
+
+    const trackDriverLocation = (event) => {
+        // const { distanceTraveled, durationRemaining, fractionTraveled, distanceRemaining } = event.nativeEvent;
+        const { latitude, longitude } = event.nativeEvent;
+
+        return driver.track({ latitude, longitude }).catch(logError);
+    };
 
     useEffect(() => {
         getCurrentLocation().then(setOrigin).catch(logError);
@@ -64,16 +72,14 @@ const NavigationScreen = ({ navigation, route }) => {
                     origin={coords.origin}
                     destination={coords.destination}
                     showsEndOfRouteFeedback={true}
-                    onLocationChange={(event) => {
-                        const { latitude, longitude } = event.nativeEvent;
-                    }}
+                    onLocationChange={trackDriverLocation}
                     onRouteProgressChange={(event) => {
                         const { distanceTraveled, durationRemaining, fractionTraveled, distanceRemaining } = event.nativeEvent;
                     }}
                     onError={(event) => {
                         const { message } = event.nativeEvent;
                     }}
-                    onCancelNavigation={this.close}
+                    onCancelNavigation={() => navigation.goBack()}
                     onArrive={() => {
                         // Called when you arrive at the destination.
                     }}
