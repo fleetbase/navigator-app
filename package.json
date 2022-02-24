@@ -13,7 +13,7 @@
     "generate-launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background-color=111827 --logo-width=100 --flavor=main"
   },
   "dependencies": {
-    "@fleetbase/sdk": "../fleetbase-js",
+    "@fleetbase/sdk": "1.2.3",
     "@fortawesome/free-brands-svg-icons": "^5.15.4",
     "@freakycoder/react-native-bounceable": "^0.2.5",
     "@homee/react-native-mapbox-navigation": "^1.1.0",
