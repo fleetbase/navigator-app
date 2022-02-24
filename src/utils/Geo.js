@@ -1,10 +1,11 @@
 import Geolocation from 'react-native-geolocation-service';
+import RNLocation from 'react-native-location';
 import { Platform } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
 import { checkMultiple, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { GoogleAddress, Place } from '@fleetbase/sdk';
 import { set, get } from './Storage';
-import { isAndroid } from './Helper';
+import { isAndroid, logError } from './Helper';
 import { haversine } from './Calculate';
 import axios from 'axios';
 import config from 'config';
@@ -20,10 +21,44 @@ const { emit } = EventRegister;
  */
 export default class GeoUtil {
     /**
+     * Request user permissions to track location.
+     *
+     * @static
+     * @return {Promise}
+     * @memberof GeoUtil
+     */
+    static requestTrackingPermissions() {
+        RNLocation.configure({
+            distanceFilter: 100,
+            desiredAccuracy: {
+                ios: 'bestForNavigation',
+                android: 'highAccuracy',
+            },
+            androidProvider: 'auto',
+            interval: 10000 * 5,
+            fastestInterval: 10000 * 1,
+            maxWaitTime: 10000 * 5,
+            activityType: 'other',
+            allowsBackgroundLocationUpdates: true,
+            headingFilter: 1,
+            headingOrientation: 'portrait',
+            pausesLocationUpdatesAutomatically: false,
+            showsBackgroundLocationIndicator: true,
+        });
+
+        return RNLocation.requestPermission({
+            ios: 'whenInUse',
+            android: {
+                detail: 'coarse',
+            },
+        });
+    }
+
+    /**
      * Creates a new google address instance.
      *
      * @static
-     * @return {GoogleAddress} 
+     * @return {GoogleAddress}
      * @memberof GeoUtil
      */
     static createGoogleAddress() {
@@ -37,7 +72,7 @@ export default class GeoUtil {
      * @static
      * @param {string|number} latitude
      * @param {string|number} longitude
-     * @return {Promise} 
+     * @return {Promise}
      * @memberof GeoUtil
      */
     static geocode(latitude, longitude) {
@@ -67,10 +102,10 @@ export default class GeoUtil {
      * Checks to see if device has geolocation permissions.
      *
      * @static
-     * @return {Promise} 
+     * @return {Promise}
      * @memberof GeoUtil
      */
-    static checkHasLocationPermission() {        
+    static checkHasLocationPermission() {
         return new Promise((resolve) => {
             return checkMultiple([PERMISSIONS.IOS.LOCATION_WHEN_IN_USE, PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION]).then((statuses) => {
                 if (isAndroid && statuses[PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION] === RESULTS.DENIED) {
@@ -94,7 +129,7 @@ export default class GeoUtil {
      * If the correct permissions are set, will resolve the current location of device via Promise.
      *
      * @static
-     * @return {Promise} 
+     * @return {Promise}
      * @memberof GeoUtil
      */
     static async getCurrentLocation() {
@@ -139,7 +174,7 @@ export default class GeoUtil {
      * Get the current stored location for device/user.
      *
      * @static
-     * @return {object} 
+     * @return {object}
      * @memberof GeoUtil
      */
     static getLocation() {
@@ -157,7 +192,7 @@ export default class GeoUtil {
      *
      * @static
      * @param {*} location
-     * @return {*} 
+     * @return {*}
      * @memberof GeoUtil
      */
     static getCoordinates(location) {
@@ -170,8 +205,8 @@ export default class GeoUtil {
                 return [0, 0];
             }
 
-            const [ longitude, latitude ] = location.coordinates;
-            const coordinates = [ latitude, longitude ];
+            const [longitude, latitude] = location.coordinates;
+            const coordinates = [latitude, longitude];
 
             return coordinates;
         }
@@ -181,8 +216,8 @@ export default class GeoUtil {
         }
 
         if (typeof location === 'object' && location?.type === 'Point') {
-            const [ longitude, latitude ] = location.coordinates;
-            const coordinates = [ latitude, longitude ];
+            const [longitude, latitude] = location.coordinates;
+            const coordinates = [latitude, longitude];
 
             return coordinates;
         }
@@ -194,7 +229,7 @@ export default class GeoUtil {
      * @static
      * @param {*} origin
      * @param {*} destination
-     * @return {*} 
+     * @return {*}
      * @memberof GeoUtil
      */
     static getDistance(origin, destination) {
@@ -211,5 +246,6 @@ const getCurrentLocation = GeoUtil.getCurrentLocation;
 const getLocation = GeoUtil.getLocation;
 const getCoordinates = GeoUtil.getCoordinates;
 const getDistance = GeoUtil.getDistance;
+const requestTrackingPermissions = GeoUtil.requestTrackingPermissions;
 
-export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance };
+export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance, requestTrackingPermissions };
