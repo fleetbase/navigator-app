@@ -15,6 +15,7 @@ import {
     faLocationArrow,
     faRoute,
     faMagic,
+    faLightbulb,
 } from '@fortawesome/free-solid-svg-icons';
 import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
 import { useMountedState, useLocale, useResourceStorage } from 'hooks';
@@ -190,7 +191,7 @@ const OrderScreen = ({ navigation, route }) => {
     };
 
     const reload = () => {
-        order.reload().then(setOrder).catch(catchError);
+        return order.reload().then(setOrder).catch(catchError);
     };
 
     const refresh = () => {
@@ -256,15 +257,9 @@ const OrderScreen = ({ navigation, route }) => {
         setIsLoadingAction(true);
         setActionSheetAction('update_activity');
 
-        const activity = await order.getNextActivity().finally(() => {
+        const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {
             setIsLoadingAction(false);
         });
-
-        console.log('activity', activity);
-
-        if (activity.require_pod) {
-            // do proof of delivery
-        }
 
         if (activity.code === 'dispatched') {
             return Alert.alert('Warning!', 'This order is not yet dispatched, are you sure you want to continue?', [
@@ -296,6 +291,11 @@ const OrderScreen = ({ navigation, route }) => {
 
     const sendOrderActivityUpdate = (activity) => {
         setIsLoadingActivity(true);
+
+        if (activity.require_pod) {
+            actionSheetRef.current?.setModalVisible(false);
+            return navigation.push('ProofScreen', { activity, _order: order.serialize(), _waypoint: destination });
+        }
 
         return order
             .updateActivity({ activity })
@@ -368,6 +368,16 @@ const OrderScreen = ({ navigation, route }) => {
         return () => {
             removeEventListener(watchNotifications);
         };
+    }, [isMounted]);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            reload().then(() => {
+                setIsLoadingActivity(false);
+            });
+        });
+
+        return unsubscribe;
     }, [isMounted]);
 
     let actionSheetHeight = height / 2;
@@ -673,7 +683,7 @@ const OrderScreen = ({ navigation, route }) => {
                                                             {group.entities.map((entity, ii) => (
                                                                 <View key={ii} style={tailwind('w-40')}>
                                                                     <View style={tailwind('pb-2 pr-2')}>
-                                                                        <TouchableOpacity onPress={() => navigation.push('EntityScreen', { data: entity })}>
+                                                                        <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
                                                                             <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
                                                                                 <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
                                                                                 <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
@@ -850,11 +860,22 @@ const OrderScreen = ({ navigation, route }) => {
                                     <View style={tailwind('px-5')}>
                                         {nextActivity.map((activity, index) => (
                                             <View key={index} style={tailwind('mb-4')}>
-                                                <TouchableOpacity style={[tailwind('btn bg-green-900 border border-green-700 px-4'), getStatusColors(activity.code, true).statusWrapperStyle]} onPress={() => sendOrderActivityUpdate(activity)}>
+                                                <TouchableOpacity
+                                                    style={[tailwind('btn bg-green-900 border border-green-700 px-4'), getStatusColors(activity.code, true).statusWrapperStyle]}
+                                                    onPress={() => sendOrderActivityUpdate(activity)}
+                                                >
                                                     {isLoadingActivity && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('ml-8 mr-3')} />}
                                                     <View style={tailwind('w-full flex flex-col items-start py-2')}>
                                                         <Text style={tailwind(`font-bold text-lg text-${getStatusColors(activity.code).color}-50`)}>{activity.status}</Text>
                                                         <Text style={tailwind(`text-${getStatusColors(activity.code).color}-100`)}>{activity.details}</Text>
+                                                        {activity.require_pod && (
+                                                            <View style={tailwind('mt-3')}>
+                                                                <View style={tailwind('rounded-md px-2 py-1 bg-yellow-400 border border-yellow-700 shadow-sm flex flex-row items-center')}>
+                                                                    <FontAwesomeIcon icon={faLightbulb} style={tailwind('text-yellow-900 mr-2')} />
+                                                                    <Text style={tailwind('font-semibold text-yellow-900')}>Requires proof of delivery</Text>
+                                                                </View>
+                                                            </View>
+                                                        )}
                                                     </View>
                                                 </TouchableOpacity>
                                             </View>

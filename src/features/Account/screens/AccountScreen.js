@@ -56,9 +56,7 @@ const AccountScreen = ({ navigation, route }) => {
             </ImageBackground>
         );
     };
-
-    console.log('driver photo_url', driver.getAttribute('photo_url'));
-
+    
     return (
         <RenderBackground>
             {displayHeaderComponent === true && (

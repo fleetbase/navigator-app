@@ -67,6 +67,8 @@
 		<string></string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>This app allows you to upload photos from your photo library</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>This app may require microphone access if camera is used</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>remote-notification</string>
