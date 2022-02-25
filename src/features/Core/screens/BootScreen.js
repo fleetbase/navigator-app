@@ -55,13 +55,6 @@ const BootScreen = ({ navigation }) => {
                     RNBootSplash.hide();
                 }, 300);
             });
-
-        // addEventListener('signout', () => {
-        //     console.log('signout emited!');
-        //     return navigation.reset('LoginScreen').then(() => {
-        //         setDriver(undefined);
-        //     });
-        // });
     }, [isMounted, driver]);
 
     return (
