@@ -13,7 +13,6 @@ import { tailwind } from 'tailwind';
 import { useDriver, useMountedState } from 'hooks';
 import useFleetbase from 'hooks/use-fleetbase';
 import RNLocation from 'react-native-location';
-import BackgroundTimer from 'react-native-background-timer';
 import AccountStack from 'account/AccountStack';
 import OrdersStack from 'core/OrdersStack';
 import ScheduleStack from 'core/ScheduleStack';
