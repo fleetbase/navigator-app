@@ -5,7 +5,7 @@ module.exports = {
         [
             'module-resolver',
             {
-                root: ['./src'],
+                root: ['./src', './app'],
                 extensions: ['.js', '.json'],
                 alias: {
                     account: './src/features/Account',
@@ -14,6 +14,7 @@ module.exports = {
                     exceptions: './src/features/Exceptions',
                     shared: './src/features/Shared',
                     ui: './src/interface',
+                    app: './app'
                 },
             },
         ],
