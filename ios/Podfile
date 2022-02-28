@@ -41,7 +41,7 @@ target 'StorefrontApp' do
   end
 
   post_install do |installer|
-    react_native_post_install(installer)
     $RNMBNAV.post_install(installer)
+    react_native_post_install(installer)
   end
 end
