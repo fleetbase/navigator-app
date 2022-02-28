@@ -28,7 +28,7 @@ const MainScreen = ({ navigation, route }) => {
 
     const [driver, setDriver] = useDriver();
     const [isOnline, setIsOnline] = useState(driver.getAttribute('online'));
-    const [tracking, setTracking] = useState(null);
+    const [tracking, setTracking] = useState(0);
 
     useEffect(() => {
         // set location
@@ -49,19 +49,30 @@ const MainScreen = ({ navigation, route }) => {
     }, [isMounted]);
 
     // track driver location
-    useEffect(() => {
-        setTracking(trackDriver(driver));
-
-        if (!isOnline && typeof tracking === 'function') {
-            tracking();
+    useEffect(async () => {
+        if (!isOnline) {
+            return;
         }
 
-        return () => {
-            if (typeof tracking === 'function') {
-                tracking();
-            }
-        };
-    }, [isMounted, isOnline]);
+        const unsubscribe = await trackDriver(driver);
+        setTracking({ unsubscribe });
+    }, [isMounted]);
+
+    // toggle driver location tracking
+    useEffect(async () => {
+        const shouldUnsubscribe = !isOnline && typeof tracking?.unsubscribe === 'function';
+        const shouldSubscribe = isOnline && tracking?.unsubscribe === null;
+
+        if (shouldUnsubscribe) {
+            tracking.unsubscribe();
+            setTracking({ unsubscribe: null });
+        }
+
+        if (shouldSubscribe) {
+            const unsubscribe = await trackDriver(driver);
+            setTracking({ unsubscribe });
+        }
+    }, [isOnline]);
 
     // track driver online/offline
     useEffect(() => {
