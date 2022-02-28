@@ -29,7 +29,7 @@ export default class GeoUtil {
      */
     static requestTrackingPermissions(configuration = {}) {
         RNLocation.configure({
-            distanceFilter: 100,
+            distanceFilter: 0,
             desiredAccuracy: {
                 ios: 'bestForNavigation',
                 android: 'highAccuracy',
@@ -48,28 +48,27 @@ export default class GeoUtil {
         });
 
         return RNLocation.requestPermission({
-            ios: 'whenInUse',
+            ios: 'always',
             android: {
-                detail: 'coarse',
+                detail: 'fine',
             },
         });
     }
 
     static async trackDriver(driver, configuration = {}) {
-        if (!driver.getAttribute('online')) {
-            return null;
-        }
-
         const granted = await GeoUtil.requestTrackingPermissions(configuration);
 
-        if (granted) {
-            return RNLocation.subscribeToLocationUpdates(([position]) => {
-                console.log('Driver location is being tracked : ', position);
-                return driver.track(position).catch(logError);
-            });
-        }
+        return new Promise((resolve) => {
+            let t = null;
 
-        return null;
+            if (granted) {
+                t = RNLocation.subscribeToLocationUpdates(([position]) => {
+                    return driver.track(position).catch(logError);
+                });
+            }
+
+            resolve(t);
+        });
     }
 
     /**
