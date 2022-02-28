@@ -30,7 +30,7 @@ const ProofScreen = ({ navigation, route }) => {
     const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
     const [isLoading, setIsLoading] = useState(false);
 
-    const isScanningProof = activity?.pod_method === 'scan' || true;
+    const isScanningProof = activity?.pod_method === 'scan';
     const isSigningProof = activity?.pod_method === 'signature';
     const isWaypoint = !isEmpty(_waypoint);
     const isEntity = !isEmpty(_entity);
