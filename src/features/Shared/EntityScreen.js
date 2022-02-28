@@ -3,8 +3,7 @@ import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes, faBarcode, faPen } from '@fortawesome/free-solid-svg-icons';
-import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
-import { useMountedState, useLocale, useResourceStorage } from 'hooks';
+import { useMountedState, useLocale, useResourceStorage, useFleetbase } from 'hooks';
 import { formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue } from 'utils';
 import { Entity, Order } from '@fleetbase/sdk';
 import { format } from 'date-fns';
@@ -20,10 +19,11 @@ const EntityScreen = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
+    const fleetbase = useFleetbase();
     const [locale] = useLocale();
 
-    const [order, setOrder] = useState(new Order(_order, FleetbaseAdapter));
-    const [entity, setEntity] = useState(new Entity(_entity, FleetbaseAdapter));
+    const [order, setOrder] = useState(new Order(_order, fleetbase.getAdapter()));
+    const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
