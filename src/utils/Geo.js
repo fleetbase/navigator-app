@@ -27,7 +27,7 @@ export default class GeoUtil {
      * @return {Promise}
      * @memberof GeoUtil
      */
-    static requestTrackingPermissions() {
+    static requestTrackingPermissions(configuration = {}) {
         RNLocation.configure({
             distanceFilter: 100,
             desiredAccuracy: {
@@ -44,6 +44,7 @@ export default class GeoUtil {
             headingOrientation: 'portrait',
             pausesLocationUpdatesAutomatically: false,
             showsBackgroundLocationIndicator: true,
+            ...configuration,
         });
 
         return RNLocation.requestPermission({
@@ -52,6 +53,23 @@ export default class GeoUtil {
                 detail: 'coarse',
             },
         });
+    }
+
+    static async trackDriver(driver, configuration = {}) {
+        if (!driver.getAttribute('online')) {
+            return null;
+        }
+
+        const granted = await GeoUtil.requestTrackingPermissions(configuration);
+
+        if (granted) {
+            return RNLocation.subscribeToLocationUpdates(([position]) => {
+                console.log('Driver location is being tracked : ', position);
+                return driver.track(position).catch(logError);
+            });
+        }
+
+        return null;
     }
 
     /**
@@ -247,5 +265,6 @@ const getLocation = GeoUtil.getLocation;
 const getCoordinates = GeoUtil.getCoordinates;
 const getDistance = GeoUtil.getDistance;
 const requestTrackingPermissions = GeoUtil.requestTrackingPermissions;
+const trackDriver = GeoUtil.trackDriver;
 
-export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance, requestTrackingPermissions };
+export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance, requestTrackingPermissions, trackDriver };
