@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClipboardList, faUser, faRoute, faCalendarDay, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { EventRegister } from 'react-native-event-listeners';
-import { getCurrentLocation, requestTrackingPermissions } from 'utils/Geo';
+import { getCurrentLocation, requestTrackingPermissions, trackDriver } from 'utils/Geo';
 import { useResourceStorage, get } from 'utils/Storage';
 import { syncDevice } from 'utils/Auth';
 import { logError, getColorCode } from 'utils';
@@ -27,6 +27,8 @@ const MainScreen = ({ navigation, route }) => {
     const isMounted = useMountedState();
 
     const [driver, setDriver] = useDriver();
+    const [isOnline, setIsOnline] = useState(driver.getAttribute('online'));
+    const [tracking, setTracking] = useState(null);
 
     useEffect(() => {
         // set location
@@ -47,21 +49,26 @@ const MainScreen = ({ navigation, route }) => {
     }, [isMounted]);
 
     // track driver location
-    useEffect(async () => {
-        const granted = await requestTrackingPermissions();
+    useEffect(() => {
+        setTracking(trackDriver(driver));
 
-        let tracking;
-
-        if (granted) {
-            tracking = RNLocation.subscribeToLocationUpdates(([position]) => {
-                return driver.track(position).catch(logError);
-            });
+        if (!isOnline && typeof tracking === 'function') {
+            tracking();
         }
 
         return () => {
             if (typeof tracking === 'function') {
                 tracking();
             }
+        };
+    }, [isMounted, isOnline]);
+
+    // track driver online/offline
+    useEffect(() => {
+        const driverUpdated = addEventListener('driver.updated', (driver) => setIsOnline(driver.getAttribute('online')));
+
+        return () => {
+            removeEventListener(driverUpdated);
         };
     }, [isMounted]);
 
