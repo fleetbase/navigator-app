@@ -39,8 +39,14 @@ const MainScreen = ({ navigation, route }) => {
 
         // Listen for incoming remote notification events
         const notifications = addEventListener('onNotification', (notification) => {
-            const { data } = notification;
-            const { id, type } = data;
+            const { data, id } = notification;
+            const { action } = data;
+            
+            if (action?.action === 'view_order' && id) {
+                return fleetbase.orders.findRecord(id).then((order) => {
+                    navigation.push('OrderScreen', { data: order.serialize() });
+                });
+            }
         });
 
         return () => {
@@ -76,7 +82,13 @@ const MainScreen = ({ navigation, route }) => {
 
     // track driver online/offline
     useEffect(() => {
-        const driverUpdated = addEventListener('driver.updated', (driver) => setIsOnline(driver.getAttribute('online')));
+        const driverUpdated = addEventListener('driver.updated', (driver) => {
+            if (driver === null && typeof tracking?.unsubscribe === 'function') {
+                tracking.unsubscribe();
+            }
+
+            setIsOnline(driver?.getAttribute('online'));
+        });
 
         return () => {
             removeEventListener(driverUpdated);

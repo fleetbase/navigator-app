@@ -8,6 +8,7 @@ import NavigationScreen from 'shared/NavigationScreen';
 import ProofScreen from 'shared/ProofScreen';
 
 const RootStack = createStackNavigator();
+const OrderStack = createStackNavigator();
 
 const verticalAnimation = {
     gestureDirection: 'vertical',
@@ -41,4 +42,18 @@ const OrdersStack = ({ route }) => {
     );
 };
 
+const OrderScreenStack = ({ route }) => {
+    return (
+        <SafeAreaProvider>
+            <OrderStack.Navigator mode="modal">
+                <OrderStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
+                <OrderStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <OrderStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <OrderStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false, ...verticalAnimation }} />
+            </OrderStack.Navigator>
+        </SafeAreaProvider>
+    );
+}
+
 export default OrdersStack;
+export { OrderScreenStack };

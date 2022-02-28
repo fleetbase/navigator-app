@@ -1,4 +1,4 @@
-import { Collection } from '@fleetbase/sdk';
+import { Collection, isResource } from '@fleetbase/sdk';
 import { EventRegister } from 'react-native-event-listeners';
 import { countries } from 'countries-list';
 import { set } from './Storage';
@@ -222,22 +222,6 @@ export default class HelperUtil {
     }
 
     /**
-     * Determines if argument is a valid fleetbase resource.
-     *
-     * @static
-     * @param {*} mixed
-     * @return {boolean}
-     * @memberof HelperUtil
-     */
-    static isResource(mixed, type = null) {
-        if (typeof type === 'string') {
-            return HelperUtil.hasResouceProperties(mixed) && mixed.resource === type;
-        }
-
-        return HelperUtil.hasResouceProperties(mixed);
-    }
-
-    /**
      * Determines if argument has valid resource properties.
      *
      * @static
@@ -246,7 +230,7 @@ export default class HelperUtil {
      * @memberof HelperUtil
      */
     static hasResouceProperties(mixed) {
-        return !HelperUtil.isVoid(mixed) && mixed?.id && typeof mixed?.serialize === 'function' && typeof mixed?.resource === 'string';
+        return !HelperUtil.isVoid(mixed) && !HelperUtil.isVoid(mixed?.id) && typeof mixed?.serialize === 'function' && typeof mixed?.resource === 'string';
     }
 
     /**
@@ -344,7 +328,7 @@ export default class HelperUtil {
                     current = current[pathArray[i]];
 
                     // if is resource then return get on it's attributes
-                    if (HelperUtil.isResource(current) && pathArray[i + 1] !== undefined) {
+                    if (isResource(current) && pathArray[i + 1] !== undefined) {
                         const newPath = pathArray.slice(i + 1).join('.');
 
                         return HelperUtil.deepGet(current.attributes, newPath);
@@ -471,7 +455,6 @@ const isAndroid = HelperUtil.isAndroid();
 const isApple = HelperUtil.isApple();
 const isVoid = HelperUtil.isVoid;
 const isEmpty = HelperUtil.isEmpty;
-const isResource = HelperUtil.isResource;
 const isFalsy = HelperUtil.isFalsy;
 const endSession = HelperUtil.endSession;
 const logError = HelperUtil.logError;
@@ -493,7 +476,6 @@ export {
     isApple,
     isVoid,
     isEmpty,
-    isResource,
     isFalsy,
     endSession,
     logError,

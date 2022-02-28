@@ -4,7 +4,7 @@ import * as RNLocalize from 'react-native-localize';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { isResource, logError, mutatePlaces, translate } from 'utils';
+import { translate } from 'utils';
 import { useLocale, useMountedState } from 'hooks';
 import { activeTranslations } from 'utils/Localize';
 import ActionSheet from 'react-native-actions-sheet';

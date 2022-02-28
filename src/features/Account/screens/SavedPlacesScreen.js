@@ -5,7 +5,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes, faMapMarked, faPlus, faEdit, faStar, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { Customer } from '@fleetbase/storefront';
-import { Place, Collection, isResource } from '@fleetbase/sdk';
+import { Place, Collection } from '@fleetbase/sdk';
 import { useStorefront, useCustomer, useDeliveryLocation, useLocale } from 'hooks';
 import { mutatePlaces, translate } from 'utils';
 import useFleetbase, { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
