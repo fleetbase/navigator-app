@@ -29,7 +29,7 @@ export default class GeoUtil {
      */
     static requestTrackingPermissions(configuration = {}) {
         RNLocation.configure({
-            distanceFilter: 0,
+            distanceFilter: 100,
             desiredAccuracy: {
                 ios: 'bestForNavigation',
                 android: 'highAccuracy',
