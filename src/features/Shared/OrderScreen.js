@@ -410,7 +410,7 @@ const OrderScreen = ({ navigation, route }) => {
                 </View>
                 <View style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')}>
                     <View style={tailwind('flex-1')}>
-                        {order.isNotStarted && (
+                        {order.isNotStarted && !order.isCanceled && (
                             <TouchableOpacity style={tailwind('')} onPress={() => startOrder()}>
                                 <View style={tailwind('btn bg-green-900 border border-green-700')}>
                                     {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
