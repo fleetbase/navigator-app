@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
-import { useDriver, useMountedState, useResourceCollection } from 'hooks';
+import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
 import { logError, getColorCode, isArray, pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
-import useFleetbase, { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
 import { setI18nConfig } from 'utils/Localize';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
@@ -30,7 +29,7 @@ const OrdersScreen = ({ navigation }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isQuerying, setIsQuerying] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, FleetbaseAdapter);
+    const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, fleetbase.getAdapter());
 
     const setParam = (key, value) => {
         if (key === 'on') {

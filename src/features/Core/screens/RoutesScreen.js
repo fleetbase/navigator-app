@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
-import { useDriver, useMountedState, useResourceCollection } from 'hooks';
+import { useFleetbase, useDriver, useMountedState, useResourceCollection } from 'hooks';
 import { logError, isArray, isEmpty, getCurrentLocation, pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
-import useFleetbase, { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 import { Order, Collection } from '@fleetbase/sdk';
@@ -34,7 +33,7 @@ const RoutesScreen = ({ navigation }) => {
     const [userLocation, setUserLocation] = useState(null);
     const [stops, setStops] = useState([]);
     const [firstStop, setFirstStop] = useState(null);
-    const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, FleetbaseAdapter);
+    const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, fleetbase.getAdapter());
 
     const setParam = (key, value) => {
         if (key === 'on') {
