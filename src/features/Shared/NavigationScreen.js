@@ -4,8 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes, faLocationArrow } from '@fortawesome/free-solid-svg-icons';
 import { Order, Place } from '@fleetbase/sdk';
-import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
-import { useMountedState, useLocale, useDriver } from 'hooks';
+import { useMountedState, useLocale, useDriver, useFleetbase } from 'hooks';
 import { getCurrentLocation, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, isArray, getColorCode, titleize, formatMetaValue } from 'utils';
 import { format } from 'date-fns';
 import MapboxNavigation from '@homee/react-native-mapbox-navigation';
@@ -19,11 +18,12 @@ const NavigationScreen = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
+    const fleetbase = useFleetbase();
     const [driver, setDriver] = useDriver();
     const [locale] = useLocale();
 
-    const [order, setOrder] = useState(new Order(_order, FleetbaseAdapter));
-    const [destination, setDestination] = useState(new Place(_destination, FleetbaseAdapter));
+    const [order, setOrder] = useState(new Order(_order, fleetbase.getAdapter()));
+    const [destination, setDestination] = useState(new Place(_destination, fleetbase.getAdapter()));
     const [origin, setOrigin] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
