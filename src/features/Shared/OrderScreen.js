@@ -17,8 +17,7 @@ import {
     faMagic,
     faLightbulb,
 } from '@fortawesome/free-solid-svg-icons';
-import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
-import { useMountedState, useLocale, useResourceStorage } from 'hooks';
+import { useFleetbase, useMountedState, useLocale, useResourceStorage } from 'hooks';
 import { config, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue, getStatusColors } from 'utils';
 import { Order } from '@fleetbase/sdk';
 import { format, formatDistance as formatDateDistance, add, isValid as isValidDate } from 'date-fns';
@@ -46,9 +45,10 @@ const OrderScreen = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
+    const fleetbase = useFleetbase();
     const [locale] = useLocale();
 
-    const [order, setOrder] = useState(new Order(data, FleetbaseAdapter));
+    const [order, setOrder] = useState(new Order(data, fleetbase.getAdapter()));
     const [isLoadingAction, setIsLoadingAction] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingActivity, setIsLoadingActivity] = useState(false);
@@ -190,15 +190,13 @@ const OrderScreen = ({ navigation, route }) => {
         Alert.alert('Error', error?.message ?? 'An error occured');
     };
 
-    const reload = () => {
-        return order.reload().then(setOrder).catch(catchError);
-    };
+    const loadOrder = (options = {}) => {
+        if (options.isRefreshing) {
+            setIsRefreshing(true);
+        }
 
-    const refresh = () => {
-        setIsRefreshing(true);
-
-        order
-            .reload()
+        return fleetbase.orders
+            .findRecord(order.id)
             .then(setOrder)
             .catch(catchError)
             .finally(() => {
@@ -241,7 +239,7 @@ const OrderScreen = ({ navigation, route }) => {
                         {
                             text: 'Cancel',
                             onPress: () => {
-                                return reload();
+                                return loadOrder();
                             },
                         },
                     ]);
@@ -272,7 +270,7 @@ const OrderScreen = ({ navigation, route }) => {
                 {
                     text: 'Cancel',
                     onPress: () => {
-                        return reload();
+                        return loadOrder();
                     },
                 },
             ]);
@@ -360,10 +358,10 @@ const OrderScreen = ({ navigation, route }) => {
 
     useEffect(() => {
         const watchNotifications = addEventListener('onNotification', (notification) => {
-            reload();
+            loadOrder();
         });
 
-        reload();
+        loadOrder();
 
         return () => {
             removeEventListener(watchNotifications);
@@ -372,7 +370,7 @@ const OrderScreen = ({ navigation, route }) => {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            reload().then(() => {
+            loadOrder().then(() => {
                 setIsLoadingActivity(false);
             });
         });
@@ -451,7 +449,7 @@ const OrderScreen = ({ navigation, route }) => {
             <ScrollView
                 showsHorizontalScrollIndicator={false}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={getColorCode('text-blue-200')} />}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadOrder({ isRefreshing: true })} tintColor={getColorCode('text-blue-200')} />}
             >
                 <View style={tailwind('flex w-full h-full pb-60')}>
                     <View style={tailwind('flex flex-row items-center justify-center')}>

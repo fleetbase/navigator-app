@@ -4,8 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes, faBarcode, faSignature } from '@fortawesome/free-solid-svg-icons';
 import { Order, Place, Entity } from '@fleetbase/sdk';
-import { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
-import { useMountedState, useLocale } from 'hooks';
+import { useFleetbase, useMountedState, useLocale } from 'hooks';
 import { isEmpty, getColorCode, logError } from 'utils';
 import { RNCamera } from 'react-native-camera';
 import FastImage from 'react-native-fast-image';
@@ -23,11 +22,12 @@ const ProofScreen = ({ navigation, route }) => {
     const qrCodeScannerRef = useRef();
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
+    const fleetbase = useFleetbase();
     const [locale] = useLocale();
 
-    const [order, setOrder] = useState(new Order(_order, FleetbaseAdapter));
-    const [waypoint, setWaypoint] = useState(new Place(_waypoint, FleetbaseAdapter));
-    const [entity, setEntity] = useState(new Entity(_entity, FleetbaseAdapter));
+    const [order, setOrder] = useState(new Order(_order, fleetbase.getAdapter()));
+    const [waypoint, setWaypoint] = useState(new Place(_waypoint, fleetbase.getAdapter()));
+    const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
     const [isLoading, setIsLoading] = useState(false);
 
     const isScanningProof = activity?.pod_method === 'scan' || true;
