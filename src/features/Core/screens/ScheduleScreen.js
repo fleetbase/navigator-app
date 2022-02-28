@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, Dimensions, RefreshControl } from 'react-native';
-import { useDriver, useMountedState, useResourceCollection } from 'hooks';
+import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
 import { logError, getColorCode } from 'utils';
-import useFleetbase, { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
 import { setI18nConfig } from 'utils/Localize';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
