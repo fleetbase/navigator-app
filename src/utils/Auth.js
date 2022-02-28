@@ -1,7 +1,7 @@
 import { EventRegister } from 'react-native-event-listeners';
-import { Driver } from '@fleetbase/sdk';
+import { Driver, isResource } from '@fleetbase/sdk';
 import { get, set, storage, useMMKVStorage } from './Storage';
-import { endSession, isResource, isVoid } from './Helper';
+import { endSession, isVoid, logError } from './Helper';
 import useFleetbase from 'hooks/use-fleetbase';
 
 const { emit } = EventRegister;
@@ -74,22 +74,20 @@ export default class AuthUtil {
     }
 
     /**
-     * Sync current mobile device to driver on Fleetbase/Storefront.
+     * Sync current mobile device to driver on Fleetbase.
      *
      * @static
      * @param {Driver} driver
      * @return {void}
      * @memberof AuthUtil
      */
-    static syncDevice(driver) {
+    static syncDevice(driver = null) {
         driver = driver ?? AuthUtil.get();
 
         const token = get('token');
-
-        if (AuthUtil.isValid(driver) && token) {
-            driver.syncDevice(token).catch((error) => {
-                console.log('[ Error syncing driver device! ]', error);
-            });
+        
+        if (typeof driver?.syncDevice === 'function' && token?.token) {
+            driver.syncDevice(token).catch(logError);
         }
     }
 
@@ -102,7 +100,7 @@ export default class AuthUtil {
      * @memberof AuthUtil
      */
     static isValid(driver) {
-        return isResource(driver, 'driver') && !isVoid(driver.token);
+        return isResource(driver) && !isVoid(driver.token);
     }
 }
 
