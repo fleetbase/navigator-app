@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
+import { EventRegister } from 'react-native-event-listeners';
 import { useDriver, useMountedState, useResourceCollection } from 'hooks';
 import { logError, getColorCode, isArray, pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
 import useFleetbase, { adapter as FleetbaseAdapter } from 'hooks/use-fleetbase';
@@ -12,6 +13,8 @@ import OrdersFilterBar from 'ui/OrdersFilterBar';
 import OrderCard from 'ui/OrderCard';
 import SimpleOrdersMetrics from 'ui/SimpleOrdersMetrics';
 import config from 'config';
+
+const { addEventListener, removeEventListener } = EventRegister;
 
 const OrdersScreen = ({ navigation }) => {
     const isMounted = useMountedState();
@@ -69,6 +72,14 @@ const OrdersScreen = ({ navigation }) => {
         });
 
         return unsubscribe;
+    }, [isMounted]);
+
+    useEffect(() => {
+        const notifications = addEventListener('onNotification', () => loadOrders({ isQuerying: true }));
+
+        return () => {
+            removeEventListener(notifications);
+        };
     }, [isMounted]);
 
     return (
