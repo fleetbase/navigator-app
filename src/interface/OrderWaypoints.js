@@ -15,6 +15,11 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
 
     const getCurrentLeg = (order) => {
         const payload = order.getAttribute('payload');
+
+        if (!payload) {
+            return false;
+        }
+
         const { waypoints, current_waypoint } = payload;
         const isMultiDropOrder = !isEmpty(payload.waypoints);
 
@@ -29,6 +34,10 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
 
     const getFirstWaypoint = (order) => {
         const payload = order.getAttribute('payload');
+
+        if (!payload) {
+            return false;
+        }
 
         if (payload?.pickup) {
             return payload.pickup;
@@ -46,6 +55,10 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
     const getLastWaypoint = (order) => {
         const payload = order.getAttribute('payload');
 
+        if (!payload) {
+            return false;
+        }
+
         if (payload?.dropoff) {
             return payload.dropoff;
         }
@@ -61,6 +74,11 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
 
     const getMiddleWaypoints = (order) => {
         const payload = order.getAttribute('payload');
+
+        if (!payload) {
+            return false;
+        }
+        
         const { waypoints, pickup, dropoff } = payload;
 
         if (!pickup && !dropoff && waypoints.length) {
