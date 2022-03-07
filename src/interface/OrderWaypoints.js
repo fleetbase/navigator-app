@@ -43,7 +43,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
             return payload.pickup;
         }
 
-        const firstWaypoint = payload.waypoints[0] || null;
+        const firstWaypoint = payload.waypoints[0] ?? payload?.dropoff;
 
         if (firstWaypoint) {
             firstWaypoint.completed = firstWaypoint.status_code === 'COMPLETED';
@@ -63,7 +63,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
             return payload.dropoff;
         }
 
-        const lastWaypoint = payload.waypoints[payload.waypoints.length - 1] || null;
+        const lastWaypoint = payload.waypoints[payload.waypoints.length - 1] ?? null;
 
         if (lastWaypoint) {
             lastWaypoint.completed = lastWaypoint.status_code === 'COMPLETED';
@@ -114,7 +114,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
         <View style={[tailwind('overflow-hidden'), wrapperStyle]}>
             <View style={[tailwind('w-full'), containerStyle]} onPress={onPress}>
                 <View style={tailwind('z-20 relative')}>
-                    <View style={[{ height: isWaypointsCollapsed ? '94.5%' : '96.5%' }, tailwind(`ml-4 absolute border-l-2 border-white opacity-75`)]} />
+                    <View style={[{ height: '100%' }, tailwind(`ml-4 absolute border-l-2 border-white opacity-75`)]} />
                     {payload && (
                         <View style={tailwind('')}>
                             {firstWaypoint && (
@@ -218,7 +218,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle }) => {
                                 </View>
                             )}
                             {lastWaypoint && (
-                                <View style={tailwind('w-full flex-row items-start')}>
+                                <View style={tailwind('w-full flex-row items-end')}>
                                     <View style={tailwind('mr-3')}>
                                         <View style={tailwind('rounded-full bg-red-500 w-8 h-8 flex items-center justify-center')}>
                                             <Text style={tailwind('font-bold text-white')}>{middleWaypoints.length + 2}</Text>
