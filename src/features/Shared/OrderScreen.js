@@ -465,9 +465,11 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('px-4 py-2 flex-1 border-b border-blue-700')}>
                                             <Text style={tailwind('font-bold text-white mb-1')}>Current Destination</Text>
                                             <Text style={tailwind('text-blue-50')}>{destination.address}</Text>
-                                            <View style={tailwind('my-2 flex flex-row')}>
-                                                <OrderStatusBadge status={destination?.tracking_number.status_code} wrapperStyle={tailwind('flex-grow-0')} />
-                                            </View>
+                                            {destination?.tracking_number?.status_code && (
+                                                <View style={tailwind('my-2 flex flex-row')}>
+                                                    <OrderStatusBadge status={destination?.tracking_number?.status_code ?? 'pending'} wrapperStyle={tailwind('flex-grow-0')} />
+                                                </View>
+                                            )}
                                         </View>
                                         <View style={tailwind('flex flex-row')}>
                                             <TouchableOpacity
@@ -712,7 +714,7 @@ const OrderScreen = ({ navigation, route }) => {
                                                 {order.getAttribute('payload.entities', []).map((entity, i) => (
                                                     <View key={i} style={tailwind('w-40')}>
                                                         <View style={tailwind('p-1')}>
-                                                            <TouchableOpacity onPress={() => navigation.push('EntityScreen', { data: entity })}>
+                                                            <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
                                                                 <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
                                                                     <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
                                                                     <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>

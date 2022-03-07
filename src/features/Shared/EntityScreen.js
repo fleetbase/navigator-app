@@ -16,6 +16,8 @@ const isObjectEmpty = (obj) => isEmpty(obj) || Object.values(obj).length === 0;
 const EntityScreen = ({ navigation, route }) => {
     const { _entity, _order } = route.params;
 
+    console.log('_entity', _entity);
+
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
