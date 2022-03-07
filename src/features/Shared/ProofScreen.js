@@ -30,19 +30,20 @@ const ProofScreen = ({ navigation, route }) => {
     const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
     const [isLoading, setIsLoading] = useState(false);
 
+    const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
     const isScanningProof = activity?.pod_method === 'scan';
     const isSigningProof = activity?.pod_method === 'signature';
     const isWaypoint = !isEmpty(_waypoint);
     const isEntity = !isEmpty(_entity);
     const isOrder = !isWaypoint && !isEntity;
 
-    const catchError = (error) => {
+    const catchError = (error, alertOptions = []) => {
         if (!error) {
             return;
         }
 
         logError(error);
-        Alert.alert('Error', error?.message ?? 'An error occured');
+        Alert.alert('Error', error?.message ?? 'An error occured', alertOptions);
     };
 
     const captureSignature = (event) => {
@@ -54,7 +55,7 @@ const ProofScreen = ({ navigation, route }) => {
             subject = entity;
         }
 
-        if (isWaypoint) {
+        if (isWaypoint && isMultiDropOrder) {
             subject = waypoint;
         }
 
@@ -84,7 +85,7 @@ const ProofScreen = ({ navigation, route }) => {
             subject = entity;
         }
 
-        if (isWaypoint) {
+        if (isWaypoint && isMultiDropOrder) {
             subject = waypoint;
         }
 
@@ -106,7 +107,9 @@ const ProofScreen = ({ navigation, route }) => {
             .catch(catchError)
             .finally(() => {
                 setIsLoading(false);
-                qrCodeScannerRef.current?.reactivate();
+                setTimeout(() => {
+                    qrCodeScannerRef.current?.reactivate();
+                }, 600);
             });
     };
 
@@ -220,18 +223,22 @@ const ProofScreen = ({ navigation, route }) => {
                                             <View>
                                                 <Text style={tailwind('font-bold text-white mb-1')}>Current Destination</Text>
                                                 <Text style={tailwind('text-blue-50')}>{waypoint.getAttribute('address')}</Text>
-                                                <View style={tailwind('my-2 flex flex-row')}>
-                                                    <OrderStatusBadge status={waypoint.getAttribute('tracking_number.status_code')} wrapperStyle={tailwind('flex-grow-0')} />
-                                                </View>
+                                                {waypoint.getAttribute('tracking_number.status_code') && (
+                                                    <View style={tailwind('my-2 flex flex-row')}>
+                                                        <OrderStatusBadge status={waypoint.getAttribute('tracking_number.status_code')} wrapperStyle={tailwind('flex-grow-0')} />
+                                                    </View>
+                                                )}
                                             </View>
                                         )}
                                         {isOrder && (
                                             <View>
                                                 <Text style={tailwind('font-bold text-white mb-1')}>Current Destination</Text>
                                                 <Text style={tailwind('text-blue-50')}>{order.getAttribute('payload.pickup.address')}</Text>
-                                                <View style={tailwind('my-2 flex flex-row')}>
-                                                    <OrderStatusBadge status={order.getAttribute('tracking_number.status_code')} wrapperStyle={tailwind('flex-grow-0')} />
-                                                </View>
+                                                {order.getAttribute('tracking_number.status_code') && (
+                                                    <View style={tailwind('my-2 flex flex-row')}>
+                                                        <OrderStatusBadge status={order.getAttribute('tracking_number.status_code')} wrapperStyle={tailwind('flex-grow-0')} />
+                                                    </View>
+                                                )}
                                             </View>
                                         )}
                                         {isEntity && (
@@ -240,10 +247,22 @@ const ProofScreen = ({ navigation, route }) => {
                                                     <FastImage source={{ uri: entity.getAttribute('photo_url') }} style={tailwind('w-12 h-12 rounded-md')} />
                                                 </View>
                                                 <View>
-                                                    <Text style={tailwind('font-bold text-blue-50 mb-1')} numberOfLines={1}>{entity.getAttribute('name')}</Text>
-                                                    <Text style={tailwind('text-blue-50')} numberOfLines={1}>Tracking: {entity.getAttribute('tracking_number.tracking_number')}</Text>
-                                                    {entity.isAttributeFilled('tracking_number.internal_id') && <Text style={tailwind('text-blue-50')} numberOfLines={1}>Internal ID: {entity.getAttribute('tracking_number.internal_id')}</Text>}
-                                                    {entity.isAttributeFilled('tracking_number.sku') && <Text style={tailwind('text-blue-50')} numberOfLines={1}>SKU: {entity.getAttribute('tracking_number.sku')}</Text>}
+                                                    <Text style={tailwind('font-bold text-blue-50 mb-1')} numberOfLines={1}>
+                                                        {entity.getAttribute('name')}
+                                                    </Text>
+                                                    <Text style={tailwind('text-blue-50')} numberOfLines={1}>
+                                                        Tracking: {entity.getAttribute('tracking_number.tracking_number')}
+                                                    </Text>
+                                                    {entity.isAttributeFilled('tracking_number.internal_id') && (
+                                                        <Text style={tailwind('text-blue-50')} numberOfLines={1}>
+                                                            Internal ID: {entity.getAttribute('tracking_number.internal_id')}
+                                                        </Text>
+                                                    )}
+                                                    {entity.isAttributeFilled('tracking_number.sku') && (
+                                                        <Text style={tailwind('text-blue-50')} numberOfLines={1}>
+                                                            SKU: {entity.getAttribute('tracking_number.sku')}
+                                                        </Text>
+                                                    )}
                                                 </View>
                                             </View>
                                         )}

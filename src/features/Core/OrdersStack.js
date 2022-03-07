@@ -32,11 +32,11 @@ const OrdersStack = ({ route }) => {
     return (
         <SafeAreaProvider>
             <RootStack.Navigator>
-                <RootStack.Screen name="OrdersScreen" component={OrdersScreen} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
-                <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} />
-                <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
-                <RootStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} />
-                <RootStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <RootStack.Screen name="OrdersScreen" component={OrdersScreen} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );
@@ -47,9 +47,9 @@ const OrderScreenStack = ({ route }) => {
         <SafeAreaProvider>
             <OrderStack.Navigator mode="modal">
                 <OrderStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
-                <OrderStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
-                <OrderStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} />
-                <OrderStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <OrderStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
+                <OrderStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
+                <OrderStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
             </OrderStack.Navigator>
         </SafeAreaProvider>
     );
