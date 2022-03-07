@@ -37,7 +37,7 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
             return payload.pickup;
         }
 
-        const firstWaypoint = payload.waypoints[0] ?? null;
+        const firstWaypoint = payload.waypoints[0] ?? payload?.dropoff;
 
         if (firstWaypoint) {
             firstWaypoint.completed = firstWaypoint.status_code === 'COMPLETED';
@@ -53,7 +53,7 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
             return payload.dropoff;
         }
 
-        const lastWaypoint = payload.waypoints[payload.waypoints.length - 1] || null;
+        const lastWaypoint = payload.waypoints[payload.waypoints.length - 1] ?? null;
 
         if (lastWaypoint) {
             lastWaypoint.completed = lastWaypoint.status_code === 'COMPLETED';
@@ -92,8 +92,8 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
     const payload = order.getAttribute('payload');
 
     const initialRegionCoordinates = {
-        latitude: firstWaypoint.location.coordinates[1],
-        longitude: firstWaypoint.location.coordinates[0]
+        latitude: firstWaypoint?.location.coordinates[1],
+        longitude: firstWaypoint?.location.coordinates[0]
     };
 
     return (
