@@ -45,7 +45,7 @@ const OrdersStack = ({ route }) => {
 const OrderScreenStack = ({ route }) => {
     return (
         <SafeAreaProvider>
-            <OrderStack.Navigator mode="modal">
+            <OrderStack.Navigator options={{ presentation: 'modal' }} screenOptions={{ presentation: 'modal', headerShown: false, animationEnabled: false, gestureEnabled: false }}>
                 <OrderStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
                 <OrderStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />
                 <OrderStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false, ...verticalAnimation }} initialParams={route.params ?? {}} />

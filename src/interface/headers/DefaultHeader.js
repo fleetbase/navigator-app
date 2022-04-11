@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ImageBackground, TextInput, TouchableOpacity, Modal, Image, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -45,7 +45,7 @@ const DefaultHeader = (props) => {
 
     const shouldDisplayLogoText = (displayLogoText ?? config('ui.headerComponent.displayLogoText')) === true;
 
-    const toggleOnline = () => {
+    const toggleOnline = useCallback(() => {
         setIsLoading(true);
         setIsOnline(!isOnline);
 
@@ -54,7 +54,7 @@ const DefaultHeader = (props) => {
             .then(setDriver)
             .catch(logError)
             .finally(() => setIsLoading(false));
-    };
+    });
 
     return (
         <ImageBackground
