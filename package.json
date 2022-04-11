@@ -22,7 +22,7 @@
         "@freakycoder/react-native-bounceable": "^0.2.5",
         "@homee/react-native-mapbox-navigation": "^1.1.0",
         "@react-native-async-storage/async-storage": "^1.15.5",
-        "@react-native-community/datetimepicker": "^4.0.1",
+        "@react-native-community/datetimepicker": "^6.1.2",
         "@react-native-community/masked-view": "^0.1.11",
         "@react-native-community/push-notification-ios": "^1.8.0",
         "@react-native-picker/picker": "^1.16.3",
