@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
 import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
@@ -41,7 +41,7 @@ const OrdersScreen = ({ navigation }) => {
         setParams(params);
     };
 
-    const loadOrders = (options = {}) => {
+    const loadOrders = useCallback((options = {}) => {
         if (options.isRefreshing) {
             setIsRefreshing(true);
         }
@@ -59,7 +59,7 @@ const OrdersScreen = ({ navigation }) => {
                 setIsQuerying(false);
                 setIsLoaded(true);
             });
-    };
+    });
 
     useEffect(() => {
         loadOrders({ isQuerying: isLoaded });
