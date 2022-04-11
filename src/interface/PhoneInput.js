@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { listCountries, translate, getColorCode } from 'utils';
 import { useLocale } from 'hooks';
 import tailwind from 'tailwind';
 import ReactNativePickerModule from 'react-native-picker-module';
 
 const isString = (string) => typeof string === 'string';
+const isAndroid = Platform.OS === 'android';
 
 const PhoneInput = (props) => {
     const pickerRef = useRef();
@@ -74,10 +75,10 @@ const PhoneInput = (props) => {
 
     return (
         <View>
-            <View style={[tailwind('form-input py-2 flex flex-row'), { height: 52 }, props.style || {}]}>
+            <View style={[tailwind(`form-input ${isAndroid ? 'py-0.5' : 'py-2'} flex flex-row items-center`), { height: isAndroid ? 52 : 52 }, props.style || {}]}>
                 <TouchableOpacity onPress={() => pickerRef.current.show()}>
                     <View style={tailwind('flex items-center justify-center mr-3')}>
-                        <Text style={tailwind('text-2xl')}>{country?.emoji}</Text>
+                        <Text style={tailwind(`text-2xl`)}>{country?.emoji}</Text>
                     </View>
                 </TouchableOpacity>
                 <TextInput
