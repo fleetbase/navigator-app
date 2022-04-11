@@ -39,7 +39,7 @@ const AccountScreen = ({ navigation, route }) => {
                 <ImageBackground
                     source={config('ui.accountScreen.signedInContainerBackgroundImage')}
                     resizeMode={config('ui.accountScreen.signedInBackgroundResizeMode') ?? 'cover'}
-                    style={[config('ui.accountScreen.signedInContainerBackgroundImageStyle')]}
+                    style={[tailwind('h-full bg-gray-800'), config('ui.accountScreen.signedInContainerBackgroundImageStyle')]}
                 >
                     {props.children}
                 </ImageBackground>
@@ -50,7 +50,7 @@ const AccountScreen = ({ navigation, route }) => {
             <ImageBackground
                 source={config('ui.accountScreen.signedOutContainerBackgroundImage')}
                 resizeMode={config('ui.accountScreen.signedOutBackgroundResizeMode') ?? 'cover'}
-                style={[config('ui.accountScreen.signedOutContainerBackgroundImageStyle')]}
+                style={[tailwind('h-full bg-gray-800'), config('ui.accountScreen.signedOutContainerBackgroundImageStyle')]}
             >
                 {props.children}
             </ImageBackground>

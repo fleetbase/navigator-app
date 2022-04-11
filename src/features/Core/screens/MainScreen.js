@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import { getUniqueId } from 'react-native-device-info';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClipboardList, faUser, faRoute, faCalendarDay, faWallet } from '@fortawesome/free-solid-svg-icons';
@@ -8,7 +8,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import { getCurrentLocation, requestTrackingPermissions, trackDriver } from 'utils/Geo';
 import { useResourceStorage, get } from 'utils/Storage';
 import { syncDevice } from 'utils/Auth';
-import { logError, getColorCode } from 'utils';
+import { logError, getColorCode, isFalsy } from 'utils';
 import { tailwind } from 'tailwind';
 import { useDriver, useMountedState } from 'hooks';
 import useFleetbase from 'hooks/use-fleetbase';
@@ -22,12 +22,15 @@ import WalletScreen from './WalletScreen';
 const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
 
+const isTruthy = (mixed) => !isFalsy(mixed);
+const isAndroid = Platform.OS === 'android';
+
 const MainScreen = ({ navigation, route }) => {
     const fleetbase = useFleetbase();
     const isMounted = useMountedState();
 
     const [driver, setDriver] = useDriver();
-    const [isOnline, setIsOnline] = useState(driver.getAttribute('online'));
+    const [isOnline, setIsOnline] = useState(isTruthy(driver?.getAttribute('online')));
     const [tracking, setTracking] = useState(0);
 
     useEffect(() => {
@@ -55,17 +58,18 @@ const MainScreen = ({ navigation, route }) => {
     }, [isMounted]);
 
     // track driver location
-    useEffect(async () => {
+    useEffect(() => {
         if (!isOnline) {
             return;
         }
 
-        const unsubscribe = await trackDriver(driver);
-        setTracking({ unsubscribe });
+        trackDriver(driver).then(({ unsubscribe }) => {
+            setTracking({ unsubscribe });
+        });
     }, [isMounted]);
 
     // toggle driver location tracking
-    useEffect(async () => {
+    useEffect(() => {
         const shouldUnsubscribe = !isOnline && typeof tracking?.unsubscribe === 'function';
         const shouldSubscribe = isOnline && tracking?.unsubscribe === null;
 
@@ -75,8 +79,9 @@ const MainScreen = ({ navigation, route }) => {
         }
 
         if (shouldSubscribe) {
-            const unsubscribe = await trackDriver(driver);
-            setTracking({ unsubscribe });
+            trackDriver(driver).then(({ unsubscribe }) => {
+                setTracking({ unsubscribe });
+            });
         }
     }, [isOnline]);
 
@@ -87,7 +92,7 @@ const MainScreen = ({ navigation, route }) => {
                 tracking.unsubscribe();
             }
 
-            setIsOnline(driver?.getAttribute('online'));
+            setIsOnline(isTruthy(driver?.getAttribute('online')));
         });
 
         return () => {
@@ -118,14 +123,15 @@ const MainScreen = ({ navigation, route }) => {
                             break;
                     }
                     // You can return any component that you like here!
-                    return <FontAwesomeIcon icon={icon} size={size} color={focused ? getColorCode('text-blue-400') : getColorCode('text-gray-600')} />;
+                    return <FontAwesomeIcon icon={icon} size={isAndroid ? 23 : size} color={focused ? getColorCode('text-blue-400') : getColorCode('text-gray-600')} />;
                 },
-            })}
-            tabBarOptions={{
-                style: tailwind('bg-gray-800 border-gray-700 shadow-lg'),
-                tabStyle: tailwind('bg-gray-800 border-gray-700'),
+                tabBarStyle: tailwind('bg-gray-800 border-gray-700 shadow-lg'),
+                tabBarItemStyle: tailwind(`bg-gray-800 border-gray-700 ${isAndroid ? 'py-1' : 'pt-1.5'}`),
+                tabBarActiveTintColor: getColorCode('text-blue-400'),
+                tabBarInactiveTintColor: getColorCode('text-gray-600'),
                 showLabel: false,
-            }}
+                headerShown: false,
+            })}
         >
             <Tab.Screen key="orders" name="Orders" component={OrdersStack} />
             <Tab.Screen key="routes" name="Routes" component={RoutesScreen} />
