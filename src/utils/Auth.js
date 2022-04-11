@@ -58,12 +58,13 @@ export default class AuthUtil {
         const fleetbase = useFleetbase();
 
         const setDriver = (driver) => {
+            console.log('setDriver() - driver', driver);
             if (typeof driver?.serialize === 'function') {
                 emit('driver.updated', driver);
-                return setValue(driver.serialize());
+                setValue(driver.serialize());
+            } else {
+                setValue(driver);
             }
-
-            setValue(driver);
         };
 
         if (value) {
@@ -85,7 +86,7 @@ export default class AuthUtil {
         driver = driver ?? AuthUtil.get();
 
         const token = get('token');
-        
+
         if (typeof driver?.syncDevice === 'function' && token?.token) {
             driver.syncDevice(token).catch(logError);
         }
@@ -96,7 +97,7 @@ export default class AuthUtil {
      *
      * @static
      * @param {Driver} driver
-     * @return {boolean} 
+     * @return {boolean}
      * @memberof AuthUtil
      */
     static isValid(driver) {
