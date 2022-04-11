@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, Image, TouchableOpacity, TextInput, ActivityIndicator, Dimensions, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ScrollView, View, Text, Image, TouchableOpacity, TextInput, ActivityIndicator, Dimensions, Modal, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -11,6 +11,7 @@ import OrderCard from 'ui/OrderCard';
 
 const windowHeight = Dimensions.get('window').height;
 const dialogHeight = windowHeight / 2;
+const isAndroid = Platform.OS === 'android';
 
 const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, buttonIconStyle, onResultPress, placeholder }) => {
     buttonTitle = buttonTitle ?? `Search orders`;
@@ -20,6 +21,7 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
     const insets = useSafeAreaInsets();
     const fleetbase = useFleetbase();
     const isMounted = useMountedState();
+    const searchInput = useRef();
 
     const [locale] = useLocale();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -35,7 +37,13 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
         }
     };
 
-    const fetchResults = async (query, cb) => {
+    const onModalShow = () => {
+        setTimeout(() => {
+            searchInput.current.focus();
+        }, 100);
+    };
+
+    const fetchResults = useCallback(async (query, cb) => {
         setIsLoading(true);
 
         const results = await fleetbase.orders.query({ query }).catch(logError);
@@ -45,7 +53,7 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
         if (typeof cb === 'function') {
             cb(results);
         }
-    };
+    });
 
     const debouncedSearch = debounce((query, cb) => {
         fetchResults(query, cb);
@@ -54,12 +62,11 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
     useEffect(() => {
         if (!query) {
             setResults([]);
-            return;
+        } else {
+            debouncedSearch(query, (results) => {
+                setResults(results);
+            });
         }
-
-        debouncedSearch(query, (results) => {
-            setResults(results);
-        });
     }, [query]);
 
     return (
@@ -71,7 +78,7 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
                 </View>
             </TouchableOpacity>
 
-            <Modal animationType={'slide'} transparent={true} visible={isDialogOpen} onRequestClose={closeDialog}>
+            <Modal animationType={'slide'} transparent={true} visible={isDialogOpen} onRequestClose={closeDialog} onShow={onModalShow}>
                 <View style={[tailwind('w-full h-full bg-gray-800'), { paddingTop: insets.top }]}>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between')}>
                         <View style={tailwind('flex-1 pr-4')}>
@@ -80,12 +87,13 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
                                     <FontAwesomeIcon icon={buttonIcon} style={[tailwind('text-gray-700 ml-3'), buttonIconStyle]} />
                                 </View>
                                 <TextInput
+                                    ref={searchInput}
                                     value={query}
                                     onChangeText={setQuery}
                                     autoComplete={'off'}
                                     autoCorrect={false}
                                     autoCapitalize={'none'}
-                                    autoFocus={true}
+                                    autoFocus={isAndroid ? false : true}
                                     clearButtonMode={'while-editing'}
                                     textAlign={'left'}
                                     style={tailwind('bg-gray-900 text-white rounded-md pl-10 shadow-lg pr-2 h-10')}
