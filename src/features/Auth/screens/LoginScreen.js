@@ -13,6 +13,7 @@ import tailwind from 'tailwind';
 import PhoneInput from 'ui/PhoneInput';
 
 const isIos = Platform.OS === 'ios';
+// const isAndroid = Platform.OS === 'android';
 
 const LoginScreen = ({ navigation, route }) => {
     const fleetbase = useFleetbase();
