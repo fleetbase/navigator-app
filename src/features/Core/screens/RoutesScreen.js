@@ -143,11 +143,8 @@ const RoutesScreen = ({ navigation }) => {
     // const firstStop = stops[0] ?? null;
     const canRenderMap = firstStop || userLocation;
 
-    console.log('firstStop', firstStop);
-    console.log('userLocation', userLocation);
-
     return (
-        <View style={[tailwind('bg-gray-800 h-full'), { paddingBottom: 147 }]}>
+        <View style={[tailwind('bg-gray-800 h-full')]}>
             <DefaultHeader>
                 <OrdersFilterBar
                     onSelectSort={(sort) => setParam('sort', sort)}
