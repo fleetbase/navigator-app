@@ -1,7 +1,7 @@
 import { EventRegister } from 'react-native-event-listeners';
 import { Driver, isResource } from '@fleetbase/sdk';
 import { get, set, storage, useMMKVStorage } from './Storage';
-import { endSession, isVoid, logError } from './Helper';
+import { isVoid, logError } from './Helper';
 import useFleetbase from 'hooks/use-fleetbase';
 
 const { emit } = EventRegister;
@@ -109,7 +109,6 @@ const getDriver = AuthUtil.get;
 const updateDriver = AuthUtil.update;
 const useDriver = AuthUtil.use;
 const syncDevice = AuthUtil.syncDevice;
-const signOut = AuthUtil.signOut;
 const isValidDriver = AuthUtil.isValid;
 
-export { updateDriver, getDriver, useDriver, syncDevice, signOut, isValidDriver };
+export { updateDriver, getDriver, useDriver, syncDevice, isValidDriver };
