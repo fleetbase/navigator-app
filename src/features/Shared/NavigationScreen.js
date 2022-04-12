@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createRef } from 'react';
+import React, { useState, useEffect, useCallback, createRef } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -27,19 +27,29 @@ const NavigationScreen = ({ navigation, route }) => {
     const [origin, setOrigin] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    const extractOriginCoordinates = useCallback((_origin) => {
+        if (_origin?.coordinates && isArray(_origin?.coordinates)) {
+            return _origin?.coordinates?.reverse();
+        }
+
+        if (_origin?.coords && _origin?.coords?.latitude && _origin?.coords?.longitude) {
+            return  [ _origin?.coords?.longitude, _origin?.coords?.latitude];
+        }
+    });
+
     const coords = {
-        origin: origin?.coordinates?.reverse(),
+        origin: extractOriginCoordinates(origin),
         destination: destination?.getAttribute('location.coordinates'),
     };
 
     const isReady = isArray(coords?.origin) && isArray(coords?.destination);
 
-    const trackDriverLocation = (event) => {
+    const trackDriverLocation = useCallback((event) => {
         // const { distanceTraveled, durationRemaining, fractionTraveled, distanceRemaining } = event.nativeEvent;
         const { latitude, longitude } = event.nativeEvent;
 
         return driver.track({ latitude, longitude }).catch(logError);
-    };
+    });
 
     useEffect(() => {
         getCurrentLocation().then(setOrigin).catch(logError);

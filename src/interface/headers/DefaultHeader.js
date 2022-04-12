@@ -41,7 +41,7 @@ const DefaultHeader = (props) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState(new Collection());
-    const [isOnline, setIsOnline] = useState(isTruthy(driver.getAttribute('online')));
+    const [isOnline, setIsOnline] = useState(isTruthy(driver?.getAttribute('online')));
 
     const shouldDisplayLogoText = (displayLogoText ?? config('ui.headerComponent.displayLogoText')) === true;
 

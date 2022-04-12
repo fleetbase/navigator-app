@@ -82,6 +82,10 @@ export default class StorageUtil {
         const [value, setCollection] = useStorage(key, defaultValue);
 
         const toCollection = (arr, resource) => {
+            if (typeof arr === 'string') {
+                return toCollection(JSON.parse(arr));
+            }
+
             if (isVoid(arr)) {
                 return new Collection();
             }
@@ -102,6 +106,10 @@ export default class StorageUtil {
         };
 
         const setResource = (resource) => {
+            if (typeof value === 'string') {
+                storage.removeItem(key);
+            }
+
             if (!isArray(resource)) {
                 return setCollection({ items: [resource] });
             }
