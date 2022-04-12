@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00E356F31AD99517003FC87E /* StorefrontAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* StorefrontAppTests.m */; };
+		00E356F31AD99517003FC87E /* NavigatorAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* NavigatorAppTests.m */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		67645E408F3552F2E5478C2E /* libPods-StorefrontApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96A859EB5B568259B9BD3FA9 /* libPods-StorefrontApp.a */; };
+		67645E408F3552F2E5478C2E /* libPods-NavigatorApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96A859EB5B568259B9BD3FA9 /* libPods-NavigatorApp.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		C3CCC92698644AECB80B2AD1 /* libPods-StorefrontApp-StorefrontAppTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D2AA564C91BA79CD0C46DBF /* libPods-StorefrontApp-StorefrontAppTests.a */; };
+		C3CCC92698644AECB80B2AD1 /* libPods-NavigatorApp-NavigatorAppTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D2AA564C91BA79CD0C46DBF /* libPods-NavigatorApp-NavigatorAppTests.a */; };
 		E47AA2A827C8A8B200189DE9 /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E47AA2A727C8A8B200189DE9 /* BootSplash.storyboard */; };
 		E4E31EBE26970A7F001BAF0A /* Header.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E31EBD26970A7F001BAF0A /* Header.swift */; };
 /* End PBXBuildFile section */
@@ -24,32 +24,32 @@
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
-			remoteInfo = StorefrontApp;
+			remoteInfo = NavigatorApp;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		00E356EE1AD99517003FC87E /* StorefrontAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StorefrontAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		00E356EE1AD99517003FC87E /* NavigatorAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NavigatorAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		00E356F21AD99517003FC87E /* StorefrontAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StorefrontAppTests.m; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* StorefrontApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StorefrontApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = StorefrontApp/AppDelegate.h; sourceTree = "<group>"; };
-		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = StorefrontApp/AppDelegate.m; sourceTree = "<group>"; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = StorefrontApp/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = StorefrontApp/Info.plist; sourceTree = "<group>"; };
-		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = StorefrontApp/main.m; sourceTree = "<group>"; };
-		4D2AA564C91BA79CD0C46DBF /* libPods-StorefrontApp-StorefrontAppTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-StorefrontApp-StorefrontAppTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D83804C77290B3C1ACBAA4D /* Pods-StorefrontApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StorefrontApp.release.xcconfig"; path = "Target Support Files/Pods-StorefrontApp/Pods-StorefrontApp.release.xcconfig"; sourceTree = "<group>"; };
-		763D3B2C235D5875EDE8A1CF /* Pods-StorefrontApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StorefrontApp.debug.xcconfig"; path = "Target Support Files/Pods-StorefrontApp/Pods-StorefrontApp.debug.xcconfig"; sourceTree = "<group>"; };
-		815DF1CB3D6857C41F059218 /* Pods-StorefrontApp-StorefrontAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StorefrontApp-StorefrontAppTests.release.xcconfig"; path = "Target Support Files/Pods-StorefrontApp-StorefrontAppTests/Pods-StorefrontApp-StorefrontAppTests.release.xcconfig"; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = StorefrontApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		96A859EB5B568259B9BD3FA9 /* libPods-StorefrontApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-StorefrontApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E433B8C026AE740200D2388C /* StorefrontApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = StorefrontApp.entitlements; path = StorefrontApp/StorefrontApp.entitlements; sourceTree = "<group>"; };
+		00E356F21AD99517003FC87E /* NavigatorAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NavigatorAppTests.m; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* NavigatorApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NavigatorApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = NavigatorApp/AppDelegate.h; sourceTree = "<group>"; };
+		13B07FB01A68108700A75B9A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = NavigatorApp/AppDelegate.m; sourceTree = "<group>"; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = NavigatorApp/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = NavigatorApp/Info.plist; sourceTree = "<group>"; };
+		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = NavigatorApp/main.m; sourceTree = "<group>"; };
+		4D2AA564C91BA79CD0C46DBF /* libPods-NavigatorApp-NavigatorAppTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-NavigatorApp-NavigatorAppTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D83804C77290B3C1ACBAA4D /* Pods-NavigatorApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.release.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.release.xcconfig"; sourceTree = "<group>"; };
+		763D3B2C235D5875EDE8A1CF /* Pods-NavigatorApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.debug.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.debug.xcconfig"; sourceTree = "<group>"; };
+		815DF1CB3D6857C41F059218 /* Pods-NavigatorApp-NavigatorAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp-NavigatorAppTests.release.xcconfig"; path = "Target Support Files/Pods-NavigatorApp-NavigatorAppTests/Pods-NavigatorApp-NavigatorAppTests.release.xcconfig"; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = NavigatorApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		96A859EB5B568259B9BD3FA9 /* libPods-NavigatorApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-NavigatorApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E433B8C026AE740200D2388C /* NavigatorApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = NavigatorApp.entitlements; path = NavigatorApp/NavigatorApp.entitlements; sourceTree = "<group>"; };
 		E4516E7726CBAE3200A186F7 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
-		E47AA2A727C8A8B200189DE9 /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = StorefrontApp/BootSplash.storyboard; sourceTree = "<group>"; };
-		E4E31EBC26970A7F001BAF0A /* StorefrontApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "StorefrontApp-Bridging-Header.h"; sourceTree = "<group>"; };
+		E47AA2A727C8A8B200189DE9 /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = NavigatorApp/BootSplash.storyboard; sourceTree = "<group>"; };
+		E4E31EBC26970A7F001BAF0A /* NavigatorApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NavigatorApp-Bridging-Header.h"; sourceTree = "<group>"; };
 		E4E31EBD26970A7F001BAF0A /* Header.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Header.swift; sourceTree = "<group>"; };
-		E50DF5D08DDC645C3E4EC312 /* Pods-StorefrontApp-StorefrontAppTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StorefrontApp-StorefrontAppTests.debug.xcconfig"; path = "Target Support Files/Pods-StorefrontApp-StorefrontAppTests/Pods-StorefrontApp-StorefrontAppTests.debug.xcconfig"; sourceTree = "<group>"; };
+		E50DF5D08DDC645C3E4EC312 /* Pods-NavigatorApp-NavigatorAppTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp-NavigatorAppTests.debug.xcconfig"; path = "Target Support Files/Pods-NavigatorApp-NavigatorAppTests/Pods-NavigatorApp-NavigatorAppTests.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -58,7 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C3CCC92698644AECB80B2AD1 /* libPods-StorefrontApp-StorefrontAppTests.a in Frameworks */,
+				C3CCC92698644AECB80B2AD1 /* libPods-NavigatorApp-NavigatorAppTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,20 +66,20 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				67645E408F3552F2E5478C2E /* libPods-StorefrontApp.a in Frameworks */,
+				67645E408F3552F2E5478C2E /* libPods-NavigatorApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		00E356EF1AD99517003FC87E /* StorefrontAppTests */ = {
+		00E356EF1AD99517003FC87E /* NavigatorAppTests */ = {
 			isa = PBXGroup;
 			children = (
-				00E356F21AD99517003FC87E /* StorefrontAppTests.m */,
+				00E356F21AD99517003FC87E /* NavigatorAppTests.m */,
 				00E356F01AD99517003FC87E /* Supporting Files */,
 			);
-			path = StorefrontAppTests;
+			path = NavigatorAppTests;
 			sourceTree = "<group>";
 		};
 		00E356F01AD99517003FC87E /* Supporting Files */ = {
@@ -90,11 +90,11 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		13B07FAE1A68108700A75B9A /* StorefrontApp */ = {
+		13B07FAE1A68108700A75B9A /* NavigatorApp */ = {
 			isa = PBXGroup;
 			children = (
 				E47AA2A727C8A8B200189DE9 /* BootSplash.storyboard */,
-				E433B8C026AE740200D2388C /* StorefrontApp.entitlements */,
+				E433B8C026AE740200D2388C /* NavigatorApp.entitlements */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -102,16 +102,16 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
 			);
-			name = StorefrontApp;
+			name = NavigatorApp;
 			sourceTree = "<group>";
 		};
 		1EBA3890EB69DCE7FE109E94 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				763D3B2C235D5875EDE8A1CF /* Pods-StorefrontApp.debug.xcconfig */,
-				4D83804C77290B3C1ACBAA4D /* Pods-StorefrontApp.release.xcconfig */,
-				E50DF5D08DDC645C3E4EC312 /* Pods-StorefrontApp-StorefrontAppTests.debug.xcconfig */,
-				815DF1CB3D6857C41F059218 /* Pods-StorefrontApp-StorefrontAppTests.release.xcconfig */,
+				763D3B2C235D5875EDE8A1CF /* Pods-NavigatorApp.debug.xcconfig */,
+				4D83804C77290B3C1ACBAA4D /* Pods-NavigatorApp.release.xcconfig */,
+				E50DF5D08DDC645C3E4EC312 /* Pods-NavigatorApp-NavigatorAppTests.debug.xcconfig */,
+				815DF1CB3D6857C41F059218 /* Pods-NavigatorApp-NavigatorAppTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -120,8 +120,8 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				96A859EB5B568259B9BD3FA9 /* libPods-StorefrontApp.a */,
-				4D2AA564C91BA79CD0C46DBF /* libPods-StorefrontApp-StorefrontAppTests.a */,
+				96A859EB5B568259B9BD3FA9 /* libPods-NavigatorApp.a */,
+				4D2AA564C91BA79CD0C46DBF /* libPods-NavigatorApp-NavigatorAppTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -138,13 +138,13 @@
 			children = (
 				E4516E7726CBAE3200A186F7 /* Config.xcconfig */,
 				E4E31EBD26970A7F001BAF0A /* Header.swift */,
-				13B07FAE1A68108700A75B9A /* StorefrontApp */,
+				13B07FAE1A68108700A75B9A /* NavigatorApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				00E356EF1AD99517003FC87E /* StorefrontAppTests */,
+				00E356EF1AD99517003FC87E /* NavigatorAppTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				1EBA3890EB69DCE7FE109E94 /* Pods */,
-				E4E31EBC26970A7F001BAF0A /* StorefrontApp-Bridging-Header.h */,
+				E4E31EBC26970A7F001BAF0A /* NavigatorApp-Bridging-Header.h */,
 				E4C7954A27634B3B00F4AAFE /* Recovered References */,
 			);
 			indentWidth = 2;
@@ -155,8 +155,8 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* StorefrontApp.app */,
-				00E356EE1AD99517003FC87E /* StorefrontAppTests.xctest */,
+				13B07F961A680F5B00A75B9A /* NavigatorApp.app */,
+				00E356EE1AD99517003FC87E /* NavigatorAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -171,9 +171,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		00E356ED1AD99517003FC87E /* StorefrontAppTests */ = {
+		00E356ED1AD99517003FC87E /* NavigatorAppTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "StorefrontAppTests" */;
+			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "NavigatorAppTests" */;
 			buildPhases = (
 				11710FB2E02EC2B7148E076F /* [CP] Check Pods Manifest.lock */,
 				00E356EA1AD99517003FC87E /* Sources */,
@@ -187,14 +187,14 @@
 			dependencies = (
 				00E356F51AD99517003FC87E /* PBXTargetDependency */,
 			);
-			name = StorefrontAppTests;
-			productName = StorefrontAppTests;
-			productReference = 00E356EE1AD99517003FC87E /* StorefrontAppTests.xctest */;
+			name = NavigatorAppTests;
+			productName = NavigatorAppTests;
+			productReference = 00E356EE1AD99517003FC87E /* NavigatorAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		13B07F861A680F5B00A75B9A /* StorefrontApp */ = {
+		13B07F861A680F5B00A75B9A /* NavigatorApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "StorefrontApp" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "NavigatorApp" */;
 			buildPhases = (
 				FC03C4D02D6CFF9EE198ED4B /* [CP] Check Pods Manifest.lock */,
 				FD10A7F022414F080027D42C /* Start Packager */,
@@ -209,9 +209,9 @@
 			);
 			dependencies = (
 			);
-			name = StorefrontApp;
-			productName = StorefrontApp;
-			productReference = 13B07F961A680F5B00A75B9A /* StorefrontApp.app */;
+			name = NavigatorApp;
+			productName = NavigatorApp;
+			productReference = 13B07F961A680F5B00A75B9A /* NavigatorApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -231,7 +231,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "StorefrontApp" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "NavigatorApp" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -244,8 +244,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* StorefrontApp */,
-				00E356ED1AD99517003FC87E /* StorefrontAppTests */,
+				13B07F861A680F5B00A75B9A /* NavigatorApp */,
+				00E356ED1AD99517003FC87E /* NavigatorAppTests */,
 			);
 		};
 /* End PBXProject section */
@@ -297,7 +297,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-StorefrontApp/Pods-StorefrontApp-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		11710FB2E02EC2B7148E076F /* [CP] Check Pods Manifest.lock */ = {
@@ -315,7 +315,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-StorefrontApp-StorefrontAppTests-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-NavigatorApp-NavigatorAppTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -334,7 +334,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-StorefrontApp-StorefrontAppTests/Pods-StorefrontApp-StorefrontAppTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp-NavigatorAppTests/Pods-NavigatorApp-NavigatorAppTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		789F7239178F25F24D596BEC /* [CP] Copy Pods Resources */ = {
@@ -349,7 +349,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-StorefrontApp/Pods-StorefrontApp-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		EEA7DFC079EC63674E141D92 /* [CP] Embed Pods Frameworks */ = {
@@ -364,7 +364,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-StorefrontApp-StorefrontAppTests/Pods-StorefrontApp-StorefrontAppTests-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp-NavigatorAppTests/Pods-NavigatorApp-NavigatorAppTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		FC03C4D02D6CFF9EE198ED4B /* [CP] Check Pods Manifest.lock */ = {
@@ -382,7 +382,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-StorefrontApp-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-NavigatorApp-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -415,7 +415,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00E356F31AD99517003FC87E /* StorefrontAppTests.m in Sources */,
+				00E356F31AD99517003FC87E /* NavigatorAppTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -434,7 +434,7 @@
 /* Begin PBXTargetDependency section */
 		00E356F51AD99517003FC87E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* StorefrontApp */;
+			target = 13B07F861A680F5B00A75B9A /* NavigatorApp */;
 			targetProxy = 00E356F41AD99517003FC87E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -442,7 +442,7 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E50DF5D08DDC645C3E4EC312 /* Pods-StorefrontApp-StorefrontAppTests.debug.xcconfig */;
+			baseConfigurationReference = E50DF5D08DDC645C3E4EC312 /* Pods-NavigatorApp-NavigatorAppTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -451,7 +451,7 @@
 					"$(inherited)",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = StorefrontAppTests/Info.plist;
+				INFOPLIST_FILE = NavigatorAppTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -466,19 +466,19 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StorefrontApp.app/StorefrontApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NavigatorApp.app/NavigatorApp";
 			};
 			name = Debug;
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 815DF1CB3D6857C41F059218 /* Pods-StorefrontApp-StorefrontAppTests.release.xcconfig */;
+			baseConfigurationReference = 815DF1CB3D6857C41F059218 /* Pods-NavigatorApp-NavigatorAppTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = StorefrontAppTests/Info.plist;
+				INFOPLIST_FILE = NavigatorAppTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -493,22 +493,22 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StorefrontApp.app/StorefrontApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NavigatorApp.app/NavigatorApp";
 			};
 			name = Release;
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 763D3B2C235D5875EDE8A1CF /* Pods-StorefrontApp.debug.xcconfig */;
+			baseConfigurationReference = 763D3B2C235D5875EDE8A1CF /* Pods-NavigatorApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = StorefrontApp/StorefrontApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
 				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = StorefrontApp/Info.plist;
+				INFOPLIST_FILE = NavigatorApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -521,8 +521,8 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.fleetbase.navigator;
-				PRODUCT_NAME = StorefrontApp;
-				SWIFT_OBJC_BRIDGING_HEADER = "StorefrontApp-Bridging-Header.h";
+				PRODUCT_NAME = NavigatorApp;
+				SWIFT_OBJC_BRIDGING_HEADER = "NavigatorApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -531,15 +531,15 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4D83804C77290B3C1ACBAA4D /* Pods-StorefrontApp.release.xcconfig */;
+			baseConfigurationReference = 4D83804C77290B3C1ACBAA4D /* Pods-NavigatorApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = StorefrontApp/StorefrontApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
 				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = StorefrontApp/Info.plist;
+				INFOPLIST_FILE = NavigatorApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -552,8 +552,8 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.fleetbase.navigator;
-				PRODUCT_NAME = StorefrontApp;
-				SWIFT_OBJC_BRIDGING_HEADER = "StorefrontApp-Bridging-Header.h";
+				PRODUCT_NAME = NavigatorApp;
+				SWIFT_OBJC_BRIDGING_HEADER = "NavigatorApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -681,7 +681,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "StorefrontAppTests" */ = {
+		00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "NavigatorAppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				00E356F61AD99517003FC87E /* Debug */,
@@ -690,7 +690,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "StorefrontApp" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "NavigatorApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -699,7 +699,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "StorefrontApp" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "NavigatorApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
