@@ -456,7 +456,6 @@ const isApple = HelperUtil.isApple();
 const isVoid = HelperUtil.isVoid;
 const isEmpty = HelperUtil.isEmpty;
 const isFalsy = HelperUtil.isFalsy;
-const endSession = HelperUtil.endSession;
 const logError = HelperUtil.logError;
 const mutatePlaces = HelperUtil.mutatePlaces;
 const debounce = HelperUtil.debounce;
@@ -477,7 +476,6 @@ export {
     isVoid,
     isEmpty,
     isFalsy,
-    endSession,
     logError,
     mutatePlaces,
     debounce,
