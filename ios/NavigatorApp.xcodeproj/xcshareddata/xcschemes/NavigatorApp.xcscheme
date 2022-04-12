@@ -15,9 +15,9 @@
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-                     BuildableName = "StorefrontApp.app"
-                     BlueprintName = "StorefrontApp"
-                     ReferencedContainer = "container:StorefrontApp.xcodeproj">
+                     BuildableName = "NavigatorApp.app"
+                     BlueprintName = "NavigatorApp"
+                     ReferencedContainer = "container:NavigatorApp.xcodeproj">
                   </BuildableReference>
                </EnvironmentBuildable>
             </ActionContent>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "StorefrontApp.app"
-               BlueprintName = "StorefrontApp"
-               ReferencedContainer = "container:StorefrontApp.xcodeproj">
+               BuildableName = "NavigatorApp.app"
+               BlueprintName = "NavigatorApp"
+               ReferencedContainer = "container:NavigatorApp.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -51,9 +51,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "StorefrontAppTests.xctest"
-               BlueprintName = "StorefrontAppTests"
-               ReferencedContainer = "container:StorefrontApp.xcodeproj">
+               BuildableName = "NavigatorAppTests.xctest"
+               BlueprintName = "NavigatorAppTests"
+               ReferencedContainer = "container:NavigatorApp.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -73,9 +73,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "StorefrontApp.app"
-            BlueprintName = "StorefrontApp"
-            ReferencedContainer = "container:StorefrontApp.xcodeproj">
+            BuildableName = "NavigatorApp.app"
+            BlueprintName = "NavigatorApp"
+            ReferencedContainer = "container:NavigatorApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -90,9 +90,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "StorefrontApp.app"
-            BlueprintName = "StorefrontApp"
-            ReferencedContainer = "container:StorefrontApp.xcodeproj">
+            BuildableName = "NavigatorApp.app"
+            BlueprintName = "NavigatorApp"
+            ReferencedContainer = "container:NavigatorApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
