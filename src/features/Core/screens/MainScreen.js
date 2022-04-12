@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, Platform } from 'react-native';
 import { getUniqueId } from 'react-native-device-info';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -33,6 +33,21 @@ const MainScreen = ({ navigation, route }) => {
     const [isOnline, setIsOnline] = useState(isTruthy(driver?.getAttribute('online')));
     const [tracking, setTracking] = useState(0);
 
+    const unauthenticate = useCallback((error) => {
+        const isThrownError = error instanceof Error && error?.message?.includes('Unauthenticated');
+        const isErrorMessage = typeof error === 'string' && error.includes('Unauthenticated');
+
+        logError(error);
+
+        if (isThrownError || isErrorMessage) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'BootScreen' }],
+            });
+            setDriver(null);
+        }
+    });
+
     useEffect(() => {
         // set location
         getCurrentLocation();
@@ -44,7 +59,7 @@ const MainScreen = ({ navigation, route }) => {
         const notifications = addEventListener('onNotification', (notification) => {
             const { data, id } = notification;
             const { action } = data;
-            
+
             if (action?.action === 'view_order' && id) {
                 return fleetbase.orders.findRecord(id).then((order) => {
                     navigation.push('OrderScreen', { data: order.serialize() });
@@ -63,9 +78,11 @@ const MainScreen = ({ navigation, route }) => {
             return;
         }
 
-        trackDriver(driver).then(({ unsubscribe }) => {
-            setTracking({ unsubscribe });
-        });
+        trackDriver(driver)
+            .then(({ unsubscribe }) => {
+                setTracking({ unsubscribe });
+            })
+            .catch(unauthenticate);
     }, [isMounted]);
 
     // toggle driver location tracking
@@ -79,9 +96,11 @@ const MainScreen = ({ navigation, route }) => {
         }
 
         if (shouldSubscribe) {
-            trackDriver(driver).then(({ unsubscribe }) => {
-                setTracking({ unsubscribe });
-            });
+            trackDriver(driver)
+                .then(({ unsubscribe }) => {
+                    setTracking({ unsubscribe });
+                })
+                .catch(unauthenticate);
         }
     }, [isOnline]);
 

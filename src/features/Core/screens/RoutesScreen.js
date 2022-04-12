@@ -97,7 +97,7 @@ const RoutesScreen = ({ navigation }) => {
             latitude: stop.location.coordinates[1] - 0.0005,
             longitude: stop.location.coordinates[0],
         };
-        
+
         const latitudeZoom = 1;
         const longitudeZoom = 1;
         const latitudeDelta = LATITUDE_DELTA / latitudeZoom;
@@ -141,7 +141,7 @@ const RoutesScreen = ({ navigation }) => {
 
     // const stops = getAllOrderStops(orders);
     // const firstStop = stops[0] ?? null;
-    const canRenderMap = firstStop || userLocation;
+    const canRenderMap = firstStop?.location || userLocation?.position?.coords || userLocation?.coords;
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
@@ -166,8 +166,8 @@ const RoutesScreen = ({ navigation }) => {
                     showsPointsOfInterest={true}
                     showsTraffic={true}
                     initialRegion={{
-                        latitude: firstStop ? firstStop.location.coordinates[1] : userLocation.position.coords.latitude,
-                        longitude: firstStop ? firstStop.location.coordinates[0] : userLocation.position.coords.longitude,
+                        latitude: firstStop ? firstStop?.location?.coordinates[1] : userLocation?.position?.coords?.latitude ?? userLocation?.coords?.latitude,
+                        longitude: firstStop ? firstStop?.location?.coordinates[0] : userLocation?.position?.coords?.longitude ?? userLocation?.coords?.longitude,
                         latitudeDelta: 1.0922,
                         longitudeDelta: 0.0421,
                     }}

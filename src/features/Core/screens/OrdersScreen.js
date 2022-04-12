@@ -18,7 +18,7 @@ const { addEventListener, removeEventListener } = EventRegister;
 const OrdersScreen = ({ navigation }) => {
     const isMounted = useMountedState();
     const fleetbase = useFleetbase();
-    const [driver] = useDriver();
+    const [driver, setDriver] = useDriver();
 
     const [date, setDateValue] = useState(new Date());
     const [params, setParams] = useState({
@@ -30,6 +30,21 @@ const OrdersScreen = ({ navigation }) => {
     const [isQuerying, setIsQuerying] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, fleetbase.getAdapter());
+
+    const unauthenticate = useCallback((error) => {
+        const isThrownError = error instanceof Error && error?.message?.includes('Unauthenticated');
+        const isErrorMessage = typeof error === 'string' && error.includes('Unauthenticated');
+
+        logError(error);
+
+        if (isThrownError || isErrorMessage) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'BootScreen' }],
+            });
+            setDriver(null);
+        }
+    });
 
     const setParam = (key, value) => {
         if (key === 'on') {
@@ -53,7 +68,7 @@ const OrdersScreen = ({ navigation }) => {
         return fleetbase.orders
             .query(params)
             .then(setOrders)
-            .catch(logError)
+            .catch(unauthenticate)
             .finally(() => {
                 setIsRefreshing(false);
                 setIsQuerying(false);
