@@ -4,7 +4,7 @@ require_relative '../node_modules/@react-native-community/cli-platform-ios/nativ
 
 platform :ios, '11.0'
 
-target 'StorefrontApp' do
+target 'NavigatorApp' do
   rn_maps_path = '../node_modules/react-native-maps'
   pod 'react-native-google-maps', :path => rn_maps_path
   
@@ -43,7 +43,7 @@ target 'StorefrontApp' do
 
   pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
 
-  target 'StorefrontAppTests' do
+  target 'NavigatorAppTests' do
     inherit! :complete
     # Pods for testing
   end
