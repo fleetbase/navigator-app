@@ -388,7 +388,7 @@ PODS:
     - React-Core
   - RNCPushNotificationIOS (1.10.1):
     - React-Core
-  - RNDateTimePicker (4.0.1):
+  - RNDateTimePicker (6.1.2):
     - React-Core
   - RNDeviceInfo (8.7.0):
     - React-Core
@@ -404,7 +404,7 @@ PODS:
     - React-Core
   - RNPermissions (3.3.1):
     - React-Core
-  - RNReanimated (2.6.0):
+  - RNReanimated (2.7.0):
     - DoubleConversion
     - FBLazyVector
     - FBReactNativeSpec
@@ -731,14 +731,14 @@ SPEC CHECKSUMS:
   RNCMaskedView: 0e1bc4bfa8365eba5fbbb71e07fbdc0555249489
   RNCPicker: 0991c56da7815c0cf946d6f63cf920b25296e5f6
   RNCPushNotificationIOS: 87b8d16d3ede4532745e05b03c42cff33a36cc45
-  RNDateTimePicker: a654a0ebfa3dd78bbe5389421aa2d3d5b2744e47
+  RNDateTimePicker: 6f1f0b4cf7c71b6e2aea7a3aa62969111084bbd1
   RNDeviceInfo: 36286df381fcaf1933ff9d2d3c34ba2abeb2d8d8
   RNFastImage: 1f2cab428712a4baaf78d6169eaec7f622556dd7
   RNFS: fc610f78fdf8bfc89a9e5cc2f898519f4dba1002
   RNGestureHandler: a479ebd5ed4221a810967000735517df0d2db211
   RNLocalize: cbcb55d0e19c78086ea4eea20e03fe8000bbbced
   RNPermissions: 34d678157c800b25b22a488e4d8babb57456e796
-  RNReanimated: 8135778ca3fa9dd6cfdd74d0218106131394e2ec
+  RNReanimated: a05a0a5ba7c20a0be99fa15d18d0fbf21b025a57
   RNScreens: 40a2cb40a02a609938137a1e0acfbf8fc9eebf19
   RNSVG: 302bfc9905bd8122f08966dc2ce2d07b7b52b9f8
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
@@ -748,6 +748,6 @@ SPEC CHECKSUMS:
   Yoga: e7dc4e71caba6472ff48ad7d234389b91dadc280
   YoutubePlayer-in-WKWebView: 4fca3b4f6f09940077bfbae7bddb771f2b43aacd
 
-PODFILE CHECKSUM: a418ae2a5359b3221e8a72b68e272a9e4031ff59
+PODFILE CHECKSUM: 870da839af8ab95ee071fbe1636e47d4d89af93c
 
 COCOAPODS: 1.11.2
