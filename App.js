@@ -30,10 +30,10 @@ const App: () => Node = () => {
         <NavigationContainer
             linking={linking}
             fallback={
-                <View style={tailwind('bg-white flex items-center justify-center w-full h-full')}>
+                <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
                     <View style={tailwind('flex items-center justify-center')}>
                         <ActivityIndicator style={tailwind('mb-4')} />
-                        <Text style={tailwind('text-gray-700')}>Loading...</Text>
+                        <Text style={tailwind('text-gray-400')}>Loading...</Text>
                     </View>
                 </View>
             }
