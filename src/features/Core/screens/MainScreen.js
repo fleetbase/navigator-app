@@ -32,22 +32,7 @@ const MainScreen = ({ navigation, route }) => {
     const [driver, setDriver] = useDriver();
     const [isOnline, setIsOnline] = useState(isTruthy(driver?.getAttribute('online')));
     const [tracking, setTracking] = useState(0);
-
-    const unauthenticate = useCallback((error) => {
-        const isThrownError = error instanceof Error && error?.message?.includes('Unauthenticated');
-        const isErrorMessage = typeof error === 'string' && error.includes('Unauthenticated');
-
-        logError(error);
-
-        if (isThrownError || isErrorMessage) {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'BootScreen' }],
-            });
-            setDriver(null);
-        }
-    });
-
+    
     useEffect(() => {
         // set location
         getCurrentLocation();
@@ -82,7 +67,7 @@ const MainScreen = ({ navigation, route }) => {
             .then(({ unsubscribe }) => {
                 setTracking({ unsubscribe });
             })
-            .catch(unauthenticate);
+            .catch(logError);
     }, [isMounted]);
 
     // toggle driver location tracking
@@ -100,7 +85,7 @@ const MainScreen = ({ navigation, route }) => {
                 .then(({ unsubscribe }) => {
                     setTracking({ unsubscribe });
                 })
-                .catch(unauthenticate);
+                .catch(logError);
         }
     }, [isOnline]);
 
