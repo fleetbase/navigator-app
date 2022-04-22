@@ -63,9 +63,7 @@ const Search = ({ network, wrapperStyle, buttonTitle, buttonStyle, buttonIcon, b
         if (!query) {
             setResults([]);
         } else {
-            debouncedSearch(query, (results) => {
-                setResults(results);
-            });
+            debouncedSearch(query, setResults);
         }
     }, [query]);
 
