@@ -4,6 +4,7 @@ import { getUniqueId } from 'react-native-device-info';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClipboardList, faUser, faRoute, faCalendarDay, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useRoute, useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { EventRegister } from 'react-native-event-listeners';
 import { getCurrentLocation, requestTrackingPermissions, trackDriver } from 'utils/Geo';
 import { useResourceStorage, get } from 'utils/Storage';
@@ -11,6 +12,7 @@ import { syncDevice } from 'utils/Auth';
 import { logError, getColorCode, isFalsy } from 'utils';
 import { tailwind } from 'tailwind';
 import { useDriver, useMountedState } from 'hooks';
+import socketClusterClient from 'socketcluster-client';
 import useFleetbase from 'hooks/use-fleetbase';
 import RNLocation from 'react-native-location';
 import AccountStack from 'account/AccountStack';
@@ -28,29 +30,73 @@ const isAndroid = Platform.OS === 'android';
 const MainScreen = ({ navigation, route }) => {
     const fleetbase = useFleetbase();
     const isMounted = useMountedState();
+    const navigationRoute = useRoute();
 
     const [driver, setDriver] = useDriver();
     const [isOnline, setIsOnline] = useState(isTruthy(driver?.getAttribute('online')));
     const [tracking, setTracking] = useState(0);
-    
-    useEffect(() => {
-        // set location
-        getCurrentLocation();
+    const [isPinged, setIsPinged] = useState(0);
 
-        // sync device
-        syncDevice(driver);
+    const runSocket = useCallback(async () => {
+        const socket = socketClusterClient.create({
+            hostname: 'socket.fleetbase.io',
+            secure: true,
+            port: 8000,
+        });
 
-        // Listen for incoming remote notification events
+        const channelId = `driver.${driver.id}`;
+        const channel = socket.subscribe(channelId);
+
+        await channel.listener('subscribe').once();
+        // console.log(`Subscribed and listening to socket channel: ${channelId}`);
+
+        for await (let data of channel) {
+            const { type } = data;
+            const order = data?.data;
+
+            if (type === 'order.ping' || type === 'order.dispatched') {
+                return fleetbase.orders.findRecord(order.id).then((order) => {
+                    const data = order.serialize();
+
+                    if (navigationRoute.name === 'MainScreen') {
+                        navigation.navigate('OrderScreen', { data });
+                    }
+                });
+            }
+        }
+    });
+
+    const listenForNotifications = useCallback(() => {
         const notifications = addEventListener('onNotification', (notification) => {
             const { data, id } = notification;
             const { action } = data;
 
             if (action?.action === 'view_order' && id) {
                 return fleetbase.orders.findRecord(id).then((order) => {
-                    navigation.push('OrderScreen', { data: order.serialize() });
+                    const data = order.serialize();
+
+                    if (navigationRoute.name === 'MainScreen') {
+                        navigation.navigate('OrderScreen', { data });
+                    }
                 });
             }
         });
+
+        return notifications;
+    });
+
+    // Listen for order dispatches via socket
+    runSocket();
+
+    useEffect(() => {
+        // Set location
+        getCurrentLocation();
+
+        // Sync device
+        syncDevice(driver);
+
+        // Listen for incoming remote notification events
+        const notifications = listenForNotifications();
 
         return () => {
             removeEventListener(notifications);
