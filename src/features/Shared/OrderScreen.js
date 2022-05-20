@@ -15,9 +15,10 @@ import {
     faLocationArrow,
     faRoute,
     faMagic,
+    faBell,
     faLightbulb,
 } from '@fortawesome/free-solid-svg-icons';
-import { useFleetbase, useMountedState, useLocale, useResourceStorage } from 'hooks';
+import { useFleetbase, useMountedState, useLocale, useResourceStorage, useDriver } from 'hooks';
 import { config, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue, getStatusColors } from 'utils';
 import { Order } from '@fleetbase/sdk';
 import { format, formatDistance as formatDateDistance, add, isValid as isValidDate } from 'date-fns';
@@ -46,6 +47,7 @@ const OrderScreen = ({ navigation, route }) => {
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
     const fleetbase = useFleetbase();
+    const [driver, setDriver] = useDriver();
     const [locale] = useLocale();
 
     const [order, setOrder] = useState(new Order(data, fleetbase.getAdapter()));
@@ -73,6 +75,9 @@ const OrderScreen = ({ navigation, route }) => {
     });
     const canNavigate = order.getAttribute('payload.current_waypoint') !== null && destination && order.isInProgress && config('MAPBOX_ACCESS_TOKEN') !== null;
     const canSetDestination = isMultiDropOrder && order.isInProgress && !destination;
+    const isAdhoc = order.getAttribute('adhoc') === true;
+    const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
+    const isOrderPing = isDriverAssigned === false && isAdhoc === true;
 
     const entitiesByDestination = (() => {
         const groups = [];
@@ -251,6 +256,10 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
+    const declineOrder = (params = {}) => {
+        return navigation.goBack();
+    }
+
     const updateOrderActivity = async () => {
         setIsLoadingAction(true);
         setActionSheetAction('update_activity');
@@ -410,7 +419,32 @@ const OrderScreen = ({ navigation, route }) => {
                 </View>
                 <View style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')}>
                     <View style={tailwind('flex-1')}>
-                        {order.isNotStarted && !order.isCanceled && order.getAttribute('status') !== 'completed' && (
+                        {isOrderPing && (
+                            <View>
+                                <View style={tailwind('mb-2 flex flex-row items-center')}>
+                                    <FontAwesomeIcon icon={faBell} style={tailwind('text-yellow-400 mr-1')} />
+                                    <Text style={tailwind('text-lg text-white font-semibold')}>Incoming Order!</Text>
+                                </View>
+                                <View style={tailwind('flex flex-row items-center justify-between')}>
+                                    <View style={tailwind('pr-1 flex-1')}>
+                                        <TouchableOpacity style={tailwind('')} onPress={() => startOrder({ assign: driver.id })}>
+                                            <View style={tailwind('btn bg-green-900 border border-green-700')}>
+                                                {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
+                                                <Text style={tailwind('font-semibold text-green-50 text-base')}>Accept Order</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <View style={tailwind('pl-1 flex-1')}>
+                                        <TouchableOpacity style={tailwind('')} onPress={() => declineOrder()}>
+                                            <View style={tailwind('btn bg-red-900 border border-red-700')}>
+                                                <Text style={tailwind('font-semibold text-red-50 text-base')}>Decline Order</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+                        {order.isNotStarted && !order.isCanceled && !isOrderPing && order.getAttribute('status') !== 'completed' && (
                             <TouchableOpacity style={tailwind('')} onPress={() => startOrder()}>
                                 <View style={tailwind('btn bg-green-900 border border-green-700')}>
                                     {isLoadingAction && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
