@@ -15,7 +15,7 @@ const CoreStack = ({ route }) => {
                 <RootStack.Screen name="BootScreen" component={BootScreen} />
                 <RootStack.Screen name="MainScreen" component={MainScreen} />
                 <RootStack.Screen name="LoginScreen" component={AuthStack} />
-                <RootStack.Screen name="OrderScreen" component={OrderScreenStack} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="OrdersScreen" component={OrderScreenStack} initialParams={route.params ?? {}} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );
