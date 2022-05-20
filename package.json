@@ -17,6 +17,7 @@
         "generate-launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background-color=#111827 --logo-width=100 --flavor=main"
     },
     "dependencies": {
+        "@babel/plugin-proposal-async-generator-functions": "^7.17.12",
         "@fleetbase/sdk": "1.2.5",
         "@fortawesome/free-brands-svg-icons": "^5.15.4",
         "@freakycoder/react-native-bounceable": "^0.2.5",
@@ -74,6 +75,7 @@
         "react-native-swipe-list-view": "^3.2.9",
         "react-native-youtube": "^2.0.2",
         "react-redux": "^7.2.5",
+        "socketcluster-client": "^16.0.4",
         "tailwind-rn": "^3.0.1",
         "tailwindcss": "^2.2.4",
         "yarn": "^1.22.17"
