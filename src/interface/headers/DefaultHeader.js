@@ -77,7 +77,12 @@ const DefaultHeader = (props) => {
                                 </View>
                             </TouchableOpacity>
                         )}
-                        {shouldDisplayLogoText && <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>Navigator</Text>}
+                        {shouldDisplayLogoText && (
+                            <View>
+                                <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>Navigator</Text>
+                                <Text style={[tailwind('text-xs text-white')]}>v1.1.5</Text>
+                            </View>
+                        )}
                     </View>
                     <View>
                         <Switch
