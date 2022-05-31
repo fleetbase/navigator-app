@@ -42,19 +42,22 @@ const MainScreen = ({ navigation, route }) => {
             hostname: 'socket.fleetbase.io',
             secure: true,
             port: 8000,
+            autoConnect: true,
+	        autoReconnect: true
         });
 
         const channelId = `driver.${driver.id}`;
         const channel = socket.subscribe(channelId);
 
         await channel.listener('subscribe').once();
-        // console.log(`Subscribed and listening to socket channel: ${channelId}`);
+        console.log(`Subscribed and listening to socket channel: ${channelId}`);
 
         for await (let data of channel) {
-            const { type } = data;
             const order = data?.data;
 
-            if (type === 'order.ping' || type === 'order.dispatched') {
+            console.log('[socket #data]', data);
+
+            if (order && order.id?.startsWith('order')) {
                 return fleetbase.orders.findRecord(order.id).then((order) => {
                     const data = order.serialize();
 
@@ -70,6 +73,10 @@ const MainScreen = ({ navigation, route }) => {
         const notifications = addEventListener('onNotification', (notification) => {
             const { data, id } = notification;
             const { action } = data;
+
+            console.log('[onNotification() #notification]', notification);
+            console.log('[onNotification() #data]', data);
+            console.log('[onNotification() #action]', action);
 
             if (action?.action === 'view_order' && id) {
                 return fleetbase.orders.findRecord(id).then((order) => {
