@@ -57,7 +57,7 @@ const MainScreen = ({ navigation, route }) => {
 
             console.log('[socket #data]', data);
 
-            if (order && order.id?.startsWith('order')) {
+            if (order?.id?.startsWith('order')) {
                 return fleetbase.orders.findRecord(order.id).then((order) => {
                     const data = order.serialize();
 
@@ -78,7 +78,7 @@ const MainScreen = ({ navigation, route }) => {
             console.log('[onNotification() #data]', data);
             console.log('[onNotification() #action]', action);
 
-            if (action?.action === 'view_order' && id) {
+            if (id?.startsWith('order')) {
                 return fleetbase.orders.findRecord(id).then((order) => {
                     const data = order.serialize();
 
