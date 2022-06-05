@@ -23,6 +23,7 @@ Open source navigation and fleetbase order management for drivers/agents.
  - [Running in Simulator](#running-in-simulator)
 	 - [Run the app in iOS Simulator](#run-the-app-in-ios-simulator)
 	 - [Run the app in Android Simulator](#run-the-app-in-android-simulator)
+ - [Navigation using Mapbox](#navigation-using-mapbox)
  - [Documentation](#documentation)
  - [Roadmap](#roadmap)
 
@@ -64,6 +65,14 @@ APP_NAME=
 APP_IDENTIFIER=
 FLEETBASE_KEY=
 GOOGLE_MAPS_KEY=
+```
+
+### Navigation using Mapbox
+To enable in-app navigation powered by Mapbox you just need to include two additional environment variables which chould be your `MAPBOX_ACCESS_TOKEN` and your `MAPBOX_SECRET_TOKEN`. When these are supplied the driver will be able to navigate between waypoints.
+
+```bash
+MAPBOX_ACCESS_TOKEN=
+MAPBOX_SECRET_TOKEN=
 ```
 
 ### Running in Simulator
