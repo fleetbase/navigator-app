@@ -201,7 +201,7 @@ export default class FormatUtil {
         }
 
         if (typeof value === 'string' && (value.endsWith('.png') || value.endsWith('.jpg') || value.endsWith('.jpeg') || value.endsWith('.gif'))) {
-            return <FastImage source={{ uri: value }} style={tailwind('w-14 h-14 rounded-md')} />;
+            return <FastImage source={{ uri: value }} style={[{ width: 100, height: 100 }]} />;
         }
 
         if (isValidDate(new Date(value))) {

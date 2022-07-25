@@ -157,6 +157,11 @@ const MainScreen = ({ navigation, route }) => {
         };
     }, [isMounted]);
 
+    // edge case to start tracking
+    if (isOnline === true && tracking === 0) {
+        setTracking({ unsubscribe: null });
+    }
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
