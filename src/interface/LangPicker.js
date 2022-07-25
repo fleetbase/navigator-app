@@ -4,7 +4,7 @@ import * as RNLocalize from 'react-native-localize';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { translate } from 'utils';
+import { translate, getColorCode } from 'utils';
 import { useLocale, useMountedState } from 'hooks';
 import { activeTranslations } from 'utils/Localize';
 import ActionSheet from 'react-native-actions-sheet';
@@ -51,17 +51,19 @@ const LangPicker = ({ title, buttonStyle, wrapperStyle, dialogIconStyle, hideBut
                 nestedScrollEnabled={true}
                 onMomentumScrollEnd={() => actionSheetRef.current?.handleChildScrollEnd()}
                 ref={actionSheetRef}
+                containerStyle={tailwind('bg-gray-800')}
+                indicatorColor={getColorCode('text-gray-900')}
             >
                 <View>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between mb-2')}>
                         <View style={tailwind('flex flex-row items-center')}>
-                            <Text style={tailwind('text-lg font-semibold')}>{title}</Text>
+                            <Text style={tailwind('text-lg text-white font-semibold')}>{title}</Text>
                         </View>
 
                         <View>
                             <TouchableOpacity onPress={() => actionSheetRef.current?.hide()}>
-                                <View style={tailwind('rounded-full bg-red-50 w-8 h-8 flex items-center justify-center')}>
-                                    <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-900')} />
+                                <View style={tailwind('rounded-full bg-red-700 w-8 h-8 flex items-center justify-center')}>
+                                    <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-100')} />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -69,11 +71,11 @@ const LangPicker = ({ title, buttonStyle, wrapperStyle, dialogIconStyle, hideBut
                     <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                         {activeTranslations.map((lang, index) => (
                             <TouchableOpacity key={index} onPress={() => selectLanguage(lang)}>
-                                <View style={tailwind('flex flex-row items-center px-5 py-4 border-b border-gray-100')}>
+                                <View style={tailwind('flex flex-row items-center px-5 py-4 border-b border-gray-900')}>
                                     <View style={tailwind('w-10')}>
                                         <Text style={tailwind('text-lg')}>{localeEmoji(lang)}</Text>
                                     </View>
-                                    <Text style={tailwind('font-semibold text-lg')}>{getLangNameFromCode(lang)?.native}</Text>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-100')}>{getLangNameFromCode(lang)?.native}</Text>
                                 </View>
                             </TouchableOpacity>
                         ))}
