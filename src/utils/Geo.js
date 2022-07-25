@@ -56,19 +56,32 @@ export default class GeoUtil {
     }
 
     static async trackDriver(driver, configuration = {}) {
-        const granted = await GeoUtil.requestTrackingPermissions(configuration);
-
+        RNLocation.configure({
+            distanceFilter: 100,
+            desiredAccuracy: {
+                ios: 'bestForNavigation',
+                android: 'highAccuracy',
+            },
+            androidProvider: 'auto',
+            interval: 10000 * 5,
+            fastestInterval: 10000 * 1,
+            maxWaitTime: 10000 * 5,
+            activityType: 'other',
+            allowsBackgroundLocationUpdates: true,
+            headingFilter: 1,
+            headingOrientation: 'portrait',
+            pausesLocationUpdatesAutomatically: false,
+            showsBackgroundLocationIndicator: true,
+            ...configuration,
+        });
+        
         return new Promise((resolve, reject) => {
-            let t = null;
-
-            if (granted) {
-                t = RNLocation.subscribeToLocationUpdates(([position]) => {
-                    return driver.track(position).catch((error) => {
-                        logError(error);
-                        reject(error);
-                    });
+            let t = RNLocation.subscribeToLocationUpdates(([position]) => {
+                return driver.track(position).catch((error) => {
+                    logError(error);
+                    reject(error);
                 });
-            }
+            });
 
             resolve(t);
         });
@@ -167,19 +180,21 @@ export default class GeoUtil {
                             resolve(lastLocation);
                         }
 
-                        GeoUtil.geocode(latitude, longitude).then((googleAddress) => {
-                            if (!googleAddress || typeof googleAddress?.setAttribute !== 'function') {
-                                return resolve(position);
-                            }
+                        GeoUtil.geocode(latitude, longitude)
+                            .then((googleAddress) => {
+                                if (!googleAddress || typeof googleAddress?.setAttribute !== 'function') {
+                                    return resolve(position);
+                                }
 
-                            googleAddress?.setAttribute('position', position);
+                                googleAddress?.setAttribute('position', position);
 
-                            // save last known location
-                            set('location', googleAddress?.all());
-                            emit('location.updated', Place.fromGoogleAddress(googleAddress));
+                                // save last known location
+                                set('location', googleAddress?.all());
+                                emit('location.updated', Place.fromGoogleAddress(googleAddress));
 
-                            resolve(googleAddress?.all());
-                        }).catch(reject);
+                                resolve(googleAddress?.all());
+                            })
+                            .catch(reject);
                     },
                     (error) => {
                         resolve(null);
