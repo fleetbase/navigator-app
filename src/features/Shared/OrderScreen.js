@@ -1,5 +1,5 @@
-import React, { useState, useEffect, createRef } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect, useCallback, createRef } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventRegister } from 'react-native-event-listeners';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -349,6 +349,12 @@ const OrderScreen = ({ navigation, route }) => {
         });
     };
 
+    const handleMetafieldPress = useCallback((metaValue) => {
+        if (typeof metaValue === 'string' && metaValue.startsWith('http')) {
+            Linking.openURL(metaValue);
+        }
+    });
+
     useEffect(() => {
         if (actionSheetAction === 'change_destination') {
             actionSheetRef.current?.setModalVisible(true);
@@ -647,20 +653,20 @@ const OrderScreen = ({ navigation, route }) => {
                                 <View style={tailwind('flex flex-col items-center')}>
                                     <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700 mb-1')}>
                                         <View style={tailwind('flex flex-row items-center')}>
-                                            <Text style={tailwind('font-semibold text-gray-100')}>More Details</Text>
+                                            <Text style={tailwind('font-semibold text-gray-100')}>Metadata/ More Details</Text>
                                         </View>
                                     </View>
                                     <View style={tailwind('w-full py-2 -mt-1')}>
                                         {Object.keys(order.meta).map((key, index) => (
-                                            <View key={index} style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
-                                                <View style={tailwind('flex-1')}>
+                                            <View key={index} style={tailwind('flex flex-row items-start justify-between py-2 px-3')}>
+                                                <View style={tailwind('w-20')}>
                                                     <Text style={tailwind('text-gray-100')}>{titleize(key)}</Text>
                                                 </View>
-                                                <View style={tailwind('flex-1 flex-col items-end')}>
+                                                <TouchableOpacity onPress={() => handleMetafieldPress(order.meta[key])} style={tailwind('flex-1 flex-col items-end')}>
                                                     <Text style={tailwind('text-gray-100')} numberOfLines={1}>
                                                         {formatMetaValue(order.meta[key])}
                                                     </Text>
-                                                </View>
+                                                </TouchableOpacity>
                                             </View>
                                         ))}
                                     </View>
