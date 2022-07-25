@@ -30,17 +30,6 @@ target 'NavigatorApp' do
   pod 'Permission-LocationWhenInUse', :path => "#{permissions_path}/LocationWhenInUse"
   pod 'Permission-Contacts', :path => "#{permissions_path}/Contacts"
   pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
-
-
-
-
-
-
-
-
-
-
-
   pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
 
   target 'NavigatorAppTests' do
