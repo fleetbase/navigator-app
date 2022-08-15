@@ -55,7 +55,7 @@ const MainScreen = ({ navigation, route }) => {
         for await (let data of channel) {
             const order = data?.data;
 
-            console.log('[socket #data]', data);
+            console.log(`[socket #data] (${channelId}) `, data);
 
             if (order?.id?.startsWith('order')) {
                 return fleetbase.orders.findRecord(order.id).then((order) => {
@@ -110,19 +110,6 @@ const MainScreen = ({ navigation, route }) => {
         };
     }, [isMounted]);
 
-    // track driver location
-    useEffect(() => {
-        if (!isOnline) {
-            return;
-        }
-
-        trackDriver(driver)
-            .then(({ unsubscribe }) => {
-                setTracking({ unsubscribe });
-            })
-            .catch(logError);
-    }, [isMounted]);
-
     // toggle driver location tracking
     useEffect(() => {
         const shouldUnsubscribe = !isOnline && typeof tracking?.unsubscribe === 'function';
@@ -140,7 +127,7 @@ const MainScreen = ({ navigation, route }) => {
                 })
                 .catch(logError);
         }
-    }, [isOnline]);
+    }, [isOnline, isMounted]);
 
     // track driver online/offline
     useEffect(() => {
@@ -196,8 +183,8 @@ const MainScreen = ({ navigation, route }) => {
             })}
         >
             <Tab.Screen key="orders" name="Orders" component={OrdersStack} />
-            <Tab.Screen key="routes" name="Routes" component={RoutesScreen} />
-            <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} />
+            {/* <Tab.Screen key="routes" name="Routes" component={RoutesScreen} /> */}
+            {/* <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} /> */}
             {/* <Tab.Screen key="wallet" name="Wallet" component={WalletScreen} /> */}
             <Tab.Screen key="account" name="Account" component={AccountStack} />
         </Tab.Navigator>

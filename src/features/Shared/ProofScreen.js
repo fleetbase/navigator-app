@@ -10,7 +10,7 @@ import { RNCamera } from 'react-native-camera';
 import FastImage from 'react-native-fast-image';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import SignatureCapture from 'react-native-signature-capture';
-import OrderStatusBadge from 'ui/OrderStatusBadge';
+import OrderStatusBadge from 'components/OrderStatusBadge';
 import tailwind from 'tailwind';
 
 const { width, height } = Dimensions.get('window');
@@ -133,7 +133,7 @@ const ProofScreen = ({ navigation, route }) => {
                     <ActivityIndicator color={getColorCode('text-green-500')} size={'large'} style={tailwind('mt-10')} />
                 </View>
             )}
-            <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg'), { paddingTop: insets.top }]}>
+            <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg pt-2')]}>
                 <View style={tailwind('flex flex-row items-start justify-between px-4 py-2 overflow-hidden')}>
                     <View style={tailwind('flex-1 flex items-start')}>
                         <View style={tailwind('flex flex-row items-center')}>

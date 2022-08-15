@@ -8,7 +8,7 @@ import { Collection } from '@fleetbase/sdk';
 import { useResourceCollection } from 'utils/Storage';
 import { useLocale, useDriver, useFleetbase } from 'hooks';
 import { config, translate, isFalsy, logError } from 'utils';
-import { LangPicker, Search } from 'ui';
+import { LangPicker, SearchButton } from 'components';
 import tailwind from 'tailwind';
 
 const isTruthy = (mixed) => !isFalsy(mixed);
@@ -22,7 +22,7 @@ const DefaultHeader = (props) => {
         hideCategoryPicker,
         categories,
         searchPlaceholder,
-        onSearchResultPress,
+        onSearchButtonPress,
         backgroundImage,
         backgroundImageResizeMode,
         backgroundImageStyle,
@@ -102,14 +102,15 @@ const DefaultHeader = (props) => {
                 </View>
 
                 {!hideSearchBar && (
-                    <View style={tailwind('px-4 py-2')}>
+                    <View>
                         {!hideSearch && (
-                            <View>
-                                <Search
+                            <View style={tailwind('px-4 py-2')}>
+                                <SearchButton
                                     buttonTitle={searchPlaceholder}
-                                    onResultPress={onSearchResultPress}
+                                    onPress={onSearchButtonPress}
                                     buttonStyle={[config('ui.headerComponent.searchButtonStyle')]}
                                     buttonIconStyle={[config('ui.headerComponent.searchButtonIconStyle')]}
+                                    wrapperStyle={[tailwind('')]}
                                 />
                             </View>
                         )}

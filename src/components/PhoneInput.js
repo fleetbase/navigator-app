@@ -74,7 +74,7 @@ const PhoneInput = (props) => {
     }, []);
 
     return (
-        <View>
+        <>
             <View style={[tailwind(`form-input ${isAndroid ? 'py-0.5' : 'py-2'} flex flex-row items-center`), { height: isAndroid ? 52 : 52 }, props.style || {}]}>
                 <TouchableOpacity onPress={() => pickerRef.current.show()}>
                     <View style={tailwind('flex items-center justify-center mr-3')}>
@@ -87,7 +87,7 @@ const PhoneInput = (props) => {
                     keyboardType={'phone-pad'}
                     placeholder={props.placeholder || '+0 (000) 000 - 000'}
                     placeholderTextColor={getColorCode('text-gray-500')}
-                    style={[tailwind('w-full text-gray-50'), props.inputStyle]}
+                    style={[tailwind('flex-1 text-gray-50'), props.inputStyle]}
                     disabled={props.disabled}
                 />
             </View>
@@ -99,7 +99,7 @@ const PhoneInput = (props) => {
                 selectedColor="#3485e2"
                 onValueChange={selectCountry}
             />
-        </View>
+        </>
     );
 };
 

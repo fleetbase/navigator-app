@@ -15,6 +15,8 @@ module.exports = {
                     exceptions: './src/features/Exceptions',
                     shared: './src/features/Shared',
                     ui: './src/interface',
+                    components: './src/components',
+                    assets: './assets',
                     app: './app'
                 },
             },

@@ -8,7 +8,7 @@ import { getLocation } from 'utils/Geo';
 import { get } from 'utils/Storage';
 import { translate, config } from 'utils';
 import tailwind from 'tailwind';
-import PhoneInput from 'ui/PhoneInput';
+import PhoneInput from 'components/PhoneInput';
 
 const CreateAccountScreen = ({ navigation, route }) => {
     const { info, redirectTo } = route.params;
