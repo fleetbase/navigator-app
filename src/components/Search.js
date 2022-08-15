@@ -7,7 +7,7 @@ import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { logError, debounce, stripHtml, translate, getColorCode } from 'utils';
 import { useFleetbase, useLocale, useMountedState, useStorage } from 'hooks';
 import tailwind from 'tailwind';
-import OrderCard from 'ui/OrderCard';
+import OrderCard from 'components/OrderCard';
 
 const windowHeight = Dimensions.get('window').height;
 const dialogHeight = windowHeight / 2;

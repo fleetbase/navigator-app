@@ -9,7 +9,7 @@ import { getCurrentLocation, formatCurrency, formatKm, formatDistance, calculate
 import { format } from 'date-fns';
 import MapboxNavigation from '@homee/react-native-mapbox-navigation';
 import FastImage from 'react-native-fast-image';
-import OrderStatusBadge from 'ui/OrderStatusBadge';
+import OrderStatusBadge from 'components/OrderStatusBadge';
 import tailwind from 'tailwind';
 
 const NavigationScreen = ({ navigation, route }) => {

@@ -6,9 +6,9 @@ import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 import { Order, Collection } from '@fleetbase/sdk';
 import MapView, { Marker } from 'react-native-maps';
-import DefaultHeader from 'ui/headers/DefaultHeader';
-import OrdersFilterBar from 'ui/OrdersFilterBar';
-import SimpleOrdersMetrics from 'ui/SimpleOrdersMetrics';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import OrdersFilterBar from 'components/OrdersFilterBar';
+import SimpleOrdersMetrics from 'components/SimpleOrdersMetrics';
 import config from 'config';
 
 const { width, height } = Dimensions.get('window');

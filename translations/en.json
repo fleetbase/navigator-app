@@ -32,6 +32,9 @@
     "Core": {
         "BootScreen": {},
         "NetworkScreen": {},
+        "SearchScreen": {
+            "searchInputPlaceholderText": "Search Orders..."
+        },
         "StorefrontScreen": {}
     },
     "Exceptions": {
@@ -89,6 +92,7 @@
         "edit": "Edit",
         "delete": "Delete",
         "loading": "Loading...",
+        "searching": "Searching...",
         "more": "More",
         "sort": "Sort",
         "filter": "Filter",
