@@ -5,7 +5,7 @@ import { faEye } from '@fortawesome/free-solid-svg-icons';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 import { isEmpty, getDistance } from 'utils';
-import OrderStatusBadge from 'ui/OrderStatusBadge';
+import OrderStatusBadge from 'components/OrderStatusBadge';
 import Collapsible from 'react-native-collapsible';
 
 const COLLAPSE_POINT = 2;

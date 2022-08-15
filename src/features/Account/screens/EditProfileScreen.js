@@ -9,7 +9,7 @@ import { getLocation } from 'utils/Geo';
 import { set } from 'utils/Storage';
 import { logError, translate, getColorCode } from 'utils';
 import tailwind from 'tailwind';
-import PhoneInput from 'ui/PhoneInput';
+import PhoneInput from 'components/PhoneInput';
 
 const EditProfileScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
@@ -40,7 +40,7 @@ const EditProfileScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={[tailwind('w-full h-full bg-gray-800'), { paddingTop: insets.top }]}>
+        <View style={[tailwind('w-full h-full bg-gray-800')]}>
             <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
                 <View style={tailwind('flex flex-row items-center justify-between p-4')}>
                     <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Account.EditProfileScreen.title')}</Text>

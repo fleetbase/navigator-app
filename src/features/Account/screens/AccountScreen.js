@@ -7,7 +7,7 @@ import { faBox, faChevronRight, faLockOpen, faUser, faMapMarked, faCreditCard, f
 import { useDriver } from 'utils/Auth';
 import { config, translate } from 'utils';
 import { useLocale } from 'hooks';
-import DefaultHeader from 'ui/headers/DefaultHeader';
+import DefaultHeader from 'components/headers/DefaultHeader';
 import FastImage from 'react-native-fast-image';
 import tailwind from 'tailwind';
 
@@ -66,6 +66,8 @@ const AccountScreen = ({ navigation, route }) => {
                         config('ui.accountScreen.headerContainerStyle'),
                         driver ? config('ui.accountScreen.signedInHeaderContainerStyle') : config('ui.accountScreen.signedOutHeaderContainerStyle'),
                     ]}
+                    hideSearchBar={true}
+                    wrapperStyle={tailwind('pb-1')}
                 />
             )}
             <View
