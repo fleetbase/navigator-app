@@ -24,10 +24,10 @@ import { Order } from '@fleetbase/sdk';
 import { format, formatDistance as formatDateDistance, add, isValid as isValidDate } from 'date-fns';
 import ActionSheet from 'react-native-actions-sheet';
 import FastImage from 'react-native-fast-image';
-import DefaultHeader from 'ui/headers/DefaultHeader';
-import OrderStatusBadge from 'ui/OrderStatusBadge';
-import OrderWaypoints from 'ui/OrderWaypoints';
-import OrderRouteMap from 'ui/OrderRouteMap';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import OrderStatusBadge from 'components/OrderStatusBadge';
+import OrderWaypoints from 'components/OrderWaypoints';
+import OrderRouteMap from 'components/OrderRouteMap';
 import MapView, { Marker } from 'react-native-maps';
 import tailwind from 'tailwind';
 
@@ -77,7 +77,7 @@ const OrderScreen = ({ navigation, route }) => {
     const canSetDestination = isMultiDropOrder && order.isInProgress && !destination;
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
-    const isOrderPing = isDriverAssigned === false && isAdhoc === true;
+    const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
 
     const entitiesByDestination = (() => {
         const groups = [];
@@ -258,7 +258,7 @@ const OrderScreen = ({ navigation, route }) => {
 
     const declineOrder = (params = {}) => {
         return navigation.goBack();
-    }
+    };
 
     const updateOrderActivity = async () => {
         setIsLoadingAction(true);
@@ -405,7 +405,7 @@ const OrderScreen = ({ navigation, route }) => {
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
-            <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg'), { paddingTop: insets.top }]}>
+            <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg pt-2')]}>
                 <View style={tailwind('flex flex-row items-start justify-between px-4 py-2 overflow-hidden')}>
                     <View style={tailwind('flex items-start')}>
                         <Text style={tailwind('text-xl font-semibold text-white')}>{order.id}</Text>
@@ -698,171 +698,177 @@ const OrderScreen = ({ navigation, route }) => {
                                     </View>
                                 </View>
                                 <View style={tailwind('w-full p-4')}>
-                                    <Text style={tailwind('text-gray-100')}>{order.getAttribute('notes') || 'None'}</Text>
+                                    <Text style={tailwind('text-gray-100')}>{order.getAttribute('notes') || 'N/A'}</Text>
                                 </View>
                             </View>
                         </View>
-                        <View>
-                            <View style={tailwind('flex flex-col items-center')}>
-                                <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
-                                    <View style={tailwind('flex flex-row items-center')}>
-                                        <Text style={tailwind('font-semibold text-gray-100')}>Payload</Text>
-                                    </View>
-                                </View>
-                                <View>
-                                    {isMultiDropOrder ? (
-                                        <View style={tailwind('flex flex-row flex-wrap')}>
-                                            {entitiesByDestination.map((group, i) => (
-                                                <View key={i} style={tailwind('w-full')}>
-                                                    <View style={tailwind('rounded-md p-4 mb-4 border-b border-gray-700')}>
-                                                        <View style={tailwind('mb-3')}>
-                                                            <Text style={tailwind('text-gray-100 text-sm mb-1')}>Items drop at</Text>
-                                                            <Text style={tailwind('text-gray-100 font-bold')}>{group.waypoint.address}</Text>
-                                                        </View>
-                                                        <View style={tailwind('w-full flex flex-row flex-wrap items-start')}>
-                                                            {group.entities.map((entity, ii) => (
-                                                                <View key={ii} style={tailwind('w-40')}>
-                                                                    <View style={tailwind('pb-2 pr-2')}>
-                                                                        <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
-                                                                            <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
-                                                                                <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
-                                                                                <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
-                                                                                    {entity.name}
-                                                                                </Text>
-                                                                                <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                                    {entity.id}
-                                                                                </Text>
-                                                                                <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                                    {entity.tracking_number.tracking_number}
-                                                                                </Text>
-                                                                                <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                                    {formatCurrency((entity.price ?? 0) / 100, entity.currency)}
-                                                                                </Text>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                    </View>
-                                                                </View>
-                                                            ))}
-                                                        </View>
-                                                    </View>
-                                                </View>
-                                            ))}
+                        {order.getAttribute('payload.entities', []).length > 0 && (
+                            <View>
+                                <View style={tailwind('flex flex-col items-center')}>
+                                    <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
+                                        <View style={tailwind('flex flex-row items-center')}>
+                                            <Text style={tailwind('font-semibold text-gray-100')}>Payload</Text>
                                         </View>
-                                    ) : (
-                                        <View style={tailwind('p-4')}>
-                                            <View style={tailwind('flex flex-row flex-wrap items-start')}>
-                                                {order.getAttribute('payload.entities', []).map((entity, i) => (
-                                                    <View key={i} style={tailwind('w-40')}>
-                                                        <View style={tailwind('p-1')}>
-                                                            <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
-                                                                <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
-                                                                    <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
-                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
-                                                                        {entity.name}
-                                                                    </Text>
-                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                        {entity.id}
-                                                                    </Text>
-                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                        {entity.tracking_number.tracking_number}
-                                                                    </Text>
-                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                        {formatCurrency((entity.price ?? 0) / 100, entity.currency)}
-                                                                    </Text>
-                                                                </View>
-                                                            </TouchableOpacity>
+                                    </View>
+                                    <View>
+                                        {isMultiDropOrder ? (
+                                            <View style={tailwind('flex flex-row flex-wrap')}>
+                                                {entitiesByDestination.map((group, i) => (
+                                                    <View key={i} style={tailwind('w-full')}>
+                                                        <View style={tailwind('rounded-md p-4 mb-4 border-b border-gray-700')}>
+                                                            <View style={tailwind('mb-3')}>
+                                                                <Text style={tailwind('text-gray-100 text-sm mb-1')}>Items drop at</Text>
+                                                                <Text style={tailwind('text-gray-100 font-bold')}>{group.waypoint.address}</Text>
+                                                            </View>
+                                                            <View style={tailwind('w-full flex flex-row flex-wrap items-start')}>
+                                                                {group.entities.map((entity, ii) => (
+                                                                    <View key={ii} style={tailwind('w-40')}>
+                                                                        <View style={tailwind('pb-2 pr-2')}>
+                                                                            <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
+                                                                                <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
+                                                                                    <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
+                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
+                                                                                        {entity.name}
+                                                                                    </Text>
+                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                                        {entity.id}
+                                                                                    </Text>
+                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                                        {entity.tracking_number.tracking_number}
+                                                                                    </Text>
+                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                                        {formatCurrency((entity.price ?? 0) / 100, entity.currency)}
+                                                                                    </Text>
+                                                                                </View>
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                    </View>
+                                                                ))}
+                                                            </View>
                                                         </View>
                                                     </View>
                                                 ))}
                                             </View>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                        </View>
-                        <View style={tailwind('mt-2')}>
-                            <View style={tailwind('flex flex-col items-center')}>
-                                <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
-                                    <View style={tailwind('flex flex-row items-center')}>
-                                        <Text style={tailwind('font-semibold text-gray-100')}>{translate('Shared.OrderScreen.orderSummary')}</Text>
-                                    </View>
-                                    {isCod && (
-                                        <View style={tailwind('flex flex-row items-center')}>
-                                            <FontAwesomeIcon icon={faMoneyBillWave} style={tailwind('text-green-500 mr-1')} />
-                                            <Text style={tailwind('text-green-500 font-semibold')}>{translate('Shared.OrderScreen.cash')}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                                <View style={tailwind('w-full p-4 border-b border-gray-700')}>
-                                    {order.getAttribute('payload.entities', []).map((entity, index) => (
-                                        <View key={index} style={tailwind('flex flex-row mb-2')}>
-                                            <View style={tailwind('mr-3')}>
-                                                <View style={tailwind('rounded-md border border-gray-300 flex items-center justify-center w-7 h-7 mr-3')}>
-                                                    <Text style={tailwind('font-semibold text-blue-500 text-sm')}>{entity.meta.quantity ?? 1}x</Text>
-                                                </View>
-                                            </View>
-                                            <View style={tailwind('flex-1')}>
-                                                <Text style={tailwind('font-semibold text-gray-50')}>{entity.name}</Text>
-                                                <Text style={tailwind('text-xs text-gray-200')} numberOfLines={1}>
-                                                    {entity.description ?? 'No description'}
-                                                </Text>
-                                                <View>
-                                                    {entity.meta?.variants?.map((variant) => (
-                                                        <View key={variant.id}>
-                                                            <Text style={tailwind('text-xs text-gray-200')}>{variant.name}</Text>
-                                                        </View>
-                                                    ))}
-                                                </View>
-                                                <View>
-                                                    {entity.meta?.addons?.map((addon) => (
-                                                        <View key={addon.id}>
-                                                            <Text style={tailwind('text-xs text-gray-200')}>+ {addon.name}</Text>
+                                        ) : (
+                                            <View style={tailwind('p-4')}>
+                                                <View style={tailwind('flex flex-row flex-wrap items-start')}>
+                                                    {order.getAttribute('payload.entities', []).map((entity, i) => (
+                                                        <View key={i} style={tailwind('w-40')}>
+                                                            <View style={tailwind('p-1')}>
+                                                                <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
+                                                                    <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
+                                                                        <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
+                                                                        <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
+                                                                            {entity.name}
+                                                                        </Text>
+                                                                        <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                            {entity.id}
+                                                                        </Text>
+                                                                        <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                            {entity.tracking_number.tracking_number}
+                                                                        </Text>
+                                                                        <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                            {formatCurrency((entity.price ?? 0) / 100, entity.currency)}
+                                                                        </Text>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                            </View>
                                                         </View>
                                                     ))}
                                                 </View>
                                             </View>
-                                            <View>
-                                                <Text style={tailwind('text-gray-200')}>{formatCurrency((entity.price ?? 0) / 100, entity.currency)}</Text>
+                                        )}
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+                        {order.getAttribute('payload.entities', []).length > 0 && (
+                            <View>
+                                <View style={tailwind('mt-2')}>
+                                    <View style={tailwind('flex flex-col items-center')}>
+                                        <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
+                                            <View style={tailwind('flex flex-row items-center')}>
+                                                <Text style={tailwind('font-semibold text-gray-100')}>{translate('Shared.OrderScreen.orderSummary')}</Text>
+                                            </View>
+                                            {isCod && (
+                                                <View style={tailwind('flex flex-row items-center')}>
+                                                    <FontAwesomeIcon icon={faMoneyBillWave} style={tailwind('text-green-500 mr-1')} />
+                                                    <Text style={tailwind('text-green-500 font-semibold')}>{translate('Shared.OrderScreen.cash')}</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <View style={tailwind('w-full p-4 border-b border-gray-700')}>
+                                            {order.getAttribute('payload.entities', []).map((entity, index) => (
+                                                <View key={index} style={tailwind('flex flex-row mb-2')}>
+                                                    <View style={tailwind('mr-3')}>
+                                                        <View style={tailwind('rounded-md border border-gray-300 flex items-center justify-center w-7 h-7 mr-3')}>
+                                                            <Text style={tailwind('font-semibold text-blue-500 text-sm')}>{entity.meta.quantity ?? 1}x</Text>
+                                                        </View>
+                                                    </View>
+                                                    <View style={tailwind('flex-1')}>
+                                                        <Text style={tailwind('font-semibold text-gray-50')}>{entity.name}</Text>
+                                                        <Text style={tailwind('text-xs text-gray-200')} numberOfLines={1}>
+                                                            {entity.description ?? 'No description'}
+                                                        </Text>
+                                                        <View>
+                                                            {entity.meta?.variants?.map((variant) => (
+                                                                <View key={variant.id}>
+                                                                    <Text style={tailwind('text-xs text-gray-200')}>{variant.name}</Text>
+                                                                </View>
+                                                            ))}
+                                                        </View>
+                                                        <View>
+                                                            {entity.meta?.addons?.map((addon) => (
+                                                                <View key={addon.id}>
+                                                                    <Text style={tailwind('text-xs text-gray-200')}>+ {addon.name}</Text>
+                                                                </View>
+                                                            ))}
+                                                        </View>
+                                                    </View>
+                                                    <View>
+                                                        <Text style={tailwind('text-gray-200')}>{formatCurrency((entity.price ?? 0) / 100, entity.currency)}</Text>
+                                                    </View>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                </View>
+                                <View style={tailwind('mb-2')}>
+                                    <View style={tailwind('flex flex-col items-center')}>
+                                        <View style={tailwind('w-full p-4 border-b border-gray-700')}>
+                                            <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
+                                                <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.subtotal')}</Text>
+                                                <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateEntitiesSubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                            </View>
+                                            {!isPickupOrder && (
+                                                <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
+                                                    <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryFee')}</Text>
+                                                    <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                </View>
+                                            )}
+                                            {tip && (
+                                                <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
+                                                    <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.tip')}</Text>
+                                                    <Text style={tailwind('text-gray-100')}>{formattedTip}</Text>
+                                                </View>
+                                            )}
+                                            {deliveryTip && !isPickupOrder && (
+                                                <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
+                                                    <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryTip')}</Text>
+                                                    <Text style={tailwind('text-gray-100')}>{formattedDeliveryTip}</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <View style={tailwind('w-full p-4')}>
+                                            <View style={tailwind('flex flex-row items-center justify-between')}>
+                                                <Text style={tailwind('font-semibold text-white')}>{translate('Shared.OrderScreen.total')}</Text>
+                                                <Text style={tailwind('font-semibold text-white')}>{formatCurrency(calculateTotal() / 100, order.getAttribute('meta.currency'))}</Text>
                                             </View>
                                         </View>
-                                    ))}
-                                </View>
-                            </View>
-                        </View>
-                        <View style={tailwind('mb-2')}>
-                            <View style={tailwind('flex flex-col items-center')}>
-                                <View style={tailwind('w-full p-4 border-b border-gray-700')}>
-                                    <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
-                                        <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.subtotal')}</Text>
-                                        <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateEntitiesSubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
-                                    </View>
-                                    {!isPickupOrder && (
-                                        <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
-                                            <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryFee')}</Text>
-                                            <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
-                                        </View>
-                                    )}
-                                    {tip && (
-                                        <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
-                                            <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.tip')}</Text>
-                                            <Text style={tailwind('text-gray-100')}>{formattedTip}</Text>
-                                        </View>
-                                    )}
-                                    {deliveryTip && !isPickupOrder && (
-                                        <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
-                                            <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryTip')}</Text>
-                                            <Text style={tailwind('text-gray-100')}>{formattedDeliveryTip}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                                <View style={tailwind('w-full p-4')}>
-                                    <View style={tailwind('flex flex-row items-center justify-between')}>
-                                        <Text style={tailwind('font-semibold text-white')}>{translate('Shared.OrderScreen.total')}</Text>
-                                        <Text style={tailwind('font-semibold text-white')}>{formatCurrency(calculateTotal() / 100, order.getAttribute('meta.currency'))}</Text>
                                     </View>
                                 </View>
                             </View>
-                        </View>
+                        )}
                     </View>
                 </View>
             </ScrollView>

@@ -6,8 +6,8 @@ import { setI18nConfig } from 'utils/Localize';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
-import DefaultHeader from 'ui/headers/DefaultHeader';
-import OrdersFilterBar from 'ui/OrdersFilterBar';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import OrdersFilterBar from 'components/OrdersFilterBar';
 import config from 'config';
 
 const WalletScreen = ({ navigation }) => {
