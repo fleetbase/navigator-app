@@ -8,9 +8,10 @@ import { useLocale, useDriver, useFleetbase } from 'hooks';
 import { logError, translate, config, syncDevice, getColorCode } from 'utils';
 import { getLocation } from 'utils/Geo';
 import { set, get } from 'utils/Storage';
+import Toast from 'react-native-toast-message';
 import FastImage from 'react-native-fast-image';
 import tailwind from 'tailwind';
-import PhoneInput from 'ui/PhoneInput';
+import PhoneInput from 'components/PhoneInput';
 
 const isIos = Platform.OS === 'ios';
 // const isAndroid = Platform.OS === 'android';
@@ -44,7 +45,12 @@ const LoginScreen = ({ navigation, route }) => {
             .catch((error) => {
                 logError(error);
                 setIsLoading(false);
-                setError(error.message);
+                // setError(error.message);
+                Toast.show({
+                    type: 'error',
+                    text1: '😅 Authentication Failed',
+                    text2: error.message,
+                });
             });
     };
 
@@ -66,7 +72,12 @@ const LoginScreen = ({ navigation, route }) => {
             })
             .catch((error) => {
                 logError(error);
-                setError(error.message);
+                // setError(error.message);
+                Toast.show({
+                    type: 'error',
+                    text1: '😅 Authentication Failed',
+                    text2: error.message,
+                });
                 retry();
             });
     };
@@ -81,34 +92,32 @@ const LoginScreen = ({ navigation, route }) => {
         <ImageBackground
             source={config('ui.loginScreen.containerBackgroundImage')}
             resizeMode={config('ui.loginScreen.containerBackgroundResizeMode') ?? 'cover'}
-            style={[config('ui.loginScreen.containerBackgroundImageStyle')]}
+            style={[tailwind('flex-1'), config('ui.loginScreen.containerBackgroundImageStyle')]}
         >
-            <View style={[tailwind('w-full h-full bg-gray-800 relative flex items-center justify-center'), config('ui.loginScreen.containerStyle'), { paddingTop: insets.top }]}>
-                <View style={tailwind('w-full')}>
-                    <Pressable onPress={Keyboard.dismiss} style={[tailwind('w-full h-full flex items-center justify-center px-10'), config('ui.loginScreen.contentContainerStyle')]}>
-                        <View style={tailwind('mb-10 flex items-center justify-center rounded-full w-full')}>
+            <View style={[tailwind('bg-gray-800 flex-row flex-1 items-center justify-center'), config('ui.loginScreen.containerStyle'), { paddingTop: insets.top }]}>
+                <View style={tailwind('flex-grow')}>
+                    <Pressable
+                        onPress={Keyboard.dismiss}
+                        style={[tailwind('px-5'), config('ui.loginScreen.contentContainerStyle')]}
+                    >
+                        <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
                             <FastImage source={require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
                         </View>
-                        {error && (
-                            <View style={tailwind('mb-8 px-4 py-2 w-full flex flex-row items-center justify-center bg-red-100 border border-red-500 rounded-xl')}>
-                                <Text style={tailwind('text-lg text-red-700 text-base font-semibold')}>{error}</Text>
-                            </View>
-                        )}
-                        <KeyboardAvoidingView behavior={isIos ? 'padding' : 'height'} keyboardVerticalOffset={90}>
+                        <KeyboardAvoidingView style={tailwind('')} behavior={isIos ? 'padding' : 'height'} keyboardVerticalOffset={90}>
                             {isNotAwaitingVerification && (
                                 <View style={[tailwind(''), config('ui.loginScreen.loginFormContainerStyle')]}>
-                                    <View style={tailwind('mb-6')}>
+                                    <View style={tailwind('mb-6 flex-row')}>
                                         <PhoneInput
                                             value={phone}
                                             onChangeText={setPhone}
                                             defaultCountry={location?.country}
-                                            style={config('ui.loginScreen.phoneInputStyle')}
+                                            style={[tailwind('flex-1'), config('ui.loginScreen.phoneInputStyle')]}
                                             {...(config('ui.createAccountScreen.phoneInputProps') ?? {})}
                                         />
                                     </View>
                                     <TouchableOpacity style={tailwind('mb-3')} onPress={sendVerificationCode}>
                                         <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.sendVerificationCodeButtonStyle')]}>
-                                            {isLoading && <ActivityIndicator color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
+                                            {isLoading && <ActivityIndicator size={'small'} color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
                                             <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.sendVerificationCodeButtonTextStyle')]}>
                                                 {translate('Auth.LoginScreen.sendVerificationCodeButtonText')}
                                             </Text>
@@ -124,11 +133,11 @@ const LoginScreen = ({ navigation, route }) => {
                                             keyboardType={'phone-pad'}
                                             placeholder={translate('Auth.LoginScreen.codeInputPlaceholder')}
                                             placeholderTextColor={'rgba(156, 163, 175, 1)'}
-                                            style={[tailwind('form-input flex flex-row text-gray-100 text-center mb-2'), config('ui.loginScreen.verifyCodeInputStyle')]}
+                                            style={[tailwind('form-input flex flex-row text-gray-100 text-center mb-2.5'), config('ui.loginScreen.verifyCodeInputStyle')]}
                                             {...(config('ui.loginScreen.verifyCodeInputProps') ?? {})}
                                         />
                                         <View style={tailwind('flex flex-row justify-end w-full')}>
-                                            <TouchableOpacity style={config('ui.loginScreen.retryButtonStyle')} onPress={retry}>
+                                            <TouchableOpacity style={[tailwind('bg-gray-900 bg-opacity-50 px-4 py-2 rounded-md'), config('ui.loginScreen.retryButtonStyle')]} onPress={retry}>
                                                 <Text style={[tailwind('text-blue-200 font-semibold'), config('ui.loginScreen.retryButtonTextStyle')]}>
                                                     {translate('Auth.LoginScreen.retryButtonText')}
                                                 </Text>
@@ -137,7 +146,7 @@ const LoginScreen = ({ navigation, route }) => {
                                     </View>
                                     <TouchableOpacity onPress={verifyCode}>
                                         <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.verifyCodeButtonStyle')]}>
-                                            {isLoading && <ActivityIndicator color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
+                                            {isLoading && <ActivityIndicator size={'small'} color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
                                             <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.verifyCodeButtonTextStyle')]}>
                                                 {translate('Auth.LoginScreen.verifyCodeButtonText')}
                                             </Text>

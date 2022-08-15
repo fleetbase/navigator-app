@@ -7,9 +7,9 @@ import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
 import { Agenda } from 'react-native-calendars';
-import DefaultHeader from 'ui/headers/DefaultHeader';
-import OrdersFilterBar from 'ui/OrdersFilterBar';
-import OrderCard from 'ui/OrderCard';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import OrdersFilterBar from 'components/OrdersFilterBar';
+import OrderCard from 'components/OrderCard';
 import config from 'config';
 
 const { width, height } = Dimensions.get('window');

@@ -13,6 +13,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import CoreStack from './src/features/Core/CoreStack';
 import { config } from './src/utils';
+import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 
 const isAndroid = Platform.OS === 'android';
@@ -27,21 +28,24 @@ const linking = {
 
 const App: () => Node = () => {
     return (
-        <NavigationContainer
-            linking={linking}
-            fallback={
-                <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
-                    <View style={tailwind('flex items-center justify-center')}>
-                        <ActivityIndicator style={tailwind('mb-4')} />
-                        <Text style={tailwind('text-gray-400')}>Loading...</Text>
+        <>
+            <NavigationContainer
+                linking={linking}
+                fallback={
+                    <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
+                        <View style={tailwind('flex items-center justify-center')}>
+                            <ActivityIndicator style={tailwind('mb-4')} />
+                            <Text style={tailwind('text-gray-400')}>Loading...</Text>
+                        </View>
                     </View>
-                </View>
-            }
-        >
-            <Stack.Navigator>
-                <Stack.Screen name="CoreStack" component={CoreStack} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
-            </Stack.Navigator>
-        </NavigationContainer>
+                }
+            >
+                <Stack.Navigator>
+                    <Stack.Screen name="CoreStack" component={CoreStack} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
+                </Stack.Navigator>
+            </NavigationContainer>
+            <Toast />
+        </>
     );
 };
 

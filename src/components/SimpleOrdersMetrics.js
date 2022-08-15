@@ -5,12 +5,12 @@ import { Order } from '@fleetbase/sdk';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 
-const SimpleOrdersMetrics = ({ orders, date, wrapperClass, containerClass }) => {
+const SimpleOrdersMetrics = ({ orders, date, wrapperStyle, containerStyle }) => {
     date = date ?? new Date();
 
     return (
-        <View style={[wrapperClass]}>
-            <View style={[tailwind('px-4'), containerClass]}>
+        <View style={[wrapperStyle]}>
+            <View style={[tailwind('px-4'), containerStyle]}>
                 <Text style={tailwind('font-semibold text-lg text-gray-50 w-full mb-1')}>{`${format(date, 'eeee')} orders`}</Text>
                 <View>
                     <View style={tailwind('flex flex-row items-center mb-1')}>

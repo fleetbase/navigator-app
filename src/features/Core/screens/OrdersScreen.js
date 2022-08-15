@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -8,12 +8,13 @@ import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 
 import { logError, getColorCode, isArray, pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
 import { setI18nConfig } from 'utils/Localize';
 import { tailwind } from 'tailwind';
-import { format } from 'date-fns';
+import { format, startOfYear, endOfYear } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
-import DefaultHeader from 'ui/headers/DefaultHeader';
-import OrdersFilterBar from 'ui/OrdersFilterBar';
-import OrderCard from 'ui/OrderCard';
-import SimpleOrdersMetrics from 'ui/SimpleOrdersMetrics';
+import CalendarStrip from 'react-native-calendar-strip';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import OrdersFilterBar from 'components/OrdersFilterBar';
+import OrderCard from 'components/OrderCard';
+import SimpleOrdersMetrics from 'components/SimpleOrdersMetrics';
 import config from 'config';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -22,6 +23,7 @@ const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
 const OrdersScreen = ({ navigation }) => {
     const isMounted = useMountedState();
     const fleetbase = useFleetbase();
+    const calendar = useRef();
     const [driver, setDriver] = useDriver();
 
     const [date, setDateValue] = useState(new Date());
@@ -37,22 +39,16 @@ const OrdersScreen = ({ navigation }) => {
     const [nearbyOrders, setNearbyOrders] = useState([]);
     const [searchingForNearbyOrders, setSearchingForNearbyOrders] = useState(false);
 
-    const unauthenticate = useCallback((error) => {
-        const isThrownError = error instanceof Error && error?.message?.includes('Unauthenticated');
-        const isErrorMessage = typeof error === 'string' && error.includes('Unauthenticated');
+    const startingDate = new Date().setDate(date.getDate() - 2);
+    const datesWhitelist = [
+        new Date(),
+        {
+            start: startOfYear(new Date()),
+            end: endOfYear(new Date()),
+        },
+    ];
 
-        logError(error);
-
-        if (isThrownError || isErrorMessage) {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'BootScreen' }],
-            });
-            setDriver(null);
-        }
-    });
-
-    const setParam = (key, value) => {
+    const setParam = useCallback((key, value) => {
         if (key === 'on') {
             setDateValue(value);
             value = format(value, 'dd-MM-yyyy');
@@ -60,7 +56,7 @@ const OrdersScreen = ({ navigation }) => {
 
         params[key] = value;
         setParams(params);
-    };
+    });
 
     const loadOrders = useCallback((options = {}) => {
         if (options.isRefreshing) {
@@ -74,12 +70,16 @@ const OrdersScreen = ({ navigation }) => {
         return fleetbase.orders
             .query(params)
             .then(setOrders)
-            .catch(unauthenticate)
+            .catch(logError)
             .finally(() => {
                 setIsRefreshing(false);
                 setIsQuerying(false);
                 setIsLoaded(true);
             });
+    });
+
+    const onOrderPress = useCallback((order) => {
+        navigation.push('OrderScreen', { data: order.serialize() });
     });
 
     useFocusEffect(
@@ -131,20 +131,34 @@ const OrdersScreen = ({ navigation }) => {
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
-            <DefaultHeader
-                onSearchResultPress={(order, closeDialog) => {
-                    closeDialog();
-                    navigation.push('OrderScreen', { data: order.serialize() });
-                }}
-            >
-                <OrdersFilterBar
-                    onSelectSort={(sort) => setParam('sort', sort)}
-                    onSelectFilter={(filters) => setParam('filter', filters)}
-                    onSelectDate={(date) => setParam('on', date)}
-                    isLoading={isQuerying}
-                    containerStyle={tailwind('px-0 pb-0')}
-                />
-                <SimpleOrdersMetrics orders={orders} date={date} containerClass={tailwind('px-0')} />
+            <DefaultHeader onSearchButtonPress={() => navigation.push('SearchScreen')}>
+                <View style={tailwind('px-4')}>
+                    <View style={tailwind('bg-gray-900 rounded-xl shadow-sm border border-gray-800 mb-1 px-1')}>
+                        <CalendarStrip
+                            scrollable
+                            ref={calendar}
+                            datesWhitelist={datesWhitelist}
+                            style={{ height: 100, paddingTop: 10, paddingBottom: 15 }}
+                            calendarColor={'transparent'}
+                            calendarHeaderStyle={tailwind('text-gray-300 text-xs')}
+                            calendarHeaderContainerStyle={tailwind('mb-2.5')}
+                            dateNumberStyle={tailwind('text-sm text-gray-500')}
+                            dateNameStyle={tailwind('text-sm text-gray-500')}
+                            dayContainerStyle={tailwind('p-0 h-12')}
+                            highlightDateNameStyle={tailwind('text-sm text-gray-100')}
+                            highlightDateNumberStyle={tailwind('text-sm text-gray-100')}
+                            highlightDateContainerStyle={tailwind('bg-blue-500 rounded-lg shadow-sm')}
+                            iconContainer={{ flex: 0.1 }}
+                            numDaysInWeek={5}
+                            startingDate={startingDate}
+                            selectedDate={date}
+                            onDateSelected={(selectedDate) => setParam('on', new Date(selectedDate))}
+                            iconLeft={require('assets/nv-arrow-left.png')}
+                            iconRight={require('assets/nv-arrow-right.png')}
+                        />
+                    </View>
+                </View>
+                <SimpleOrdersMetrics orders={orders} date={date} wrapperStyle={tailwind('px-2 py-2')} containerClass={tailwind('px-0')} />
             </DefaultHeader>
             <ScrollView
                 showsHorizontalScrollIndicator={false}
@@ -153,14 +167,6 @@ const OrdersScreen = ({ navigation }) => {
                 stickyHeaderIndices={[1]}
                 style={tailwind('w-full h-full')}
             >
-                {searchingForNearbyOrders && (
-                    <View style={tailwind('px-4 py-3 bg-yellow-50')}>
-                        <View style={tailwind('flex-row items-center')}>
-                            <ActivityIndicator color={getColorCode('text-yellow-900')} style={tailwind('mr-2')} />
-                            <Text style={tailwind('text-yellow-900 font-bold text-sm')}>Searching for nearby orders...</Text>
-                        </View>
-                    </View>
-                )}
                 {nearbyOrders.length > 0 && (
                     <View style={tailwind('mb-2 px-4 py-3 bg-yellow-50')}>
                         <View>
@@ -194,7 +200,7 @@ const OrdersScreen = ({ navigation }) => {
                                         headerStyle={tailwind('border-yellow-300 py-0 pb-3')}
                                         textStyle={tailwind('text-yellow-900')}
                                         orderIdStyle={tailwind('text-yellow-900')}
-                                        onPress={() => navigation.push('OrderScreen', { data: order.serialize() })}
+                                        onPress={() => onOrderPress(order)}
                                     />
                                 </View>
                             ))}
@@ -203,7 +209,7 @@ const OrdersScreen = ({ navigation }) => {
                 )}
                 <View style={tailwind('w-full h-full mt-2')}>
                     {orders.map((order, index) => (
-                        <OrderCard key={index} order={order} onPress={() => navigation.push('OrderScreen', { data: order.serialize() })} />
+                        <OrderCard key={index} order={order} onPress={() => onOrderPress(order)} />
                     ))}
                 </View>
                 <View style={tailwind('h-96 w-full')} />
