@@ -8,7 +8,7 @@ import { formatCurrency, formatKm, formatDistance, calculatePercentage, translat
 import { Entity, Order } from '@fleetbase/sdk';
 import { format } from 'date-fns';
 import FastImage from 'react-native-fast-image';
-import OrderStatusBadge from 'ui/OrderStatusBadge';
+import OrderStatusBadge from 'components/OrderStatusBadge';
 import tailwind from 'tailwind';
 
 const isObjectEmpty = (obj) => isEmpty(obj) || Object.values(obj).length === 0;
@@ -45,7 +45,7 @@ const EntityScreen = ({ navigation, route }) => {
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
-            <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg'), { paddingTop: insets.top }]}>
+            <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg')]}>
                 <View style={tailwind('flex flex-row items-start justify-between px-4 py-2 overflow-hidden')}>
                     <View style={tailwind('flex items-start')}>
                         <Text style={tailwind('text-xl font-semibold text-white')}>{entity.id}</Text>
