@@ -19,7 +19,21 @@ import {
     faLightbulb,
 } from '@fortawesome/free-solid-svg-icons';
 import { useFleetbase, useMountedState, useLocale, useResourceStorage, useDriver } from 'hooks';
-import { config, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue, getStatusColors } from 'utils';
+import {
+    isArray,
+    config,
+    formatCurrency,
+    formatKm,
+    formatDistance,
+    calculatePercentage,
+    translate,
+    logError,
+    isEmpty,
+    getColorCode,
+    titleize,
+    formatMetaValue,
+    getStatusColors,
+} from 'utils';
 import { Order } from '@fleetbase/sdk';
 import { format, formatDistance as formatDateDistance, add, isValid as isValidDate } from 'date-fns';
 import ActionSheet from 'react-native-actions-sheet';
@@ -657,18 +671,19 @@ const OrderScreen = ({ navigation, route }) => {
                                         </View>
                                     </View>
                                     <View style={tailwind('w-full py-2 -mt-1')}>
-                                        {Object.keys(order.meta).map((key, index) => (
-                                            <View key={index} style={tailwind('flex flex-row items-start justify-between py-2 px-3')}>
-                                                <View style={tailwind('w-20')}>
-                                                    <Text style={tailwind('text-gray-100')}>{titleize(key)}</Text>
+                                        {isArray(Object.keys(order.meta)) &&
+                                            Object.keys(order.meta).map((key, index) => (
+                                                <View key={index} style={tailwind('flex flex-row items-start justify-between py-2 px-3')}>
+                                                    <View style={tailwind('w-20')}>
+                                                        <Text style={tailwind('text-gray-100')}>{titleize(key)}</Text>
+                                                    </View>
+                                                    <TouchableOpacity onPress={() => handleMetafieldPress(order.meta[key])} style={tailwind('flex-1 flex-col items-end')}>
+                                                        <Text style={tailwind('text-gray-100')} numberOfLines={1}>
+                                                            {formatMetaValue(order.meta[key])}
+                                                        </Text>
+                                                    </TouchableOpacity>
                                                 </View>
-                                                <TouchableOpacity onPress={() => handleMetafieldPress(order.meta[key])} style={tailwind('flex-1 flex-col items-end')}>
-                                                    <Text style={tailwind('text-gray-100')} numberOfLines={1}>
-                                                        {formatMetaValue(order.meta[key])}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        ))}
+                                            ))}
                                     </View>
                                 </View>
                             </View>
@@ -713,41 +728,50 @@ const OrderScreen = ({ navigation, route }) => {
                                     <View>
                                         {isMultiDropOrder ? (
                                             <View style={tailwind('flex flex-row flex-wrap')}>
-                                                {entitiesByDestination.map((group, i) => (
-                                                    <View key={i} style={tailwind('w-full')}>
-                                                        <View style={tailwind('rounded-md p-4 mb-4 border-b border-gray-700')}>
-                                                            <View style={tailwind('mb-3')}>
-                                                                <Text style={tailwind('text-gray-100 text-sm mb-1')}>Items drop at</Text>
-                                                                <Text style={tailwind('text-gray-100 font-bold')}>{group.waypoint.address}</Text>
-                                                            </View>
-                                                            <View style={tailwind('w-full flex flex-row flex-wrap items-start')}>
-                                                                {group.entities.map((entity, ii) => (
-                                                                    <View key={ii} style={tailwind('w-40')}>
-                                                                        <View style={tailwind('pb-2 pr-2')}>
-                                                                            <TouchableOpacity onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}>
-                                                                                <View style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}>
-                                                                                    <FastImage source={{ uri: entity.photo_url }} style={{ width: 50, height: 50, marginBottom: 5 }} />
-                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
-                                                                                        {entity.name}
-                                                                                    </Text>
-                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                                        {entity.id}
-                                                                                    </Text>
-                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                                        {entity.tracking_number.tracking_number}
-                                                                                    </Text>
-                                                                                    <Text numberOfLines={1} style={tailwind('text-gray-100')}>
-                                                                                        {formatCurrency((entity.price ?? 0) / 100, entity.currency)}
-                                                                                    </Text>
+                                                {isArray(entitiesByDestination) &&
+                                                    entitiesByDestination.map((group, i) => (
+                                                        <View key={i} style={tailwind('w-full')}>
+                                                            <View style={tailwind('rounded-md p-4 mb-4 border-b border-gray-700')}>
+                                                                <View style={tailwind('mb-3')}>
+                                                                    <Text style={tailwind('text-gray-100 text-sm mb-1')}>Items drop at</Text>
+                                                                    <Text style={tailwind('text-gray-100 font-bold')}>{group.waypoint.address}</Text>
+                                                                </View>
+                                                                <View style={tailwind('w-full flex flex-row flex-wrap items-start')}>
+                                                                    {isArray(group.entities) &&
+                                                                        group.entities.map((entity, ii) => (
+                                                                            <View key={ii} style={tailwind('w-40')}>
+                                                                                <View style={tailwind('pb-2 pr-2')}>
+                                                                                    <TouchableOpacity
+                                                                                        onPress={() => navigation.push('EntityScreen', { _entity: entity, _order: order.serialize() })}
+                                                                                    >
+                                                                                        <View
+                                                                                            style={tailwind('flex items-center justify-center py-4 px-1 border border-gray-700 rounded-md')}
+                                                                                        >
+                                                                                            <FastImage
+                                                                                                source={{ uri: entity.photo_url }}
+                                                                                                style={{ width: 50, height: 50, marginBottom: 5 }}
+                                                                                            />
+                                                                                            <Text numberOfLines={1} style={tailwind('text-gray-100 font-semibold')}>
+                                                                                                {entity.name}
+                                                                                            </Text>
+                                                                                            <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                                                {entity.id}
+                                                                                            </Text>
+                                                                                            <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                                                {entity.tracking_number.tracking_number}
+                                                                                            </Text>
+                                                                                            <Text numberOfLines={1} style={tailwind('text-gray-100')}>
+                                                                                                {formatCurrency((entity.price ?? 0) / 100, entity.currency)}
+                                                                                            </Text>
+                                                                                        </View>
+                                                                                    </TouchableOpacity>
                                                                                 </View>
-                                                                            </TouchableOpacity>
-                                                                        </View>
-                                                                    </View>
-                                                                ))}
+                                                                            </View>
+                                                                        ))}
+                                                                </View>
                                                             </View>
                                                         </View>
-                                                    </View>
-                                                ))}
+                                                    ))}
                                             </View>
                                         ) : (
                                             <View style={tailwind('p-4')}>
@@ -782,7 +806,7 @@ const OrderScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         )}
-                        {order.getAttribute('payload.entities', []).length > 0 && (
+                        {isArray(order.getAttribute('payload.entities', [])) && order.getAttribute('payload.entities', []).length > 0 && (
                             <View>
                                 <View style={tailwind('mt-2')}>
                                     <View style={tailwind('flex flex-col items-center')}>
@@ -798,38 +822,39 @@ const OrderScreen = ({ navigation, route }) => {
                                             )}
                                         </View>
                                         <View style={tailwind('w-full p-4 border-b border-gray-700')}>
-                                            {order.getAttribute('payload.entities', []).map((entity, index) => (
-                                                <View key={index} style={tailwind('flex flex-row mb-2')}>
-                                                    <View style={tailwind('mr-3')}>
-                                                        <View style={tailwind('rounded-md border border-gray-300 flex items-center justify-center w-7 h-7 mr-3')}>
-                                                            <Text style={tailwind('font-semibold text-blue-500 text-sm')}>{entity.meta.quantity ?? 1}x</Text>
+                                            {isArray(order.getAttribute('payload.entities', [])) &&
+                                                order.getAttribute('payload.entities', []).map((entity, index) => (
+                                                    <View key={index} style={tailwind('flex flex-row mb-2')}>
+                                                        <View style={tailwind('mr-3')}>
+                                                            <View style={tailwind('rounded-md border border-gray-300 flex items-center justify-center w-7 h-7 mr-3')}>
+                                                                <Text style={tailwind('font-semibold text-blue-500 text-sm')}>{entity.meta.quantity ?? 1}x</Text>
+                                                            </View>
                                                         </View>
-                                                    </View>
-                                                    <View style={tailwind('flex-1')}>
-                                                        <Text style={tailwind('font-semibold text-gray-50')}>{entity.name}</Text>
-                                                        <Text style={tailwind('text-xs text-gray-200')} numberOfLines={1}>
-                                                            {entity.description ?? 'No description'}
-                                                        </Text>
+                                                        <View style={tailwind('flex-1')}>
+                                                            <Text style={tailwind('font-semibold text-gray-50')}>{entity.name}</Text>
+                                                            <Text style={tailwind('text-xs text-gray-200')} numberOfLines={1}>
+                                                                {entity.description ?? 'No description'}
+                                                            </Text>
+                                                            <View>
+                                                                {entity.meta?.variants?.map((variant) => (
+                                                                    <View key={variant.id}>
+                                                                        <Text style={tailwind('text-xs text-gray-200')}>{variant.name}</Text>
+                                                                    </View>
+                                                                ))}
+                                                            </View>
+                                                            <View>
+                                                                {entity.meta?.addons?.map((addon) => (
+                                                                    <View key={addon.id}>
+                                                                        <Text style={tailwind('text-xs text-gray-200')}>+ {addon.name}</Text>
+                                                                    </View>
+                                                                ))}
+                                                            </View>
+                                                        </View>
                                                         <View>
-                                                            {entity.meta?.variants?.map((variant) => (
-                                                                <View key={variant.id}>
-                                                                    <Text style={tailwind('text-xs text-gray-200')}>{variant.name}</Text>
-                                                                </View>
-                                                            ))}
-                                                        </View>
-                                                        <View>
-                                                            {entity.meta?.addons?.map((addon) => (
-                                                                <View key={addon.id}>
-                                                                    <Text style={tailwind('text-xs text-gray-200')}>+ {addon.name}</Text>
-                                                                </View>
-                                                            ))}
+                                                            <Text style={tailwind('text-gray-200')}>{formatCurrency((entity.price ?? 0) / 100, entity.currency)}</Text>
                                                         </View>
                                                     </View>
-                                                    <View>
-                                                        <Text style={tailwind('text-gray-200')}>{formatCurrency((entity.price ?? 0) / 100, entity.currency)}</Text>
-                                                    </View>
-                                                </View>
-                                            ))}
+                                                ))}
                                         </View>
                                     </View>
                                 </View>
@@ -904,28 +929,31 @@ const OrderScreen = ({ navigation, route }) => {
                             <View>
                                 {!isEmpty(nextActivity) ? (
                                     <View style={tailwind('px-5')}>
-                                        {nextActivity.map((activity, index) => (
-                                            <View key={index} style={tailwind('mb-4')}>
-                                                <TouchableOpacity
-                                                    style={[tailwind('btn bg-green-900 border border-green-700 px-4'), getStatusColors(activity.code, true).statusWrapperStyle]}
-                                                    onPress={() => sendOrderActivityUpdate(activity)}
-                                                >
-                                                    {isLoadingActivity && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('ml-8 mr-3')} />}
-                                                    <View style={tailwind('w-full flex flex-col items-start py-2')}>
-                                                        <Text style={tailwind(`font-bold text-lg text-${getStatusColors(activity.code).color}-50`)}>{activity.status}</Text>
-                                                        <Text style={tailwind(`text-${getStatusColors(activity.code).color}-100`)}>{activity.details}</Text>
-                                                        {activity.require_pod && (
-                                                            <View style={tailwind('mt-3')}>
-                                                                <View style={tailwind('rounded-md px-2 py-1 bg-yellow-400 border border-yellow-700 shadow-sm flex flex-row items-center')}>
-                                                                    <FontAwesomeIcon icon={faLightbulb} style={tailwind('text-yellow-900 mr-2')} />
-                                                                    <Text style={tailwind('font-semibold text-yellow-900')}>Requires proof of delivery</Text>
+                                        {isArray(nextActivity) &&
+                                            nextActivity.map((activity, index) => (
+                                                <View key={index} style={tailwind('mb-4')}>
+                                                    <TouchableOpacity
+                                                        style={[tailwind('btn bg-green-900 border border-green-700 px-4'), getStatusColors(activity.code, true).statusWrapperStyle]}
+                                                        onPress={() => sendOrderActivityUpdate(activity)}
+                                                    >
+                                                        {isLoadingActivity && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('ml-8 mr-3')} />}
+                                                        <View style={tailwind('w-full flex flex-col items-start py-2')}>
+                                                            <Text style={tailwind(`font-bold text-lg text-${getStatusColors(activity.code).color}-50`)}>{activity.status}</Text>
+                                                            <Text style={tailwind(`text-${getStatusColors(activity.code).color}-100`)}>{activity.details}</Text>
+                                                            {activity.require_pod && (
+                                                                <View style={tailwind('mt-3')}>
+                                                                    <View
+                                                                        style={tailwind('rounded-md px-2 py-1 bg-yellow-400 border border-yellow-700 shadow-sm flex flex-row items-center')}
+                                                                    >
+                                                                        <FontAwesomeIcon icon={faLightbulb} style={tailwind('text-yellow-900 mr-2')} />
+                                                                        <Text style={tailwind('font-semibold text-yellow-900')}>Requires proof of delivery</Text>
+                                                                    </View>
                                                                 </View>
-                                                            </View>
-                                                        )}
-                                                    </View>
-                                                </TouchableOpacity>
-                                            </View>
-                                        ))}
+                                                            )}
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
                                     </View>
                                 ) : (
                                     <View style={tailwind('px-5')}>
@@ -960,22 +988,23 @@ const OrderScreen = ({ navigation, route }) => {
                             </View>
                             <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                                 <View style={tailwind('pb-64')}>
-                                    {waypointsInProgress.map((waypoint, index) => (
-                                        <TouchableOpacity key={index} onPress={() => setOrderDestination(waypoint)} disabled={isLoadingAction} style={tailwind('mb-4 px-4')}>
-                                            <View style={tailwind(`flex flex-row rounded-md bg-blue-900 border border-blue-700 ${isLoadingAction ? 'opacity-50' : ''}`)}>
-                                                <View style={tailwind('px-4 py-2 flex-1 flex flex-row')}>
-                                                    <View style={tailwind('mr-4')}>
-                                                        <View style={tailwind('rounded-full bg-blue-700 w-8 h-8 flex items-center justify-center')}>
-                                                            <Text style={tailwind('font-bold text-white')}>{index + 1}</Text>
+                                    {isArray(waypointsInProgress) &&
+                                        waypointsInProgress.map((waypoint, index) => (
+                                            <TouchableOpacity key={index} onPress={() => setOrderDestination(waypoint)} disabled={isLoadingAction} style={tailwind('mb-4 px-4')}>
+                                                <View style={tailwind(`flex flex-row rounded-md bg-blue-900 border border-blue-700 ${isLoadingAction ? 'opacity-50' : ''}`)}>
+                                                    <View style={tailwind('px-4 py-2 flex-1 flex flex-row')}>
+                                                        <View style={tailwind('mr-4')}>
+                                                            <View style={tailwind('rounded-full bg-blue-700 w-8 h-8 flex items-center justify-center')}>
+                                                                <Text style={tailwind('font-bold text-white')}>{index + 1}</Text>
+                                                            </View>
+                                                        </View>
+                                                        <View style={tailwind('flex-1')}>
+                                                            <Text style={tailwind('text-blue-50')}>{waypoint.address}</Text>
                                                         </View>
                                                     </View>
-                                                    <View style={tailwind('flex-1')}>
-                                                        <Text style={tailwind('text-blue-50')}>{waypoint.address}</Text>
-                                                    </View>
                                                 </View>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))}
+                                            </TouchableOpacity>
+                                        ))}
                                 </View>
                             </ScrollView>
                         </View>

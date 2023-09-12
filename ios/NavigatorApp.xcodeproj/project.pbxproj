@@ -509,6 +509,7 @@
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -540,6 +541,7 @@
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -129,7 +129,18 @@ export default class FormatUtil {
      * @memberof FormatUtil
      */
     static km(km) {
-        return `${Math.round(km)}km`;
+        return km.toFixed(2) + ' km';
+    }
+
+    /**
+     * Format meters to kilometers
+     *
+     * @static
+     * @memberof FormatUtil
+     */
+    static formatMetersToKilometers(meters) {
+        const kilometers = meters / 1000;
+        return kilometers.toFixed(2) + ' km';
     }
 
     /**
@@ -289,6 +300,7 @@ export default class FormatUtil {
 
 const formatCurrency = FormatUtil.currency;
 const formatKm = FormatUtil.km;
+const formatMetersToKilometers = FormatUtil.formatMetersToKilometers;
 const formatDuration = FormatUtil.formatDuration;
 const capitalize = FormatUtil.capitalize;
 const uppercase = FormatUtil.uppercase;
@@ -298,4 +310,4 @@ const humanize = FormatUtil.humanize;
 const formatMetaValue = FormatUtil.formatMetaValue;
 const getStatusColors = FormatUtil.getStatusColors;
 
-export { formatCurrency, formatKm, formatDuration, capitalize, pluralize, titleize, humanize, formatMetaValue, getStatusColors };
+export { formatCurrency, formatKm, formatMetersToKilometers, formatDuration, capitalize, pluralize, titleize, humanize, formatMetaValue, getStatusColors };

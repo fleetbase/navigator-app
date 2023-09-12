@@ -1,11 +1,12 @@
 /**
- * Storefront Ecommerce for On-Demand
+ * Navigator App for Fleetbase
  *
  * @format
  * @flow strict-local
  */
 
 import 'react-native-gesture-handler';
+import 'react-native-get-random-values';
 import React from 'react';
 import type { Node } from 'react';
 import { Platform, Text, View, ActivityIndicator } from 'react-native';
@@ -18,7 +19,6 @@ import tailwind from 'tailwind';
 
 const isAndroid = Platform.OS === 'android';
 const Stack = createStackNavigator();
-
 const linking = {
     prefixes: [config('APP_LINK_PREFIX'), ...config('app.linkingPrefixes')].filter(Boolean),
     config: {

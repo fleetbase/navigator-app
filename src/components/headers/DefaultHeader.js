@@ -7,11 +7,9 @@ import { useNavigation } from '@react-navigation/native';
 import { Collection } from '@fleetbase/sdk';
 import { useResourceCollection } from 'utils/Storage';
 import { useLocale, useDriver, useFleetbase } from 'hooks';
-import { config, translate, isFalsy, logError } from 'utils';
+import { config, translate, logError, toBoolean } from 'utils';
 import { LangPicker, SearchButton } from 'components';
 import tailwind from 'tailwind';
-
-const isTruthy = (mixed) => !isFalsy(mixed);
 
 const DefaultHeader = (props) => {
     let {
@@ -41,7 +39,7 @@ const DefaultHeader = (props) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState(new Collection());
-    const [isOnline, setIsOnline] = useState(isTruthy(driver?.getAttribute('online')));
+    const [isOnline, setIsOnline] = useState(toBoolean(driver?.getAttribute('online')));
 
     const shouldDisplayLogoText = (displayLogoText ?? config('ui.headerComponent.displayLogoText')) === true;
 
@@ -61,7 +59,7 @@ const DefaultHeader = (props) => {
             source={backgroundImage ?? config('ui.headerComponent.backgroundImage')}
             resizeMode={backgroundImageResizeMode ?? config('ui.headerComponent.backgroundImageResizeMode')}
             style={[
-                tailwind('z-50 bg-gray-800 border-b border-gray-700 shadow-lg'),
+                tailwind('z-50 bg-gray-800'),
                 { paddingTop: insets.top },
                 props.style,
                 backgroundImageStyle ?? config('ui.headerComponent.backgroundImageStyle'),
@@ -80,7 +78,7 @@ const DefaultHeader = (props) => {
                         {shouldDisplayLogoText && (
                             <View>
                                 <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>Navigator</Text>
-                                <Text style={[tailwind('text-xs text-white')]}>v1.1.6</Text>
+                                <Text style={[tailwind('text-xs text-white')]}>v1.1.7</Text>
                             </View>
                         )}
                     </View>

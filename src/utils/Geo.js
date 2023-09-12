@@ -68,7 +68,7 @@ export default class GeoUtil {
             maxWaitTime: 10000 * 5,
             activityType: 'other',
             allowsBackgroundLocationUpdates: true,
-            headingFilter: 1,
+            headingFilter: 0,
             headingOrientation: 'portrait',
             pausesLocationUpdatesAutomatically: false,
             showsBackgroundLocationIndicator: true,
@@ -76,14 +76,47 @@ export default class GeoUtil {
         });
         
         return new Promise((resolve, reject) => {
-            let t = RNLocation.subscribeToLocationUpdates(([position]) => {
+            let unsubscribeFn = RNLocation.subscribeToLocationUpdates(([position]) => {
                 return driver.track(position).catch((error) => {
                     logError(error);
                     reject(error);
                 });
             });
 
-            resolve(t);
+            resolve(unsubscribeFn);
+        });
+    }
+
+    static async trackDriverHeading(driver, configuration = {}) {
+        RNLocation.configure({
+            distanceFilter: 100,
+            desiredAccuracy: {
+                ios: 'bestForNavigation',
+                android: 'highAccuracy',
+            },
+            androidProvider: 'auto',
+            interval: 10000 * 5,
+            fastestInterval: 10000 * 1,
+            maxWaitTime: 10000 * 5,
+            activityType: 'other',
+            allowsBackgroundLocationUpdates: true,
+            headingFilter: 0,
+            headingOrientation: 'portrait',
+            pausesLocationUpdatesAutomatically: false,
+            showsBackgroundLocationIndicator: true,
+            ...configuration,
+        });
+        
+        return new Promise((resolve, reject) => {
+            let unsubscribeFn = RNLocation.subscribeToHeadingUpdates(([heading]) => {
+                console.log('[driver heading]', heading);
+                // return driver.track(position).catch((error) => {
+                //     logError(error);
+                //     reject(error);
+                // });
+            });
+
+            resolve(unsubscribeFn);
         });
     }
 
@@ -283,5 +316,6 @@ const getCoordinates = GeoUtil.getCoordinates;
 const getDistance = GeoUtil.getDistance;
 const requestTrackingPermissions = GeoUtil.requestTrackingPermissions;
 const trackDriver = GeoUtil.trackDriver;
+const trackDriverHeading = GeoUtil.trackDriverHeading;
 
-export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance, requestTrackingPermissions, trackDriver };
+export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance, requestTrackingPermissions, trackDriver, trackDriverHeading };

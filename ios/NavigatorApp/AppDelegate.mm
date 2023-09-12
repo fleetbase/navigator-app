@@ -9,7 +9,7 @@
 #import <UserNotifications/UserNotifications.h>
 #import <RNCPushNotificationIOS.h>
 #import <GoogleMaps/GoogleMaps.h>
-#import "ReactNativeConfig.h"
+#import "RNCConfig.h"
 #import "RNBootSplash.h"
 
 #if RCT_NEW_ARCH_ENABLED
@@ -19,7 +19,6 @@
 #import <React/RCTSurfacePresenter.h>
 #import <React/RCTSurfacePresenterBridgeAdapter.h>
 #import <ReactCommon/RCTTurboModuleManager.h>
-
 #import <react/config/ReactNativeConfig.h>
 
 @interface AppDelegate () <RCTCxxBridgeDelegate, RCTTurboModuleManagerDelegate> {
@@ -35,7 +34,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  [GMSServices provideAPIKey: [ReactNativeConfig envFor:@"GOOGLE_MAPS_KEY"]]; 
+  [GMSServices provideAPIKey: [RNCConfig envFor:@"GOOGLE_MAPS_KEY"]]; 
   RCTAppSetupPrepareApp(application);
 
   RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
@@ -48,7 +47,7 @@
   bridge.surfacePresenter = _bridgeAdapter.surfacePresenter;
 #endif
 
-  UIView *rootView = RCTAppSetupDefaultRootView(bridge, @"StorefrontApp", nil);
+  UIView *rootView = RCTAppSetupDefaultRootView(bridge, @"NavigatorApp", nil);
 
   if (@available(iOS 13.0, *)) {
     rootView.backgroundColor = [UIColor systemBackgroundColor];

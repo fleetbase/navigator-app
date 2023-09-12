@@ -4,7 +4,9 @@ import { countries } from 'countries-list';
 import { set } from './Storage';
 import { getCurrentLocation } from './Geo';
 import { useNavigation } from '@react-navigation/native';
+import useFleetbase from 'hooks/use-fleetbase';
 import configuration from 'config';
+import socketClusterClient from 'socketcluster-client';
 
 const { emit } = EventRegister;
 
@@ -302,12 +304,13 @@ export default class HelperUtil {
      * Deep get a value from a target provided it's path.
      *
      * @static
-     * @param {*} object
-     * @param {*} path
-     * @return {*}
+     * @param {Mixed} object
+     * @param {String} path
+     * @param {Mixed} defaultValue
+     * @return {Mixed}
      * @memberof HelperUtil
      */
-    static deepGet(object, path) {
+    static deepGet(object, path, defaultValue = null) {
         let current = object;
 
         const type = typeof object;
@@ -347,6 +350,8 @@ export default class HelperUtil {
         if (isFunction) {
             return HelperUtil.getResolved(object, path);
         }
+
+        return defaultValue;
     }
 
     /**
@@ -378,11 +383,18 @@ export default class HelperUtil {
      *
      * @static
      * @param {String} path
+     * @param {mixes} defaultValue
      * @return {Mixed}
      * @memberof HelperUtil
      */
-    static config(path) {
-        return HelperUtil.deepGet(configuration, path);
+    static config(path, defaultValue = null) {
+        let value = HelperUtil.deepGet(configuration, path);
+
+        if (value === undefined) {
+            return defaultValue;
+        }
+
+        return value;
     }
 
     /**
@@ -443,6 +455,107 @@ export default class HelperUtil {
 
         return null;
     }
+
+    static toBoolean(value) {
+        switch (value) {
+            case 'true':
+            case '1':
+            case 1:
+            case true:
+                return true;
+            case 'false':
+            case '0':
+            case 0:
+            case false:
+            case null:
+            case undefined:
+            case '':
+                return false;
+            default:
+                return false;
+        }
+    }
+
+    static async createSocketAndListen(channelId, callback) {
+        // Create socket connection config
+        const socketConnectionConfig = {
+            hostname: '192.168.1.38', //HelperUtil.config('SOCKETCLUSTER_HOST', 'localhost'),
+            path: HelperUtil.config('SOCKETCLUSTER_PATH', '/socketcluster/'),
+            secure: toBoolean(HelperUtil.config('SOCKETCLUSTER_SECURE', false)),
+            port: HelperUtil.config('SOCKETCLUSTER_PORT', 38000),
+            autoConnect: true,
+            autoReconnect: true,
+        };
+
+        // Create socket connection
+        const socket = socketClusterClient.create(socketConnectionConfig);
+
+        // Listen for socket connection errors
+        (async () => {
+            // eslint-disable-next-line no-unused-vars
+            for await (let event of socket.listener('error')) {
+                console.log('[Socket Error]', event);
+            }
+        })();
+
+        // Listen for socket connection
+        (async () => {
+            // eslint-disable-next-line no-unused-vars
+            for await (let event of socket.listener('connect')) {
+                console.log('[Socket Connected]', event);
+            }
+        })();
+
+        // create channel from channel id
+        const channel = socket.subscribe(channelId);
+
+        // subscribe to channel
+        await channel.listener('subscribe').once();
+
+        // listen to incoming data with callback
+        (async () => {
+            for await (let output of channel) {
+                if (typeof callback === 'function') {
+                    callback(output);
+                }
+            }
+        })();
+    }
+
+    static async listenForOrdersFromSocket(channelId, callback) {
+        const fleetbase = useFleetbase();
+
+        return HelperUtil.createSocketAndListen(channelId, ({ event, data }) => {
+            if (typeof data.id === 'string' && data.id.startsWith('order')) {
+                return fleetbase.orders.findRecord(data.id).then((order) => {
+                    const serializedOrder = order.serialize();
+
+                    if (typeof callback === 'function') {
+                        callback(serializedOrder, event);
+                    }
+                });
+            }
+        });
+    }
+
+    static createNewOrderLocalNotificationObject(order, driver) {
+        const isOrderAssigned = HelperUtil.deepGet(order, 'driver_assigned.id') === driver.id;
+        const isAdhocOrder = !isOrderAssigned;
+
+        let title = `📦 New Incoming Order`;
+        let message = `New order assigned ${order.id}`;
+        let subtitle = `Pickup at ${HelperUtil.deepGet(order, 'payload.pickup.street1')}`;
+
+        if (isAdhocOrder) {
+            message = `New order available nearby 📡`;
+        }
+
+        return {
+            title,
+            message,
+            subtitle
+        };
+    }
 }
 
 const listCountries = HelperUtil.listCountries;
@@ -463,6 +576,10 @@ const deepGet = HelperUtil.deepGet;
 const config = HelperUtil.config;
 const sum = HelperUtil.sum;
 const getColorCode = HelperUtil.getColorCode;
+const toBoolean = HelperUtil.toBoolean;
+const createSocketAndListen = HelperUtil.createSocketAndListen;
+const listenForOrdersFromSocket = HelperUtil.listenForOrdersFromSocket;
+const createNewOrderLocalNotificationObject = HelperUtil.createNewOrderLocalNotificationObject;
 
 export {
     listCountries,
@@ -483,4 +600,8 @@ export {
     config,
     sum,
     getColorCode,
+    toBoolean,
+    createSocketAndListen,
+    listenForOrdersFromSocket,
+    createNewOrderLocalNotificationObject,
 };

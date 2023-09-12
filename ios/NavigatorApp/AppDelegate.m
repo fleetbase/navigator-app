@@ -3,10 +3,11 @@
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
+#import <React/RCTLinkingManager.h>
 #import <UserNotifications/UserNotifications.h>
 #import <RNCPushNotificationIOS.h>
 #import <GoogleMaps/GoogleMaps.h>
-#import "ReactNativeConfig.h"
+#import "RNCConfig.h"
 #import "RNBootSplash.h"
 
 #ifdef FB_SONARKIT_ENABLED
@@ -28,13 +29,11 @@ static void InitializeFlipper(UIApplication *application) {
 }
 #endif
 
-//NSString *googleMapsApiKey = [ReactNativeConfig envFor:@"GOOGLE_MAPS_KEY"];
-
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-  [GMSServices provideAPIKey: [ReactNativeConfig envFor:@"GOOGLE_MAPS_KEY"]]; 
+  [GMSServices provideAPIKey: [RNCConfig envFor:@"GOOGLE_MAPS_KEY"]]; 
 #ifdef FB_SONARKIT_ENABLED
   InitializeFlipper(application);
 #endif
@@ -93,6 +92,14 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
          withCompletionHandler:(void (^)(void))completionHandler
 {
   [RNCPushNotificationIOS didReceiveNotificationResponse:response];
+}
+
+// Required for deep-linking ios 8.x and up
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
+{
+  return [RCTLinkingManager application:application openURL:url
+                      sourceApplication:sourceApplication annotation:annotation];
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
