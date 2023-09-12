@@ -17,10 +17,14 @@ import {
     config,
     sum,
     getColorCode,
+    toBoolean,
+    createSocketAndListen,
+    listenForOrdersFromSocket,
+    createNewOrderLocalNotificationObject
 } from './Helper';
 import { calculatePercentage, haversine } from './Calculate';
 import { syncDevice } from './Auth';
-import { formatCurrency, capitalize, pluralize, formatDuration, formatKm, formatMetaValue, titleize, humanize, getStatusColors } from './Format';
+import { formatCurrency, capitalize, pluralize, formatDuration, formatKm, formatMetersToKilometers, formatMetaValue, titleize, humanize, getStatusColors } from './Format';
 import { geocode, getCurrentLocation, getLocation, getDistance } from './Geo';
 import { translate } from './Localize';
 import getCurrency from './get-currency';
@@ -117,6 +121,7 @@ export {
     isVoid,
     isEmpty,
     isFalsy,
+    toBoolean,
     logError,
     calculatePercentage,
     haversine,
@@ -129,6 +134,7 @@ export {
     formatMetaValue,
     formatDuration,
     formatKm,
+    formatMetersToKilometers,
     getStatusColors,
     geocode,
     getCurrentLocation,
@@ -146,4 +152,7 @@ export {
     getTotalStops,
     getTotalDuration,
     getTotalDistance,
+    createSocketAndListen,
+    listenForOrdersFromSocket,
+    createNewOrderLocalNotificationObject
 };

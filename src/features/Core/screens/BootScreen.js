@@ -45,7 +45,7 @@ const BootScreen = ({ navigation }) => {
     useEffect(() => {
         checkForAuthenticatedDriver()
             .then(() => {
-                return navigation.navigate('MainScreen');
+                return navigation.navigate('MainStack');
             })
             .catch(() => {
                 return navigation.navigate('LoginScreen');
