@@ -41,13 +41,6 @@ const OrdersStack = ({ route }) => {
                         initialParams={route.params ?? {}}
                     />
                 </RootStack.Group>
-                <RootStack.Group screenOptions={{ presentation: 'modal' }}>
-                    <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                </RootStack.Group>
             </RootStack.Navigator>
         </SafeAreaProvider>
     );

@@ -59,17 +59,6 @@ const AccountScreen = ({ navigation, route }) => {
     
     return (
         <RenderBackground>
-            {displayHeaderComponent === true && (
-                <RenderHeader
-                    style={[
-                        tailwind(''),
-                        config('ui.accountScreen.headerContainerStyle'),
-                        driver ? config('ui.accountScreen.signedInHeaderContainerStyle') : config('ui.accountScreen.signedOutHeaderContainerStyle'),
-                    ]}
-                    hideSearchBar={true}
-                    wrapperStyle={tailwind('pb-1')}
-                />
-            )}
             <View
                 style={[
                     tailwind('bg-gray-800'),

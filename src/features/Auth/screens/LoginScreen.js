@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ImageBackground, TouchableOpacity, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView, Pressable, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUniqueId } from 'react-native-device-info';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { useLocale, useDriver, useFleetbase } from 'hooks';
-import { logError, translate, config, syncDevice, getColorCode } from 'utils';
+import { logError, translate, config, syncDevice, getColorCode, deepGet } from 'utils';
 import { getLocation } from 'utils/Geo';
 import { set, get } from 'utils/Storage';
 import Toast from 'react-native-toast-message';
@@ -13,8 +13,9 @@ import FastImage from 'react-native-fast-image';
 import tailwind from 'tailwind';
 import PhoneInput from 'components/PhoneInput';
 
-const isIos = Platform.OS === 'ios';
-// const isAndroid = Platform.OS === 'android';
+const isPhone = (phone = '') => {
+    return /^[+]?[\s./0-9]*[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/g.test(phone);
+};
 
 const LoginScreen = ({ navigation, route }) => {
     const fleetbase = useFleetbase();
@@ -30,34 +31,45 @@ const LoginScreen = ({ navigation, route }) => {
     const [driver, setDriver] = useDriver();
 
     const isNotAwaitingVerification = isAwaitingVerification === false;
-    const redirectTo = route?.params?.redirectTo ?? 'MainScreen';
+    const redirectTo = deepGet(route, 'params?.redirectTo', 'MainStack');
 
-    const sendVerificationCode = () => {
+    const sendVerificationCode = useCallback(() => {
         setIsLoading(true);
 
-        fleetbase.drivers
-            .login(phone)
-            .then((response) => {
-                setIsAwaitingVerification(true);
-                setError(null);
-                setIsLoading(false);
-            })
-            .catch((error) => {
-                logError(error);
-                setIsLoading(false);
-                // setError(error.message);
-                Toast.show({
-                    type: 'error',
-                    text1: '😅 Authentication Failed',
-                    text2: error.message,
+        console.log('[phone]', phone);
+
+        try {
+            return fleetbase.drivers
+                .login(phone)
+                .then((response) => {
+                    setIsAwaitingVerification(true);
+                    setError(null);
+                    setIsLoading(false);
+                })
+                .catch((error) => {
+                    logError(error);
+                    setIsLoading(false);
+                    Toast.show({
+                        type: 'error',
+                        text1: '😅 Authentication Failed',
+                        text2: error.message,
+                    });
                 });
+        } catch (error) {
+            logError(error);
+            setIsLoading(false);
+            Toast.show({
+                type: 'error',
+                text1: '😅 Authentication Failed',
+                text2: error.message,
             });
-    };
+        }
+    });
 
-    const verifyCode = () => {
+    const verifyCode = useCallback(() => {
         setIsLoading(true);
 
-        fleetbase.drivers
+        return fleetbase.drivers
             .verifyCode(phone, code)
             .then((driver) => {
                 setDriver(driver);
@@ -72,7 +84,6 @@ const LoginScreen = ({ navigation, route }) => {
             })
             .catch((error) => {
                 logError(error);
-                // setError(error.message);
                 Toast.show({
                     type: 'error',
                     text1: '😅 Authentication Failed',
@@ -80,13 +91,13 @@ const LoginScreen = ({ navigation, route }) => {
                 });
                 retry();
             });
-    };
+    });
 
-    const retry = () => {
+    const retry = useCallback(() => {
         setIsLoading(false);
         setPhone(null);
         setIsAwaitingVerification(false);
-    };
+    });
 
     return (
         <ImageBackground
@@ -96,21 +107,19 @@ const LoginScreen = ({ navigation, route }) => {
         >
             <View style={[tailwind('bg-gray-800 flex-row flex-1 items-center justify-center'), config('ui.loginScreen.containerStyle'), { paddingTop: insets.top }]}>
                 <View style={tailwind('flex-grow')}>
-                    <Pressable
-                        onPress={Keyboard.dismiss}
-                        style={[tailwind('px-5'), config('ui.loginScreen.contentContainerStyle')]}
-                    >
-                        <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
-                            <FastImage source={require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
-                        </View>
-                        <KeyboardAvoidingView style={tailwind('')} behavior={isIos ? 'padding' : 'height'} keyboardVerticalOffset={90}>
+                    <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-5 -mt-28'), config('ui.loginScreen.contentContainerStyle')]}>
+                        <KeyboardAvoidingView style={tailwind('')} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={100}>
+                            <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
+                                <FastImage source={require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
+                            </View>
+
                             {isNotAwaitingVerification && (
-                                <View style={[tailwind(''), config('ui.loginScreen.loginFormContainerStyle')]}>
+                                <View style={[tailwind('p-4'), config('ui.loginScreen.loginFormContainerStyle')]}>
                                     <View style={tailwind('mb-6 flex-row')}>
                                         <PhoneInput
-                                            value={phone}
-                                            onChangeText={setPhone}
-                                            defaultCountry={location?.country}
+                                            onChangeValue={setPhone}
+                                            autoFocus={true}
+                                            defaultCountryCode={deepGet(location, 'country', '+1')}
                                             style={[tailwind('flex-1'), config('ui.loginScreen.phoneInputStyle')]}
                                             {...(config('ui.createAccountScreen.phoneInputProps') ?? {})}
                                         />
@@ -130,6 +139,8 @@ const LoginScreen = ({ navigation, route }) => {
                                     <View style={tailwind('mb-6')}>
                                         <TextInput
                                             onChangeText={setCode}
+                                            autoFocus={true}
+                                            textAlign={'center'}
                                             keyboardType={'phone-pad'}
                                             placeholder={translate('Auth.LoginScreen.codeInputPlaceholder')}
                                             placeholderTextColor={'rgba(156, 163, 175, 1)'}

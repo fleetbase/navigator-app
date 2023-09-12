@@ -7,5 +7,6 @@ import OrderStatusBadge from './OrderStatusBadge';
 import OrderWaypoints from './OrderWaypoints';
 import OrderRouteMap from './OrderRouteMap';
 import SearchButton from './SearchButton';
+import Header from './Header';
 
-export { PhoneInput, PhotoUpload, LangPicker, Search, OrdersFilterBar, OrderStatusBadge, OrderWaypoints, OrderRouteMap, SearchButton };
+export { PhoneInput, PhotoUpload, LangPicker, Search, OrdersFilterBar, OrderStatusBadge, OrderWaypoints, OrderRouteMap, SearchButton, Header };

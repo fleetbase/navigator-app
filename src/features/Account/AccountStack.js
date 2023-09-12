@@ -7,6 +7,7 @@ import CreateAccountScreen from 'auth/screens/CreateAccountScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import OrderScreen from 'shared/OrderScreen';
+import SearchScreen from 'core/screens/SearchScreen';
 
 const MainStack = createStackNavigator();
 const RootStack = createStackNavigator();
@@ -23,12 +24,13 @@ const AccountStack = ({ route }) => {
     return (
         <SafeAreaProvider>
             <RootStack.Navigator screenOptions={{ presentation: 'modal' }}>
-                <RootStack.Screen name="AccountStack" component={MainStackScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name="AccountStack" component={MainStackScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="CreateAccount" component={CreateAccountScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="Order" component={OrderScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name="CreateAccount" component={CreateAccountScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="Order" component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );

@@ -17,7 +17,7 @@ const SearchScreen = ({ navigation }) => {
     const [driver] = useDriver();
     const [locale] = useLocale();
 
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState([]);
     const [query, setQuery] = useState(null);
 
@@ -50,6 +50,8 @@ const SearchScreen = ({ navigation }) => {
 
         debouncedSearch(query, setResults);
     }, [query]);
+
+    console.log('[SearchScreen #results]', results);
 
     return (
         <View style={[tailwind('bg-gray-800 flex-1 relative pt-4')]}>
