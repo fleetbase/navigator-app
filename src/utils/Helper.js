@@ -479,7 +479,7 @@ export default class HelperUtil {
     static async createSocketAndListen(channelId, callback) {
         // Create socket connection config
         const socketConnectionConfig = {
-            hostname: '192.168.1.38', //HelperUtil.config('SOCKETCLUSTER_HOST', 'localhost'),
+            hostname: '192.168.1.47', //HelperUtil.config('SOCKETCLUSTER_HOST', 'localhost'),
             path: HelperUtil.config('SOCKETCLUSTER_PATH', '/socketcluster/'),
             secure: toBoolean(HelperUtil.config('SOCKETCLUSTER_SECURE', false)),
             port: HelperUtil.config('SOCKETCLUSTER_PORT', 38000),
@@ -538,7 +538,7 @@ export default class HelperUtil {
         });
     }
 
-    static createNewOrderLocalNotificationObject(order, driver) {
+    static createNewOrderLocalNotificationObject(order, driver, event) {
         const isOrderAssigned = HelperUtil.deepGet(order, 'driver_assigned.id') === driver.id;
         const isAdhocOrder = !isOrderAssigned;
 
@@ -548,6 +548,14 @@ export default class HelperUtil {
 
         if (isAdhocOrder) {
             message = `New order available nearby 📡`;
+        }
+
+        if (event === 'order.dispatched') {
+            title = `🚀 ${order.id} was just dispatched!`;
+        }
+
+        if (event === 'order.driver_assigned') {
+            title = `📋 ${order.id} was just assigned!`
         }
 
         return {
