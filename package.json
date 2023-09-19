@@ -14,7 +14,8 @@
         "test": "jest",
         "lint": "eslint .",
         "generate-app-icon": "npx app-icon generate -i ./assets/app-icon.png",
-        "generate-launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background-color=#111827 --logo-width=100 --flavor=main"
+        "generate-launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background-color=#111827 --logo-width=100 --flavor=main",
+        "postinstall": "patch-package"
     },
     "dependencies": {
         "@babel/plugin-proposal-async-generator-functions": "^7.17.12",
@@ -98,6 +99,8 @@
         "language-name-map": "^0.3.0",
         "locale-emoji": "^0.3.0",
         "metro-react-native-babel-preset": "^0.64.0",
+        "patch-package": "^8.0.0",
+        "postinstall-postinstall": "^2.1.0",
         "react-native-svg": "^12.1.1",
         "react-test-renderer": "17.0.1"
     },
