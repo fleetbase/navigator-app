@@ -1,6 +1,6 @@
 # OSX
 #
-.DS_Store
+*.DS_Store
 
 # Xcode
 #
@@ -20,6 +20,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
+ios/.xcode.env.local
 
 # Android/IntelliJ
 #
@@ -33,6 +34,9 @@ android/*.hprof
 android/app/build
 *.apk
 *.aab
+.cxx/
+*.keystore
+!debug.keystore
 
 # node.js
 #
@@ -56,9 +60,10 @@ buck-out/
 # For more information about the recommended setup visit:
 # https://docs.fastlane.tools/best-practices/source-control/
 
-*/fastlane/report.xml
-*/fastlane/Preview.html
-*/fastlane/screenshots
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
 
 # Bundle artifact
 *.jsbundle
@@ -67,6 +72,12 @@ buck-out/
 /ios/Pods/
 /vendor/bundle/
 
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+# testing
+/coverage
+
 # react-native-config codegen
 ios/tmp.xcconfig
 
@@ -74,7 +85,7 @@ ios/tmp.xcconfig
 #
 android/app/google-services.json
 
-# Storefront assets/configurations
+# App Configuration Files
 #
 config/app.js
 config/interface.js
