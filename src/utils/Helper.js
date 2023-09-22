@@ -479,7 +479,7 @@ export default class HelperUtil {
     static async createSocketAndListen(channelId, callback) {
         // Create socket connection config
         const socketConnectionConfig = {
-            hostname: '192.168.1.47', //HelperUtil.config('SOCKETCLUSTER_HOST', 'localhost'),
+            hostname: HelperUtil.config('SOCKETCLUSTER_HOST', 'localhost'),
             path: HelperUtil.config('SOCKETCLUSTER_PATH', '/socketcluster/'),
             secure: toBoolean(HelperUtil.config('SOCKETCLUSTER_SECURE', false)),
             port: HelperUtil.config('SOCKETCLUSTER_PORT', 38000),
