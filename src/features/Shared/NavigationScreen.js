@@ -7,7 +7,7 @@ import { Order, Place } from '@fleetbase/sdk';
 import { useMountedState, useLocale, useDriver, useFleetbase } from 'hooks';
 import { getCurrentLocation, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, isArray, getColorCode, titleize, formatMetaValue } from 'utils';
 import { format } from 'date-fns';
-import MapboxNavigation from '@homee/react-native-mapbox-navigation';
+import MapboxNavigation from '@fleetbase/react-native-mapbox-navigation';
 import FastImage from 'react-native-fast-image';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import tailwind from 'tailwind';
@@ -33,7 +33,7 @@ const NavigationScreen = ({ navigation, route }) => {
         }
 
         if (_origin?.coords && _origin?.coords?.latitude && _origin?.coords?.longitude) {
-            return  [ _origin?.coords?.longitude, _origin?.coords?.latitude];
+            return [_origin?.coords?.longitude, _origin?.coords?.latitude];
         }
     });
 

@@ -12,5 +12,6 @@
         <item name="windowSplashScreenBackground">@color/bootsplash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/bootsplash_logo</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
+        <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 </resources>
