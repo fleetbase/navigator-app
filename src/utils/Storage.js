@@ -1,8 +1,8 @@
-import MMKVStorage, { create, useMMKVStorage } from 'react-native-mmkv-storage';
+import { create, useMMKVStorage, MMKVLoader } from 'react-native-mmkv-storage';
 import { Collection } from '@fleetbase/sdk';
 import { isArray, isVoid } from './Helper';
 
-const storage = new MMKVStorage.Loader().initialize();
+const storage = new MMKVLoader().initialize();
 const useStorage = create(storage);
 const { getString, setString, getInt, setInt, getBool, setBool, getArray, setArray } = storage;
 

@@ -9,7 +9,7 @@ import { isEmpty, getColorCode, logError } from 'utils';
 import { RNCamera } from 'react-native-camera';
 import FastImage from 'react-native-fast-image';
 import QRCodeScanner from 'react-native-qrcode-scanner';
-import SignatureCapture from 'react-native-signature-capture';
+import SignatureScreen from 'react-native-signature-canvas';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import tailwind from 'tailwind';
 
@@ -46,9 +46,7 @@ const ProofScreen = ({ navigation, route }) => {
         Alert.alert('Error', error?.message ?? 'An error occured', alertOptions);
     };
 
-    const captureSignature = (event) => {
-        const { encoded } = event;
-
+    const captureSignature = (signature) => {
         let subject = null;
 
         if (isEntity) {
@@ -63,7 +61,7 @@ const ProofScreen = ({ navigation, route }) => {
 
         return order
             .captureSignature(subject, {
-                signature: encoded,
+                signature,
             })
             .then((proof) => {
                 if (activity) {
@@ -153,18 +151,11 @@ const ProofScreen = ({ navigation, route }) => {
             <View>
                 {isSigningProof && (
                     <View style={tailwind('bg-white h-full w-full')}>
-                        <SignatureCapture
+                        <SignatureScreen
                             style={tailwind('bg-white h-full w-full')}
                             ref={signatureScreenRef}
-                            onSaveEvent={captureSignature}
-                            saveImageFileInExtStorage={false}
-                            showNativeButtons={false}
-                            showTitleLabel={false}
+                            onOK={captureSignature}
                             backgroundColor={'white'}
-                            strokeColor={'black'}
-                            minStrokeWidth={4}
-                            maxStrokeWidth={4}
-                            viewMode={'portrait'}
                         />
                         <View style={tailwind('absolute bottom-0 w-full')}>
                             <View style={tailwind('px-4')}>
