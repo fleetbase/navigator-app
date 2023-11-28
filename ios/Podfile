@@ -45,9 +45,13 @@ target 'NavigatorApp' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  # Google Maps
+  # React Native Maps dependencies
+  # The following line is only needed if building on an Apple silicon Mac without rosetta.
+  pod 'Google-Maps-iOS-Utils', :git => 'https://github.com/Simon-TechForm/google-maps-ios-utils.git', :branch => 'feat/support-apple-silicon'
+
   rn_maps_path = '../node_modules/react-native-maps'
   pod 'react-native-google-maps', :path => rn_maps_path
+
   # Permissions handlers
   permissions_path = '../node_modules/react-native-permissions/ios'
   pod 'Permission-Notifications', :path => "#{permissions_path}/Notifications"
@@ -62,12 +66,12 @@ target 'NavigatorApp' do
   end
 
   pre_install do |installer|
-    $RNMBNAV.pre_install(installer)
+    # $RNMBNAV.pre_install(installer)
     # any other pre install hooks here
   end
 
   post_install do |installer|
-    $RNMBNAV.post_install(installer)
+    # $RNMBNAV.post_install(installer)
      # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
      react_native_post_install(
       installer,
