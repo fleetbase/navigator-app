@@ -1,49 +1,25 @@
-import React, { useState, useEffect, useCallback, createRef } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions, Linking } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { EventRegister } from 'react-native-event-listeners';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-    faTimes,
-    faCheck,
-    faMapMarkerAlt,
-    faCogs,
-    faHandHoldingHeart,
-    faSatelliteDish,
-    faShippingFast,
-    faMoneyBillWave,
-    faLocationArrow,
-    faRoute,
-    faMagic,
-    faBell,
-    faLightbulb,
-} from '@fortawesome/free-solid-svg-icons';
-import { useFleetbase, useMountedState, useLocale, useResourceStorage, useDriver } from 'hooks';
-import {
-    isArray,
-    config,
-    formatCurrency,
-    formatKm,
-    formatDistance,
-    calculatePercentage,
-    translate,
-    logError,
-    isEmpty,
-    getColorCode,
-    titleize,
-    formatMetaValue,
-    getStatusColors,
-} from 'utils';
 import { Order } from '@fleetbase/sdk';
-import { format, formatDistance as formatDateDistance, add, isValid as isValidDate } from 'date-fns';
-import ActionSheet from 'react-native-actions-sheet';
-import FastImage from 'react-native-fast-image';
-import DefaultHeader from 'components/headers/DefaultHeader';
+import {
+    faBell,
+    faLightbulb, faLocationArrow, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import OrderRouteMap from 'components/OrderRouteMap';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import OrderWaypoints from 'components/OrderWaypoints';
-import OrderRouteMap from 'components/OrderRouteMap';
-import MapView, { Marker } from 'react-native-maps';
+import { format } from 'date-fns';
+import { useDriver, useFleetbase, useLocale, useMountedState } from 'hooks';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Linking, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import ActionSheet from 'react-native-actions-sheet';
+import { EventRegister } from 'react-native-event-listeners';
+import FastImage from 'react-native-fast-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
+import {
+    calculatePercentage, config,
+    formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate
+} from 'utils';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const { width, height } = Dimensions.get('window');

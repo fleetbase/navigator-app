@@ -70,26 +70,29 @@ PODS:
     - FlipperKit/FlipperKitNetworkPlugin
   - fmt (6.2.1)
   - glog (0.3.5)
-  - Google-Maps-iOS-Utils (2.1.0):
-    - Google-Maps-iOS-Utils/Clustering (= 2.1.0)
-    - Google-Maps-iOS-Utils/Geometry (= 2.1.0)
-    - Google-Maps-iOS-Utils/Heatmap (= 2.1.0)
-    - Google-Maps-iOS-Utils/QuadTree (= 2.1.0)
+  - Google-Maps-iOS-Utils (4.1.0):
+    - Google-Maps-iOS-Utils/Clustering (= 4.1.0)
+    - Google-Maps-iOS-Utils/Geometry (= 4.1.0)
+    - Google-Maps-iOS-Utils/GeometryUtils (= 4.1.0)
+    - Google-Maps-iOS-Utils/Heatmap (= 4.1.0)
+    - Google-Maps-iOS-Utils/QuadTree (= 4.1.0)
     - GoogleMaps
-  - Google-Maps-iOS-Utils/Clustering (2.1.0):
+  - Google-Maps-iOS-Utils/Clustering (4.1.0):
     - Google-Maps-iOS-Utils/QuadTree
     - GoogleMaps
-  - Google-Maps-iOS-Utils/Geometry (2.1.0):
+  - Google-Maps-iOS-Utils/Geometry (4.1.0):
     - GoogleMaps
-  - Google-Maps-iOS-Utils/Heatmap (2.1.0):
+  - Google-Maps-iOS-Utils/GeometryUtils (4.1.0):
+    - GoogleMaps
+  - Google-Maps-iOS-Utils/Heatmap (4.1.0):
     - Google-Maps-iOS-Utils/QuadTree
     - GoogleMaps
-  - Google-Maps-iOS-Utils/QuadTree (2.1.0):
+  - Google-Maps-iOS-Utils/QuadTree (4.1.0):
     - GoogleMaps
-  - GoogleMaps (3.5.0):
-    - GoogleMaps/Maps (= 3.5.0)
-  - GoogleMaps/Base (3.5.0)
-  - GoogleMaps/Maps (3.5.0):
+  - GoogleMaps (7.4.0):
+    - GoogleMaps/Maps (= 7.4.0)
+  - GoogleMaps/Base (7.4.0)
+  - GoogleMaps/Maps (7.4.0):
     - GoogleMaps/Base
   - hermes-engine (0.72.4):
     - hermes-engine/Pre-built (= 0.72.4)
@@ -107,44 +110,18 @@ PODS:
   - libwebp/sharpyuv (1.3.2)
   - libwebp/webp (1.3.2):
     - libwebp/sharpyuv
-  - MapboxCommon (23.4.0)
-  - MapboxCoreMaps (10.12.3):
-    - MapboxCommon (~> 23.4)
-  - MapboxCoreNavigation (2.12.0):
-    - MapboxDirections (~> 2.10.0)
-    - MapboxMobileEvents (~> 1.0)
-    - MapboxNavigationNative (~> 130.0.0)
-  - MapboxDirections (2.10.0):
-    - Polyline (~> 5.0)
-    - Turf (~> 2.6.1)
-  - MapboxMaps (10.12.3):
-    - MapboxCommon (= 23.4.0)
-    - MapboxCoreMaps (= 10.12.3)
-    - MapboxMobileEvents (= 1.0.10)
-    - Turf (~> 2.0)
-  - MapboxMobileEvents (1.0.10)
-  - MapboxNavigation (2.12.0):
-    - MapboxCoreNavigation (= 2.12.0)
-    - MapboxMaps (~> 10.12.1)
-    - MapboxMobileEvents (~> 1.0)
-    - MapboxSpeech (~> 2.0)
-    - Solar-dev (~> 3.0)
-  - MapboxNavigationNative (130.0.0):
-    - MapboxCommon (~> 23.4)
-  - MapboxSpeech (2.1.1)
   - MMKV (1.2.13):
     - MMKVCore (~> 1.2.13)
   - MMKVCore (1.2.16)
   - OpenSSL-Universal (1.1.1100)
-  - Permission-Camera (3.9.2):
+  - Permission-Camera (3.10.1):
     - RNPermissions
-  - Permission-Contacts (3.9.2):
+  - Permission-Contacts (3.10.1):
     - RNPermissions
-  - Permission-LocationWhenInUse (3.9.2):
+  - Permission-LocationWhenInUse (3.10.1):
     - RNPermissions
-  - Permission-Notifications (3.9.2):
+  - Permission-Notifications (3.10.1):
     - RNPermissions
-  - Polyline (5.1.0)
   - RCT-Folly (2021.07.22.00):
     - boost
     - DoubleConversion
@@ -462,11 +439,11 @@ PODS:
     - React-Core
   - react-native-geolocation-service (5.3.1):
     - React
-  - react-native-get-random-values (1.9.0):
+  - react-native-get-random-values (1.10.0):
     - React-Core
-  - react-native-google-maps (0.28.0):
-    - Google-Maps-iOS-Utils (= 2.1.0)
-    - GoogleMaps (= 3.5.0)
+  - react-native-google-maps (2.0.0-beta.14):
+    - Google-Maps-iOS-Utils (= 4.1.0)
+    - GoogleMaps (= 7.4.0)
     - React-Core
   - react-native-image-picker (4.10.3):
     - React-Core
@@ -474,10 +451,7 @@ PODS:
     - React-Core
   - react-native-location (2.5.0):
     - React
-  - react-native-mapbox-navigation (2.1.6):
-    - MapboxNavigation (~> 2.12.0)
-    - React-Core
-  - react-native-maps (0.28.0):
+  - react-native-maps (2.0.0-beta.14):
     - React-Core
   - react-native-mmkv-storage (0.9.1):
     - MMKV (= 1.2.13)
@@ -486,7 +460,7 @@ PODS:
     - React-Core
   - react-native-safe-area-context (3.4.1):
     - React-Core
-  - react-native-webview (13.6.0):
+  - react-native-webview (13.6.3):
     - React-Core
   - React-NativeModulesApple (0.72.4):
     - hermes-engine
@@ -600,11 +574,11 @@ PODS:
     - React-perflogger (= 0.72.4)
   - RNBootSplash (4.7.5):
     - React-Core
-  - RNCAsyncStorage (1.19.3):
+  - RNCAsyncStorage (1.19.8):
     - React-Core
   - RNCMaskedView (0.1.11):
     - React
-  - RNCPicker (2.5.1):
+  - RNCPicker (2.6.1):
     - React-Core
   - RNCPushNotificationIOS (1.11.0):
     - React-Core
@@ -622,7 +596,7 @@ PODS:
     - React-Core
   - RNLocalize (2.2.6):
     - React-Core
-  - RNPermissions (3.9.2):
+  - RNPermissions (3.10.1):
     - React-Core
   - RNReanimated (3.5.4):
     - DoubleConversion
@@ -653,9 +627,9 @@ PODS:
     - React-RCTText
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNScreens (3.25.0):
+  - RNScreens (3.27.0):
+    - RCT-Folly (= 2021.07.22.00)
     - React-Core
-    - React-RCTImage
   - RNSVG (12.5.1):
     - React-Core
   - SDWebImage (5.11.1):
@@ -665,8 +639,6 @@ PODS:
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.10)
   - SocketRocket (0.6.1)
-  - Solar-dev (3.0.1)
-  - Turf (2.6.1)
   - Yoga (1.14.0)
   - YogaKit (1.18.1):
     - Yoga (~> 1.14)
@@ -698,6 +670,7 @@ DEPENDENCIES:
   - FlipperKit/FlipperKitUserDefaultsPlugin (= 0.182.0)
   - FlipperKit/SKIOSNetworkPlugin (= 0.182.0)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
+  - Google-Maps-iOS-Utils (from `https://github.com/Simon-TechForm/google-maps-ios-utils.git`, branch `feat/support-apple-silicon`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - libevent (~> 2.1.12)
   - OpenSSL-Universal (= 1.1.1100)
@@ -731,7 +704,6 @@ DEPENDENCIES:
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-image-resizer (from `../node_modules/react-native-image-resizer`)
   - react-native-location (from `../node_modules/react-native-location`)
-  - "react-native-mapbox-navigation (from `../node_modules/@fleetbase/react-native-mapbox-navigation`)"
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-mmkv-storage (from `../node_modules/react-native-mmkv-storage`)
   - react-native-render-html (from `../node_modules/react-native-render-html`)
@@ -783,28 +755,15 @@ SPEC REPOS:
     - Flipper-PeerTalk
     - FlipperKit
     - fmt
-    - Google-Maps-iOS-Utils
     - GoogleMaps
     - libevent
     - libwebp
-    - MapboxCommon
-    - MapboxCoreMaps
-    - MapboxCoreNavigation
-    - MapboxDirections
-    - MapboxMaps
-    - MapboxMobileEvents
-    - MapboxNavigation
-    - MapboxNavigationNative
-    - MapboxSpeech
     - MMKV
     - MMKVCore
     - OpenSSL-Universal
-    - Polyline
     - SDWebImage
     - SDWebImageWebPCoder
     - SocketRocket
-    - Solar-dev
-    - Turf
     - YogaKit
     - YoutubePlayer-in-WKWebView
 
@@ -819,6 +778,9 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/React/FBReactNativeSpec"
   glog:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
+  Google-Maps-iOS-Utils:
+    :branch: feat/support-apple-silicon
+    :git: https://github.com/Simon-TechForm/google-maps-ios-utils.git
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2023-08-07-RNv0.72.4-813b2def12bc9df02654b3e3653ae4a68d0572e0
@@ -878,8 +840,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-resizer"
   react-native-location:
     :path: "../node_modules/react-native-location"
-  react-native-mapbox-navigation:
-    :path: "../node_modules/@fleetbase/react-native-mapbox-navigation"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
   react-native-mmkv-storage:
@@ -957,6 +917,11 @@ EXTERNAL SOURCES:
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
+CHECKOUT OPTIONS:
+  Google-Maps-iOS-Utils:
+    :commit: 35d05d1eeb65682c1b271f4f3760d814fd946aa1
+    :git: https://github.com/Simon-TechForm/google-maps-ios-utils.git
+
 SPEC CHECKSUMS:
   boost: 57d2868c099736d80fcd648bf211b4431e51a558
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
@@ -973,28 +938,18 @@ SPEC CHECKSUMS:
   FlipperKit: 2efad7007d6745a3f95e4034d547be637f89d3f6
   fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
   glog: 04b94705f318337d7ead9e6d17c019bd9b1f6b1b
-  Google-Maps-iOS-Utils: c32891ff472eaaa1fca032beedafa1a013af7875
-  GoogleMaps: 32ca02de09de357a10ac773f2c70f1986751392d
+  Google-Maps-iOS-Utils: d3fdfd57db799771418f06189e33981597553aa8
+  GoogleMaps: 032f676450ba0779bd8ce16840690915f84e57ac
   hermes-engine: 81191603c4eaa01f5e4ae5737a9efcf64756c7b2
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
-  MapboxCommon: 2945d39158111455f353524f3c2ad356bd8d546a
-  MapboxCoreMaps: 21b53d771818c7b487a66302f6ee7edddfe0cfc9
-  MapboxCoreNavigation: f6ec7dc5b5f124a8f7a464b18706954a4a38b88f
-  MapboxDirections: a620d78a54312c392323ba211df8ae7dd9a28ab4
-  MapboxMaps: 119cdd6c062b9ae2cb9fb5e9a3b9f198f2bf6387
-  MapboxMobileEvents: de50b3a4de180dd129c326e09cd12c8adaaa46d6
-  MapboxNavigation: bae307fb7e8ccc2e8ba6439592f7da29408577e7
-  MapboxNavigationNative: b0159bab8904071aa4d895bd960ff9824ba87cc3
-  MapboxSpeech: cd25ef99c3a3d2e0da72620ff558276ea5991a77
   MMKV: aac95d817a100479445633f2b3ed8961b4ac5043
   MMKVCore: 9cfef4c48c6c46f66226fc2e4634d78490206a48
   OpenSSL-Universal: ebc357f1e6bc71fa463ccb2fe676756aff50e88c
-  Permission-Camera: 72fc8bc495a13190eb00c9a54d94fb9c1a1095fd
-  Permission-Contacts: a0a958ee67d14373494bec88f6657b419ed9372b
-  Permission-LocationWhenInUse: 864516b65f94533a24a2d6fd2139a714a1e0a516
-  Permission-Notifications: 1616a358a006cef437d8c7cfe81f3e038f5b0861
-  Polyline: 2a1f29f87f8d9b7de868940f4f76deb8c678a5b1
+  Permission-Camera: 9b70902f34a83c10e198d2d01f0e453e58842776
+  Permission-Contacts: 5d89377c3488b99a4b0e62332ba1be6da3103119
+  Permission-LocationWhenInUse: 31f52ebddef50c306a585b5a82ca16c8ff582dec
+  Permission-Notifications: 817390e18898f34adad940cd4141e771e77086ea
   RCT-Folly: 424b8c9a7a0b9ab2886ffe9c3b041ef628fd4fb1
   RCTRequired: c0569ecc035894e4a68baecb30fe6a7ea6e399f9
   RCTTypeSafety: e90354072c21236e0bcf1699011e39acd25fea2f
@@ -1014,17 +969,16 @@ SPEC CHECKSUMS:
   react-native-camera: 3eae183c1d111103963f3dd913b65d01aef8110f
   react-native-config: 86038147314e2e6d10ea9972022aa171e6b1d4d8
   react-native-geolocation-service: 608e1da71a1ac31b4de64d9ef2815f697978c55b
-  react-native-get-random-values: dee677497c6a740b71e5612e8dbd83e7539ed5bb
-  react-native-google-maps: 46dea4aa4acb7300beff508f64d9f8c84e9fb106
+  react-native-get-random-values: 384787fd76976f5aec9465aff6fa9e9129af1e74
+  react-native-google-maps: 327f65e847bbf98e1b92ccedd3ab322d4a00f56c
   react-native-image-picker: 60f4246eb5bb7187fc15638a8c1f13abd3820695
   react-native-image-resizer: d9fb629a867335bdc13230ac2a58702bb8c8828f
   react-native-location: 5a40ec1cc6abf2f6d94df979f98ec76c3a415681
-  react-native-mapbox-navigation: 68cb8a18a5a9c63340560c470f466757e61a4d80
-  react-native-maps: 2d405b4e8cee0282e4c02bac434d81450dfea877
+  react-native-maps: bea0a31ac1c8c5974ceb1b16b301d72d847c6fb0
   react-native-mmkv-storage: cfb6854594cfdc5f7383a9e464bb025417d1721c
   react-native-render-html: 984dfe2294163d04bf5fe25d7c9f122e60e05ebe
   react-native-safe-area-context: 9e40fb181dac02619414ba1294d6c2a807056ab9
-  react-native-webview: 669ae162965f629a8d6a4bdd3b99a304d36ef1f2
+  react-native-webview: 88293a0f23eca8465c0433c023ec632930e644d0
   React-NativeModulesApple: edb5ace14f73f4969df6e7b1f3e41bef0012740f
   React-perflogger: 496a1a3dc6737f964107cb3ddae7f9e265ddda58
   React-RCTActionSheet: 02904b932b50e680f4e26e7a686b33ebf7ef3c00
@@ -1043,9 +997,9 @@ SPEC CHECKSUMS:
   React-utils: b79f2411931f9d3ea5781404dcbb2fa8a837e13a
   ReactCommon: 4b2bdcb50a3543e1c2b2849ad44533686610826d
   RNBootSplash: 85f6b879c080e958afdb4c62ee04497b05fd7552
-  RNCAsyncStorage: c913ede1fa163a71cea118ed4670bbaaa4b511bb
+  RNCAsyncStorage: 687bb9e85dd3d45b966662440dcfc0cd962347e6
   RNCMaskedView: 0e1bc4bfa8365eba5fbbb71e07fbdc0555249489
-  RNCPicker: 529d564911e93598cc399b56cc0769ce3675f8c8
+  RNCPicker: b18aaf30df596e9b1738e7c1f9ee55402a229dca
   RNCPushNotificationIOS: 64218f3c776c03d7408284a819b2abfda1834bc8
   RNDateTimePicker: 65e1d202799460b286ff5e741d8baf54695e8abd
   RNDeviceInfo: aad3c663b25752a52bf8fce93f2354001dd185aa
@@ -1053,19 +1007,17 @@ SPEC CHECKSUMS:
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
   RNGestureHandler: a479ebd5ed4221a810967000735517df0d2db211
   RNLocalize: d4b8af4e442d4bcca54e68fc687a2129b4d71a81
-  RNPermissions: 868c4e459921873df0c756f37450457a88bf037c
+  RNPermissions: 4e3714e18afe7141d000beae3755e5b5fb2f5e05
   RNReanimated: ab2e96c6d5591c3dfbb38a464f54c8d17fb34a87
-  RNScreens: 85d3880b52d34db7b8eeebe2f1a0e807c05e69fa
+  RNScreens: 3c2d122f5e08c192e254c510b212306da97d2581
   RNSVG: d7d7bc8229af3842c9cfc3a723c815a52cdd1105
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
   SocketRocket: f32cd54efbe0f095c4d7594881e52619cfe80b17
-  Solar-dev: 4612dc9878b9fed2667d23b327f1d4e54e16e8d0
-  Turf: 469ce2c3d22e5e8e4818d5a3b254699a5c89efa4
   Yoga: 3efc43e0d48686ce2e8c60f99d4e6bd349aff981
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
   YoutubePlayer-in-WKWebView: 4fca3b4f6f09940077bfbae7bddb771f2b43aacd
 
-PODFILE CHECKSUM: e7d3820730edeb4de17e6e765bc681c9462f98ec
+PODFILE CHECKSUM: 39ec3329bfce7da538889a9c08c6e9f2d5cd79d0
 
 COCOAPODS: 1.12.1

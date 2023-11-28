@@ -513,7 +513,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
 				CURRENT_PROJECT_VERSION = 10;
-				DEVELOPMENT_TEAM = W4M54N7H85;
+				DEVELOPMENT_TEAM = 27ZYTHPKKU;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
@@ -548,7 +548,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 10;
-				DEVELOPMENT_TEAM = W4M54N7H85;
+				DEVELOPMENT_TEAM = 27ZYTHPKKU;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
