@@ -1,16 +1,12 @@
-import React, { useState, useEffect, useCallback, createRef } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes, faLocationArrow } from '@fortawesome/free-solid-svg-icons';
 import { Order, Place } from '@fleetbase/sdk';
-import { useMountedState, useLocale, useDriver, useFleetbase } from 'hooks';
-import { getCurrentLocation, formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, isArray, getColorCode, titleize, formatMetaValue } from 'utils';
-import { format } from 'date-fns';
-import MapboxNavigation from '@fleetbase/react-native-mapbox-navigation';
-import FastImage from 'react-native-fast-image';
-import OrderStatusBadge from 'components/OrderStatusBadge';
+import { faLocationArrow, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useDriver, useFleetbase, useLocale, useMountedState } from 'hooks';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
+import { getCurrentLocation, isArray, logError } from 'utils';
 
 const NavigationScreen = ({ navigation, route }) => {
     const { _order, _destination } = route.params;
@@ -27,7 +23,7 @@ const NavigationScreen = ({ navigation, route }) => {
     const [origin, setOrigin] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const extractOriginCoordinates = useCallback((_origin) => {
+    const extractOriginCoordinates = useCallback(_origin => {
         if (_origin?.coordinates && isArray(_origin?.coordinates)) {
             return _origin?.coordinates?.reverse();
         }
@@ -44,7 +40,7 @@ const NavigationScreen = ({ navigation, route }) => {
 
     const isReady = isArray(coords?.origin) && isArray(coords?.destination);
 
-    const trackDriverLocation = useCallback((event) => {
+    const trackDriverLocation = useCallback(event => {
         // const { distanceTraveled, durationRemaining, fractionTraveled, distanceRemaining } = event.nativeEvent;
         const { latitude, longitude } = event.nativeEvent;
 
