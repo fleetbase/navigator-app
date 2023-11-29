@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Dimensions, Text, View } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
-import MapView, { Marker, PROVIDER_APPLE, PROVIDER_GOOGLE } from 'react-native-maps';
-import { googleMapsActions, googleMapsTravelModes, NavigationApps, wazeActions } from 'react-native-navigation-apps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { NavigationApps } from 'react-native-navigation-apps';
+import Picker from 'react-native-picker-select';
 import { tailwind } from 'tailwind';
 import { isEmpty } from 'utils';
 
@@ -14,7 +14,7 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapReady }) => {
     const map = useRef();
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
-    const [mapProvider, setMapProvider] = useState(PROVIDER_GOOGLE);
+    const [mapProvider, setMapProvider] = useState(undefined);
 
     const getCurrentLeg = order => {
         const payload = order.getAttribute('payload');
@@ -45,7 +45,7 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
         return firstWaypoint;
     };
 
-    const getLastWaypoint = (order) => {
+    const getLastWaypoint = order => {
         const payload = order.getAttribute('payload');
 
         if (payload?.dropoff) {
@@ -61,14 +61,14 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
         return lastWaypoint;
     };
 
-    const getMiddleWaypoints = (order) => {
+    const getMiddleWaypoints = order => {
         const payload = order.getAttribute('payload');
         const { waypoints, pickup, dropoff } = payload;
 
         if (!pickup && !dropoff && waypoints.length) {
             const middleWaypoints = waypoints.slice(1, waypoints.length - 1);
 
-            middleWaypoints.forEach((waypoint) => {
+            middleWaypoints.forEach(waypoint => {
                 waypoint.completed = waypoint.status_code === 'COMPLETED';
             });
 
@@ -78,7 +78,7 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
         return waypoints ?? [];
     };
 
-    const startCall = (phone) => {
+    const startCall = phone => {
         if (phone) {
             Linking.openURL(`tel:${phone}`);
         }
@@ -99,28 +99,21 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
         const coordinates = '37.7749,-122.4194';
         Linking.openURL(`maps://app?daddr=${coordinates}&dirflg=d`);
     };
-
-    const mapProviders = [
-        { label: 'Google Maps', value: PROVIDER_GOOGLE },
-        { label: 'Apple Maps', value: PROVIDER_APPLE },
-        { label: 'Waze', value: 'waze' },
-    ];
-
     return (
         <View style={[tailwind(''), wrapperStyle]}>
-            <DropDownPicker
-                items={mapProviders}
-                defaultValue={PROVIDER_GOOGLE}
-                containerStyle={{ height: 40, margin: 10 }}
-                style={{ backgroundColor: '#fafafa' }}
-                itemStyle={{
-                    justifyContent: 'flex-start',
-                }}
-                dropDownStyle={{ backgroundColor: '#fafafa' }}
-                onChangeItem={item => setMapProvider(item.value)}
+            <Picker
+                onValueChange={value => setMapProvider(value == 'apple' ? undefined : value)}
+                style={Platform.OS === 'ios' ? tailwind('py-20 px-8') : tailwind('py-20 px-8 my-10')}
+                items={[
+                    { label: 'Google Maps', value: PROVIDER_GOOGLE, key: PROVIDER_GOOGLE },
+                    { label: 'Apple Maps', value: 'apple', key: 'apple' },
+                    { label: 'Waze', value: 'waze', key: 'waze' },
+                ]}
             />
-
-            {mapProvider === PROVIDER_GOOGLE && (
+            <Text>
+                {mapProvider} {mapProvider == PROVIDER_GOOGLE || mapProvider == undefined}
+            </Text>
+            {(mapProvider == PROVIDER_GOOGLE || mapProvider == undefined) && (
                 <MapView
                     ref={map}
                     onMapReady={() => {
@@ -128,6 +121,7 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
                             onMapReady(map);
                         }
                     }}
+                    provider={mapProvider || undefined}
                     minZoomLevel={12}
                     maxZoomLevel={20}
                     style={tailwind('w-full h-60 rounded-md shadow-sm')}
@@ -174,19 +168,6 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
                     )}
                 </MapView>
             )}
-
-            {mapProvider === PROVIDER_APPLE && (
-                <MapView
-                    style={styles.map}
-                    provider={mapProvider}
-                    initialRegion={{
-                        latitude: 37.7749,
-                        longitude: -122.4194,
-                        latitudeDelta: 0.0922,
-                        longitudeDelta: 0.0421,
-                    }}
-                />
-            )}
             {mapProvider === 'waze' && (
                 <NavigationApps
                     modalProps={{ animationType: 'slide', transparent: true }}
@@ -202,9 +183,6 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
                     row
                     viewMode="modal"
                     address="some default address to navigate"
-                    waze={{ address: '', lat: '', lon: '', action: wazeActions.navigateByAddress }}
-                    googleMaps={{ search, lat: '', lon: '', action: googleMapsActions.navigateByAddress, travelMode: googleMapsTravelModes.driving }}
-                    maps={{ search, lat: '', lon: '', action: mapsActions.navigateByAddress, travelMode: mapsTravelModes.driving }}
                 />
             )}
         </View>
