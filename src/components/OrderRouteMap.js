@@ -1,20 +1,16 @@
-import React, { useRef, useState } from 'react';
-import { Dimensions, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { NavigationApps } from 'react-native-navigation-apps';
-import Picker from 'react-native-picker-select';
+import React, { useRef } from 'react';
+import { Dimensions, Text, TouchableOpacity, View, Linking } from 'react-native';
+import LaunchNavigator from 'react-native-launch-navigator';
 import { tailwind } from 'tailwind';
-import { isEmpty } from 'utils';
+import { deepGet, isEmpty } from 'utils';
 
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
-const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapReady }) => {
-    const map = useRef();
+const OrderRouteMap = ({ order }) => {
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
-    const [mapProvider, setMapProvider] = useState(undefined);
 
     const getCurrentLeg = order => {
         const payload = order.getAttribute('payload');
@@ -78,113 +74,34 @@ const OrderRouteMap = ({ order, onPress, wrapperStyle, containerStyle, onMapRead
         return waypoints ?? [];
     };
 
-    const startCall = phone => {
-        if (phone) {
-            Linking.openURL(`tel:${phone}`);
-        }
-    };
-
     const currentLeg = getCurrentLeg(order);
     const firstWaypoint = getFirstWaypoint(order);
     const lastWaypoint = getLastWaypoint(order);
     const middleWaypoints = getMiddleWaypoints(order) ?? [];
     const payload = order.getAttribute('payload');
 
-    const initialRegionCoordinates = {
-        latitude: firstWaypoint?.location.coordinates[1],
-        longitude: firstWaypoint?.location.coordinates[0],
+    const start = deepGet(payload.pickup, 'location.coordinates', []);
+    const destination = deepGet(payload.dropoff, 'location.coordinates', []);
+
+    console.log('[start]', [...start.reverse()]);
+    console.log('[destination]', [...destination.reverse()]);
+
+    const handleLaunchNavigator = async () => {
+        LaunchNavigator.navigate(destination.reverse(), {
+            launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
+            start: start.reverse(),
+        })
+            .then(() => console.log('Launched navigator'))
+            .catch(err => console.error('Error launching navigator: ' + err));
     };
 
-    const openMaps = () => {
-        const coordinates = '37.7749,-122.4194';
-        Linking.openURL(`maps://app?daddr=${coordinates}&dirflg=d`);
-    };
     return (
-        <View style={[tailwind(''), wrapperStyle]}>
-            <Picker
-                onValueChange={value => setMapProvider(value == 'apple' ? undefined : value)}
-                style={Platform.OS === 'ios' ? tailwind('py-20 px-8') : tailwind('py-20 px-8 my-10')}
-                items={[
-                    { label: 'Google Maps', value: PROVIDER_GOOGLE, key: PROVIDER_GOOGLE },
-                    { label: 'Apple Maps', value: 'apple', key: 'apple' },
-                    { label: 'Waze', value: 'waze', key: 'waze' },
-                ]}
-            />
-            <Text>
-                {mapProvider} {mapProvider == PROVIDER_GOOGLE || mapProvider == undefined}
-            </Text>
-            {(mapProvider == PROVIDER_GOOGLE || mapProvider == undefined) && (
-                <MapView
-                    ref={map}
-                    onMapReady={() => {
-                        if (typeof onMapReady === 'function') {
-                            onMapReady(map);
-                        }
-                    }}
-                    provider={mapProvider || undefined}
-                    minZoomLevel={12}
-                    maxZoomLevel={20}
-                    style={tailwind('w-full h-60 rounded-md shadow-sm')}
-                    initialRegion={{
-                        ...initialRegionCoordinates,
-                        latitudeDelta: 1.0922,
-                        longitudeDelta: 0.0421,
-                    }}>
-                    {firstWaypoint && (
-                        <Marker
-                            coordinate={{
-                                latitude: firstWaypoint.location.coordinates[1],
-                                longitude: firstWaypoint.location.coordinates[0],
-                            }}>
-                            <View style={tailwind('bg-blue-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
-                                <Text style={tailwind('font-bold text-white')}>1</Text>
-                            </View>
-                        </Marker>
-                    )}
-
-                    {middleWaypoints.map((waypoint, i) => (
-                        <Marker
-                            key={i}
-                            coordinate={{
-                                latitude: waypoint.location.coordinates[1],
-                                longitude: waypoint.location.coordinates[0],
-                            }}>
-                            <View style={tailwind('bg-green-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
-                                <Text style={tailwind('font-bold text-white')}>{i + 2}</Text>
-                            </View>
-                        </Marker>
-                    ))}
-
-                    {lastWaypoint && (
-                        <Marker
-                            coordinate={{
-                                latitude: lastWaypoint.location.coordinates[1],
-                                longitude: lastWaypoint.location.coordinates[0],
-                            }}>
-                            <View style={tailwind('bg-red-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
-                                <Text style={tailwind('font-bold text-white')}>{middleWaypoints.length + 2}</Text>
-                            </View>
-                        </Marker>
-                    )}
-                </MapView>
-            )}
-            {mapProvider === 'waze' && (
-                <NavigationApps
-                    modalProps={{ animationType: 'slide', transparent: true }}
-                    modalContainerStyle={{ height: 300, width: 300, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}
-                    modalBtnCloseContainerStyle={{}}
-                    modalBtnCloseStyle={{ borderWidth: 1 }}
-                    modalBtnCloseTextStyle={{ fontSize: 20 }}
-                    modalBtnOpenStyle={{ borderWidth: 1 }}
-                    modalBtnOpenTextStyle={{ fontSize: 50, color: 'white' }}
-                    modalBtnOpenText={'some text'}
-                    modalBtnCloseText={'some text'}
-                    iconSize={50}
-                    row
-                    viewMode="modal"
-                    address="some default address to navigate"
-                />
-            )}
+        <View style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')}>
+            <View style={tailwind('btn bg-green-900 border border-green-700')}>
+                <TouchableOpacity style={tailwind('')} onPress={handleLaunchNavigator}>
+                    <Text style={tailwind('font-semibold text-red-50 text-base')}>Map</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
