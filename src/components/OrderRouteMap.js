@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Dimensions, Text, TouchableOpacity, View, Linking } from 'react-native';
+import React from 'react';
+import { Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import LaunchNavigator from 'react-native-launch-navigator';
 import { tailwind } from 'tailwind';
 import { deepGet, isEmpty } from 'utils';
@@ -86,23 +86,35 @@ const OrderRouteMap = ({ order }) => {
     console.log('[start]', [...start.reverse()]);
     console.log('[destination]', [...destination.reverse()]);
 
+    console.log('---------------------------');
+
+    console.log('[no---->start]', start.reverse());
+    console.log('no---->destination', destination);
+
     const handleLaunchNavigator = async () => {
-        LaunchNavigator.navigate(destination.reverse(), {
-            launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
-            start: start.reverse(),
-        })
-            .then(() => console.log('Launched navigator'))
-            .catch(err => console.error('Error launching navigator: ' + err));
+        LaunchNavigator.isAppAvailable(LaunchNavigator.APP.GOOGLE_MAPS).then(isGoogleMapAvailable => {
+            if (isGoogleMapAvailable) {
+                app = LaunchNavigator.APP.GOOGLE_MAPS;
+            } else {
+                app = LaunchNavigator.APP.APPLE_MAPS || LaunchNavigator.APP.WAZE;
+            }
+
+            LaunchNavigator.navigate(destination, {
+                launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
+                app: app,
+                start: [...start.reverse()],
+            })
+                .then(() => console.log('Launched navigator'))
+                .catch(err => console.error('Error launching navigator: ' + err));
+        });
     };
 
     return (
-        <View style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')}>
+        <TouchableOpacity style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')} onPress={() => handleLaunchNavigator()}>
             <View style={tailwind('btn bg-green-900 border border-green-700')}>
-                <TouchableOpacity style={tailwind('')} onPress={handleLaunchNavigator}>
-                    <Text style={tailwind('font-semibold text-red-50 text-base')}>Map</Text>
-                </TouchableOpacity>
+                <Text style={tailwind('font-semibold text-red-50 text-base')}>Map</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
