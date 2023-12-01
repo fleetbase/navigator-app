@@ -83,13 +83,9 @@ const OrderRouteMap = ({ order }) => {
     const start = deepGet(payload.pickup, 'location.coordinates', []);
     const destination = deepGet(payload.dropoff, 'location.coordinates', []);
 
-    console.log('[start]', [...start.reverse()]);
-    console.log('[destination]', [...destination.reverse()]);
 
-    console.log('---------------------------');
-
-    console.log('[no---->start]', start.reverse());
-    console.log('no---->destination', destination);
+    const s = [...start.reverse()];
+    const d = [...destination.reverse()];
 
     const handleLaunchNavigator = async () => {
         LaunchNavigator.isAppAvailable(LaunchNavigator.APP.GOOGLE_MAPS).then(isGoogleMapAvailable => {
@@ -99,11 +95,12 @@ const OrderRouteMap = ({ order }) => {
                 app = LaunchNavigator.APP.APPLE_MAPS || LaunchNavigator.APP.WAZE;
             }
 
-            LaunchNavigator.navigate(destination, {
+            LaunchNavigator.navigate(d, {
                 launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
                 app: app,
-                start: [...start.reverse()],
+                start: s,
             })
+
                 .then(() => console.log('Launched navigator'))
                 .catch(err => console.error('Error launching navigator: ' + err));
         });

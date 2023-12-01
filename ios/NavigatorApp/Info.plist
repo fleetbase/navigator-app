@@ -26,10 +26,6 @@
 		<string>$(CURRENT_PROJECT_VERSION)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
-		<key>MBXAccessToken</key>
-		<string>$(MAPBOX_ACCESS_TOKEN)</string>
-		<key>MGLMapboxAccessToken</key>
-		<string>$(MAPBOX_ACCESS_TOKEN)</string>
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSExceptionDomains</key>
