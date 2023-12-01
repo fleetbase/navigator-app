@@ -73,28 +73,6 @@ const NavigationScreen = ({ navigation, route }) => {
                     </View>
                 </View>
             </View>
-            {isReady ? (
-                <MapboxNavigation
-                    origin={coords.origin}
-                    destination={coords.destination}
-                    showsEndOfRouteFeedback={true}
-                    onLocationChange={trackDriverLocation}
-                    onRouteProgressChange={(event) => {
-                        const { distanceTraveled, durationRemaining, fractionTraveled, distanceRemaining } = event.nativeEvent;
-                    }}
-                    onError={(event) => {
-                        const { message } = event.nativeEvent;
-                    }}
-                    onCancelNavigation={() => navigation.goBack()}
-                    onArrive={() => {
-                        // Called when you arrive at the destination.
-                    }}
-                />
-            ) : (
-                <View style={tailwind('flex items-center justify-center h-full w-full bg-gray-600 -mt-14')}>
-                    <ActivityIndicator size={'large'} color={getColorCode('text-blue-300')} />
-                </View>
-            )}
         </View>
     );
 };
