@@ -1,14 +1,11 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { createRef, useEffect, useState } from 'react';
-import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import ActionSheet from 'react-native-actions-sheet';
 import LaunchNavigator from 'react-native-launch-navigator';
 import tailwind from 'tailwind';
 import { deepGet, getColorCode, translate } from 'utils';
-
-const windowHeight = Dimensions.get('window').height;
-const dialogHeight = windowHeight / 2;
 
 const OrderMapPicker = ({ title = 'Select Navigator', wrapperStyle, order, buttonStyle }) => {
     const actionSheetRef = createRef();
@@ -41,9 +38,7 @@ const OrderMapPicker = ({ title = 'Select Navigator', wrapperStyle, order, butto
                     <Text style={tailwind('font-semibold text-red-50 text-base')}>Start Navigation</Text>
                 </View>
             </TouchableOpacity>
-
             <ActionSheet
-                containerStyle={[{ height: dialogHeight }]}
                 gestureEnabled={true}
                 bounceOnOpen={true}
                 nestedScrollEnabled={true}
