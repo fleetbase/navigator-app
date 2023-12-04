@@ -134,6 +134,8 @@ dependencies {
     // Installed dependencies
     implementation project(':react-native-config')
     implementation "androidx.core:core-splashscreen:1.0.0-alpha02" 
+    implementation "com.google.android.gms:play-services-base:16.0.1"
+    implementation "com.google.android.gms:play-services-location:16.0.0"
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
