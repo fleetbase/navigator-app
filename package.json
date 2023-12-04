@@ -31,7 +31,6 @@
     },
     "dependencies": {
         "@babel/plugin-proposal-async-generator-functions": "^7.17.12",
-        "@fleetbase/react-native-mapbox-navigation": "^2.1.7",
         "@fleetbase/sdk": "1.2.5",
         "@fortawesome/fontawesome-svg-core": "^1.2.35",
         "@fortawesome/free-brands-svg-icons": "^5.15.4",

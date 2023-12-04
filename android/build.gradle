@@ -12,7 +12,7 @@ buildscript {
         googlePlayServicesVersion = "17.0.0"
         // We use NDK 23 which has both M1 support and is the side-by-side NDK version from AGP.
         ndkVersion = "26.0.10792818"
-    }
+            }
     repositories {
         google()
         mavenCentral()
@@ -22,23 +22,5 @@ buildscript {
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("de.undercouch:gradle-download-task:4.1.2")
         classpath('com.google.gms:google-services:4.3.15')
-    }
-}
-
-allprojects {
-    repositories {
-         maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            authentication {
-                basic(BasicAuthentication)
-            }
-            credentials {
-                // Do not change the username below.
-                // This should always be `mapbox` (not your username).
-                username = "mapbox"
-                // Use the secret token you stored in gradle.properties as the password
-                password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
-            }
         }
-    }
 }
