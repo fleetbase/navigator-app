@@ -57,7 +57,7 @@ const OrderScreen = ({ navigation, route }) => {
     const destination = [order.getAttribute('payload.pickup'), ...order.getAttribute('payload.waypoints', []), order.getAttribute('payload.dropoff')].find(place => {
         return place?.id === order.getAttribute('payload.current_waypoint');
     });
-    const canNavigate = order.getAttribute('payload.current_waypoint') !== null && destination && order.isInProgress;
+    const canNavigate = order.isDispatched || order.isInProgress;
     const canSetDestination = isMultiDropOrder && order.isInProgress && !destination;
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
@@ -459,11 +459,11 @@ const OrderScreen = ({ navigation, route }) => {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadOrder({ isRefreshing: true })} tintColor={getColorCode('text-blue-200')} />}>
                 <View style={tailwind('flex w-full h-full pb-60')}>
-                    <View style={tailwind('flex flex-row items-center justify-center')}>
-                        <View style={tailwind('w-full')}>
+                    {canNavigate && (
+                        <View style={tailwind('flex flex-row items-center justify-center flex-1')}>
                             <OrderMapPicker order={order} />
                         </View>
-                    </View>
+                    )}
                     <View style={tailwind('bg-gray-800 ')}>
                         <View style={tailwind('px-4 pb-3 pt-4')}>
                             {destination && order.isInProgress && (
