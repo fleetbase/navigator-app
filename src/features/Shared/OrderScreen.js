@@ -12,7 +12,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
-import { calculatePercentage, config, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
+import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
 import OrderMapPicker from '../../components/OrderMapPicker';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -450,7 +450,6 @@ const OrderScreen = ({ navigation, route }) => {
                                 </View>
                             </TouchableOpacity>
                         )}
-                        {canNavigate && <OrderMapPicker wrapperStyle={tailwind('mr-2')} buttonStyle={[config('ui.headerComponent.localePickerStyle')]} />}
                     </View>
                 </View>
             </View>

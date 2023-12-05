@@ -3,7 +3,7 @@
 buildscript {
     ext {
         googlePlayServicesVersion = "+"
-        playServicesLocationVersion = "16.0.0"
+        playServicesLocationVersion = "21.0.1"
         firebaseMessagingVersion = "22.0.0"
         firebaseVersion = "22.0.0"
         buildToolsVersion = "33.0.0"
