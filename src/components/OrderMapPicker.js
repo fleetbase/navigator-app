@@ -1,41 +1,73 @@
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faLocationArrow, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { createRef, useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import ActionSheet from 'react-native-actions-sheet';
 import LaunchNavigator from 'react-native-launch-navigator';
 import tailwind from 'tailwind';
-import { deepGet, getColorCode, translate } from 'utils';
+import { deepGet, getColorCode, isEmpty, translate } from 'utils';
+
+function waypointMustHaveId(waypoint) {
+    return typeof waypoint.id === 'string' && waypoint.id.startsWith('place_');
+}
+
+function getOrderDestination(order) {
+    const waypoints = [order.getAttribute('payload.pickup'), ...order.getAttribute('payload.waypoints', []), order.getAttribute('payload.dropoff')].filter(waypointMustHaveId);
+    const orderHasWaypoints = !isEmpty(order.getAttribute('payload.waypoints', []));
+
+    let destination = order.getAttribute('payload.pickup');
+
+    if (order.isEnroute) {
+        destination = order.getAttribute('payload.dropoff');
+    }
+
+    if (orderHasWaypoints) {
+        destination = waypoints.find(waypoint => {
+            return typeof waypoint.id === 'string' && waypoint.id === order.getAttribute('payload.current_waypoint');
+        });
+
+        if (!destination) {
+            return waypoints[0];
+        }
+    }
+
+    return destination;
+}
 
 const OrderMapPicker = ({ title = 'Select Navigator', wrapperStyle, order, buttonStyle }) => {
     const actionSheetRef = createRef();
-    const payload = order.getAttribute('payload');
-    const start = deepGet(payload.pickup, 'location.coordinates', []);
-    const destination = deepGet(payload.dropoff, 'location.coordinates', []);
+    const destinationWaypoint = getOrderDestination(order);
+    const destination = [...deepGet(destinationWaypoint, 'location.coordinates', [])].reverse();
     const [mapProviders, setMapProviders] = useState([]);
 
     title = title ?? translate('components.interface.OrderMapPicker.title');
-
-    const s = [...start.reverse()];
-    const d = [...destination.reverse()];
 
     useEffect(() => {
         LaunchNavigator.getAvailableApps().then(setMapProviders);
     }, []);
 
     const handleNavigate = async app => {
-        LaunchNavigator.navigate(d, {
+        LaunchNavigator.navigate(destination, {
             launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
             app,
-            start: s,
         });
     };
 
     return (
         <View style={[wrapperStyle]}>
             <TouchableOpacity style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')} onPress={() => actionSheetRef.current?.setModalVisible()}>
-                <View style={tailwind('btn bg-blue-900 border border-blue-700')}>
-                    <Text style={tailwind('font-semibold text-red-50 text-base')}>Start Navigation</Text>
+                <View style={tailwind('btn bg-blue-900 border border-blue-700 py-0 pl-4 pr-2')}>
+                    <View style={tailwind('flex flex-row justify-start')}>
+                        <View style={tailwind('border-r border-blue-700 py-2 pr-4 flex flex-row items-center')}>
+                            <FontAwesomeIcon icon={faLocationArrow} style={tailwind('text-blue-50 mr-2')} />
+                            <Text style={tailwind('font-semibold text-blue-50 text-base')}>Navigate</Text>
+                        </View>
+                        <View style={tailwind('flex-1 py-2 px-2 flex items-center')}>
+                            <Text numberOfLines={1} style={tailwind('text-blue-50 text-base')}>
+                                {destinationWaypoint.address}
+                            </Text>
+                        </View>
+                    </View>
                 </View>
             </TouchableOpacity>
             <ActionSheet
