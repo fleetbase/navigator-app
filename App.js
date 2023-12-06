@@ -5,32 +5,59 @@
  * @flow strict-local
  */
 
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import type { Node } from 'react';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
-import React from 'react';
-import type { Node } from 'react';
-import { Platform, Text, View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
-import CoreStack from './src/features/Core/CoreStack';
-import { config } from './src/utils';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
+import Config from 'react-native-config';
+import CoreStack from './src/features/Core/CoreStack';
 
-const isAndroid = Platform.OS === 'android';
 const Stack = createStackNavigator();
-const linking = {
-    prefixes: [config('APP_LINK_PREFIX'), ...config('app.linkingPrefixes')].filter(Boolean),
-    config: {
-        screens: {},
-    },
-};
 
 const App: () => Node = () => {
+    const setFleetbaseConfig = (key, host) => {
+        // Logic to set FLEETBASE_KEY and FLEETBASE_HOST
+        console.log(`Setting Fleetbase config: Key=${key}, Host=${host}`);
+        // Implement the logic to update the app's configuration
+        return Config[key] && Config[host];
+    };
+
+    useEffect(() => {
+        const handleDeepLink = event => {
+            let data = Linking.parse(event.url);
+
+            // Example URL: flbnavigator://configure?fleetbase_key=KEY&fleetbase_host=HOST
+            if (data.path === 'configure' && data.queryParams) {
+                const { fleetbase_key, fleetbase_host } = data.queryParams;
+                // Set the environment variables here
+
+                console.log('fleetbase_key::::', JSON.stringify(fleetbase_key));
+                setFleetbaseConfig(fleetbase_key, fleetbase_host);
+            }
+        };
+        // Listen for incoming links
+        Linking.addEventListener('url', handleDeepLink);
+
+        // Check if the app was opened by a deep link
+        Linking.getInitialURL().then(url => {
+            if (url) handleDeepLink({ url });
+        });
+
+        // Cleanup
+        return () => {
+            Linking.removeEventListener('url', handleDeepLink);
+        };
+    }, []);
+
     return (
         <>
             <NavigationContainer
-                linking={linking}
+                linking={handleDeepLink}
                 fallback={
                     <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
                         <View style={tailwind('flex items-center justify-center')}>
@@ -38,8 +65,7 @@ const App: () => Node = () => {
                             <Text style={tailwind('text-gray-400')}>Loading...</Text>
                         </View>
                     </View>
-                }
-            >
+                }>
                 <Stack.Navigator>
                     <Stack.Screen name="CoreStack" component={CoreStack} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
                 </Stack.Navigator>
