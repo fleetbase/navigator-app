@@ -10,49 +10,42 @@ import { createStackNavigator } from '@react-navigation/stack';
 import type { Node } from 'react';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Linking, Text, View } from 'react-native';
+import Config from 'react-native-config';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
-import Config from 'react-native-config';
 import CoreStack from './src/features/Core/CoreStack';
 
 const Stack = createStackNavigator();
 
 const App: () => Node = () => {
     const setFleetbaseConfig = (key, host) => {
-        // Logic to set FLEETBASE_KEY and FLEETBASE_HOST
         console.log(`Setting Fleetbase config: Key=${key}, Host=${host}`);
-        // Implement the logic to update the app's configuration
+
         return Config[key] && Config[host];
     };
 
     useEffect(() => {
-        const handleDeepLink = event => {
-            let data = Linking.parse(event.url);
+        Linking.addEventListener('url', setFleetbaseConfig);
 
-            // Example URL: flbnavigator://configure?fleetbase_key=KEY&fleetbase_host=HOST
-            if (data.path === 'configure' && data.queryParams) {
-                const { fleetbase_key, fleetbase_host } = data.queryParams;
-                // Set the environment variables here
-
-                console.log('fleetbase_key::::', JSON.stringify(fleetbase_key));
-                setFleetbaseConfig(fleetbase_key, fleetbase_host);
-            }
-        };
-        // Listen for incoming links
-        Linking.addEventListener('url', handleDeepLink);
-
-        // Check if the app was opened by a deep link
         Linking.getInitialURL().then(url => {
             if (url) handleDeepLink({ url });
         });
 
-        // Cleanup
         return () => {
             Linking.removeEventListener('url', handleDeepLink);
         };
     }, []);
+
+    const handleDeepLink = event => {
+        let data = Linking.parse(event.url);
+
+        if (data.path === 'configure' && data.queryParams) {
+            const { fleetbase_key, fleetbase_host } = data.queryParams;
+            setFleetbaseConfig(fleetbase_key, fleetbase_host);
+        }
+    };
 
     return (
         <>
