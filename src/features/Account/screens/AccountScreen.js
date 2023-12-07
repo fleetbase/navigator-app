@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, View, Text, ImageBackground, Image, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { SafeAreaView, View, Text, ImageBackground, Image, TouchableOpacity, ActivityIndicator, Dimensions, Linking } from 'react-native';
 import { getUniqueId } from 'react-native-device-info';
 import { EventRegister } from 'react-native-event-listeners';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -29,18 +29,17 @@ const AccountScreen = ({ navigation, route }) => {
         setDriver(null);
     };
 
-    const RenderHeader = (props) => {
+    const RenderHeader = props => {
         return <DefaultHeader {...props} />;
     };
 
-    const RenderBackground = (props) => {
+    const RenderBackground = props => {
         if (driver) {
             return (
                 <ImageBackground
                     source={config('ui.accountScreen.signedInContainerBackgroundImage')}
                     resizeMode={config('ui.accountScreen.signedInBackgroundResizeMode') ?? 'cover'}
-                    style={[tailwind('h-full bg-gray-800'), config('ui.accountScreen.signedInContainerBackgroundImageStyle')]}
-                >
+                    style={[tailwind('h-full bg-gray-800'), config('ui.accountScreen.signedInContainerBackgroundImageStyle')]}>
                     {props.children}
                 </ImageBackground>
             );
@@ -50,13 +49,22 @@ const AccountScreen = ({ navigation, route }) => {
             <ImageBackground
                 source={config('ui.accountScreen.signedOutContainerBackgroundImage')}
                 resizeMode={config('ui.accountScreen.signedOutBackgroundResizeMode') ?? 'cover'}
-                style={[tailwind('h-full bg-gray-800'), config('ui.accountScreen.signedOutContainerBackgroundImageStyle')]}
-            >
+                style={[tailwind('h-full bg-gray-800'), config('ui.accountScreen.signedOutContainerBackgroundImageStyle')]}>
                 {props.children}
             </ImageBackground>
         );
     };
+
+
+    const handlePress = () => {
+        //  the URL you want to navigate to
+        const url = 'http://localhost:8000/int/v1/fleet-ops/link-app';
     
+        // Open the URL using the Linking module
+        Linking.openURL(url)
+          .catch((err) => console.error('Error opening URL:', err));
+      };
+
     return (
         <RenderBackground>
             <View
@@ -65,8 +73,7 @@ const AccountScreen = ({ navigation, route }) => {
                     config('ui.accountScreen.containerStyle'),
                     driver ? config('ui.accountScreen.signedInContainerStyle') : config('ui.accountScreen.signedOutContainerStyle'),
                     { height: containerHeight },
-                ]}
-            >
+                ]}>
                 {!driver && (
                     <View style={tailwind('w-full h-full relative')}>
                         <View style={tailwind('flex items-center justify-center w-full h-full relative')}>
@@ -76,8 +83,7 @@ const AccountScreen = ({ navigation, route }) => {
                                         style={[
                                             tailwind('flex items-center justify-center mb-10 rounded-full bg-gray-100 w-60 h-60'),
                                             config('ui.accountScreen.emptyStatePlaceholderIconContainerStyle'),
-                                        ]}
-                                    >
+                                        ]}>
                                         <FontAwesomeIcon icon={faIdBadge} size={88} style={[tailwind('text-gray-600'), config('ui.accountScreen.emptyStatePlaceholderIconStyle')]} />
                                     </View>
                                     <Text style={[tailwind('text-lg text-center font-semibold mb-10'), config('ui.accountScreen.emptyStatePlaceholderTextStyle')]}>
@@ -153,6 +159,20 @@ const AccountScreen = ({ navigation, route }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
+
+                        <TouchableOpacity
+                            style={tailwind('flex flex-row items-center px-4 pb-2 mt-1')}
+                            onPress={() => handlePress()}>
+                            <View style={tailwind('btn bg-blue-900 border border-blue-700 py-0 pl-4 pr-2')}>
+                                <View style={tailwind('flex flex-row justify-start')}>
+                                    <View style={tailwind('flex-1 py-2 px-2 flex items-center')}>
+                                        <Text numberOfLines={1} style={tailwind('text-blue-50 text-base')}>
+                                            {'Linking'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
                     </View>
                 )}
             </View>
