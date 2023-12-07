@@ -5,7 +5,7 @@
  * @flow strict-local
  */
 
-import { NavigationContainer } from '@react-navigation/native';
+import { Link, NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { Node } from 'react';
 import React, { useEffect } from 'react';
@@ -16,7 +16,7 @@ import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import CoreStack from './src/features/Core/CoreStack';
-
+import { get } from 'utils/Storage';
 const Stack = createStackNavigator();
 
 const App: () => Node = () => {
@@ -26,10 +26,12 @@ const App: () => Node = () => {
         return Config[key] && Config[host];
     };
 
-    useEffect(() => {
-        Linking.addEventListener('url', setFleetbaseConfig);
+    useEffect(async () => {
+        console.log('Event: ', await Linking.getInitialURL());
+        Linking.addEventListener('url', handleDeepLink);
 
         Linking.getInitialURL().then(url => {
+            console.log('Initial URL: ', url);
             if (url) handleDeepLink({ url });
         });
 
@@ -39,11 +41,30 @@ const App: () => Node = () => {
     }, []);
 
     const handleDeepLink = event => {
-        let data = Linking.parse(event.url);
+        const urlParts = event.url.split('?');
+        
+        if (urlParts.length > 1) {
+            const path = String(urlParts[0]).replace("flbnavigator://", '')
+            
+            if(path !== 'configure') return;
 
-        if (data.path === 'configure' && data.queryParams) {
-            const { fleetbase_key, fleetbase_host } = data.queryParams;
+            const queryString = urlParts[1];
+            const queryParams = queryString.split('&');
+
+            const parsedParams = {};
+            queryParams.forEach(param => {
+                const [key, value] = param.split('=');
+                parsedParams[key] = decodeURIComponent(value);
+            });
+            
+            const { fleetbase_key, fleetbase_host } = parsedParams;
+         
             setFleetbaseConfig(fleetbase_key, fleetbase_host);
+        
+            let _FLEETBASE_KEY = get('_FLEETBASE_KEY');
+            let _FLEETBASE_HOST = get('_FLEETBASE_HOST');
+
+            console.log('Set config: ', Config[key], Config[host], fleetbase_key, fleetbase_host);
         }
     };
 
