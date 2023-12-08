@@ -43,7 +43,7 @@
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="fleetbasenavigator" android:host="configure" />
+        <data android:scheme="flbnavigator" android:host="configure" />
     </intent-filter>
     </activity>
   </application>
