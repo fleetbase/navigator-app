@@ -1,57 +1,36 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { Node } from 'react';
-import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, Linking, Text, View } from 'react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { ActivityIndicator, Linking, Text, View, AppState } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
-import { getString, setString } from 'utils/Storage';
+import { setString } from 'utils/Storage';
+import { config } from './src/utils';
 
 import CoreStack from './src/features/Core/CoreStack';
 
 const Stack = createStackNavigator();
 
+const linking = {
+    prefixes: ['https://fleetbase.io', 'flbnavigator://', config('APP_LINK_PREFIX'), ...config('app.linkingPrefixes')].filter(Boolean),
+    config: {
+        screens: {},
+    },
+};
+
 const App: () => Node = () => {
-    const [driver, setDriver] = useDriver();
+    const [setDriver] = useDriver();
     const navigationRef = useRef();
 
-    useEffect(async () => {
-        console.log('Event: ', await Linking.getInitialURL());
-        Linking.addEventListener('url', handleDeepLink);
-
-        Linking.getInitialURL().then(url => {
-            if (url) handleDeepLink({ url });
-        });
-
-        return () => {
-            Linking.removeEventListener('url', handleDeepLink);
-        };
-    }, []);
-
-    const setFleetbaseConfig = (key, host) => {
-        setString('_FLEETBASE_KEY', key);
-        setString('_FLEETBASE_HOST', host);
-
-        if (navigationRef.current) {
-            setTimeout(() => {
-                // is key and host for instance stored
-                navigationRef.current.reset({
-                    index: 0,
-                    routes: [{ name: 'BootScreen' }],
-                });
-                setDriver(null);
-            }, 300);
-        }
-    };
-
-    const handleDeepLink = event => {
-        const urlParts = event.url.split('?');
+    const parseDeepLinkUrl = useCallback(url => {
+        const urlParts = url.split('?');
 
         if (urlParts.length > 1) {
-            const path = String(urlParts[0]).replace('flbnavigator://', '');
+            const path = String(urlParts[0]).replace(/^[^:]+:\/\//, '');
             if (path !== 'configure') return;
 
             const queryString = urlParts[1];
@@ -63,17 +42,65 @@ const App: () => Node = () => {
                 parsedParams[key] = decodeURIComponent(value);
             });
 
-            const { key, host } = parsedParams;
-
-            setFleetbaseConfig(key, host);
+            return parsedParams;
         }
-    };
+
+        return null;
+    });
+
+    const setFleetbaseConfig = useCallback((key, host) => {
+        setString('_FLEETBASE_KEY', key);
+        setString('_FLEETBASE_HOST', host);
+
+        if (navigationRef.current) {
+            setTimeout(() => {
+                navigationRef.current.reset({
+                    index: 0,
+                    routes: [{ name: 'BootScreen' }],
+                });
+                setDriver(null);
+            }, 600);
+        }
+    });
+
+    useEffect(() => {
+        const setupInstanceLink = ({ url }) => {
+            console.log('setupInstanceLink() #url', url);
+            const parsedParams = parseDeepLinkUrl(url);
+
+            console.log('parsedParams----->', parsedParams);
+
+            if (parsedParams !== null) {
+                const { key, host } = parsedParams;
+                setFleetbaseConfig(key, host);
+            }
+        };
+
+        console.log('Linking:::::', Linking);
+
+        Linking.addEventListener('url', ({ url }) => {
+            console.log('URL EVENT FIRED!');
+            setupInstanceLink({ url });
+        });
+
+        Linking.getInitialURL().then(url => {
+            if (url) {
+                setupInstanceLink({ url });
+                console.log('initial url:::', url);
+            }
+        });
+
+        return () => {
+            console.log('App useEffect cleaned up');
+            Linking.removeListeners('url', setupInstanceLink);
+        };
+    }, []);
 
     return (
         <>
             <NavigationContainer
                 ref={navigationRef}
-                linking={handleDeepLink}
+                linking={linking}
                 fallback={
                     <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
                         <View style={tailwind('flex items-center justify-center')}>
