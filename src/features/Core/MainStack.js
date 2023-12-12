@@ -1,13 +1,13 @@
-import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import React from 'react';
+import { EventRegister } from 'react-native-event-listeners';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import MainScreen from './screens/MainScreen';
-import OrdersScreen from './screens/OrdersScreen';
-import SearchScreen from './screens/SearchScreen';
-import OrderScreen from 'shared/OrderScreen';
 import EntityScreen from 'shared/EntityScreen';
 import NavigationScreen from 'shared/NavigationScreen';
+import OrderScreen from 'shared/OrderScreen';
 import ProofScreen from 'shared/ProofScreen';
+import MainScreen from './screens/MainScreen';
+import SearchScreen from './screens/SearchScreen';
 
 const RootStack = createStackNavigator();
 
