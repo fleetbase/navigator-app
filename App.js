@@ -1,31 +1,22 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { Node } from 'react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ActivityIndicator, Linking, Text, View } from 'react-native';
-import Config from 'react-native-config';
-import { EventRegister } from 'react-native-event-listeners';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
-import { setString } from 'utils/Storage';
+import { getString, setString } from 'utils/Storage';
+
 import CoreStack from './src/features/Core/CoreStack';
 
 const Stack = createStackNavigator();
 
-// const linking = {
-//     prefixes: ['http://fleetbase.ap.ngrok.io/int/v1/fleet-ops/navigator/link-app'],
-//     config: {
-//         screens: {
-//             CoreStack: 'BootScreen',
-//         },
-//     },
-// };
-
 const App: () => Node = () => {
     const [driver, setDriver] = useDriver();
+    const navigationRef = useRef();
 
     useEffect(async () => {
         console.log('Event: ', await Linking.getInitialURL());
@@ -33,7 +24,6 @@ const App: () => Node = () => {
 
         Linking.getInitialURL().then(url => {
             if (url) handleDeepLink({ url });
-            console.log('url:::::::', url);
         });
 
         return () => {
@@ -42,15 +32,19 @@ const App: () => Node = () => {
     }, []);
 
     const setFleetbaseConfig = (key, host) => {
-        console.log('KEY---->', key);
-        console.log('HOST---->', host);
-
         setString('_FLEETBASE_KEY', key);
         setString('_FLEETBASE_HOST', host);
 
-        EventRegister.emit('signout');
-
-        return Config[key] && Config[host];
+        if (navigationRef.current) {
+            setTimeout(() => {
+                // is key and host for instance stored
+                navigationRef.current.reset({
+                    index: 0,
+                    routes: [{ name: 'BootScreen' }],
+                });
+                setDriver(null);
+            }, 300);
+        }
     };
 
     const handleDeepLink = event => {
@@ -58,7 +52,6 @@ const App: () => Node = () => {
 
         if (urlParts.length > 1) {
             const path = String(urlParts[0]).replace('flbnavigator://', '');
-
             if (path !== 'configure') return;
 
             const queryString = urlParts[1];
@@ -79,14 +72,8 @@ const App: () => Node = () => {
     return (
         <>
             <NavigationContainer
-                linking={{
-                    async getInitialURL() {
-                        Linking.getInitialURL().then(url => {
-                            if (url) handleDeepLink({ url });
-                            console.log('url:::::::', url);
-                        });
-                    },
-                }}
+                ref={navigationRef}
+                linking={handleDeepLink}
                 fallback={
                     <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
                         <View style={tailwind('flex items-center justify-center')}>
