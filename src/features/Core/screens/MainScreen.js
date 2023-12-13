@@ -103,20 +103,6 @@ const MainScreen = ({ navigation, route }) => {
         };
     }, [isMounted]);
 
-    useEffect(() => {
-        const shouldSignout = addEventListener('signout', () => {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'BootScreen' }],
-            });
-            setDriver(null);
-        });
-
-        return () => {
-            removeEventListener(shouldSignout);
-        };
-    }, [isMounted]);
-
     // Listen for new orders via Socket Connection
     useEffect(() => {
         const notifiableEvents = ['order.ready', 'order.ping', 'order.driver_assigned', 'order.dispatched'];
