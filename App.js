@@ -1,8 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { Node } from 'react';
-import React, { useEffect, useRef, useCallback } from 'react';
-import { ActivityIndicator, Linking, Text, View, AppState } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
@@ -68,18 +68,14 @@ const App: () => Node = () => {
             console.log('setupInstanceLink() #url', url);
             const parsedParams = parseDeepLinkUrl(url);
 
-            console.log('parsedParams----->', parsedParams);
-
             if (parsedParams !== null) {
                 const { key, host } = parsedParams;
                 setFleetbaseConfig(key, host);
             }
         };
 
-        console.log('Linking:::::', Linking);
-
         Linking.addEventListener('url', ({ url }) => {
-            console.log('URL EVENT FIRED!');
+            console.log('URL EVENT FIRED!', url);
             setupInstanceLink({ url });
         });
 
@@ -92,7 +88,7 @@ const App: () => Node = () => {
 
         return () => {
             console.log('App useEffect cleaned up');
-            Linking.removeListeners('url', setupInstanceLink);
+            Linking.removeEventListener('url', setupInstanceLink);
         };
     }, []);
 
