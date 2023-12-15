@@ -1,8 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import type { Node } from 'react';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, Linking, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
@@ -25,10 +25,10 @@ const linking = {
 const App: () => Node = () => {
     const [setDriver] = useDriver();
     const navigationRef = useRef();
+    const [isLoading, setLoading] = useState(true);
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');
-
         if (urlParts.length > 1) {
             const path = String(urlParts[0]).replace(/^[^:]+:\/\//, '');
             if (path !== 'configure') return;
@@ -48,20 +48,31 @@ const App: () => Node = () => {
         return null;
     });
 
-    const setFleetbaseConfig = useCallback((key, host) => {
-        setString('_FLEETBASE_KEY', key);
-        setString('_FLEETBASE_HOST', host);
+    const setFleetbaseConfig = useCallback(async (key, host) => {
+        return await new Promise(() => {
+            setString('_FLEETBASE_KEY', key);
+            setString('_FLEETBASE_HOST', host);
 
-        if (navigationRef.current) {
-            setTimeout(() => {
+            if (navigationRef.current) {
                 navigationRef.current.reset({
                     index: 0,
                     routes: [{ name: 'BootScreen' }],
                 });
                 setDriver(null);
-            }, 600);
-        }
+                setLoading(false);
+            }
+        });
     });
+
+    const showLoader = (isLoading => {
+        return (
+            <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
+                <View style={tailwind('flex items-center justify-center')}>
+                    <ActivityIndicator style={tailwind('mb-4')} isLoading={isLoading} />
+                </View>
+            </View>
+        );
+    })();
 
     useEffect(() => {
         const setupInstanceLink = ({ url }) => {
@@ -94,17 +105,7 @@ const App: () => Node = () => {
 
     return (
         <>
-            <NavigationContainer
-                ref={navigationRef}
-                linking={linking}
-                fallback={
-                    <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
-                        <View style={tailwind('flex items-center justify-center')}>
-                            <ActivityIndicator style={tailwind('mb-4')} />
-                            <Text style={tailwind('text-gray-400')}>Loading...</Text>
-                        </View>
-                    </View>
-                }>
+            <NavigationContainer ref={navigationRef} linking={linking} fallback={showLoader}>
                 <Stack.Navigator>
                     <Stack.Screen
                         name="CoreStack"
