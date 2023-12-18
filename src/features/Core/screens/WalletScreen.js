@@ -1,14 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
-import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
-import { logError } from 'utils';
-import { setI18nConfig } from 'utils/Localize';
-import { tailwind } from 'tailwind';
-import { format } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
 import DefaultHeader from 'components/headers/DefaultHeader';
-import OrdersFilterBar from 'components/OrdersFilterBar';
-import config from 'config';
+import { format } from 'date-fns';
+import { useDriver, useFleetbase, useMountedState, useResourceCollection } from 'hooks';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { tailwind } from 'tailwind';
+import { logError } from 'utils';
 
 const WalletScreen = ({ navigation }) => {
     const isMounted = useMountedState();
