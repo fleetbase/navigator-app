@@ -9,6 +9,7 @@ import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { setString } from 'utils/Storage';
+import { useFleetbase } from 'hooks';
 import { config } from './src/utils';
 
 import CoreStack from './src/features/Core/CoreStack';
@@ -24,6 +25,7 @@ const linking = {
 
 const App: () => Node = () => {
     const [setDriver] = useDriver();
+    const fleetbase = useFleetbase();
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
 
@@ -96,6 +98,13 @@ const App: () => Node = () => {
                 console.log('initial url:::', url);
             }
         });
+
+    
+        async function currentOrg() {
+            return await fleetbase.organizations.current();
+        }
+        const current = currentOrg();
+        console.log('current------->', current);
 
         return () => {
             console.log('App useEffect cleaned up');
