@@ -29,16 +29,15 @@ const LoginScreen = ({ navigation, route }) => {
     const isNotAwaitingVerification = isAwaitingVerification === false;
     const redirectTo = deepGet(route, 'params?.redirectTo', 'MainStack');
 
+    console.log('FLEETBASE SDK OPTIONS', fleetbase.options);
+
     const sendVerificationCode = useCallback(() => {
         setIsLoading(true);
-
-        console.log('[phone]', phone);
 
         try {
             return fleetbase.drivers
                 .login(phone)
                 .then(response => {
-                    console.log('response;;', response);
                     setIsAwaitingVerification(true); 
                     setError(null);
                     setIsLoading(false);
