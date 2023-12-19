@@ -108,7 +108,7 @@ const LoginScreen = ({ navigation, route }) => {
                     <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-5 -mt-28'), config('ui.loginScreen.contentContainerStyle')]}>
                         <KeyboardAvoidingView style={tailwind('')} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={100}>
                             <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
-                                <FastImage source={{ uri: _LOGO }} style={tailwind('w-20 h-20 rounded-full')} />
+                                <FastImage source={_LOGO ? { uri: _LOGO } : require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
                             </View>
 
                             {isNotAwaitingVerification && (
