@@ -1,33 +1,23 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl, ActivityIndicator } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Order } from '@fleetbase/sdk';
 import { faSatelliteDish } from '@fortawesome/free-solid-svg-icons';
-import { EventRegister } from 'react-native-event-listeners';
-import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
-import {
-    logError,
-    getColorCode,
-    isArray,
-    pluralize,
-    formatDuration,
-    formatMetersToKilometers,
-    getActiveOrdersCount,
-    getTotalStops,
-    getTotalDuration,
-    getTotalDistance,
-    listenForOrdersFromSocket,
-} from 'utils';
-import { setI18nConfig } from 'utils/Localize';
-import { tailwind } from 'tailwind';
-import { format, startOfYear, endOfYear } from 'date-fns';
-import { Order, Collection } from '@fleetbase/sdk';
-import CalendarStrip from 'react-native-calendar-strip';
-import DefaultHeader from 'components/headers/DefaultHeader';
-import OrdersFilterBar from 'components/OrdersFilterBar';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useFocusEffect } from '@react-navigation/native';
 import OrderCard from 'components/OrderCard';
 import SimpleOrdersMetrics from 'components/SimpleOrdersMetrics';
-import config from 'config';
+import { endOfYear, format, startOfYear } from 'date-fns';
+import { useDriver, useFleetbase, useMountedState, useResourceCollection } from 'hooks';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import CalendarStrip from 'react-native-calendar-strip';
+import { EventRegister } from 'react-native-event-listeners';
+import { tailwind } from 'tailwind';
+import {
+    formatMetersToKilometers,
+    getColorCode,
+    isArray,
+    listenForOrdersFromSocket,
+    logError
+} from 'utils';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
