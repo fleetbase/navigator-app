@@ -38,7 +38,7 @@ const LoginScreen = ({ navigation, route }) => {
             return fleetbase.drivers
                 .login(phone)
                 .then(response => {
-                    setIsAwaitingVerification(true);
+                    setIsAwaitingVerification(true); 
                     setError(null);
                     setIsLoading(false);
                 })
