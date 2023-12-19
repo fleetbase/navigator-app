@@ -6,6 +6,7 @@ import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
+import { getString } from 'utils/Storage';
 import { config, deepGet, getColorCode, logError, syncDevice, translate } from 'utils';
 import { getLocation } from 'utils/Geo';
 
@@ -26,6 +27,8 @@ const LoginScreen = ({ navigation, route }) => {
     const [locale, setLocale] = useLocale();
     const [driver, setDriver] = useDriver();
 
+    const _LOGO = getString('_LOGO');
+
     const isNotAwaitingVerification = isAwaitingVerification === false;
     const redirectTo = deepGet(route, 'params?.redirectTo', 'MainStack');
 
@@ -38,7 +41,7 @@ const LoginScreen = ({ navigation, route }) => {
             return fleetbase.drivers
                 .login(phone)
                 .then(response => {
-                    setIsAwaitingVerification(true); 
+                    setIsAwaitingVerification(true);
                     setError(null);
                     setIsLoading(false);
                 })
@@ -105,7 +108,7 @@ const LoginScreen = ({ navigation, route }) => {
                     <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-5 -mt-28'), config('ui.loginScreen.contentContainerStyle')]}>
                         <KeyboardAvoidingView style={tailwind('')} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={100}>
                             <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
-                                <FastImage source={require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
+                                <FastImage source={{ uri: _LOGO }} style={tailwind('w-20 h-20 rounded-full')} />
                             </View>
 
                             {isNotAwaitingVerification && (
