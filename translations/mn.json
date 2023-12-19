@@ -326,6 +326,9 @@
             "LangPicker": {
                 "title": "Хэл сонгох "
             },
+            "MapPicker": {
+                "title": "Газрын зураг сонгох"
+            },
             "NetworkCategoryBlock": {
                 "categories": "Ангилал"
             },

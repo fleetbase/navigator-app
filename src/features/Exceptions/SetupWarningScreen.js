@@ -1,11 +1,11 @@
-import React from 'react';
-import { SafeAreaView, View, Text } from 'react-native';
+import { faExclamation, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faExclamationTriangle, faExclamation } from '@fortawesome/free-solid-svg-icons';
-import { hasRequiredKeys, translate } from 'utils';
 import { useLocale } from 'hooks';
-import { tailwind } from 'tailwind';
+import React from 'react';
+import { SafeAreaView, Text, View } from 'react-native';
 import Config from 'react-native-config';
+import { tailwind } from 'tailwind';
+import { translate } from 'utils';
 
 const keyMissing = (key) => {
     return !Config[key];
