@@ -21,7 +21,7 @@
     [GMSServices provideAPIKey:[RNCConfig envFor:@"GOOGLE_MAPS_KEY"]];
 
     // Define UNUserNotificationCenter
-    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    // UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
 
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }

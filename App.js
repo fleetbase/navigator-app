@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useFleetbase } from 'hooks';
 import type { Node } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, View } from 'react-native';
@@ -27,6 +28,7 @@ const App: () => Node = () => {
 
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
+    const fleetbase = useFleetbase();
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');
@@ -109,6 +111,13 @@ const App: () => Node = () => {
             console.log('App useEffect cleaned up');
             Linking.removeEventListener('url', setupInstanceLink);
         };
+    }, []);
+
+    useEffect(() => {
+        fleetbase.organizations.current().then(res => {
+            setString('_LOGO', res.logo_url);
+            console.log('Organization: ',  res);
+        });
     }, []);
 
     return (
