@@ -9,7 +9,6 @@ import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { setString } from 'utils/Storage';
-import { useFleetbase } from 'hooks';
 import { config } from './src/utils';
 
 import CoreStack from './src/features/Core/CoreStack';
@@ -25,7 +24,7 @@ const linking = {
 
 const App: () => Node = () => {
     const [setDriver] = useDriver();
-    const fleetbase = useFleetbase();
+
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
 
@@ -79,11 +78,18 @@ const App: () => Node = () => {
     useEffect(() => {
         const setupInstanceLink = ({ url }) => {
             console.log('setupInstanceLink() #url', url);
+
             const parsedParams = parseDeepLinkUrl(url);
 
             if (parsedParams !== null) {
                 const { key, host } = parsedParams;
                 setFleetbaseConfig(key, host);
+
+                Toast.show({
+                    type: 'success',
+                    text1: `Linking to instance ${host}`,
+                    text2: 'Navigator app linked successfully',
+                });
             }
         };
 
@@ -98,13 +104,6 @@ const App: () => Node = () => {
                 console.log('initial url:::', url);
             }
         });
-
-    
-        async function currentOrg() {
-            return await fleetbase.organizations.current();
-        }
-        const current = currentOrg();
-        console.log('current------->', current);
 
         return () => {
             console.log('App useEffect cleaned up');
