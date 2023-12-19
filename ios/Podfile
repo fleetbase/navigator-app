@@ -46,8 +46,9 @@ target 'NavigatorApp' do
   )
 
   # Google Maps
-  # rn_maps_path = '../node_modules/react-native-maps'
-  # pod 'react-native-google-maps', :path => rn_maps_path
+  rn_maps_path = '../node_modules/react-native-maps'
+  pod 'react-native-google-maps', :path => rn_maps_path
+  
   # Permissions handlers
   permissions_path = '../node_modules/react-native-permissions/ios'
   pod 'Permission-Notifications', :path => "#{permissions_path}/Notifications"
