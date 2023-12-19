@@ -85,8 +85,13 @@ const App: () => Node = () => {
 
             if (parsedParams !== null) {
                 const { key, host } = parsedParams;
-                setFleetbaseConfig(key, host);
 
+                setFleetbaseConfig(key, host);
+                fleetbase.organizations.current().then(res => {
+                    setString('_LOGO', res.logo_url);
+                    console.log('Organization: ', res);
+                });
+                
                 Toast.show({
                     type: 'success',
                     text1: `Linking to instance ${host}`,
@@ -111,13 +116,6 @@ const App: () => Node = () => {
             console.log('App useEffect cleaned up');
             Linking.removeEventListener('url', setupInstanceLink);
         };
-    }, []);
-
-    useEffect(() => {
-        fleetbase.organizations.current().then(res => {
-            setString('_LOGO', res.logo_url);
-            console.log('Organization: ',  res);
-        });
     }, []);
 
     return (
