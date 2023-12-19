@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, ImageBackground, TouchableOpacity, ActivityIndicator, Platform, KeyboardAvoidingView, Pressable, Keyboard } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { useStorefront, useLocale, useCustomer } from 'hooks';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import PhoneInput from 'components/PhoneInput';
+import { useCustomer, useLocale, useStorefront } from 'hooks';
+import React, { useState } from 'react';
+import { ActivityIndicator, ImageBackground, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import tailwind from 'tailwind';
+import { config, translate } from 'utils';
 import { getLocation } from 'utils/Geo';
 import { get } from 'utils/Storage';
-import { translate, config } from 'utils';
-import tailwind from 'tailwind';
-import PhoneInput from 'components/PhoneInput';
 
 const CreateAccountScreen = ({ navigation, route }) => {
     const { info, redirectTo } = route.params;

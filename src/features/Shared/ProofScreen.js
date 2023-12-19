@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Entity, Order, Place } from '@fleetbase/sdk';
+import { faBarcode, faSignature, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes, faBarcode, faSignature } from '@fortawesome/free-solid-svg-icons';
-import { Order, Place, Entity } from '@fleetbase/sdk';
-import { useFleetbase, useMountedState, useLocale } from 'hooks';
-import { isEmpty, getColorCode, logError } from 'utils';
+import OrderStatusBadge from 'components/OrderStatusBadge';
+import { useFleetbase, useLocale, useMountedState } from 'hooks';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import { RNCamera } from 'react-native-camera';
 import FastImage from 'react-native-fast-image';
 import QRCodeScanner from 'react-native-qrcode-scanner';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen from 'react-native-signature-canvas';
-import OrderStatusBadge from 'components/OrderStatusBadge';
 import tailwind from 'tailwind';
+import { getColorCode, isEmpty, logError } from 'utils';
 
 const { width, height } = Dimensions.get('window');
 

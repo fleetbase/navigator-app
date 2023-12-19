@@ -1,15 +1,15 @@
-import React, { useState, useEffect, createRef } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes, faBarcode, faPen } from '@fortawesome/free-solid-svg-icons';
-import { useMountedState, useLocale, useResourceStorage, useFleetbase } from 'hooks';
-import { formatCurrency, formatKm, formatDistance, calculatePercentage, translate, logError, isEmpty, getColorCode, titleize, formatMetaValue } from 'utils';
 import { Entity, Order } from '@fleetbase/sdk';
-import { format } from 'date-fns';
-import FastImage from 'react-native-fast-image';
+import { faBarcode, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import OrderStatusBadge from 'components/OrderStatusBadge';
+import { format } from 'date-fns';
+import { useFleetbase, useLocale, useMountedState } from 'hooks';
+import React, { createRef, useState } from 'react';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
+import { formatCurrency, formatMetaValue, getColorCode, isEmpty, logError, titleize } from 'utils';
 
 const isObjectEmpty = (obj) => isEmpty(obj) || Object.values(obj).length === 0;
 
