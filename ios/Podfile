@@ -62,13 +62,7 @@ target 'NavigatorApp' do
     # Pods for testing
   end
 
-  pre_install do |installer|
-    $RNMBNAV.pre_install(installer)
-    # any other pre install hooks here
-  end
-
   post_install do |installer|
-    $RNMBNAV.post_install(installer)
      # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
      react_native_post_install(
       installer,
