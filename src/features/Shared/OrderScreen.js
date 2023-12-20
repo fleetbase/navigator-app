@@ -1,6 +1,7 @@
 import { Order } from '@fleetbase/sdk';
 import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useNetInfo } from '@react-native-community/netinfo';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import OrderWaypoints from 'components/OrderWaypoints';
 import { format } from 'date-fns';
@@ -13,6 +14,7 @@ import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
+import { setString, getString } from 'utils/Storage';
 import OrderMapPicker from '../../components/OrderMapPicker';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -26,7 +28,7 @@ const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
-
+    const { isConnected } = useNetInfo();
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
@@ -62,6 +64,8 @@ const OrderScreen = ({ navigation, route }) => {
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
+    const currentTimestamp = Date.now();
+    const currentDate = new Date(currentTimestamp).toString();
 
     const entitiesByDestination = (() => {
         const groups = [];
@@ -210,8 +214,29 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
+    // console.log('connected::::::', isConnected, type);
     const startOrder = (params = {}) => {
         setIsLoadingAction(true);
+
+        console.log('isConnected---->', isConnected);
+        console.log('Params------>', params);
+        console.log('Order------>', JSON.stringify(order));
+        const apiRequestQueue = [];
+        if (!isConnected) {
+            apiRequestQueue.push({
+                type: 'startOrder',
+                params,
+                order,
+                action: 'start',
+                time: new Date(),
+            });
+            setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
+            let changedOrders = JSON.parse(getString('_ORDER'));
+            if (changedOrders.length > 0) {
+                changedOrders.push(order);
+            } else changedOrders = [order][({}, {})];
+            setString('_ORDER', JSON.stringify(changedOrders));
+        }
 
         order
             .start(params)
@@ -245,8 +270,21 @@ const OrderScreen = ({ navigation, route }) => {
     };
 
     const updateOrderActivity = async () => {
-        setIsLoadingAction(true);
+        // setIsLoadingAction(true);
         setActionSheetAction('update_activity');
+
+        console.log('isConnected---->', isConnected);
+        // console.log('Params------>', params);
+        if (!isConnected) {
+            // console.log('Params------>', params);
+            // const order = {
+            //     orderParams: params,
+            //     action: 'updated',
+            //     time: '',
+            // };
+            // JSON.stringify(order);
+            // setString('_ORDER', order);
+        }
 
         const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {
             setIsLoadingAction(false);
@@ -279,6 +317,14 @@ const OrderScreen = ({ navigation, route }) => {
             setActionSheetAction('change_destination');
         }
     };
+
+    useEffect(() => {
+        const orderUpdated = addEventListener('order', ({ event }) => {
+            const { params, action, time } = event;
+            if ((action = 'update')) completeOrder(params);
+            else startOrder(params);
+        });
+    }, []);
 
     const sendOrderActivityUpdate = activity => {
         setIsLoadingActivity(true);
