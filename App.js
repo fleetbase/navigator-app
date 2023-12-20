@@ -88,6 +88,7 @@ const App: () => Node = () => {
 
                 setFleetbaseConfig(key, host);
                 fleetbase.organizations.current().then(res => {
+                    setString('_BRANDING_LOGO', res.branding.logo_url);
                     setString('_LOGO', res.logo_url);
                     console.log('Organization: ', res);
                 });
