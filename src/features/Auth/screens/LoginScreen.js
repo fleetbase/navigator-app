@@ -28,6 +28,7 @@ const LoginScreen = ({ navigation, route }) => {
     const [driver, setDriver] = useDriver();
 
     const _LOGO = getString('_LOGO');
+    const _BRANDING_LOGO = getString('_BRANDING_LOGO');
 
     const isNotAwaitingVerification = isAwaitingVerification === false;
     const redirectTo = deepGet(route, 'params?.redirectTo', 'MainStack');
@@ -108,7 +109,7 @@ const LoginScreen = ({ navigation, route }) => {
                     <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-5 -mt-28'), config('ui.loginScreen.contentContainerStyle')]}>
                         <KeyboardAvoidingView style={tailwind('')} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={100}>
                             <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
-                                <FastImage source={_LOGO ? { uri: _LOGO } : require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
+                                <FastImage source={_LOGO ? { uri: _BRANDING_LOGO } : { uri: _LOGO }} style={tailwind('w-20 h-20 rounded-full')} />
                             </View>
 
                             {isNotAwaitingVerification && (
