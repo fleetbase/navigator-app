@@ -12,6 +12,7 @@ import { useDriver } from 'utils/Auth';
 import { setString } from 'utils/Storage';
 import { config } from './src/utils';
 
+import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
 const Stack = createStackNavigator();
@@ -29,6 +30,22 @@ const App: () => Node = () => {
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
     const fleetbase = useFleetbase();
+    const { isConnected } = useNetInfo();
+
+    useEffect(() => {
+        if (isConnected) {
+            // const orders = JSON.parse(getString('_ORDER'));
+            // orders.forEach(order => {
+            //     // const order = {
+            //     //     orderParams: params,
+            //     //     action: 'start',
+            //     //     time: currentDate,
+            //     // };
+            //     emit('order', order);
+            
+            // });
+        }
+    }, [isConnected]);
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');
