@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
 import { setString, getString } from 'utils/Storage';
+import { addToQueue, getQueue } from 'utils/RequestQueue';
 import OrderMapPicker from '../../components/OrderMapPicker';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -28,7 +29,8 @@ const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
-    const { isConnected } = useNetInfo();
+    const { isConnected, type, addEventListener: addEventListeners } = useNetInfo();
+    const [netInfo, setNetInfo] = useState('');
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
@@ -214,12 +216,11 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
-    // console.log('connected::::::', isConnected, type);
     const startOrder = (params = {}) => {
         setIsLoadingAction(true);
 
         console.log('isConnected---->', isConnected);
-        console.log('Params------>', params);
+
         console.log('Order------>', JSON.stringify(order));
         const apiRequestQueue = [];
         if (!isConnected) {
@@ -274,16 +275,23 @@ const OrderScreen = ({ navigation, route }) => {
         setActionSheetAction('update_activity');
 
         console.log('isConnected---->', isConnected);
-        // console.log('Params------>', params);
+
         if (!isConnected) {
-            // console.log('Params------>', params);
-            // const order = {
-            //     orderParams: params,
-            //     action: 'updated',
-            //     time: '',
-            // };
-            // JSON.stringify(order);
-            // setString('_ORDER', order);
+            const apiRequestQueue = [];
+            apiRequestQueue.push({
+                type: 'updateOrder',
+                order,
+                action: 'start',
+                time: new Date(),
+            });
+            setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
+            let changedOrders = JSON.parse(getString('_ORDER'));
+
+            console.log('changedOrders------>', JSON.stringify(changedOrders));
+            if (changedOrders.length > 0) {
+                changedOrders.push(order);
+            } else changedOrders = [order][({}, {})];
+            setString('_ORDER', JSON.stringify(changedOrders));
         }
 
         const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {
