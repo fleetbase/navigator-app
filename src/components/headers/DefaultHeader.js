@@ -11,7 +11,7 @@ import { config, translate, logError, toBoolean } from 'utils';
 import { LangPicker, SearchButton } from 'components';
 import tailwind from 'tailwind';
 
-const DefaultHeader = (props) => {
+const DefaultHeader = props => {
     let {
         onBack,
         backButtonIcon,
@@ -58,13 +58,7 @@ const DefaultHeader = (props) => {
         <ImageBackground
             source={backgroundImage ?? config('ui.headerComponent.backgroundImage')}
             resizeMode={backgroundImageResizeMode ?? config('ui.headerComponent.backgroundImageResizeMode')}
-            style={[
-                tailwind('z-50 bg-gray-800'),
-                { paddingTop: insets.top },
-                props.style,
-                backgroundImageStyle ?? config('ui.headerComponent.backgroundImageStyle'),
-            ]}
-        >
+            style={[tailwind('z-50 bg-gray-800'), { paddingTop: insets.top }, props.style, backgroundImageStyle ?? config('ui.headerComponent.backgroundImageStyle')]}>
             <View style={[tailwind(''), props.wrapperStyle, config('ui.headerComponent.containerStyle')]}>
                 <View style={[tailwind('flex flex-row items-center justify-between px-4 py-1 overflow-hidden'), props.innerStyle]}>
                     <View style={tailwind('flex flex-row items-center')}>
