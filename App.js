@@ -3,7 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useFleetbase } from 'hooks';
 import type { Node } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, View } from 'react-native';
+import { ActivityIndicator, Linking, View, Text } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
@@ -11,8 +11,6 @@ import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { setString } from 'utils/Storage';
 import { config } from './src/utils';
-import Toast from 'react-native-toast-message';
-import tailwind from 'tailwind';
 
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -94,7 +92,7 @@ const App: () => Node = () => {
                     setString('_LOGO', res.logo_url);
                     console.log('Organization: ', res);
                 });
-                
+
                 Toast.show({
                     type: 'success',
                     text1: `Linking to instance ${host}`,
@@ -132,8 +130,7 @@ const App: () => Node = () => {
                             <Text style={tailwind('text-gray-400')}>Loading...</Text>
                         </View>
                     </View>
-                }
-            >
+                }>
                 <Stack.Navigator>
                     <Stack.Screen name="CoreStack" component={CoreStack} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
                 </Stack.Navigator>
