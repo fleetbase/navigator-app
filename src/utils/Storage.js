@@ -105,7 +105,7 @@ export default class StorageUtil {
             return new Collection(arr?.map(attributes => new resource(attributes, adapter)));
         };
 
-        const setResource = resource => {
+        const setResource = (resource) => {
             if (typeof value === 'string') {
                 storage.removeItem(key);
             }

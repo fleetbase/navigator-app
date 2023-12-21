@@ -78,7 +78,6 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
         if (!payload) {
             return false;
         }
-
         const { waypoints, pickup, dropoff } = payload;
 
         if (!pickup && !dropoff && waypoints.length) {

@@ -23,6 +23,9 @@ const { addEventListener, removeEventListener } = EventRegister;
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
 const REFRESH_ORDERS_MS = 6000 * 10; // 10 mins
 
+const { addEventListener, removeEventListener } = EventRegister;
+const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
+
 const OrdersScreen = ({ navigation }) => {
     const isMounted = useMountedState();
     const fleetbase = useFleetbase();
@@ -157,6 +160,22 @@ const OrdersScreen = ({ navigation }) => {
             }
         });
     }, []);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadOrders();
+        });
+
+        return unsubscribe;
+    }, [isMounted]);
+
+    useEffect(() => {
+        const notifications = addEventListener('onNotification', () => loadOrders({ isQuerying: true }));
+
+        return () => {
+            removeEventListener(notifications);
+        };
+    }, [isMounted]);
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>

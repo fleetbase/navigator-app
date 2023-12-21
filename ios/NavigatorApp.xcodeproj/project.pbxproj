@@ -551,11 +551,11 @@
 				DEVELOPMENT_TEAM = 27ZYTHPKKU;
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
+<<<<<<< HEAD
 				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+>>>>>>> main
 				);
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (

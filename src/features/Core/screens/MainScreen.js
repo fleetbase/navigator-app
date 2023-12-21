@@ -20,6 +20,9 @@ const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
 const isAndroid = Platform.OS === 'android';
 
+const isTruthy = (mixed) => !isFalsy(mixed);
+const isAndroid = Platform.OS === 'android';
+
 const MainScreen = ({ navigation, route }) => {
     // Setup
     const fleetbase = useFleetbase();

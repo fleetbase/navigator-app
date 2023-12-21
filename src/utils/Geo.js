@@ -1,14 +1,13 @@
-import Geolocation from 'react-native-geolocation-service';
-import RNLocation from 'react-native-location';
-import { Platform } from 'react-native';
-import { EventRegister } from 'react-native-event-listeners';
-import { checkMultiple, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { GoogleAddress, Place } from '@fleetbase/sdk';
-import { set, get } from './Storage';
-import { isAndroid, logError } from './Helper';
-import { haversine } from './Calculate';
 import axios from 'axios';
 import config from 'config';
+import { EventRegister } from 'react-native-event-listeners';
+import Geolocation from 'react-native-geolocation-service';
+import RNLocation from 'react-native-location';
+import { PERMISSIONS, RESULTS, checkMultiple, request } from 'react-native-permissions';
+import { haversine } from './Calculate';
+import { isAndroid, logError } from './Helper';
+import { get, set } from './Storage';
 
 const { GOOGLE_MAPS_KEY } = config;
 const { emit } = EventRegister;
@@ -318,4 +317,5 @@ const requestTrackingPermissions = GeoUtil.requestTrackingPermissions;
 const trackDriver = GeoUtil.trackDriver;
 const trackDriverHeading = GeoUtil.trackDriverHeading;
 
-export { checkHasLocationPermission, geocode, getLocation, getCurrentLocation, getCoordinates, getDistance, requestTrackingPermissions, trackDriver, trackDriverHeading };
+export { checkHasLocationPermission, geocode, getCoordinates, getCurrentLocation, getDistance, getLocation, requestTrackingPermissions, trackDriver, trackDriverHeading };
+
