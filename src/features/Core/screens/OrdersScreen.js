@@ -11,13 +11,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react
 import CalendarStrip from 'react-native-calendar-strip';
 import { EventRegister } from 'react-native-event-listeners';
 import { tailwind } from 'tailwind';
-import {
-    formatMetersToKilometers,
-    getColorCode,
-    isArray,
-    listenForOrdersFromSocket,
-    logError
-} from 'utils';
+import { formatMetersToKilometers, getColorCode, isArray, listenForOrdersFromSocket, logError } from 'utils';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
@@ -157,6 +151,22 @@ const OrdersScreen = ({ navigation }) => {
             }
         });
     }, []);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadOrders();
+        });
+
+        return unsubscribe;
+    }, [isMounted]);
+
+    useEffect(() => {
+        const notifications = addEventListener('onNotification', () => loadOrders({ isQuerying: true }));
+
+        return () => {
+            removeEventListener(notifications);
+        };
+    }, [isMounted]);
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>

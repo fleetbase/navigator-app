@@ -58,6 +58,7 @@ export default class AuthUtil {
         const fleetbase = useFleetbase();
 
         const setDriver = (driver) => {
+            console.log('setDriver() - driver', driver);
             if (typeof driver?.serialize === 'function') {
                 emit('driver.updated', driver);
                 setValue(driver.serialize());

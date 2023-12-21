@@ -74,10 +74,10 @@ export default class GeoUtil {
             showsBackgroundLocationIndicator: true,
             ...configuration,
         });
-        
+
         return new Promise((resolve, reject) => {
             let unsubscribeFn = RNLocation.subscribeToLocationUpdates(([position]) => {
-                return driver.track(position).catch((error) => {
+                return driver.track(position).catch(error => {
                     logError(error);
                     reject(error);
                 });
@@ -106,7 +106,7 @@ export default class GeoUtil {
             showsBackgroundLocationIndicator: true,
             ...configuration,
         });
-        
+
         return new Promise((resolve, reject) => {
             let unsubscribeFn = RNLocation.subscribeToHeadingUpdates(([heading]) => {
                 console.log('[driver heading]', heading);
@@ -142,7 +142,7 @@ export default class GeoUtil {
      * @memberof GeoUtil
      */
     static geocode(latitude, longitude) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             return axios({
                 method: 'get',
                 url: `https://maps.googleapis.com/maps/api/geocode/json`,
@@ -152,7 +152,7 @@ export default class GeoUtil {
                     language: 'en-US',
                     key: GOOGLE_MAPS_KEY,
                 },
-            }).then((response) => {
+            }).then(response => {
                 const result = response.data.results[0];
 
                 if (!result) {
@@ -172,16 +172,16 @@ export default class GeoUtil {
      * @memberof GeoUtil
      */
     static checkHasLocationPermission() {
-        return new Promise((resolve) => {
-            return checkMultiple([PERMISSIONS.IOS.LOCATION_WHEN_IN_USE, PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION]).then((statuses) => {
+        return new Promise(resolve => {
+            return checkMultiple([PERMISSIONS.IOS.LOCATION_WHEN_IN_USE, PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION]).then(statuses => {
                 if (isAndroid && statuses[PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION] === RESULTS.DENIED) {
-                    return request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION).then((result) => {
+                    return request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION).then(result => {
                         resolve(result === 'granted');
                     });
                 }
 
                 if (!isAndroid && statuses[PERMISSIONS.IOS.LOCATION_WHEN_IN_USE] === RESULTS.DENIED) {
-                    return request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE).then((result) => {
+                    return request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE).then(result => {
                         resolve(result === 'granted');
                     });
                 }
@@ -205,7 +205,7 @@ export default class GeoUtil {
         if (hasLocationPermission) {
             return new Promise((resolve, reject) => {
                 Geolocation.getCurrentPosition(
-                    (position) => {
+                    position => {
                         const { latitude, longitude } = position.coords;
 
                         // if a location is stored and user is not more then 1km in distance from previous stored location skip geocode
@@ -214,7 +214,7 @@ export default class GeoUtil {
                         }
 
                         GeoUtil.geocode(latitude, longitude)
-                            .then((googleAddress) => {
+                            .then(googleAddress => {
                                 if (!googleAddress || typeof googleAddress?.setAttribute !== 'function') {
                                     return resolve(position);
                                 }
@@ -229,7 +229,7 @@ export default class GeoUtil {
                             })
                             .catch(reject);
                     },
-                    (error) => {
+                    error => {
                         resolve(null);
                     },
                     { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }

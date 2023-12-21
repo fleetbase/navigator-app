@@ -25,7 +25,7 @@
 		<key>CFBundleVersion</key>
 		<string>$(CURRENT_PROJECT_VERSION)</string>
 		<key>LSRequiresIPhoneOS</key>
-		<true/>
+		<true />
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSExceptionDomains</key>
@@ -33,21 +33,21 @@
 				<key>fleetbase.engineering</key>
 				<dict>
 					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<false/>
+					<false />
 					<key>NSIncludesSubdomains</key>
-					<true/>
+					<true />
 				</dict>
 				<key>fleetbase.io</key>
 				<dict>
 					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<false/>
+					<false />
 					<key>NSIncludesSubdomains</key>
-					<true/>
+					<true />
 				</dict>
 				<key>localhost</key>
 				<dict>
 					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<true/>
+					<true />
 				</dict>
 			</dict>
 		</dict>
@@ -99,7 +99,7 @@
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false/>
+		<false />
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>citymapper</string>
