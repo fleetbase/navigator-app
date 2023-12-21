@@ -20,7 +20,7 @@ import {
     toBoolean,
     createSocketAndListen,
     listenForOrdersFromSocket,
-    createNewOrderLocalNotificationObject
+    createNewOrderLocalNotificationObject,
 } from './Helper';
 import { calculatePercentage, haversine } from './Calculate';
 import { syncDevice } from './Auth';
@@ -154,5 +154,5 @@ export {
     getTotalDistance,
     createSocketAndListen,
     listenForOrdersFromSocket,
-    createNewOrderLocalNotificationObject
+    createNewOrderLocalNotificationObject,
 };

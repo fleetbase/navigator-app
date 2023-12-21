@@ -46,7 +46,7 @@ const ProofScreen = ({ navigation, route }) => {
         Alert.alert('Error', error?.message ?? 'An error occured', alertOptions);
     };
 
-    const captureSignature = (signature) => {
+    const captureSignature = signature => {
         let subject = null;
 
         if (isEntity) {
@@ -63,7 +63,7 @@ const ProofScreen = ({ navigation, route }) => {
             .captureSignature(subject, {
                 signature,
             })
-            .then((proof) => {
+            .then(proof => {
                 if (activity) {
                     return sendOrderActivityUpdate(proof);
                 }
@@ -76,7 +76,7 @@ const ProofScreen = ({ navigation, route }) => {
             });
     };
 
-    const captureScan = (event) => {
+    const captureScan = event => {
         let subject = null;
 
         if (isEntity) {
@@ -95,7 +95,7 @@ const ProofScreen = ({ navigation, route }) => {
                 data: event,
                 raw_data: event.rawData,
             })
-            .then((proof) => {
+            .then(proof => {
                 if (activity) {
                     return sendOrderActivityUpdate(proof);
                 }
@@ -111,7 +111,7 @@ const ProofScreen = ({ navigation, route }) => {
             });
     };
 
-    const sendOrderActivityUpdate = (proof) => {
+    const sendOrderActivityUpdate = proof => {
         setIsLoading(true);
 
         return order
@@ -151,12 +151,7 @@ const ProofScreen = ({ navigation, route }) => {
             <View>
                 {isSigningProof && (
                     <View style={tailwind('bg-white h-full w-full')}>
-                        <SignatureScreen
-                            style={tailwind('bg-white h-full w-full')}
-                            ref={signatureScreenRef}
-                            onOK={captureSignature}
-                            backgroundColor={'white'}
-                        />
+                        <SignatureScreen style={tailwind('bg-white h-full w-full')} ref={signatureScreenRef} onOK={captureSignature} backgroundColor={'white'} />
                         <View style={tailwind('absolute bottom-0 w-full')}>
                             <View style={tailwind('px-4')}>
                                 <View style={tailwind('border border-gray-900 bg-gray-800 rounded-md shadow-lg px-3 py-2 mb-32')}>
@@ -166,8 +161,7 @@ const ProofScreen = ({ navigation, route }) => {
                                                 style={tailwind('pr-1')}
                                                 onPress={() => {
                                                     signatureScreenRef.current?.resetImage();
-                                                }}
-                                            >
+                                                }}>
                                                 <View style={tailwind('btn bg-gray-800 border border-gray-700 bg-opacity-75')}>
                                                     <Text style={tailwind('font-semibold text-gray-50 text-base')}>Reset</Text>
                                                 </View>
@@ -178,8 +172,7 @@ const ProofScreen = ({ navigation, route }) => {
                                                 style={tailwind('pl-1')}
                                                 onPress={() => {
                                                     signatureScreenRef.current?.saveImage();
-                                                }}
-                                            >
+                                                }}>
                                                 <View style={tailwind('btn bg-green-900 border border-green-700')}>
                                                     {isLoading && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
                                                     <Text style={tailwind('font-semibold text-green-50 text-base')}>Capture</Text>

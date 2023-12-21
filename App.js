@@ -11,6 +11,8 @@ import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { setString } from 'utils/Storage';
 import { config } from './src/utils';
+import Toast from 'react-native-toast-message';
+import tailwind from 'tailwind';
 
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -121,17 +123,19 @@ const App: () => Node = () => {
 
     return (
         <>
-            <NavigationContainer ref={navigationRef} linking={linking} fallback={showLoader}>
+            <NavigationContainer
+                linking={linking}
+                fallback={
+                    <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
+                        <View style={tailwind('flex items-center justify-center')}>
+                            <ActivityIndicator style={tailwind('mb-4')} />
+                            <Text style={tailwind('text-gray-400')}>Loading...</Text>
+                        </View>
+                    </View>
+                }
+            >
                 <Stack.Navigator>
-                    <Stack.Screen
-                        name="CoreStack"
-                        component={CoreStack}
-                        options={{
-                            headerShown: false,
-                            animationEnabled: false,
-                            gestureEnabled: false,
-                        }}
-                    />
+                    <Stack.Screen name="CoreStack" component={CoreStack} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
                 </Stack.Navigator>
             </NavigationContainer>
             <Toast />

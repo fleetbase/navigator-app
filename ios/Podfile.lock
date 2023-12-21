@@ -758,6 +758,15 @@ SPEC REPOS:
     - GoogleMaps
     - libevent
     - libwebp
+    - Mapbox-iOS-SDK
+    - MapboxAccounts
+    - MapboxCommon
+    - MapboxCoreNavigation
+    - MapboxDirections
+    - MapboxMobileEvents
+    - MapboxNavigation
+    - MapboxNavigationNative
+    - MapboxSpeech
     - MMKV
     - MMKVCore
     - OpenSSL-Universal

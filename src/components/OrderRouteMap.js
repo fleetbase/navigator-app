@@ -83,7 +83,6 @@ const OrderRouteMap = ({ order }) => {
     const start = deepGet(payload.pickup, 'location.coordinates', []);
     const destination = deepGet(payload.dropoff, 'location.coordinates', []);
 
-
     const s = [...start.reverse()];
     const d = [...destination.reverse()];
 
