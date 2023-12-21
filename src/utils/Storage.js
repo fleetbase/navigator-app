@@ -38,7 +38,7 @@ export default class StorageUtil {
     static useResourceStorage(key, ResourceType, adapter, defaultValue) {
         const [value, setValue] = useStorage(key, defaultValue);
 
-        const setResource = (resource) => {
+        const setResource = resource => {
             if (isArray(resource) && typeof resource?.invoke === 'function') {
                 setValue(resource.invoke('serialize'));
                 return;
@@ -53,7 +53,7 @@ export default class StorageUtil {
         };
 
         if (value && isArray(value)) {
-            return [new Collection(value.map((attributes) => new ResourceType(attributes, adapter))), setResource];
+            return [new Collection(value.map(attributes => new ResourceType(attributes, adapter))), setResource];
         }
 
         if (value) {
@@ -102,10 +102,10 @@ export default class StorageUtil {
                 return new Collection();
             }
 
-            return new Collection(arr?.map((attributes) => new resource(attributes, adapter)));
+            return new Collection(arr?.map(attributes => new resource(attributes, adapter)));
         };
 
-        const setResource = (resource) => {
+        const setResource = resource => {
             if (typeof value === 'string') {
                 storage.removeItem(key);
             }
@@ -117,7 +117,7 @@ export default class StorageUtil {
             if (typeof resource?.invoke !== 'function') {
                 return setCollection({ items: resource });
             }
-            
+
             return setCollection({ items: resource.invoke('serialize') });
         };
 
@@ -200,4 +200,22 @@ const clear = StorageUtil.clear;
 const useResourceStorage = StorageUtil.useResourceStorage;
 const useResourceCollection = StorageUtil.useResourceCollection;
 
-export { set, get, remove, clear, storage, useMMKVStorage, useStorage, useResourceStorage, useResourceCollection, getString, setString, getInt, setInt, getBool, setBool, getArray, setArray };
+export {
+    set,
+    get,
+    remove,
+    clear,
+    storage,
+    useMMKVStorage,
+    useStorage,
+    useResourceStorage,
+    useResourceCollection,
+    getString,
+    setString,
+    getInt,
+    setInt,
+    getBool,
+    setBool,
+    getArray,
+    setArray,
+};

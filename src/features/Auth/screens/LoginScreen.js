@@ -1,17 +1,14 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ImageBackground, TouchableOpacity, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView, Pressable, Keyboard } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getUniqueId } from 'react-native-device-info';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { useLocale, useDriver, useFleetbase } from 'hooks';
-import { logError, translate, config, syncDevice, getColorCode, deepGet } from 'utils';
-import { getLocation } from 'utils/Geo';
-import { set, get } from 'utils/Storage';
-import Toast from 'react-native-toast-message';
-import FastImage from 'react-native-fast-image';
-import tailwind from 'tailwind';
 import PhoneInput from 'components/PhoneInput';
+import { useDriver, useFleetbase, useLocale } from 'hooks';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, ImageBackground, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import tailwind from 'tailwind';
+import { getString } from 'utils/Storage';
+import { config, deepGet, getColorCode, logError, syncDevice, translate } from 'utils';
+import { getLocation } from 'utils/Geo';
 
 const isPhone = (phone = '') => {
     return /^[+]?[\s./0-9]*[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/g.test(phone);
@@ -30,23 +27,26 @@ const LoginScreen = ({ navigation, route }) => {
     const [locale, setLocale] = useLocale();
     const [driver, setDriver] = useDriver();
 
+    const _LOGO = getString('_LOGO');
+    const _BRANDING_LOGO = getString('_BRANDING_LOGO');
+
     const isNotAwaitingVerification = isAwaitingVerification === false;
     const redirectTo = deepGet(route, 'params?.redirectTo', 'MainStack');
+
+    console.log('FLEETBASE SDK OPTIONS', fleetbase.options);
 
     const sendVerificationCode = useCallback(() => {
         setIsLoading(true);
 
-        console.log('[phone]', phone);
-
         try {
             return fleetbase.drivers
                 .login(phone)
-                .then((response) => {
+                .then(response => {
                     setIsAwaitingVerification(true);
                     setError(null);
                     setIsLoading(false);
                 })
-                .catch((error) => {
+                .catch(error => {
                     logError(error);
                     setIsLoading(false);
                     Toast.show({
@@ -71,7 +71,7 @@ const LoginScreen = ({ navigation, route }) => {
 
         return fleetbase.drivers
             .verifyCode(phone, code)
-            .then((driver) => {
+            .then(driver => {
                 setDriver(driver);
                 syncDevice(driver);
                 setIsLoading(false);
@@ -82,7 +82,7 @@ const LoginScreen = ({ navigation, route }) => {
                     navigation.goBack();
                 }
             })
-            .catch((error) => {
+            .catch(error => {
                 logError(error);
                 Toast.show({
                     type: 'error',
@@ -103,16 +103,17 @@ const LoginScreen = ({ navigation, route }) => {
         <ImageBackground
             source={config('ui.loginScreen.containerBackgroundImage')}
             resizeMode={config('ui.loginScreen.containerBackgroundResizeMode') ?? 'cover'}
-            style={[tailwind('flex-1'), config('ui.loginScreen.containerBackgroundImageStyle')]}
-        >
+            style={[tailwind('flex-1'), config('ui.loginScreen.containerBackgroundImageStyle')]}>
             <View style={[tailwind('bg-gray-800 flex-row flex-1 items-center justify-center'), config('ui.loginScreen.containerStyle'), { paddingTop: insets.top }]}>
                 <View style={tailwind('flex-grow')}>
                     <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-5 -mt-28'), config('ui.loginScreen.contentContainerStyle')]}>
                         <KeyboardAvoidingView style={tailwind('')} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={100}>
                             <View style={tailwind('mb-10 flex items-center justify-center rounded-full')}>
-                                <FastImage source={require('../../../../assets/icon.png')} style={tailwind('w-20 h-20 rounded-full')} />
+                                <FastImage
+                                    source={_BRANDING_LOGO ? { uri: _BRANDING_LOGO } : _LOGO ? { uri: _LOGO } : require('../../../../assets/icon.png')}
+                                    style={tailwind('w-20 h-20 rounded-full')}
+                                />
                             </View>
-
                             {isNotAwaitingVerification && (
                                 <View style={[tailwind('p-4'), config('ui.loginScreen.loginFormContainerStyle')]}>
                                     <View style={tailwind('mb-6 flex-row')}>

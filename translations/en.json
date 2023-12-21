@@ -83,11 +83,15 @@
             "LangPicker": {
                 "title": "Select language"
             },
+            "MapPicker": {
+                "title": "Select Map"
+            },
             "PhoneInput": {
                 "selectCountry": "Select Country"
             }
         }
     },
+
     "terms": {
         "edit": "Edit",
         "delete": "Delete",

@@ -14,8 +14,6 @@
     <!-- Change the resource name to your App's accent color - or any other color you want -->
     <meta-data android:name="com.dieam.reactnativepushnotification.notification_color" android:resource="@color/white"/>
     <!-- or @android:color/{name} to use a standard color -->
-    <!-- Mapbox Public Token -->
-    <meta-data android:name="MAPBOX_ACCESS_TOKEN" android:value="@string/MAPBOX_ACCESS_TOKEN" />
     <meta-data android:name="com.google.android.geo.API_KEY" android:value="@string/GOOGLE_MAPS_KEY" />
 
     <receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationActions" />
@@ -39,6 +37,12 @@
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="flbnavigator" android:host="configure" />
+    </intent-filter>
     </activity>
   </application>
 </manifest>

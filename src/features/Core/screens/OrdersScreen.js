@@ -1,33 +1,23 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl, ActivityIndicator } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { Order } from '@fleetbase/sdk';
 import { faSatelliteDish } from '@fortawesome/free-solid-svg-icons';
-import { EventRegister } from 'react-native-event-listeners';
-import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
-import {
-    logError,
-    getColorCode,
-    isArray,
-    pluralize,
-    formatDuration,
-    formatMetersToKilometers,
-    getActiveOrdersCount,
-    getTotalStops,
-    getTotalDuration,
-    getTotalDistance,
-    listenForOrdersFromSocket,
-} from 'utils';
-import { setI18nConfig } from 'utils/Localize';
-import { tailwind } from 'tailwind';
-import { format, startOfYear, endOfYear } from 'date-fns';
-import { Order, Collection } from '@fleetbase/sdk';
-import CalendarStrip from 'react-native-calendar-strip';
-import DefaultHeader from 'components/headers/DefaultHeader';
-import OrdersFilterBar from 'components/OrdersFilterBar';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useFocusEffect } from '@react-navigation/native';
 import OrderCard from 'components/OrderCard';
 import SimpleOrdersMetrics from 'components/SimpleOrdersMetrics';
-import config from 'config';
+import { endOfYear, format, startOfYear } from 'date-fns';
+import { useDriver, useFleetbase, useMountedState, useResourceCollection } from 'hooks';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import CalendarStrip from 'react-native-calendar-strip';
+import { EventRegister } from 'react-native-event-listeners';
+import { tailwind } from 'tailwind';
+import {
+    formatMetersToKilometers,
+    getColorCode,
+    isArray,
+    listenForOrdersFromSocket,
+    logError
+} from 'utils';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
@@ -38,10 +28,9 @@ const OrdersScreen = ({ navigation }) => {
     const fleetbase = useFleetbase();
     const calendar = useRef();
     const [driver, setDriver] = useDriver();
-
     const [date, setDateValue] = useState(new Date());
     const [params, setParams] = useState({
-        driver: driver.id,
+        driver: driver?.id,
         on: format(date, 'dd-MM-yyyy'),
         sort: '-created_at',
     });
@@ -66,7 +55,7 @@ const OrdersScreen = ({ navigation }) => {
             setDateValue(value);
             updatedValue = format(value, 'dd-MM-yyyy');
         }
-        setParams((prevParams) => ({ ...prevParams, [key]: updatedValue }));
+        setParams(prevParams => ({ ...prevParams, [key]: updatedValue }));
     }, []);
 
     const loadOrders = useCallback((options = {}) => {
@@ -101,7 +90,7 @@ const OrdersScreen = ({ navigation }) => {
         setSearchingForNearbyOrders(true);
 
         return fleetbase.orders
-            .query({ nearby: driver.id, adhoc: 1, unassigned: 1, dispatched: 1 })
+            .query({ nearby: driver?.id, adhoc: 1, unassigned: 1, dispatched: 1 })
             .then(setNearbyOrders)
             .catch(logError)
             .finally(() => {
@@ -110,8 +99,8 @@ const OrdersScreen = ({ navigation }) => {
     });
 
     const insertNewOrder = useCallback(
-        (newOrder) => {
-            const orderExists = orders.isAny((order) => order.id === newOrder.id);
+        newOrder => {
+            const orderExists = orders.isAny(order => order.id === newOrder.id);
 
             if (orderExists) {
                 return;
@@ -122,7 +111,7 @@ const OrdersScreen = ({ navigation }) => {
         [orders, setOrders]
     );
 
-    const onOrderPress = useCallback((order) => {
+    const onOrderPress = useCallback(order => {
         navigation.push('OrderScreen', { data: order.serialize() });
     });
 
@@ -154,7 +143,7 @@ const OrdersScreen = ({ navigation }) => {
 
     // Listen for new orders via Socket Connection
     useEffect(() => {
-        listenForOrdersFromSocket(`driver.${driver.id}`, (order, event) => {
+        listenForOrdersFromSocket(`driver.${driver?.id}`, (order, event) => {
             console.log('[socket event]', event);
             if (typeof event === 'string' && event === 'order.ready') {
                 // Convert data to Fleetbase Order Resource
@@ -191,7 +180,7 @@ const OrdersScreen = ({ navigation }) => {
                         numDaysInWeek={5}
                         startingDate={startingDate}
                         selectedDate={date}
-                        onDateSelected={(selectedDate) => setParam('on', new Date(selectedDate))}
+                        onDateSelected={selectedDate => setParam('on', new Date(selectedDate))}
                         iconLeft={require('assets/nv-arrow-left.png')}
                         iconRight={require('assets/nv-arrow-right.png')}
                     />
@@ -203,8 +192,7 @@ const OrdersScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadOrders({ isRefreshing: true })} tintColor={getColorCode('text-blue-200')} />}
                 stickyHeaderIndices={[1]}
-                style={tailwind('w-full h-full')}
-            >
+                style={tailwind('w-full h-full')}>
                 {isQuerying && (
                     <View style={tailwind('flex items-center justify-center p-5')}>
                         <ActivityIndicator />
@@ -232,8 +220,7 @@ const OrdersScreen = ({ navigation }) => {
                                                     shadowColor: 'rgba(252, 211, 77, 1)',
                                                     marginBottom: nearbyOrders.length > 1 ? 12 : 8,
                                                 },
-                                            ]}
-                                        >
+                                            ]}>
                                             <OrderCard
                                                 headerTop={
                                                     <View style={tailwind('pt-3 pb-2 px-3')}>
@@ -250,7 +237,7 @@ const OrdersScreen = ({ navigation }) => {
                                                 orderIdStyle={tailwind('text-yellow-900')}
                                                 onPress={() => onOrderPress(order)}
                                                 badgeProps={{
-                                                    containerStyle: order.status === 'created' ? tailwind('bg-yellow-200') : {}
+                                                    containerStyle: order.status === 'created' ? tailwind('bg-yellow-200') : {},
                                                 }}
                                             />
                                         </View>

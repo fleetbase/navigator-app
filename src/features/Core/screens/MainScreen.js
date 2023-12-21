@@ -1,28 +1,20 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, Platform, Linking } from 'react-native';
-import { getUniqueId } from 'react-native-device-info';
+import { faCalendarDay, faClipboardList, faRoute, faUser, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faClipboardList, faUser, faRoute, faCalendarDay, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useRoute, useFocusEffect, useIsFocused } from '@react-navigation/native';
-import { EventRegister } from 'react-native-event-listeners';
-import { getCurrentLocation, requestTrackingPermissions, trackDriver } from 'utils/Geo';
-import { useResourceStorage, get } from 'utils/Storage';
-import { syncDevice } from 'utils/Auth';
-import { logError, getColorCode, config, toBoolean, listenForOrdersFromSocket, createNewOrderLocalNotificationObject } from 'utils';
-import { Header } from 'components';
-import { tailwind } from 'tailwind';
-import { useDriver, useMountedState, useResourceCollection } from 'hooks';
-import { format, startOfYear, endOfYear } from 'date-fns';
-import { Order } from '@fleetbase/sdk';
-import PushNotification from 'react-native-push-notification';
-import useFleetbase from 'hooks/use-fleetbase';
-import RNLocation from 'react-native-location';
+import { useRoute } from '@react-navigation/native';
 import AccountStack from 'account/AccountStack';
+import { Header } from 'components';
 import OrdersStack from 'core/OrdersStack';
-import ScheduleStack from 'core/ScheduleStack';
-import RoutesScreen from './RoutesScreen';
-import WalletScreen from './WalletScreen';
+import { useDriver, useMountedState } from 'hooks';
+import useFleetbase from 'hooks/use-fleetbase';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import { EventRegister } from 'react-native-event-listeners';
+import PushNotification from 'react-native-push-notification';
+import { tailwind } from 'tailwind';
+import { createNewOrderLocalNotificationObject, getColorCode, listenForOrdersFromSocket, logError } from 'utils';
+import { syncDevice } from 'utils/Auth';
+import { getCurrentLocation, trackDriver } from 'utils/Geo';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
@@ -36,13 +28,13 @@ const MainScreen = ({ navigation, route }) => {
 
     // State Management
     const [driver, setDriver] = useDriver();
-    const [isOnline, setIsOnline] = useState(driver.isOnline);
+    const [isOnline, setIsOnline] = useState(driver?.isOnline);
     const [trackingSubscriptions, setTrackingSubscriptions] = useState([]);
     const [isPinged, setIsPinged] = useState(0);
 
     // Listen for push notifications for new orders
     const listenForNotifications = useCallback(() => {
-        const notifications = addEventListener('onNotification', (notification) => {
+        const notifications = addEventListener('onNotification', notification => {
             const { data, id } = notification;
             const { action } = data;
 
@@ -51,7 +43,7 @@ const MainScreen = ({ navigation, route }) => {
             console.log('[onNotification() #action]', action);
 
             if (typeof id === 'string' && id.startsWith('order')) {
-                return fleetbase.orders.findRecord(id).then((order) => {
+                return fleetbase.orders.findRecord(id).then(order => {
                     const data = order.serialize();
 
                     if (navigationRoute.name === 'MainScreen') {
@@ -88,13 +80,13 @@ const MainScreen = ({ navigation, route }) => {
         // Start tracking the driver location
         if (isOnline) {
             trackDriver(driver)
-                .then((unsubscribeFn) => {
+                .then(unsubscribeFn => {
                     setTrackingSubscriptions([...trackingSubscriptions, unsubscribeFn]);
                 })
                 .catch(logError);
         } else {
             // Unsubscribe to all tracking subscriptions in state
-            trackingSubscriptions.forEach((unsubscribeFn) => {
+            trackingSubscriptions.forEach(unsubscribeFn => {
                 unsubscribeFn();
             });
         }
@@ -115,7 +107,7 @@ const MainScreen = ({ navigation, route }) => {
     useEffect(() => {
         const notifiableEvents = ['order.ready', 'order.ping', 'order.driver_assigned', 'order.dispatched'];
 
-        listenForOrdersFromSocket(`driver.${driver.id}`, (order, event) => {
+        listenForOrdersFromSocket(`driver.${driver?.id}`, (order, event) => {
             if (typeof event === 'string' && notifiableEvents.includes(event)) {
                 let localNotificationObject = createNewOrderLocalNotificationObject(order, driver);
                 PushNotification.localNotification(localNotificationObject);
@@ -158,8 +150,7 @@ const MainScreen = ({ navigation, route }) => {
                     header: ({ navigation, route, options }) => {
                         return <Header navigation={navigation} route={route} options={options} />;
                     },
-                })}
-            >
+                })}>
                 <Tab.Screen key="orders" name="Orders" component={OrdersStack} />
                 {/* <Tab.Screen key="routes" name="Routes" component={RoutesScreen} /> */}
                 {/* <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} /> */}
