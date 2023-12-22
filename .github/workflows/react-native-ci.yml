@@ -11,25 +11,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - uses: actions/cache@v3
-      id: npm-cache
-      with:
-          path: ~/.pnpm-store # Replace this with the path you want to cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-              ${{ runner.os }}-node-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2.0.1
-      with:
-          version: latest
-
     - name: Install Node.js
       uses: actions/setup-node@v1
       with:
         node-version: 18.x
 
     - name: Install dependencies
-      run: pnpm install
+      run: npm install -g yarn
+
+    - name: Install dependencies
+      run: yarn install
 
   android_build:
     runs-on: ubuntu-latest
@@ -37,25 +28,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
-    - uses: actions/cache@v3
-      id: npm-cache
-      with:
-          path: ~/.pnpm-store # Replace this with the path you want to cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-              ${{ runner.os }}-node-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2.0.1
-      with:
-          version: latest
-
     - name: Install Node.js
       uses: actions/setup-node@v1
       with:
         node-version: 18.x
 
     - name: Install dependencies
-      run: pnpm install
+      run: npm install -g yarn
+
+    - name: Install dependencies
+      run: yarn install
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -91,25 +73,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - uses: actions/cache@v3
-      id: npm-cache
-      with:
-          path: ~/.pnpm-store # Replace this with the path you want to cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-              ${{ runner.os }}-node-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2.0.1
-      with:
-          version: latest
-
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 18.x
 
     - name: Install dependencies
-      run: pnpm install
+      run: npm install -g yarn
+
+    - name: Install dependencies
+      run: yarn install
 
     - name: Install CocoaPods
       run: sudo gem install cocoapods
