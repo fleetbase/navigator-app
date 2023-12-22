@@ -27,6 +27,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Generate google-services.json
+      env:
+        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      run: |
+        echo "$GOOGLE_SERVICES_JSON" > google-services.json
+        mkdir -p android/app/src  
+        mv google-services.json android/app/src
     
     - name: Install Node.js
       uses: actions/setup-node@v1
