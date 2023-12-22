@@ -62,6 +62,9 @@ jobs:
       with:
         distribution: 'oracle' 
         java-version: '17'
+        
+    - name: Run Jetify
+      run: npx jetify
 
     - name: Build Android
       run: cd android && ./gradlew assembleRelease
