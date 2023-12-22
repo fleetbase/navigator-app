@@ -14,8 +14,7 @@ import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
-import { setString, getString } from 'utils/Storage';
-import { addToQueue, getQueue } from 'utils/RequestQueue';
+import { getString, setString } from 'utils/Storage';
 import OrderMapPicker from '../../components/OrderMapPicker';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -66,8 +65,6 @@ const OrderScreen = ({ navigation, route }) => {
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
-    const currentTimestamp = Date.now();
-    const currentDate = new Date(currentTimestamp).toString();
 
     const entitiesByDestination = (() => {
         const groups = [];
@@ -199,6 +196,23 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
+    const addToRequestQueue = (type, params, order, action) => {
+        const apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+        const queueItem = {
+            type: type,
+            params,
+            order,
+            action: action,
+            time: new Date(),
+        };
+
+        if (apiRequestQueue.length > 0) {
+            apiRequestQueue.push(queueItem);
+        } else apiRequestQueue = [queueItem];
+
+        setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
+    };
+
     const setOrderDestination = waypoint => {
         if (!waypoint) {
             return;
@@ -219,24 +233,8 @@ const OrderScreen = ({ navigation, route }) => {
     const startOrder = (params = {}) => {
         setIsLoadingAction(true);
 
-        console.log('isConnected---->', isConnected);
-
-        console.log('Order------>', JSON.stringify(order));
-        const apiRequestQueue = [];
         if (!isConnected) {
-            apiRequestQueue.push({
-                type: 'startOrder',
-                params,
-                order,
-                action: 'start',
-                time: new Date(),
-            });
-            setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
-            let changedOrders = JSON.parse(getString('_ORDER'));
-            if (changedOrders.length > 0) {
-                changedOrders.push(order);
-            } else changedOrders = [order][({}, {})];
-            setString('_ORDER', JSON.stringify(changedOrders));
+            addToRequestQueue('startOrder', params, order, 'start');
         }
 
         order
@@ -274,24 +272,8 @@ const OrderScreen = ({ navigation, route }) => {
         // setIsLoadingAction(true);
         setActionSheetAction('update_activity');
 
-        console.log('isConnected---->', isConnected);
-
         if (!isConnected) {
-            const apiRequestQueue = [];
-            apiRequestQueue.push({
-                type: 'updateOrder',
-                order,
-                action: 'start',
-                time: new Date(),
-            });
-            setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
-            let changedOrders = JSON.parse(getString('_ORDER'));
-
-            console.log('changedOrders------>', JSON.stringify(changedOrders));
-            if (changedOrders.length > 0) {
-                changedOrders.push(order);
-            } else changedOrders = [order][({}, {})];
-            setString('_ORDER', JSON.stringify(changedOrders));
+            addToRequestQueue('updateOrder', order, 'updated');
         }
 
         const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {

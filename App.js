@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useFleetbase } from 'hooks';
 import type { Node } from 'react';
+import { Order } from '@fleetbase/sdk';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, View, Text } from 'react-native';
 import 'react-native-gesture-handler';
@@ -9,7 +10,7 @@ import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
-import { setString } from 'utils/Storage';
+import { setString, getString } from 'utils/Storage';
 import { config } from './src/utils';
 
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -29,21 +30,38 @@ const App: () => Node = () => {
 
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
+
     const fleetbase = useFleetbase();
-    const { isConnected } = useNetInfo();
+
+    // const { isConnected } = useNetInfo();
+    const [isConnected, setIsConnected] = useState();
 
     useEffect(() => {
-        if (isConnected) {
-            // const orders = JSON.parse(getString('_ORDER'));
-            // orders.forEach(order => {
-            //     // const order = {
-            //     //     orderParams: params,
-            //     //     action: 'start',
-            //     //     time: currentDate,
-            //     // };
-            //     emit('order', order);
-            
-            // });
+        if (!isConnected) {
+            const orders = JSON.parse(getString('apiRequestQueue'));
+            orders.forEach(item => {
+                console.log('order::', JSON.stringify(item.action));
+                const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
+                if (item.action == 'start') {
+                    try {
+                        orderService.start(item.params).then(res => {
+                            console.log('Order started------->', res);
+                        });
+                    } catch (error) {
+                        console.log('error:::', error);
+                    }
+                } else if (item.action == 'updated') {
+                    orderService
+                        .updateActivity({ skipDispatch: true })
+                        .then(res => {
+                            console.log('Update------>', res);
+                        })
+                        .catch(err => {
+                            r;
+                            console.error(err);
+                        });
+                }
+            });
         }
     }, [isConnected]);
 
@@ -61,7 +79,7 @@ const App: () => Node = () => {
                 const [key, value] = param.split('=');
                 parsedParams[key] = decodeURIComponent(value);
             });
-
+            r;
             return parsedParams;
         }
 
