@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { SafeAreaView, View, Text, TextInput, ImageBackground, TouchableOpacity, ActivityIndicator, Platform, KeyboardAvoidingView, Pressable, Keyboard } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { useStorefront, useLocale, useCustomer } from 'hooks';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import PhoneInput from 'components/PhoneInput';
+import { useCustomer, useLocale, useStorefront } from 'hooks';
+import React, { useState } from 'react';
+import { ActivityIndicator, ImageBackground, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import tailwind from 'tailwind';
+import { config, translate } from 'utils';
 import { getLocation } from 'utils/Geo';
 import { get } from 'utils/Storage';
-import { translate, config } from 'utils';
-import tailwind from 'tailwind';
-import PhoneInput from 'components/PhoneInput';
 
 const CreateAccountScreen = ({ navigation, route }) => {
     const { info, redirectTo } = route.params;
@@ -27,7 +27,7 @@ const CreateAccountScreen = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const isNotAwaitingVerification = isAwaitingVerification === false;
 
-    const syncDevice = (customer) => {
+    const syncDevice = customer => {
         const token = get('token');
 
         if (customer && token) {
@@ -38,7 +38,7 @@ const CreateAccountScreen = ({ navigation, route }) => {
     const sendVerificationCode = () => {
         setIsLoading(true);
 
-        storefront.customers.requestCreationCode(phone, 'sms').then((response) => {
+        storefront.customers.requestCreationCode(phone, 'sms').then(response => {
             setIsAwaitingVerification(true);
             setIsLoading(false);
         });
@@ -49,7 +49,7 @@ const CreateAccountScreen = ({ navigation, route }) => {
 
         storefront.customers
             .create(phone, code, { name, phone })
-            .then((customer) => {
+            .then(customer => {
                 setCustomer(customer);
                 syncDevice(customer);
                 setIsLoading(false);
@@ -60,7 +60,7 @@ const CreateAccountScreen = ({ navigation, route }) => {
 
                 navigation.goBack();
             })
-            .catch((error) => {
+            .catch(error => {
                 setError(error.message);
                 retry();
             });
@@ -76,8 +76,7 @@ const CreateAccountScreen = ({ navigation, route }) => {
         <ImageBackground
             source={config('ui.createAccountScreen.containerBackgroundImage')}
             resizeMode={config('ui.createAccountScreen.containerBackgroundResizeMode') ?? 'cover'}
-            style={[config('ui.createAccountScreen.containerBackgroundImageStyle')]}
-        >
+            style={[config('ui.createAccountScreen.containerBackgroundImageStyle')]}>
             <View style={[tailwind('w-full h-full bg-white relative'), config('ui.createAccountScreen.containerStyle'), { paddingTop: insets.top }]}>
                 <View style={[tailwind('flex flex-row items-center p-4'), config('ui.createAccountScreen.headerContainerStyle')]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('mr-4')}>
@@ -89,7 +88,10 @@ const CreateAccountScreen = ({ navigation, route }) => {
                 </View>
                 <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-4 py-6'), config('ui.createAccountScreen.contentContainerStyle')]}>
                     {isNotAwaitingVerification && (
-                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={160} style={[config('ui.createAccountScreen.createAccountFormContainerStyle')]}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={160}
+                            style={[config('ui.createAccountScreen.createAccountFormContainerStyle')]}>
                             <View style={[tailwind('mb-8'), config('ui.createAccountScreen.greetingContainerStyle')]}>
                                 <Text style={[tailwind('text-lg text-gray-600'), config('ui.createAccountScreen.greetingLine1TextStyle')]}>
                                     {translate('Auth.CreateAccountScreen.greetingTitle', { infoName: info.name })}
@@ -137,7 +139,10 @@ const CreateAccountScreen = ({ navigation, route }) => {
                         </KeyboardAvoidingView>
                     )}
                     {isAwaitingVerification && (
-                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={80} style={[config('ui.createAccountScreen.verifyFormContainerStyle')]}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={80}
+                            style={[config('ui.createAccountScreen.verifyFormContainerStyle')]}>
                             <View style={[tailwind('mb-8'), config('ui.createAccountScreen.greetingContainerStyle')]}>
                                 <Text style={[tailwind('text-lg text-green-700'), config('ui.createAccountScreen.greetingLine1TextStyle')]}>
                                     {translate('Auth.CreateAccountScreen.awaitingVerificationTitle', { name })}

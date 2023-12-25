@@ -1,15 +1,14 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Dimensions, RefreshControl } from 'react-native';
-import { useFleetbase, useDriver, useMountedState, useResourceCollection } from 'hooks';
-import { logError, isArray, isEmpty, getCurrentLocation, pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
-import { tailwind } from 'tailwind';
-import { format } from 'date-fns';
-import { Order, Collection } from '@fleetbase/sdk';
-import MapView, { Marker } from 'react-native-maps';
-import DefaultHeader from 'components/headers/DefaultHeader';
+import { Collection, Order } from '@fleetbase/sdk';
 import OrdersFilterBar from 'components/OrdersFilterBar';
 import SimpleOrdersMetrics from 'components/SimpleOrdersMetrics';
-import config from 'config';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import { format } from 'date-fns';
+import { useDriver, useFleetbase, useMountedState, useResourceCollection } from 'hooks';
+import React, { useEffect, useRef, useState } from 'react';
+import { Dimensions, Text, View } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import { tailwind } from 'tailwind';
+import { getCurrentLocation, isArray, isEmpty, logError } from 'utils';
 
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
@@ -88,7 +87,7 @@ const RoutesScreen = ({ navigation }) => {
         return stops;
     };
 
-    const focusStop = (stop) => {
+    const focusStop = stop => {
         if (!stop) {
             return;
         }
@@ -117,7 +116,7 @@ const RoutesScreen = ({ navigation }) => {
 
         fleetbase.orders
             .query(params)
-            .then((orders) => {
+            .then(orders => {
                 const stops = getAllOrderStops(orders);
 
                 setStops(stops);
@@ -147,9 +146,9 @@ const RoutesScreen = ({ navigation }) => {
         <View style={[tailwind('bg-gray-800 h-full')]}>
             <DefaultHeader>
                 <OrdersFilterBar
-                    onSelectSort={(sort) => setParam('sort', sort)}
-                    onSelectFilter={(filters) => setParam('filter', filter)}
-                    onSelectDate={(date) => setParam('on', date)}
+                    onSelectSort={sort => setParam('sort', sort)}
+                    onSelectFilter={filters => setParam('filter', filter)}
+                    onSelectDate={date => setParam('on', date)}
                     isLoading={isQuerying}
                     containerStyle={tailwind('px-0 pb-0')}
                 />
@@ -170,16 +169,14 @@ const RoutesScreen = ({ navigation }) => {
                         longitude: firstStop ? firstStop?.location?.coordinates[0] : userLocation?.position?.coords?.longitude ?? userLocation?.coords?.longitude,
                         latitudeDelta: 1.0922,
                         longitudeDelta: 0.0421,
-                    }}
-                >
+                    }}>
                     {stops.map((waypoint, i) => (
                         <Marker
                             key={i}
                             coordinate={{
                                 latitude: waypoint.location.coordinates[1],
                                 longitude: waypoint.location.coordinates[0],
-                            }}
-                        >
+                            }}>
                             <View style={tailwind('bg-green-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
                                 <Text style={tailwind('font-bold text-white')}>{i + 1}</Text>
                             </View>

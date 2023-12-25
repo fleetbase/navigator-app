@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { formatDuration, formatKm } from 'utils';
 import OrderStatusBadge from './OrderStatusBadge';
 import OrderWaypoints from './OrderWaypoints';
-import socketClusterClient from 'socketcluster-client';
 
 const OrderCard = ({
     order,
@@ -15,6 +14,7 @@ const OrderCard = ({
     headerStyle,
     waypointsContainerStyle,
     badgeWrapperStyle,
+    badgeProps = {},
     textStyle,
     orderIdStyle,
     dateStyle,
@@ -25,40 +25,6 @@ const OrderCard = ({
 }) => {
     const scheduledAt = order.scheduledAt ? format(order.scheduledAt, 'PPpp') : null;
     const createdAt = order.createdAt ? format(order.createdAt, 'PPpp') : null;
-
-    const runSocket = useCallback(async () => {
-        const socket = socketClusterClient.create({
-            hostname: 'socket.fleetbase.io',
-            secure: true,
-            port: 8000,
-            autoConnect: true,
-	        autoReconnect: true
-        });
-
-        const channelId = `order.${order.id}`;
-        const channel = socket.subscribe(channelId);
-
-        await channel.listener('subscribe').once();
-        console.log(`Subscribed and listening to socket channel: ${channelId}`);
-
-        for await (let data of channel) {
-            const order = data?.data;
-
-            console.log(`[socket #data] (${channelId}) `, data);
-
-            if (order?.id?.startsWith('order')) {
-                return fleetbase.orders.findRecord(order.id).then((order) => {
-                    const data = order.serialize();
-
-                    if (navigationRoute.name === 'MainScreen') {
-                        navigation.navigate('OrderScreen', { data });
-                    }
-                });
-            }
-        }
-    });
-
-    runSocket();
 
     return (
         <View style={[tailwind('p-2'), wrapperStyle]}>
@@ -77,7 +43,7 @@ const OrderCard = ({
                         {headerBottom}
                     </View>
                     <View style={[tailwind('flex flex-col items-end justify-start'), badgeWrapperStyle]}>
-                        <OrderStatusBadge status={order.getAttribute('status')} />
+                        <OrderStatusBadge status={order.getAttribute('status')} {...badgeProps} />
                         {order.getAttribute('status') === 'created' && order.isDispatched && <OrderStatusBadge status={'dispatched'} wrapperStyle={tailwind('mt-1')} />}
                     </View>
                 </View>
