@@ -78,7 +78,7 @@ jobs:
       run: cd android && chmod +x ./gradlew
 
     - name: Build Android
-      run: cd android && ./gradlew bundleRelease
+      run: cd android && ./gradlew assembleDebug
 
   ios_build:
     runs-on: macOS-latest
