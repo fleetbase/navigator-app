@@ -43,8 +43,8 @@ jobs:
 
     - name: Generate release.keystore
       run: |
-        echo  "${{ secret.ANDROID_RELEASE_KEYSTORE }}" > release.keystore.asc
-        gpg -d --passphrase "${{ secret.ANDROID_KEYSTORE_PASSWORD }}" --batch release.keystore.asc > app/release.keystore
+        echo  "${{ secrets.ANDROID_RELEASE_KEYSTORE }}" > release.keystore.asc
+        gpg -d --passphrase "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" --batch release.keystore.asc > app/release.keystore
     
     - name: Install Node.js
       uses: actions/setup-node@v1
