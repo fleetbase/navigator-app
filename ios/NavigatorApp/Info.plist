@@ -25,11 +25,7 @@
 		<key>CFBundleVersion</key>
 		<string>$(CURRENT_PROJECT_VERSION)</string>
 		<key>LSRequiresIPhoneOS</key>
-		<true/>
-		<key>MBXAccessToken</key>
-		<string>$(MAPBOX_ACCESS_TOKEN)</string>
-		<key>MGLMapboxAccessToken</key>
-		<string>$(MAPBOX_ACCESS_TOKEN)</string>
+		<true />
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSExceptionDomains</key>
@@ -37,21 +33,21 @@
 				<key>fleetbase.engineering</key>
 				<dict>
 					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<false/>
+					<false />
 					<key>NSIncludesSubdomains</key>
-					<true/>
+					<true />
 				</dict>
 				<key>fleetbase.io</key>
 				<dict>
 					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<false/>
+					<false />
 					<key>NSIncludesSubdomains</key>
-					<true/>
+					<true />
 				</dict>
 				<key>localhost</key>
 				<dict>
 					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<true/>
+					<true />
 				</dict>
 			</dict>
 		</dict>
@@ -87,6 +83,15 @@
 		<array>
 			<string>armv7</string>
 		</array>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>flbnavigator</string>
+				</array>
+			</dict>
+		</array>
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
@@ -94,6 +99,26 @@
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false/>
+		<false />
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>citymapper</string>
+			<string>comgooglemaps</string>
+			<string>navigon</string>
+			<string>transit</string>
+			<string>waze</string>
+			<string>yandexnavi</string>
+			<string>uber</string>
+			<string>tomtomhome</string>
+			<string>com.sygic.aura</string>
+			<string>here-route</string>
+			<string>moovit</string>
+			<string>lyft</string>
+			<string>mapsme</string>
+			<string>cabify</string>
+			<string>baidumap</string>
+			<string>taxis99</string>
+			<string>iosamap</string>
+		</array>
 	</dict>
 </plist>

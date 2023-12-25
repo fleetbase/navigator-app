@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Entity, Order, Place } from '@fleetbase/sdk';
+import { faBarcode, faSignature, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTimes, faBarcode, faSignature } from '@fortawesome/free-solid-svg-icons';
-import { Order, Place, Entity } from '@fleetbase/sdk';
-import { useFleetbase, useMountedState, useLocale } from 'hooks';
-import { isEmpty, getColorCode, logError } from 'utils';
+import OrderStatusBadge from 'components/OrderStatusBadge';
+import { useFleetbase, useLocale, useMountedState } from 'hooks';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import { RNCamera } from 'react-native-camera';
 import FastImage from 'react-native-fast-image';
 import QRCodeScanner from 'react-native-qrcode-scanner';
-import SignatureCapture from 'react-native-signature-capture';
-import OrderStatusBadge from 'components/OrderStatusBadge';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SignatureScreen from 'react-native-signature-canvas';
 import tailwind from 'tailwind';
+import { getColorCode, isEmpty, logError } from 'utils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -46,9 +46,7 @@ const ProofScreen = ({ navigation, route }) => {
         Alert.alert('Error', error?.message ?? 'An error occured', alertOptions);
     };
 
-    const captureSignature = (event) => {
-        const { encoded } = event;
-
+    const captureSignature = signature => {
         let subject = null;
 
         if (isEntity) {
@@ -63,9 +61,9 @@ const ProofScreen = ({ navigation, route }) => {
 
         return order
             .captureSignature(subject, {
-                signature: encoded,
+                signature,
             })
-            .then((proof) => {
+            .then(proof => {
                 if (activity) {
                     return sendOrderActivityUpdate(proof);
                 }
@@ -78,7 +76,7 @@ const ProofScreen = ({ navigation, route }) => {
             });
     };
 
-    const captureScan = (event) => {
+    const captureScan = event => {
         let subject = null;
 
         if (isEntity) {
@@ -97,7 +95,7 @@ const ProofScreen = ({ navigation, route }) => {
                 data: event,
                 raw_data: event.rawData,
             })
-            .then((proof) => {
+            .then(proof => {
                 if (activity) {
                     return sendOrderActivityUpdate(proof);
                 }
@@ -113,7 +111,7 @@ const ProofScreen = ({ navigation, route }) => {
             });
     };
 
-    const sendOrderActivityUpdate = (proof) => {
+    const sendOrderActivityUpdate = proof => {
         setIsLoading(true);
 
         return order
@@ -153,19 +151,7 @@ const ProofScreen = ({ navigation, route }) => {
             <View>
                 {isSigningProof && (
                     <View style={tailwind('bg-white h-full w-full')}>
-                        <SignatureCapture
-                            style={tailwind('bg-white h-full w-full')}
-                            ref={signatureScreenRef}
-                            onSaveEvent={captureSignature}
-                            saveImageFileInExtStorage={false}
-                            showNativeButtons={false}
-                            showTitleLabel={false}
-                            backgroundColor={'white'}
-                            strokeColor={'black'}
-                            minStrokeWidth={4}
-                            maxStrokeWidth={4}
-                            viewMode={'portrait'}
-                        />
+                        <SignatureScreen style={tailwind('bg-white h-full w-full')} ref={signatureScreenRef} onOK={captureSignature} backgroundColor={'white'} />
                         <View style={tailwind('absolute bottom-0 w-full')}>
                             <View style={tailwind('px-4')}>
                                 <View style={tailwind('border border-gray-900 bg-gray-800 rounded-md shadow-lg px-3 py-2 mb-32')}>
@@ -175,8 +161,7 @@ const ProofScreen = ({ navigation, route }) => {
                                                 style={tailwind('pr-1')}
                                                 onPress={() => {
                                                     signatureScreenRef.current?.resetImage();
-                                                }}
-                                            >
+                                                }}>
                                                 <View style={tailwind('btn bg-gray-800 border border-gray-700 bg-opacity-75')}>
                                                     <Text style={tailwind('font-semibold text-gray-50 text-base')}>Reset</Text>
                                                 </View>
@@ -187,8 +172,7 @@ const ProofScreen = ({ navigation, route }) => {
                                                 style={tailwind('pl-1')}
                                                 onPress={() => {
                                                     signatureScreenRef.current?.saveImage();
-                                                }}
-                                            >
+                                                }}>
                                                 <View style={tailwind('btn bg-green-900 border border-green-700')}>
                                                     {isLoading && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
                                                     <Text style={tailwind('font-semibold text-green-50 text-base')}>Capture</Text>

@@ -1,13 +1,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { pluralize, formatDuration, formatKm, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
+import { pluralize, formatDuration, formatMetersToKilometers, getActiveOrdersCount, getTotalStops, getTotalDuration, getTotalDistance } from 'utils';
 import { Order } from '@fleetbase/sdk';
 import { tailwind } from 'tailwind';
 import { format } from 'date-fns';
 
-const SimpleOrdersMetrics = ({ orders, date, wrapperStyle, containerStyle }) => {
-    date = date ?? new Date();
-
+const SimpleOrdersMetrics = ({ orders, date = new Date(), wrapperStyle, containerStyle }) => {
     return (
         <View style={[wrapperStyle]}>
             <View style={[tailwind('px-4'), containerStyle]}>
@@ -20,7 +18,7 @@ const SimpleOrdersMetrics = ({ orders, date, wrapperStyle, containerStyle }) => 
                         <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
                         <Text style={tailwind('text-base text-gray-100')}>{formatDuration(getTotalDuration(orders))}</Text>
                         <Text style={tailwind('text-base text-gray-100 mx-2')}>•</Text>
-                        <Text style={tailwind('text-base text-gray-100')}>{formatKm(getTotalDistance(orders) / 1000)}</Text>
+                        <Text style={tailwind('text-base text-gray-100')}>{formatMetersToKilometers(getTotalDistance(orders))}</Text>
                     </View>
                 </View>
             </View>

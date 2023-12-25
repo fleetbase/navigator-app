@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { logError, debounce, stripHtml, translate, getColorCode, isEmpty } from 'utils';
-import { useLocale, useMountedState, useFleetbase, useDriver } from 'hooks';
-import { searchButtonStyle } from 'components/SearchButton';
 import OrderCard from 'components/OrderCard';
+import { searchButtonStyle } from 'components/SearchButton';
+import { useDriver, useFleetbase, useLocale, useMountedState } from 'hooks';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, TextInput, View } from 'react-native';
 import tailwind from 'tailwind';
+import { debounce, getColorCode, isEmpty, logError, translate } from 'utils';
 
 const isAndroid = Platform.OS === 'android';
 
@@ -17,11 +17,11 @@ const SearchScreen = ({ navigation }) => {
     const [driver] = useDriver();
     const [locale] = useLocale();
 
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState([]);
     const [query, setQuery] = useState(null);
 
-    const onOrderPress = useCallback((order) => {
+    const onOrderPress = useCallback(order => {
         navigation.push('OrderScreen', { data: order.serialize() });
     });
 
@@ -50,6 +50,8 @@ const SearchScreen = ({ navigation }) => {
 
         debouncedSearch(query, setResults);
     }, [query]);
+
+    console.log('[SearchScreen #results]', results);
 
     return (
         <View style={[tailwind('bg-gray-800 flex-1 relative pt-4')]}>
