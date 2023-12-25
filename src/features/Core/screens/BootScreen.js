@@ -1,14 +1,12 @@
-import React, { useEffect } from 'react';
-import { SafeAreaView, View, ActivityIndicator } from 'react-native';
-import { EventRegister } from 'react-native-event-listeners';
-import { hasRequiredKeys, logError, getColorCode } from 'utils';
-import { useDriver, useMountedState } from 'hooks';
-import { set } from 'utils/Storage';
-import { setI18nConfig } from 'utils/Localize';
-import { tailwind } from 'tailwind';
-import RNBootSplash from 'react-native-bootsplash';
 import SetupWarningScreen from 'exceptions/SetupWarningScreen';
-import config from 'config';
+import { useDriver, useMountedState } from 'hooks';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, SafeAreaView, View } from 'react-native';
+import RNBootSplash from 'react-native-bootsplash';
+import { EventRegister } from 'react-native-event-listeners';
+import { tailwind } from 'tailwind';
+import { getColorCode, hasRequiredKeys } from 'utils';
+import { setI18nConfig } from 'utils/Localize';
 
 const { addEventListener } = EventRegister;
 
@@ -45,7 +43,7 @@ const BootScreen = ({ navigation }) => {
     useEffect(() => {
         checkForAuthenticatedDriver()
             .then(() => {
-                return navigation.navigate('MainScreen');
+                return navigation.navigate('MainStack');
             })
             .catch(() => {
                 return navigation.navigate('LoginScreen');

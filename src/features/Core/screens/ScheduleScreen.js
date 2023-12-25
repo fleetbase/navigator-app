@@ -1,16 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, Dimensions, RefreshControl } from 'react-native';
-import { useDriver, useMountedState, useResourceCollection, useFleetbase } from 'hooks';
-import { logError, getColorCode } from 'utils';
-import { setI18nConfig } from 'utils/Localize';
-import { tailwind } from 'tailwind';
-import { format } from 'date-fns';
-import { Order } from '@fleetbase/sdk';
-import { Agenda } from 'react-native-calendars';
-import DefaultHeader from 'components/headers/DefaultHeader';
-import OrdersFilterBar from 'components/OrdersFilterBar';
 import OrderCard from 'components/OrderCard';
-import config from 'config';
+import DefaultHeader from 'components/headers/DefaultHeader';
+import { format } from 'date-fns';
+import { useDriver, useFleetbase, useMountedState } from 'hooks';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, RefreshControl, Text, View } from 'react-native';
+import { Agenda } from 'react-native-calendars';
+import { tailwind } from 'tailwind';
+import { getColorCode, logError } from 'utils';
 
 const { width, height } = Dimensions.get('window');
 const DATE_FORMAT = 'yyyy-MM-dd';
@@ -82,8 +78,8 @@ const ScheduleScreen = ({ navigation }) => {
             <Agenda
                 items={items}
                 selected={format(date, DATE_FORMAT)}
-                onDayPress={(day) => setDateValue(new Date(day.dateString))}
-                renderItem={(item) => <OrderCard order={item} onPress={() => navigation.push('OrderScreen', { data: item?.serialize() })} />}
+                onDayPress={day => setDateValue(new Date(day.dateString))}
+                renderItem={item => <OrderCard order={item} onPress={() => navigation.push('OrderScreen', { data: item?.serialize() })} />}
                 renderEmptyDate={() => (
                     <View style={[tailwind('w-full flex py-12'), { height: height - 330 }]}>
                         <Text style={tailwind('text-gray-400 pl-8')}>No orders scheduled for this day</Text>
