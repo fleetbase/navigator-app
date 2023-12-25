@@ -42,7 +42,8 @@ jobs:
         mv google-services.json android/app/src
 
     - name: Generate release.keystore
-      run: gpg -d --passphrase "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" --batch release.keystore.asc > android/app/release.keystore
+      run: |
+        gpg -d --passphrase '${{ secrets.ANDROID_KEYSTORE_PASSWORD }}' --batch release.keystore.asc > android/app/release.keystore
     
     - name: Install Node.js
       uses: actions/setup-node@v1
