@@ -40,6 +40,11 @@ jobs:
         echo "$GOOGLE_SERVICES_JSON" > google-services.json
         mkdir -p android/app/src  
         mv google-services.json android/app/src
+
+    - name: Generate release.keystore
+      run: |
+        echo  "${{ secret.ANDROID_RELEASE_KEYSTORE }}" > release.keystore.asc
+        gpg -d --passphrase "${{ secret.ANDROID_KEYSTORE_PASSWORD }}" --batch release.keystore.asc > app/release.keystore
     
     - name: Install Node.js
       uses: actions/setup-node@v1
@@ -78,7 +83,7 @@ jobs:
       run: cd android && chmod +x ./gradlew
 
     - name: Build Android
-      run: cd android && ./gradlew assembleDebug
+      run: cd android && ./gradlew assembleRelease
 
   ios_build:
     runs-on: macOS-latest
