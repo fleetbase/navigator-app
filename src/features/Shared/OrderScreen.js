@@ -10,6 +10,7 @@ import { ActivityIndicator, Alert, Dimensions, Linking, RefreshControl, ScrollVi
 import ActionSheet from 'react-native-actions-sheet';
 import { EventRegister } from 'react-native-event-listeners';
 import FastImage from 'react-native-fast-image';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
@@ -33,6 +34,7 @@ const OrderScreen = ({ navigation, route }) => {
     const fleetbase = useFleetbase();
     const [driver, setDriver] = useDriver();
     const [locale] = useLocale();
+    const { isConnected } = useNetInfo();
 
     const [order, setOrder] = useState(new Order(data, fleetbase.getAdapter()));
     const [isLoadingAction, setIsLoadingAction] = useState(false);
@@ -159,6 +161,23 @@ const OrderScreen = ({ navigation, route }) => {
         return parseInt(subtotal);
     };
 
+    const addToRequestQueue = (type, params, order, action) => {
+        const apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+        const queueItem = {
+            type: type,
+            params,
+            order,
+            action: action,
+            time: new Date(),
+        };
+
+        if (apiRequestQueue.length > 0) {
+            apiRequestQueue.push(queueItem);
+        } else apiRequestQueue = [queueItem];
+
+        setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
+    };
+
     const calculateTotal = () => {
         let subtotal = calculateEntitiesSubtotal();
         let deliveryFee = calculateDeliverySubtotal();
@@ -213,6 +232,10 @@ const OrderScreen = ({ navigation, route }) => {
     const startOrder = (params = {}) => {
         setIsLoadingAction(true);
 
+        if (isConnected) {
+            addToRequestQueue('startOrder', params, order, 'start');
+        }
+
         order
             .start(params)
             .then(setOrder)
@@ -247,6 +270,10 @@ const OrderScreen = ({ navigation, route }) => {
     const updateOrderActivity = async () => {
         setIsLoadingAction(true);
         setActionSheetAction('update_activity');
+
+        if (isConnected) {
+            addToRequestQueue('updateOrder', order, 'updated');
+        }
 
         const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {
             setIsLoadingAction(false);
