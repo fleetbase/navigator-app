@@ -10,11 +10,12 @@ import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
-import { setString, getString } from 'utils/Storage';
+import { setString, getString, remove } from 'utils/Storage';
 import { config } from './src/utils';
 
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
+import { err } from 'react-native-svg/lib/typescript/xml';
 
 const Stack = createStackNavigator();
 
@@ -27,10 +28,8 @@ const linking = {
 
 const App: () => Node = () => {
     const [setDriver] = useDriver();
-
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
-
     const fleetbase = useFleetbase();
 
     // const { isConnected } = useNetInfo();
@@ -39,14 +38,30 @@ const App: () => Node = () => {
     useEffect(() => {
         if (!isConnected) {
             const orders = JSON.parse(getString('apiRequestQueue'));
+
+            if (orders.length > 0) {
+                Toast.show({
+                    type: 'success',
+                    text1: `Order is syncing`,
+                });
+            }
             orders.forEach(item => {
-                console.log('order::', JSON.stringify(item.action));
+                console.log('item.action:::::', JSON.stringify(item.action));
+                console.log('attributes:::::', JSON.stringify(item.order.attributes));
                 const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
                 if (item.action == 'start') {
                     try {
-                        orderService.start(item.params).then(res => {
-                            console.log('Order started------->', res);
-                        });
+                        orderService
+                            .start(item.params)
+                            .then(res => {
+                                Toast.show({
+                                    type: 'success',
+                                    text1: `Order started`,
+                                });
+                            })
+                            .catch(error => {
+                                console.log('attributes error----->', error);
+                            });
                     } catch (error) {
                         console.log('error:::', error);
                     }
@@ -54,13 +69,18 @@ const App: () => Node = () => {
                     orderService
                         .updateActivity({ skipDispatch: true })
                         .then(res => {
-                            console.log('Update------>', res);
+                            Toast.show({
+                                type: 'success',
+                                text1: `Order started`,
+                            });
+                            console.log('Order started------->', res);
                         })
                         .catch(err => {
-                            r;
-                            console.error(err);
+                            console.error('update error::', err);
                         });
                 }
+                const removedData = JSON.parse(remove('apiRequestQueue'));
+                console.error('removedData :::::', removedData);
             });
         }
     }, [isConnected]);
@@ -150,7 +170,7 @@ const App: () => Node = () => {
 
         return () => {
             console.log('App useEffect cleaned up');
-            Linking.removeEventListener('url', setupInstanceLink);
+            // Linking.removeEventListener('url', setupInstanceLink);
         };
     }, []);
 
