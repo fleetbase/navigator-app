@@ -15,7 +15,6 @@ import { config } from './src/utils';
 
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
-import { err } from 'react-native-svg/lib/typescript/xml';
 
 const Stack = createStackNavigator();
 
@@ -32,11 +31,11 @@ const App: () => Node = () => {
     const [isLoading, setLoading] = useState(true);
     const fleetbase = useFleetbase();
 
-    // const { isConnected } = useNetInfo();
-    const [isConnected, setIsConnected] = useState();
+    const { isConnected } = useNetInfo();
+    // const [isConnected, setIsConnected] = useState();
 
     useEffect(() => {
-        if (!isConnected) {
+        if (isConnected) {
             const orders = JSON.parse(getString('apiRequestQueue'));
 
             if (orders.length > 0) {
@@ -45,10 +44,14 @@ const App: () => Node = () => {
                     text1: `Order is syncing`,
                 });
             }
+
             orders.forEach(item => {
-                console.log('item.action:::::', JSON.stringify(item.action));
-                console.log('attributes:::::', JSON.stringify(item.order.attributes));
                 const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
+                const destination = [orderService.getAttribute('payload.pickup'), ...orderService.getAttribute('payload.waypoints', []), orderService.getAttribute('payload.dropoff')].find(
+                    place => {
+                        return place?.id === orderService.getAttribute('payload.current_waypoint');
+                    }
+                );
                 if (item.action == 'start') {
                     try {
                         orderService
@@ -66,21 +69,31 @@ const App: () => Node = () => {
                         console.log('error:::', error);
                     }
                 } else if (item.action == 'updated') {
-                    orderService
-                        .updateActivity({ skipDispatch: true })
-                        .then(res => {
-                            Toast.show({
-                                type: 'success',
-                                text1: `Order started`,
-                            });
-                            console.log('Order started------->', res);
-                        })
-                        .catch(err => {
-                            console.error('update error::', err);
+                    try {
+                        const activity = order.getNextActivity({ waypoint: destination?.id }).finally(() => {
+                            setIsLoadingAction(false);
                         });
+
+                        if (activity.code === 'dispatched') {
+                            return order
+                                .updateActivity({ skipDispatch: true })
+                                .then(res => {
+                                    Toast.show({
+                                        type: 'success',
+                                        text1: `Order started`,
+                                    });
+                                    console.log('Order started------->', res);
+                                })
+                                .catch(err => {
+                                    console.error('update error------->', err);
+                                });
+                        }
+                    } catch (error) {
+                        console.log('error:::', error);
+                    }
                 }
-                const removedData = JSON.parse(remove('apiRequestQueue'));
-                console.error('removedData :::::', removedData);
+                // const removedData = JSON.parse(remove('apiRequestQueue'));
+                // console.error('removedData :::::', removedData);
             });
         }
     }, [isConnected]);
@@ -99,7 +112,6 @@ const App: () => Node = () => {
                 const [key, value] = param.split('=');
                 parsedParams[key] = decodeURIComponent(value);
             });
-            r;
             return parsedParams;
         }
 
