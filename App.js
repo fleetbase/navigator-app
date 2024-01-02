@@ -25,6 +25,8 @@ const linking = {
     },
 };
 
+const success = [];
+
 const App: () => Node = () => {
     const [setDriver] = useDriver();
     const navigationRef = useRef();
@@ -33,85 +35,70 @@ const App: () => Node = () => {
     const { isConnected } = useNetInfo();
 
     useEffect(() => {
-        if (!isConnected) {
-            const orders = JSON.parse(getString('apiRequestQueue'));
+        const orders = JSON.parse(getString('apiRequestQueue'));
 
-            if (orders?.length > 0) {
-                Toast.show({
-                    type: 'success',
-                    text1: `Order is syncing`,
-                });
-            }
-
-            console.log('orders--->', getString('apiRequestQueue'));
-
-            const success = [];
-
-            orders?.forEach((item, index) => {
-                const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
-                const destination = [orderService.getAttribute('payload.pickup'), ...orderService.getAttribute('payload.waypoints', []), orderService.getAttribute('payload.dropoff')].find(
-                    place => {
-                        return place?.id === orderService.getAttribute('payload.current_waypoint');
-                    }
-                );
-                if (item.action == 'start') {
-                    try {
-                        orderService
-                            .start(item.params)
-                            .then(res => {
-                                Toast.show({
-                                    type: 'success',
-                                    text1: `Order started`,
-                                });
-                                success.push(index);
-                            })
-                            .catch(error => {
-                                if (error.includes('already started')) {
-                                    success.push(index);
-                                }
-
-                                console.log('attributes error----->', error);
-                            });
-                    } catch (error) {
-                        console.log('error:::', error);
-                    }
-                } else if (item.action == 'updated') {
-                    try {
-                        const activity = order
-                            .getNextActivity({ waypoint: destination?.id })
-                            .then(res => {
-                                console.log('res waypoint', res);
-                            })
-                            .catch(err => {
-                                console.log('err waypoint', err);
-                            });
-
-                        if (activity.code === 'dispatched') {
-                            return order
-                                .updateActivity({ skipDispatch: true })
-                                .then(res => {
-                                    Toast.show({
-                                        type: 'success',
-                                        text1: `Order started`,
-                                    });
-                                    success.push(index);
-                                    console.log('Order started------->', res);
-                                })
-                                .catch(err => {
-                                    console.error('update error------->', err);
-                                });
-                        }
-                    } catch (error) {
-                        console.log('error:::', error);
-                    }
-                }
-                success.forEach(item => {
-                    orders.splice(item);
-                });
-                setString('apiRequestQueue', JSON.stringify(orders));
+        if (!isConnected || orders?.length == 0) {
+            return;
+        }
+        if (orders?.length > 0) {
+            Toast.show({
+                type: 'success',
+                text1: `Order is syncing`,
             });
         }
-    }, [!isConnected]);
+
+        orders?.forEach((item, index) => {
+            console.log('Order: ', item?.order.attributes.tracking_number.status, item?.order.attributes.id, item.action);
+            const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
+
+            if (item.action == 'start') {
+                startOrder(orderService, index)
+            } else if (item.action == 'updated') {
+                updateOrder(orderService, index);
+            }
+            success.forEach(item => {
+                orders.splice(item);
+            });
+            const order = setString('apiRequestQueue', JSON.stringify(orders));
+        });
+    }, [isConnected]);
+
+
+    const updateOrder = (order, index) => {
+        order
+            .updateActivity({ skipDispatch: true })
+            .then(res => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Order updated`,
+                });
+                success.push(index);
+                console.log('Order updated------->', res);
+            })
+            .catch(err => {
+                console.error('Order update error------->', err);
+            });
+    };
+
+    const startOrder = (order, index) => {
+        order
+            .start({ skipDispatch: true })
+            .then(res => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Order started`,
+                });
+                success.push(index);
+                console.log('Sync sucess: ', res);
+            })
+            .catch(error => {
+                console.log('attributes error----->', error);
+                if (error.message.includes('already started')) {
+                    success.push(index);
+                }
+            });
+    };
+
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');

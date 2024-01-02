@@ -198,7 +198,6 @@ const OrderScreen = ({ navigation, route }) => {
 
     const addToRequestQueue = (type, params, order, action) => {
         let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
-
         const queueItem = {
             type: type,
             params,
@@ -210,7 +209,6 @@ const OrderScreen = ({ navigation, route }) => {
         if (apiRequestQueue?.length > 0) {
             apiRequestQueue.push(queueItem);
         } else apiRequestQueue = [queueItem];
-
         setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
     };
 
@@ -236,6 +234,7 @@ const OrderScreen = ({ navigation, route }) => {
 
         if (!isConnected) {
             addToRequestQueue('startOrder', params, order, 'start');
+            setIsLoadingAction(false);
             return;
         }
 
@@ -276,6 +275,7 @@ const OrderScreen = ({ navigation, route }) => {
 
         if (!isConnected) {
             addToRequestQueue('updateOrder', '', order, 'updated');
+            setIsLoadingAction(false);
             return;
         }
 
