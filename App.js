@@ -1,16 +1,16 @@
+import { Order } from '@fleetbase/sdk';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useFleetbase } from 'hooks';
 import type { Node } from 'react';
-import { Order } from '@fleetbase/sdk';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, View, Text } from 'react-native';
+import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
-import { setString, getString, remove } from 'utils/Storage';
+import { getString, setString } from 'utils/Storage';
 import { config } from './src/utils';
 
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -30,22 +30,24 @@ const App: () => Node = () => {
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
     const fleetbase = useFleetbase();
-
     const { isConnected } = useNetInfo();
-    // const [isConnected, setIsConnected] = useState();
 
     useEffect(() => {
-        if (isConnected) {
+        if (!isConnected) {
             const orders = JSON.parse(getString('apiRequestQueue'));
 
-            if (orders.length > 0) {
+            if (orders?.length > 0) {
                 Toast.show({
                     type: 'success',
                     text1: `Order is syncing`,
                 });
             }
 
-            orders.forEach(item => {
+            console.log('orders--->', getString('apiRequestQueue'));
+
+            const success = [];
+
+            orders?.forEach((item, index) => {
                 const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
                 const destination = [orderService.getAttribute('payload.pickup'), ...orderService.getAttribute('payload.waypoints', []), orderService.getAttribute('payload.dropoff')].find(
                     place => {
@@ -61,8 +63,13 @@ const App: () => Node = () => {
                                     type: 'success',
                                     text1: `Order started`,
                                 });
+                                success.push(index);
                             })
                             .catch(error => {
+                                if (error.includes('already started')) {
+                                    success.push(index);
+                                }
+
                                 console.log('attributes error----->', error);
                             });
                     } catch (error) {
@@ -70,9 +77,14 @@ const App: () => Node = () => {
                     }
                 } else if (item.action == 'updated') {
                     try {
-                        const activity = order.getNextActivity({ waypoint: destination?.id }).finally(() => {
-                            setIsLoadingAction(false);
-                        });
+                        const activity = order
+                            .getNextActivity({ waypoint: destination?.id })
+                            .then(res => {
+                                console.log('res waypoint', res);
+                            })
+                            .catch(err => {
+                                console.log('err waypoint', err);
+                            });
 
                         if (activity.code === 'dispatched') {
                             return order
@@ -82,6 +94,7 @@ const App: () => Node = () => {
                                         type: 'success',
                                         text1: `Order started`,
                                     });
+                                    success.push(index);
                                     console.log('Order started------->', res);
                                 })
                                 .catch(err => {
@@ -92,11 +105,13 @@ const App: () => Node = () => {
                         console.log('error:::', error);
                     }
                 }
-                // const removedData = JSON.parse(remove('apiRequestQueue'));
-                // console.error('removedData :::::', removedData);
+                success.forEach(item => {
+                    orders.splice(item);
+                });
+                setString('apiRequestQueue', JSON.stringify(orders));
             });
         }
-    }, [isConnected]);
+    }, [!isConnected]);
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');

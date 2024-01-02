@@ -28,7 +28,7 @@ const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
-    const { isConnected, type, addEventListener: addEventListeners } = useNetInfo();
+    const { isConnected } = useNetInfo();
     const [netInfo, setNetInfo] = useState('');
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
@@ -197,7 +197,8 @@ const OrderScreen = ({ navigation, route }) => {
     };
 
     const addToRequestQueue = (type, params, order, action) => {
-        const apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+        let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+
         const queueItem = {
             type: type,
             params,
@@ -206,7 +207,7 @@ const OrderScreen = ({ navigation, route }) => {
             time: new Date(),
         };
 
-        if (apiRequestQueue.length > 0) {
+        if (apiRequestQueue?.length > 0) {
             apiRequestQueue.push(queueItem);
         } else apiRequestQueue = [queueItem];
 
@@ -235,6 +236,7 @@ const OrderScreen = ({ navigation, route }) => {
 
         if (!isConnected) {
             addToRequestQueue('startOrder', params, order, 'start');
+            return;
         }
 
         order
@@ -273,7 +275,8 @@ const OrderScreen = ({ navigation, route }) => {
         setActionSheetAction('update_activity');
 
         if (!isConnected) {
-            addToRequestQueue('updateOrder', order, 'updated');
+            addToRequestQueue('updateOrder', '', order, 'updated');
+            return;
         }
 
         const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {
