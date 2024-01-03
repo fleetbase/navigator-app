@@ -1,17 +1,20 @@
+import { Order } from '@fleetbase/sdk';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useFleetbase } from 'hooks';
 import type { Node } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, View, Text } from 'react-native';
+import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
+import { EventRegister } from 'react-native-event-listeners';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
-import { setString } from 'utils/Storage';
+import { getString, setString } from 'utils/Storage';
 import { config } from './src/utils';
 
+import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
 const Stack = createStackNavigator();
@@ -23,12 +26,85 @@ const linking = {
     },
 };
 
+const success = [];
+
+const { emit } = EventRegister;
+
 const App: () => Node = () => {
     const [setDriver] = useDriver();
-
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
     const fleetbase = useFleetbase();
+    const { isConnected } = useNetInfo();
+
+    useEffect(() => {
+        const orders = JSON.parse(getString('apiRequestQueue'));
+
+        if (!isConnected || orders?.length == 0) {
+            return;
+        }
+        if (orders?.length > 0) {
+            Toast.show({
+                type: 'success',
+                text1: `Activity syncing...`,
+            });
+        }
+
+        orders?.forEach((item, index) => {
+            console.log('Order: ', item?.order.attributes.tracking_number.status, item?.order.attributes.id, item.action);
+            const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
+
+            if (item.action == 'start') {
+                startOrder(orderService, index);
+            } else if (item.action == 'updated') {
+                updateOrder(orderService, index);
+            }
+        });
+
+        if (success) {
+            emit('order');
+        }
+
+        success.forEach(item => {
+            orders.splice(item);
+        });
+        setString('apiRequestQueue', JSON.stringify(orders));
+    }, [isConnected]);
+
+    const updateOrder = (order, index) => {
+        order
+            .updateActivity({ skipDispatch: true })
+            .then(res => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Activity synced.`,
+                });
+                success.push(index);
+                console.log('Order updated------->', res);
+            })
+            .catch(err => {
+                console.error('Order update error------->', err);
+            });
+    };
+
+    const startOrder = (order, index) => {
+        order
+            .start({ skipDispatch: true })
+            .then(res => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Activity synced.`,
+                });
+                success.push(index);
+                console.log('Sync sucess: ', res);
+            })
+            .catch(error => {
+                console.log('attributes error----->', error);
+                if (error.message.includes('already started')) {
+                    success.push(index);
+                }
+            });
+    };
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');
@@ -44,7 +120,6 @@ const App: () => Node = () => {
                 const [key, value] = param.split('=');
                 parsedParams[key] = decodeURIComponent(value);
             });
-
             return parsedParams;
         }
 
@@ -115,7 +190,7 @@ const App: () => Node = () => {
 
         return () => {
             console.log('App useEffect cleaned up');
-            Linking.removeEventListener('url', setupInstanceLink);
+            // Linking.removeEventListener('url', setupInstanceLink);
         };
     }, []);
 
