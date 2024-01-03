@@ -311,14 +311,6 @@ const OrderScreen = ({ navigation, route }) => {
         }
     };
 
-    useEffect(() => {
-        const orderUpdated = addEventListener('order', ({ event }) => {
-            const { params, action, time } = event;
-            if ((action = 'update')) completeOrder(params);
-            else startOrder(params);
-        });
-    }, []);
-
     const sendOrderActivityUpdate = activity => {
         setIsLoadingActivity(true);
 
