@@ -8,6 +8,7 @@ import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import Toast from 'react-native-toast-message';
+import { EventRegister } from 'react-native-event-listeners';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { getString, setString } from 'utils/Storage';
@@ -27,6 +28,8 @@ const linking = {
 
 const success = [];
 
+const { emit } = EventRegister;
+
 const App: () => Node = () => {
     const [setDriver] = useDriver();
     const navigationRef = useRef();
@@ -43,7 +46,7 @@ const App: () => Node = () => {
         if (orders?.length > 0) {
             Toast.show({
                 type: 'success',
-                text1: `Order is syncing`,
+                text1: `Activity syncing...`,
             });
         }
 
@@ -52,17 +55,21 @@ const App: () => Node = () => {
             const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
 
             if (item.action == 'start') {
-                startOrder(orderService, index)
+                startOrder(orderService, index);
             } else if (item.action == 'updated') {
                 updateOrder(orderService, index);
             }
-            success.forEach(item => {
-                orders.splice(item);
-            });
-            const order = setString('apiRequestQueue', JSON.stringify(orders));
         });
-    }, [isConnected]);
 
+        if (success) {
+            emit('order');
+        }
+
+        success.forEach(item => {
+            orders.splice(item);
+        });
+        setString('apiRequestQueue', JSON.stringify(orders));
+    }, [isConnected]);
 
     const updateOrder = (order, index) => {
         order
@@ -70,7 +77,7 @@ const App: () => Node = () => {
             .then(res => {
                 Toast.show({
                     type: 'success',
-                    text1: `Order updated`,
+                    text1: `Activity synced.`,
                 });
                 success.push(index);
                 console.log('Order updated------->', res);
@@ -86,7 +93,7 @@ const App: () => Node = () => {
             .then(res => {
                 Toast.show({
                     type: 'success',
-                    text1: `Order started`,
+                    text1: `Activity synced.`,
                 });
                 success.push(index);
                 console.log('Sync sucess: ', res);
@@ -98,7 +105,6 @@ const App: () => Node = () => {
                 }
             });
     };
-
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');
