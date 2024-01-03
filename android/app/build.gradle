@@ -94,7 +94,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         missingDimensionStrategy 'react-native-camera', 'general' 
-        versionCode project.env.get("ANDROID_VERSION_CODE") ?: 1
+        versionCode project.env.get("ANDROID_VERSION_CODE")?.toInteger() ?: 1
         versionName project.env.get("ANDROID_VERSION_NAME") ?: "1.0.0"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
     }

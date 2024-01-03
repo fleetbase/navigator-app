@@ -135,6 +135,14 @@ const OrdersScreen = ({ navigation }) => {
         };
     }, [isMounted]);
 
+    useEffect(() => {
+        const orders = addEventListener('order', () => loadOrders({ isQuerying: true }));
+
+        return () => {
+            removeEventListener(orders);
+        };
+    }, [isMounted]);
+
     // Listen for new orders via Socket Connection
     useEffect(() => {
         listenForOrdersFromSocket(`driver.${driver?.id}`, (order, event) => {
