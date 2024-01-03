@@ -1,6 +1,7 @@
 import { Order } from '@fleetbase/sdk';
 import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useNetInfo } from '@react-native-community/netinfo';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import OrderWaypoints from 'components/OrderWaypoints';
 import { format } from 'date-fns';
@@ -13,6 +14,7 @@ import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
+import { getString, setString } from 'utils/Storage';
 import OrderMapPicker from '../../components/OrderMapPicker';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -26,7 +28,8 @@ const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
-
+    const { isConnected } = useNetInfo();
+    const [netInfo, setNetInfo] = useState('');
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
@@ -193,6 +196,22 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
+    const addToRequestQueue = (type, params, order, action) => {
+        let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+        const queueItem = {
+            type: type,
+            params,
+            order,
+            action: action,
+            time: new Date(),
+        };
+
+        if (apiRequestQueue?.length > 0) {
+            apiRequestQueue.push(queueItem);
+        } else apiRequestQueue = [queueItem];
+        setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
+    };
+
     const setOrderDestination = waypoint => {
         if (!waypoint) {
             return;
@@ -212,6 +231,12 @@ const OrderScreen = ({ navigation, route }) => {
 
     const startOrder = (params = {}) => {
         setIsLoadingAction(true);
+
+        if (!isConnected) {
+            addToRequestQueue('startOrder', params, order, 'start');
+            setIsLoadingAction(false);
+            return;
+        }
 
         order
             .start(params)
@@ -245,8 +270,14 @@ const OrderScreen = ({ navigation, route }) => {
     };
 
     const updateOrderActivity = async () => {
-        setIsLoadingAction(true);
+        // setIsLoadingAction(true);
         setActionSheetAction('update_activity');
+
+        if (!isConnected) {
+            addToRequestQueue('updateOrder', '', order, 'updated');
+            setIsLoadingAction(false);
+            return;
+        }
 
         const activity = await order.getNextActivity({ waypoint: destination?.id }).finally(() => {
             setIsLoadingAction(false);
@@ -279,6 +310,14 @@ const OrderScreen = ({ navigation, route }) => {
             setActionSheetAction('change_destination');
         }
     };
+
+    useEffect(() => {
+        const orderUpdated = addEventListener('order', ({ event }) => {
+            const { params, action, time } = event;
+            if ((action = 'update')) completeOrder(params);
+            else startOrder(params);
+        });
+    }, []);
 
     const sendOrderActivityUpdate = activity => {
         setIsLoadingActivity(true);
