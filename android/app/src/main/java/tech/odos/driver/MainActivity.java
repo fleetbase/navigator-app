@@ -1,4 +1,4 @@
-package com.fleetbase.navigator;
+package tech.odos.driver;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
