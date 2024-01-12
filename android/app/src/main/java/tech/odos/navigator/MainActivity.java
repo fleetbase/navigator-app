@@ -1,10 +1,10 @@
-package tech.odos.driver;
+package tech.odos.navigator;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
 import com.facebook.react.defaults.DefaultReactActivityDelegate;
-import com.facebook.react.ReactRootView;
+
 import android.os.Bundle;
 import com.zoontek.rnbootsplash.RNBootSplash;
 

@@ -1,21 +1,14 @@
-package tech.odos.driver;
+package tech.odos.navigator;
 
 import android.app.Application;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
-import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
-import com.facebook.react.defaults.DefaultReactNativeHost;
-import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.fleetbase.navigator.BuildConfig;
-import com.horcrux.svg.SvgPackage;
-import com.reactnativecommunity.webview.RNCWebViewPackage;
-import com.swmansion.gesturehandler.react.RNGestureHandlerPackage;
 
 import java.util.List;
-import java.util.Arrays;
 
 public class MainApplication extends Application implements ReactApplication {
 
