@@ -1,4 +1,4 @@
-package com.fleetbase.navigator;
+package tech.odos.navigator;
 
 import android.app.Application;
 import com.facebook.react.PackageList;
@@ -9,6 +9,7 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
 import com.facebook.react.defaults.DefaultReactNativeHost;
 import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
+import tech.odos.navigator.BuildConfig;
 import com.horcrux.svg.SvgPackage;
 import com.reactnativecommunity.webview.RNCWebViewPackage;
 import com.swmansion.gesturehandler.react.RNGestureHandlerPackage;
