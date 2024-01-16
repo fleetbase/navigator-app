@@ -2,7 +2,6 @@
 #import <React/RCTBundleURLProvider.h>
 #import "RNBootSplash.h"
 #import "RNCConfig.h"
-#import <GoogleMaps/GoogleMaps.h>
 #import <RNCPushNotificationIOS.h>
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
@@ -16,9 +15,6 @@
     // You can add your custom initial props in the dictionary below.
     // They will be passed down to the ViewController used by React Native.
     self.initialProps = @{};
-  
-    // Setup Google Maps API
-    [GMSServices provideAPIKey:[RNCConfig envFor:@"GOOGLE_MAPS_KEY"]];
 
     // Define UNUserNotificationCenter
     // UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
