@@ -1,12 +1,10 @@
-import { Collection, isResource } from '@fleetbase/sdk';
-import { EventRegister } from 'react-native-event-listeners';
-import { countries } from 'countries-list';
-import { set } from './Storage';
-import { getCurrentLocation } from './Geo';
-import { useNavigation } from '@react-navigation/native';
-import useFleetbase from 'hooks/use-fleetbase';
+import { isResource } from '@fleetbase/sdk';
 import configuration from 'config';
+import { countries } from 'countries-list';
+import useFleetbase from 'hooks/use-fleetbase';
+import { EventRegister } from 'react-native-event-listeners';
 import socketClusterClient from 'socketcluster-client';
+import { getString } from './Storage';
 
 const { emit } = EventRegister;
 
@@ -43,7 +41,7 @@ export default class HelperUtil {
 
         if (_country !== null) {
             // eslint-disable-next-line radix
-            return _list.find((c) => c.iso2 === _country || parseInt(c.phone) === parseInt(_country));
+            return _list.find(c => c.iso2 === _country || parseInt(c.phone) === parseInt(_country));
         }
 
         return _list;
@@ -65,7 +63,7 @@ export default class HelperUtil {
             return;
         }
 
-        const index = places.findIndex((p) => p.id === place.id);
+        const index = places.findIndex(p => p.id === place.id);
 
         if (place.isDeleted) {
             places = places.removeAt(index);
@@ -374,7 +372,7 @@ export default class HelperUtil {
      * @param {*} mixed
      * @memberof HelperUtil
      */
-    static isFalsy = (mixed) => {
+    static isFalsy = mixed => {
         return !mixed === true || mixed === '0';
     };
 
@@ -434,7 +432,7 @@ export default class HelperUtil {
             return defaultColorCode;
         }
 
-        const rgba2rgb = (rgbaString) => {
+        const rgba2rgb = rgbaString => {
             const decimals = rgbaString.replace('rgba', 'rgb').split(',');
             decimals.pop();
 
@@ -479,10 +477,10 @@ export default class HelperUtil {
     static async createSocketAndListen(channelId, callback) {
         // Create socket connection config
         const socketConnectionConfig = {
-            hostname: HelperUtil.config('SOCKETCLUSTER_HOST', 'localhost'),
+            hostname: getString('_SOCKET_HOST'),
             path: HelperUtil.config('SOCKETCLUSTER_PATH', '/socketcluster/'),
             secure: toBoolean(HelperUtil.config('SOCKETCLUSTER_SECURE', false)),
-            port: HelperUtil.config('SOCKETCLUSTER_PORT', 38000),
+            port: getString('_SOCKET_PORT'),
             autoConnect: true,
             autoReconnect: true,
         };
@@ -527,7 +525,7 @@ export default class HelperUtil {
 
         return HelperUtil.createSocketAndListen(channelId, ({ event, data }) => {
             if (typeof data.id === 'string' && data.id.startsWith('order')) {
-                return fleetbase.orders.findRecord(data.id).then((order) => {
+                return fleetbase.orders.findRecord(data.id).then(order => {
                     const serializedOrder = order.serialize();
 
                     if (typeof callback === 'function') {
@@ -555,13 +553,13 @@ export default class HelperUtil {
         }
 
         if (event === 'order.driver_assigned') {
-            title = `📋 ${order.id} was just assigned!`
+            title = `📋 ${order.id} was just assigned!`;
         }
 
         return {
             title,
             message,
-            subtitle
+            subtitle,
         };
     }
 }
@@ -590,26 +588,26 @@ const listenForOrdersFromSocket = HelperUtil.listenForOrdersFromSocket;
 const createNewOrderLocalNotificationObject = HelperUtil.createNewOrderLocalNotificationObject;
 
 export {
-    listCountries,
-    isArray,
-    hasRequiredKeys,
-    isLastIndex,
-    stripHtml,
-    stripIframeTags,
-    isAndroid,
-    isApple,
-    isVoid,
-    isEmpty,
-    isFalsy,
-    logError,
-    mutatePlaces,
+    config,
+    createNewOrderLocalNotificationObject,
+    createSocketAndListen,
     debounce,
     deepGet,
-    config,
-    sum,
     getColorCode,
-    toBoolean,
-    createSocketAndListen,
+    hasRequiredKeys,
+    isAndroid,
+    isApple,
+    isArray,
+    isEmpty,
+    isFalsy,
+    isLastIndex,
+    isVoid,
+    listCountries,
     listenForOrdersFromSocket,
-    createNewOrderLocalNotificationObject,
+    logError,
+    mutatePlaces,
+    stripHtml,
+    stripIframeTags,
+    sum,
+    toBoolean,
 };
