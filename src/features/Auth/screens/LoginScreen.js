@@ -141,7 +141,7 @@ const LoginScreen = ({ navigation, route }) => {
                             )}
 
                             {isNotAwaitingVerification && (
-                                <View style={tailwind(' flex items-center justify-center rounded-full ')}>
+                                <View style={tailwind('flex items-end mr-4  rounded-full')}>
                                     <TouchableOpacity
                                         style={tailwind('rounded-full mb-3 bg-gray-900 w-10 h-10 border border-gray-700 flex items-center justify-center')}
                                         onPress={() => {
