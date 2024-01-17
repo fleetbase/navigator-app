@@ -126,10 +126,12 @@ const App: () => Node = () => {
         return null;
     });
 
-    const setFleetbaseConfig = useCallback(async (key, host) => {
+    const setFleetbaseConfig = useCallback(async (key, host, socketcluster_host, socketcluster_port) => {
         return await new Promise(() => {
             setString('_FLEETBASE_KEY', key);
             setString('_FLEETBASE_HOST', host);
+            setString('_SOCKET_HOST', socketcluster_host);
+            setString('_SOCKET_PORT', socketcluster_port);
 
             if (navigationRef.current) {
                 navigationRef.current.reset({
@@ -159,9 +161,9 @@ const App: () => Node = () => {
             const parsedParams = parseDeepLinkUrl(url);
 
             if (parsedParams !== null) {
-                const { key, host } = parsedParams;
+                const { key, host, socketcluster_host, socketcluster_port } = parsedParams;
 
-                setFleetbaseConfig(key, host);
+                setFleetbaseConfig(key, host, socketcluster_host, socketcluster_port);
                 fleetbase.organizations.current().then(res => {
                     setString('_BRANDING_LOGO', res.branding.logo_url);
                     setString('_LOGO', res.logo_url);
