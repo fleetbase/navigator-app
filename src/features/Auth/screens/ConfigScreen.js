@@ -9,16 +9,50 @@ let { SOCKETCLUSTER_PORT, SOCKETCLUSTER_HOST, FLEETBASE_HOST } = config;
 const ConfigScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
-            <View style={tailwind('flex flex-row items-center p-4 ')}>
+            <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
+                <View>
+                    <Text style={tailwind('font-bold text-white text-base')}>Instance Configuration</Text>
+                </View>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('rounded-full')}>
                     <FontAwesomeIcon size="25" icon={faWindowClose} style={tailwind('text-red-400')} />
                 </TouchableOpacity>
             </View>
             <View style={[tailwind('p-4')]}>
-                <View style={[tailwind('mb-5 bg-gray-900 border border-gray-700 p-4')]}>
-                    <Text style={tailwind('font-mono text-gray-50 text-sm')} numberOfLines={1}>{`SOCKET PORT: ${SOCKETCLUSTER_PORT}`}</Text>
-                    <Text style={tailwind('font-mono text-gray-50 text-sm')} numberOfLines={1}>{`SOCKET HOST: ${SOCKETCLUSTER_HOST}`}</Text>
-                    <Text style={tailwind('font-mono text-gray-50 text-sm')} numberOfLines={1}>{`FLEETBASE HOST: ${FLEETBASE_HOST}`}</Text>
+                <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 w-36 flex flex-row items-center rounded-l-md')]}>
+                        <Text style={tailwind('text-sm text-black')} numberOfLines={1}>
+                            HOST:
+                        </Text>
+                    </View>
+                    <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
+                        <Text style={tailwind('text-gray-50 text-sm')} numberOfLines={1}>
+                            {FLEETBASE_HOST}
+                        </Text>
+                    </View>
+                </View>
+                <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 w-36 flex flex-row items-center rounded-l-md')]}>
+                        <Text style={tailwind('text-sm text-black')} numberOfLines={1}>
+                            SOCKET HOST:
+                        </Text>
+                    </View>
+                    <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
+                        <Text style={tailwind('text-gray-50 text-sm')} numberOfLines={1}>
+                            {SOCKETCLUSTER_HOST}
+                        </Text>
+                    </View>
+                </View>
+                <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 w-36 flex flex-row items-center rounded-l-md')]}>
+                        <Text style={tailwind('text-sm text-black')} numberOfLines={1}>
+                            SOCKET PORT:
+                        </Text>
+                    </View>
+                    <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
+                        <Text style={tailwind('text-gray-50 text-sm')} numberOfLines={1}>
+                            {SOCKETCLUSTER_PORT}
+                        </Text>
+                    </View>
                 </View>
             </View>
         </SafeAreaView>
