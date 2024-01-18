@@ -2,7 +2,7 @@ import { faWindowClose } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import config from 'config';
 import React from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
 
 let { SOCKETCLUSTER_PORT, SOCKETCLUSTER_HOST, FLEETBASE_HOST } = config;
