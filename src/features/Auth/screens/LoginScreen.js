@@ -1,13 +1,17 @@
 import PhoneInput from 'components/PhoneInput';
 import { useDriver, useFleetbase, useLocale } from 'hooks';
+
+import { faLink } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, ImageBackground, Keyboard, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
-import { getString } from 'utils/Storage';
 import { config, deepGet, getColorCode, logError, syncDevice, translate } from 'utils';
+import { getString } from 'utils/Storage';
+
 import { getLocation } from 'utils/Geo';
 
 const isPhone = (phone = '') => {
@@ -125,7 +129,7 @@ const LoginScreen = ({ navigation, route }) => {
                                             {...(config('ui.createAccountScreen.phoneInputProps') ?? {})}
                                         />
                                     </View>
-                                    <TouchableOpacity style={tailwind('mb-3')} onPress={sendVerificationCode}>
+                                    <TouchableOpacity style={tailwind('mb-2')} onPress={sendVerificationCode}>
                                         <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.sendVerificationCodeButtonStyle')]}>
                                             {isLoading && <ActivityIndicator size={'small'} color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
                                             <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.sendVerificationCodeButtonTextStyle')]}>
@@ -135,6 +139,19 @@ const LoginScreen = ({ navigation, route }) => {
                                     </TouchableOpacity>
                                 </View>
                             )}
+
+                            {isNotAwaitingVerification && (
+                                <View style={tailwind('flex items-end mr-4  rounded-full')}>
+                                    <TouchableOpacity
+                                        style={tailwind('rounded-lg mb-3 bg-gray-900 w-10 h-10 border border-gray-700 flex items-center justify-center')}
+                                        onPress={() => {
+                                            navigation.navigate('ConfigScreen');
+                                        }}>
+                                        <FontAwesomeIcon icon={faLink} style={tailwind('text-gray-400')} />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
                             {isAwaitingVerification && (
                                 <View style={[tailwind(''), config('ui.loginScreen.verifyFormContainerStyle')]}>
                                     <View style={tailwind('mb-6')}>

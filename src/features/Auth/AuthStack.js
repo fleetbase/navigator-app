@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 // import AccountScreen from './screens/AccountScreen';
 import LoginScreen from 'auth/screens/LoginScreen';
 import CreateAccountScreen from 'auth/screens/CreateAccountScreen';
+import ConfigScreen from 'auth/screens/ConfigScreen';
 
 const RootStack = createStackNavigator();
 
@@ -14,6 +15,7 @@ const AuthStack = ({ route }) => {
                 {/* <RootStack.Screen name="AccountScreen" component={AccountScreen} options={{ headerShown: false }} initialParams={{ info }} /> */}
                 <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
                 <RootStack.Screen name="CreateAccount" component={CreateAccountScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ headerShown: false}} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );

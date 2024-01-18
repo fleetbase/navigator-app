@@ -144,16 +144,6 @@ const App: () => Node = () => {
         });
     });
 
-    const showLoader = (isLoading => {
-        return (
-            <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
-                <View style={tailwind('flex items-center justify-center')}>
-                    <ActivityIndicator style={tailwind('mb-4')} isLoading={isLoading} />
-                </View>
-            </View>
-        );
-    })();
-
     useEffect(() => {
         const setupInstanceLink = ({ url }) => {
             console.log('setupInstanceLink() #url', url);
