@@ -475,12 +475,25 @@ export default class HelperUtil {
     }
 
     static async createSocketAndListen(channelId, callback) {
+        let hostname = getString('_SOCKET_HOST');
+        let port = getString('_SOCKET_PORT');
+
+        // IF no hostname set from instance link use env
+        if (!hostname) {
+            hostname = HelperUtil.config('SOCKETCLUSTER_HOST', 'socket.fleetbase.io');
+        }
+        
+        // IF no port set from instance link use env
+        if (!port) {
+            port = HelperUtil.config('SOCKETCLUSTER_PORT', 8000);
+        }
+
         // Create socket connection config
         const socketConnectionConfig = {
-            hostname: getString('_SOCKET_HOST'),
+            hostname,
             path: HelperUtil.config('SOCKETCLUSTER_PATH', '/socketcluster/'),
             secure: toBoolean(HelperUtil.config('SOCKETCLUSTER_SECURE', false)),
-            port: getString('_SOCKET_PORT'),
+            port,
             autoConnect: true,
             autoReconnect: true,
         };
