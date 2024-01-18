@@ -126,10 +126,12 @@ const App: () => Node = () => {
         return null;
     });
 
-    const setFleetbaseConfig = useCallback(async (key, host) => {
+    const setFleetbaseConfig = useCallback(async (key, host, socketcluster_host, socketcluster_port) => {
         return await new Promise(() => {
             setString('_FLEETBASE_KEY', key);
             setString('_FLEETBASE_HOST', host);
+            setString('_SOCKET_HOST', socketcluster_host);
+            setString('_SOCKET_PORT', socketcluster_port);
 
             if (navigationRef.current) {
                 navigationRef.current.reset({
@@ -142,16 +144,6 @@ const App: () => Node = () => {
         });
     });
 
-    const showLoader = (isLoading => {
-        return (
-            <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
-                <View style={tailwind('flex items-center justify-center')}>
-                    <ActivityIndicator style={tailwind('mb-4')} isLoading={isLoading} />
-                </View>
-            </View>
-        );
-    })();
-
     useEffect(() => {
         const setupInstanceLink = ({ url }) => {
             console.log('setupInstanceLink() #url', url);
@@ -159,9 +151,9 @@ const App: () => Node = () => {
             const parsedParams = parseDeepLinkUrl(url);
 
             if (parsedParams !== null) {
-                const { key, host } = parsedParams;
+                const { key, host, socketcluster_host, socketcluster_port } = parsedParams;
 
-                setFleetbaseConfig(key, host);
+                setFleetbaseConfig(key, host, socketcluster_host, socketcluster_port);
                 fleetbase.organizations.current().then(res => {
                     setString('_BRANDING_LOGO', res.branding.logo_url);
                     setString('_LOGO', res.logo_url);
