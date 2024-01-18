@@ -2,7 +2,7 @@ import { faWindowClose } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import config from 'config';
 import React from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import tailwind from 'tailwind';
 
 let { SOCKETCLUSTER_PORT, SOCKETCLUSTER_HOST, FLEETBASE_HOST } = config;
@@ -19,37 +19,37 @@ const ConfigScreen = ({ navigation }) => {
             </View>
             <View style={[tailwind('p-4')]}>
                 <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
-                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 w-36 flex flex-row items-center rounded-l-md')]}>
-                        <Text style={tailwind('text-sm text-black')} numberOfLines={1}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 120 }]}>
+                        <Text style={tailwind('text-xs font-semibold text-black')} numberOfLines={1}>
                             HOST:
                         </Text>
                     </View>
                     <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
-                        <Text style={tailwind('text-gray-50 text-sm')} numberOfLines={1}>
+                        <Text style={tailwind('text-gray-50 text-xs')} numberOfLines={1}>
                             {FLEETBASE_HOST}
                         </Text>
                     </View>
                 </View>
                 <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
-                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 w-36 flex flex-row items-center rounded-l-md')]}>
-                        <Text style={tailwind('text-sm text-black')} numberOfLines={1}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 120 }]}>
+                        <Text style={tailwind('text-xs font-semibold text-black')} numberOfLines={1}>
                             SOCKET HOST:
                         </Text>
                     </View>
                     <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
-                        <Text style={tailwind('text-gray-50 text-sm')} numberOfLines={1}>
+                        <Text style={tailwind('text-gray-50 text-xs')} numberOfLines={1}>
                             {SOCKETCLUSTER_HOST}
                         </Text>
                     </View>
                 </View>
                 <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
-                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 w-36 flex flex-row items-center rounded-l-md')]}>
-                        <Text style={tailwind('text-sm text-black')} numberOfLines={1}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 120 }]}>
+                        <Text style={tailwind('text-xs font-semibold text-black')} numberOfLines={1}>
                             SOCKET PORT:
                         </Text>
                     </View>
                     <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
-                        <Text style={tailwind('text-gray-50 text-sm')} numberOfLines={1}>
+                        <Text style={tailwind('text-gray-50 text-xs')} numberOfLines={1}>
                             {SOCKETCLUSTER_PORT}
                         </Text>
                     </View>
