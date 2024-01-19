@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Dimensions } from 'react-native';
 import { CountryPicker, countryCodes } from 'react-native-country-codes-picker';
 import { getColorCode } from 'utils';
+import { countries } from 'constant/Country';
+import * as RNLocalize from 'react-native-localize';
 import tailwind from 'tailwind';
 
 function isValidCountryCode(code) {
@@ -38,6 +40,20 @@ const PhoneInput = ({
     const [show, setShow] = useState(false);
     const [countryCode, setCountryCode] = useState(defaultCountryCode);
     const [input, setInput] = useState(value);
+
+    useEffect(() => {
+        const timeZone = RNLocalize.getTimeZone();
+        const dialCode = findDialCodeByTimezone(timeZone);
+        setCountryCode(dialCode);
+    }, []);
+
+    const findDialCodeByTimezone = timezone => {
+        for (const country of countries) {
+            if (country.timeZones.includes(timezone)) {
+                return country.dialCode;
+            }
+        }
+    };
 
     // if the default country code is alphanumeric ISO-2 convert to phone code
     useEffect(() => {
