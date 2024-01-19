@@ -14,7 +14,7 @@ const ConfigScreen = ({ navigation }) => {
                     <Text style={tailwind('font-bold text-white text-base')}>Instance Configuration</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('rounded-full')}>
-                    <FontAwesomeIcon size="25" icon={faWindowClose} style={tailwind('text-red-400')} />
+                    <FontAwesomeIcon size="20" icon={faWindowClose} style={tailwind('text-red-400')} />
                 </TouchableOpacity>
             </View>
             <View style={[tailwind('p-4')]}>
