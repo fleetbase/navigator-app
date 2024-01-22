@@ -19,7 +19,7 @@ const ConfigScreen = ({ navigation }) => {
             </View>
             <View style={[tailwind('p-4')]}>
                 <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
-                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 120 }]}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 150 }]}>
                         <Text style={tailwind('text-xs font-semibold text-black')} numberOfLines={1}>
                             HOST:
                         </Text>
@@ -31,7 +31,7 @@ const ConfigScreen = ({ navigation }) => {
                     </View>
                 </View>
                 <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
-                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 120 }]}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 150 }]}>
                         <Text style={tailwind('text-xs font-semibold text-black')} numberOfLines={1}>
                             SOCKET HOST:
                         </Text>
@@ -43,7 +43,7 @@ const ConfigScreen = ({ navigation }) => {
                     </View>
                 </View>
                 <View style={[tailwind('bg-gray-900 border border-gray-700 rounded-md flex flex-row items-center mb-6')]}>
-                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 120 }]}>
+                    <View style={[tailwind('border-r border-gray-700 bg-gray-200 px-4 py-2 flex flex-row items-center rounded-l-md'), { width: 150 }]}>
                         <Text style={tailwind('text-xs font-semibold text-black')} numberOfLines={1}>
                             SOCKET PORT:
                         </Text>
