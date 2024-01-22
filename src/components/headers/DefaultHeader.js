@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ImageBackground, TextInput, TouchableOpacity, Modal, Image, Switch } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faMapMarkerAlt, faTimes, faInfoCircle, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import { useNavigation } from '@react-navigation/native';
 import { Collection } from '@fleetbase/sdk';
-import { useResourceCollection } from 'utils/Storage';
-import { useLocale, useDriver, useFleetbase } from 'hooks';
-import { config, translate, logError, toBoolean } from 'utils';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useNavigation } from '@react-navigation/native';
 import { LangPicker, SearchButton } from 'components';
+import { useDriver, useFleetbase, useLocale } from 'hooks';
+import React, { useCallback, useState } from 'react';
+import { ImageBackground, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import packageJson from '../../../package.json';
 import tailwind from 'tailwind';
+import { config, logError, toBoolean, translate } from 'utils';
 
 const DefaultHeader = props => {
     let {
@@ -43,6 +43,8 @@ const DefaultHeader = props => {
 
     const shouldDisplayLogoText = (displayLogoText ?? config('ui.headerComponent.displayLogoText')) === true;
 
+    const appVersion = packageJson.version;
+
     const toggleOnline = useCallback(() => {
         setIsLoading(true);
         setIsOnline(!isOnline);
@@ -72,7 +74,7 @@ const DefaultHeader = props => {
                         {shouldDisplayLogoText && (
                             <View>
                                 <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>Navigator</Text>
-                                <Text style={[tailwind('text-xs text-white')]}>v1.1.10</Text>
+                                <Text style={[tailwind('text-xs text-white')]}>{appVersion}</Text>
                             </View>
                         )}
                     </View>
