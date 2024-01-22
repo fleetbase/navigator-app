@@ -72,7 +72,7 @@ const DefaultHeader = props => {
                         {shouldDisplayLogoText && (
                             <View>
                                 <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>Navigator</Text>
-                                <Text style={[tailwind('text-xs text-white')]}>v1.1.7</Text>
+                                <Text style={[tailwind('text-xs text-white')]}>v1.1.10</Text>
                             </View>
                         )}
                     </View>
