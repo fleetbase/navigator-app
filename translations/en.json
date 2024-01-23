@@ -6,6 +6,7 @@
             "createAccountButtonText": "Create Account",
             "userGreetingTitle": "Hello, {{driverName}}",
             "accountMenuTitle": "My Account",
+            "config": "Instance Config",
             "profileLinkText": "Profile",
             "ordersLinkText": "Orders",
             "placesLinkText": "Places",
