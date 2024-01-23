@@ -160,7 +160,7 @@ const ProofScreen = ({ navigation, route }) => {
                                             <TouchableOpacity
                                                 style={tailwind('pr-1')}
                                                 onPress={() => {
-                                                    signatureScreenRef.current?.resetImage();
+                                                    signatureScreenRef.current?.undo();
                                                 }}>
                                                 <View style={tailwind('btn bg-gray-800 border border-gray-700 bg-opacity-75')}>
                                                     <Text style={tailwind('font-semibold text-gray-50 text-base')}>Reset</Text>
@@ -171,7 +171,7 @@ const ProofScreen = ({ navigation, route }) => {
                                             <TouchableOpacity
                                                 style={tailwind('pl-1')}
                                                 onPress={() => {
-                                                    signatureScreenRef.current?.saveImage();
+                                                    signatureScreenRef.current.readSignature(captureSignature);
                                                 }}>
                                                 <View style={tailwind('btn bg-green-900 border border-green-700')}>
                                                     {isLoading && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
