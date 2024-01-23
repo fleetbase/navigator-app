@@ -8,6 +8,7 @@ import EditProfileScreen from './screens/EditProfileScreen';
 import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import OrderScreen from 'shared/OrderScreen';
 import SearchScreen from 'core/screens/SearchScreen';
+import ConfigScreen from '../Shared/ConfigScreen';
 
 const MainStack = createStackNavigator();
 const RootStack = createStackNavigator();
@@ -31,6 +32,7 @@ const AccountStack = ({ route }) => {
                 <RootStack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 <RootStack.Screen name="Order" component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <RootStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ headerShown: false }} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );
