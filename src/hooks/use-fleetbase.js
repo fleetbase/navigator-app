@@ -20,9 +20,6 @@ const useFleetbase = () => {
         FLEETBASE_KEY = _DRIVER.token;
     }
 
-    console.log('_FLEETBASE_HOST', FLEETBASE_HOST);
-    console.log('_FLEETBASE_KEY', FLEETBASE_KEY);
-
     const fleetbase = new Fleetbase(FLEETBASE_KEY, {
         host: FLEETBASE_HOST,
         namespace: FLEETBASE_NAMESPACE,
