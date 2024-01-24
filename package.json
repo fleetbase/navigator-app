@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/navigator-app",
-    "version": "1.1.9",
+    "version": "1.1.11",
     "description": "Fleetbase Fleet-Ops extension provides a fleet management and last mile delivery operations system module.",
     "keywords": [
         "fleetbase-navigator",
@@ -92,7 +92,6 @@
         "react-native-permissions": "^3.0.5",
         "react-native-picker-module": "^2.0.4",
         "react-native-push-notification": "^7.4.0",
-        "react-native-qrcode-scanner": "^1.5.5",
         "react-native-reanimated": "^3.5.4",
         "react-native-render-html": "^6.0.5",
         "react-native-safe-area-context": "^3.2.0",
@@ -101,6 +100,7 @@
         "react-native-svg": "^12.1.1",
         "react-native-swipe-list-view": "^3.2.9",
         "react-native-toast-message": "^2.1.5",
+        "react-native-vision-camera": "^3.8.2",
         "react-native-webview": "^13.6.0",
         "react-native-youtube": "^2.0.2",
         "react-redux": "^7.2.5",
