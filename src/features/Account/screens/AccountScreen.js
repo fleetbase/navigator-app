@@ -1,8 +1,9 @@
-import { faChevronRight, faIdBadge, faUser, faLink } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faIdBadge, faUser, faLink, faBuilding } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import DefaultHeader from 'components/headers/DefaultHeader';
 import { useLocale } from 'hooks';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useFleetbase } from 'hooks';
 import { ActivityIndicator, Dimensions, ImageBackground, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import tailwind from 'tailwind';
@@ -15,9 +16,29 @@ const AccountScreen = ({ navigation, route }) => {
     const [driver, setDriver] = useDriver();
     const [locale, setLocale] = useLocale();
     const [isLoading, setIsLoading] = useState(false);
+    const fleetbase = useFleetbase();
 
     const displayHeaderComponent = config(driver ? 'ui.accountScreen.displaySignedInHeaderComponent' : 'ui.accountScreen.displaySignedOutHeaderComponent') ?? true;
     const containerHeight = displayHeaderComponent === true ? fullHeight - 224 : fullHeight;
+
+    useEffect(() => {
+        fleetbase.drivers.listOrganizations().then((organizations) => {
+            console.log('[organizations]', organizations);
+        });
+        console.log(JSON.stringify(
+            fleetbase))
+            console.log(JSON.stringify(
+                fleetbase.organizations))
+        // fleetbase.drivers.listOrganizations().then(organizations => {
+        //     console.log('Success');
+        // });
+    }, []);
+
+    const switchOrg = organizationId => {
+        fleetbase.drivers.switchOrganization(organizationId).then(res => {
+            console.log('Success');
+        });
+    };
 
     const signOut = () => {
         navigation.reset({
@@ -52,6 +73,24 @@ const AccountScreen = ({ navigation, route }) => {
             </ImageBackground>
         );
     };
+    const data = [
+        {
+            id: 1,
+            name: 'Organization 1',
+        },
+        {
+            id: 2,
+            name: 'Organization 3',
+        },
+        {
+            id: 3,
+            name: 'Organization 3',
+        },
+        {
+            id: 4,
+            name: 'Organization 4',
+        },
+    ];
 
     return (
         <RenderBackground>
@@ -121,7 +160,20 @@ const AccountScreen = ({ navigation, route }) => {
                         </View>
                         <View style={tailwind('mb-4')}>
                             <View style={tailwind('flex flex-row p-4')}>
-                                <Text style={tailwind('font-semibold text-base text-gray-50')}>{translate('Account.AccountScreen.accountMenuTitle')}</Text>
+                                <Text style={tailwind('font-semibold text-base text-gray-50')}>{translate('Account.AccountScreen.organization')}</Text>
+                            </View>
+                            <View>
+                                <TouchableOpacity onPress={() => navigation.navigate('Organization', { data })}>
+                                    <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
+                                        <View style={tailwind('flex flex-row items-center')}>
+                                            <FontAwesomeIcon icon={faBuilding} size={18} style={tailwind('mr-3 text-gray-50')} />
+                                            <Text style={tailwind('text-gray-50 text-base')}>{translate('Account.AccountScreen.config')}</Text>
+                                        </View>
+                                        <View>
+                                            <FontAwesomeIcon icon={faChevronRight} size={18} style={tailwind('text-gray-600')} />
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
                             </View>
                             <View>
                                 <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { attributes: driver.serialize() })}>
