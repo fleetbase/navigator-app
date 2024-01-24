@@ -39,6 +39,8 @@ const ProofScreen = ({ navigation, route }) => {
 
     const cameraRef = useRef(Camera);
     const device = useCameraDevice('back');
+    const cameraPermission = Camera.getCameraPermissionStatus();
+    const newCameraPermission = Camera.requestCameraPermission();
 
     const catchError = (error, alertOptions = []) => {
         if (!error) {
