@@ -4,10 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import { useFleetbase, useLocale, useMountedState } from 'hooks';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
-import { RNCamera } from 'react-native-camera';
+import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import QRCodeScanner from 'react-native-qrcode-scanner';
+import { Camera, useCodeScanner, useCameraDevice } from 'react-native-vision-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen from 'react-native-signature-canvas';
 import tailwind from 'tailwind';
@@ -29,6 +28,7 @@ const ProofScreen = ({ navigation, route }) => {
     const [waypoint, setWaypoint] = useState(new Place(_waypoint, fleetbase.getAdapter()));
     const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
     const [isLoading, setIsLoading] = useState(false);
+    const [isCapturingCode, setIsCapturingCode] = useState(false);
 
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
     const isScanningProof = activity?.pod_method === 'scan';
@@ -36,6 +36,9 @@ const ProofScreen = ({ navigation, route }) => {
     const isWaypoint = !isEmpty(_waypoint);
     const isEntity = !isEmpty(_entity);
     const isOrder = !isWaypoint && !isEntity;
+
+    const cameraRef = useRef(Camera);
+    const device = useCameraDevice('back');
 
     const catchError = (error, alertOptions = []) => {
         if (!error) {
@@ -76,7 +79,20 @@ const ProofScreen = ({ navigation, route }) => {
             });
     };
 
-    const captureScan = event => {
+    const codeScanner = useCodeScanner({
+        codeTypes: ['qr', 'ean-13'],
+        onCodeScanned: event => {
+            if (isCapturingCode) {
+                return;
+            }
+            console.log(`Scanned ${JSON.stringify(event)} codes!`);
+            const [code] = event;
+
+            captureScan(code);
+        },
+    });
+
+    const captureScan = data => {
         let subject = null;
 
         if (isEntity) {
@@ -88,12 +104,12 @@ const ProofScreen = ({ navigation, route }) => {
         }
 
         setIsLoading(true);
+        setIsCapturingCode(true);
 
         return order
             .captureQrCode(subject, {
-                code: event.data,
-                data: event,
-                raw_data: event.rawData,
+                code: data.value,
+                data,
             })
             .then(proof => {
                 if (activity) {
@@ -187,15 +203,8 @@ const ProofScreen = ({ navigation, route }) => {
                 )}
                 {isScanningProof && (
                     <View style={tailwind('relative h-full')}>
-                        <QRCodeScanner
-                            ref={qrCodeScannerRef}
-                            onRead={captureScan}
-                            flashMode={RNCamera.Constants.FlashMode.auto}
-                            topViewStyle={tailwind('flex-none')}
-                            markerStyle={tailwind('-mt-10')}
-                            showMarker={true}
-                            cameraStyle={[{ height: height - 180 }, tailwind('z-10')]}
-                        />
+                        <Camera showref={cameraRef} style={[{ height: height - 180 }]} device={device} isActive={true} codeScanner={codeScanner} />
+
                         <View style={tailwind('absolute bottom-0 z-20 w-full')}>
                             <View style={tailwind('px-4')}>
                                 <View style={tailwind('border bg-blue-900 border border-blue-700 rounded-md shadow-lg mb-32')}>
@@ -260,5 +269,4 @@ const ProofScreen = ({ navigation, route }) => {
         </View>
     );
 };
-
 export default ProofScreen;
