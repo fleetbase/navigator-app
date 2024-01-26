@@ -25,6 +25,7 @@ const useFleetbase = () => {
         namespace: FLEETBASE_NAMESPACE,
     });
 
+    console.log('_FLEETBASE_HOST', FLEETBASE_HOST);
     return fleetbase;
 };
 
