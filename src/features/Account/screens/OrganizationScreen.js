@@ -1,7 +1,8 @@
 import { faWindowClose } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 import { getColorCode, logError } from 'utils';
 import { useDriver } from 'utils/Auth';
@@ -31,11 +32,39 @@ const Organization = ({ navigation }) => {
     }, []);
 
     const switchOrganization = organizationId => {
-        return driver.switchOrganization(organizationId);
+        return driver.switchOrganization(organizationId).then(() => {
+            Toast.show({
+                type: 'success',
+                text1: `Switched organization`,
+            });
+            navigation.goBack();
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'AccountScreen' }],
+            });
+        });
+    };
+
+    const confirmSwitchOrganization = organizationId => {
+        Alert.alert(
+            'Confirmation',
+            'Are you sure you want to switch organizations?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'OK',
+                    onPress: () => switchOrganization(organizationId),
+                },
+            ],
+            { cancelable: false }
+        );
     };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity onPress={() => switchOrganization(item.id)}>
+        <TouchableOpacity onPress={() => confirmSwitchOrganization(item.id)}>
             <View style={[tailwind('p-1')]}>
                 <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
                     <Text style={tailwind('text-gray-50 text-base')} numberOfLines={1}>
@@ -49,7 +78,7 @@ const Organization = ({ navigation }) => {
     return (
         <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
             {isLoading ? (
-                <ActivityIndicator size="small" color={getColorCode('white')} style={tailwind('mr-2')} />
+                <ActivityIndicator size="small" color={getColorCode('bg-gray-800')} style={tailwind('mr-2')} />
             ) : (
                 <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
                     <View>

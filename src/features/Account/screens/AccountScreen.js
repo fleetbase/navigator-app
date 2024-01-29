@@ -1,6 +1,7 @@
 import { faBuilding, faChevronRight, faIdBadge, faLink, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import React, { useState } from 'react';
+import { useFleetbase } from 'hooks';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, ImageBackground, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import tailwind from 'tailwind';
@@ -9,11 +10,11 @@ import { useDriver } from 'utils/Auth';
 
 const fullHeight = Dimensions.get('window').height;
 
-const AccountScreen = ({ org = 'Organization', navigation, route }) => {
+const AccountScreen = ({ navigation }) => {
     const [driver, setDriver] = useDriver();
+    const fleetbase = useFleetbase();
+    const [currentOrganization, setCurrentOrganization] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
-    org = org ?? translate('Account.AccountScreen.organization');
     const displayHeaderComponent = config(driver ? 'ui.accountScreen.displaySignedInHeaderComponent' : 'ui.accountScreen.displaySignedOutHeaderComponent') ?? true;
     const containerHeight = displayHeaderComponent === true ? fullHeight - 224 : fullHeight;
 
@@ -24,6 +25,12 @@ const AccountScreen = ({ org = 'Organization', navigation, route }) => {
         });
         setDriver(null);
     };
+
+    useEffect(() => {
+        fleetbase.organizations.current().then(res => {
+            setCurrentOrganization(res);
+        });
+    }, []);
 
     const RenderBackground = props => {
         if (driver) {
@@ -109,20 +116,18 @@ const AccountScreen = ({ org = 'Organization', navigation, route }) => {
                                             driverName: driver.getAttribute('name'),
                                         })}
                                     </Text>
+                                    <Text style={tailwind('text-gray-50 mb-1')}>{currentOrganization.name}</Text>
                                     <Text style={tailwind('text-gray-50')}>{driver.getAttribute('phone')}</Text>
                                 </View>
                             </View>
                         </View>
                         <View style={tailwind('mb-4')}>
-                            <View style={tailwind('flex flex-row p-4')}>
-                                <Text style={tailwind('font-semibold text-base text-gray-50')}>{translate('Account.AccountScreen.organization')}</Text>
-                            </View>
                             <View>
                                 <TouchableOpacity onPress={() => navigation.navigate('Organization')}>
                                     <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
                                         <View style={tailwind('flex flex-row items-center')}>
                                             <FontAwesomeIcon icon={faBuilding} size={18} style={tailwind('mr-3 text-gray-50')} />
-                                            <Text style={tailwind('text-gray-50 text-base')}>{org}</Text>
+                                            <Text style={tailwind('text-gray-50 text-base')}>{translate('Account.AccountScreen.organization')}</Text>
                                         </View>
                                         <View>
                                             <FontAwesomeIcon icon={faChevronRight} size={18} style={tailwind('text-gray-600')} />
