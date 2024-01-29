@@ -1,7 +1,6 @@
 import { faBuilding, faChevronRight, faIdBadge, faLink, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { useFleetbase } from 'hooks';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Dimensions, ImageBackground, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import tailwind from 'tailwind';
@@ -13,20 +12,10 @@ const fullHeight = Dimensions.get('window').height;
 const AccountScreen = ({ org = 'Organization', navigation, route }) => {
     const [driver, setDriver] = useDriver();
     const [isLoading, setIsLoading] = useState(false);
-    const fleetbase = useFleetbase();
-    const driverId = driver.getAttribute('id');
-    const [organizations, setOrganizations] = useState([]);
 
     org = org ?? translate('Account.AccountScreen.organization');
     const displayHeaderComponent = config(driver ? 'ui.accountScreen.displaySignedInHeaderComponent' : 'ui.accountScreen.displaySignedOutHeaderComponent') ?? true;
     const containerHeight = displayHeaderComponent === true ? fullHeight - 224 : fullHeight;
-
-    useEffect(() => {
-        fleetbase.drivers
-            .listOrganizations(driverId)
-            .then(res => setOrganizations(res))
-            .catch(err => console.log('[err]:::::', err));
-    }, []);
 
     const signOut = () => {
         navigation.reset({
@@ -129,7 +118,7 @@ const AccountScreen = ({ org = 'Organization', navigation, route }) => {
                                 <Text style={tailwind('font-semibold text-base text-gray-50')}>{translate('Account.AccountScreen.organization')}</Text>
                             </View>
                             <View>
-                                <TouchableOpacity onPress={() => navigation.navigate('Organization', { organizations })}>
+                                <TouchableOpacity onPress={() => navigation.navigate('Organization')}>
                                     <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
                                         <View style={tailwind('flex flex-row items-center')}>
                                             <FontAwesomeIcon icon={faBuilding} size={18} style={tailwind('mr-3 text-gray-50')} />
