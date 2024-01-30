@@ -33,24 +33,29 @@ const Organization = ({ navigation, route }) => {
     }, []);
 
     const switchOrganization = organizationId => {
-        if (currentOrganization.id === organizationId) {
+        if (currentOrganization.getAttribute('id') === organizationId) {
             return Alert.alert('Warning', 'This organization already selected');
         }
-        return driver.switchOrganization(organizationId).then(() => {
-            Toast.show({
-                type: 'success',
-                text1: `Switched organization`,
-            });
-
-            setTimeout(() => {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'AccountScreen' }],
+        return driver
+            .switchOrganization(organizationId)
+            .then(() => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Switched organization`,
                 });
 
-                navigation.goBack();
-            }, 1500);
-        });
+                setTimeout(() => {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'AccountScreen' }],
+                    });
+
+                    navigation.goBack();
+                }, 1500);
+            })
+            .catch(error => {
+                logError(error);
+            });
     };
 
     const confirmSwitchOrganization = organizationId => {

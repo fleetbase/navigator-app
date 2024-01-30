@@ -13,7 +13,7 @@ const fullHeight = Dimensions.get('window').height;
 const AccountScreen = ({ navigation }) => {
     const [driver, setDriver] = useDriver();
     const fleetbase = useFleetbase();
-    const [currentOrganization, setCurrentOrganization] = useState(false);
+    const [currentOrganization, setCurrentOrganization] = useState();
     const [isLoading, setIsLoading] = useState(false);
     const displayHeaderComponent = config(driver ? 'ui.accountScreen.displaySignedInHeaderComponent' : 'ui.accountScreen.displaySignedOutHeaderComponent') ?? true;
     const containerHeight = displayHeaderComponent === true ? fullHeight - 224 : fullHeight;
@@ -27,9 +27,7 @@ const AccountScreen = ({ navigation }) => {
     };
 
     useEffect(() => {
-        fleetbase.organizations.current().then(res => {
-            setCurrentOrganization(res);
-        });
+        driver.currentOrganization().then(setCurrentOrganization);
     }, []);
 
     const RenderBackground = props => {
@@ -116,7 +114,7 @@ const AccountScreen = ({ navigation }) => {
                                             driverName: driver.getAttribute('name'),
                                         })}
                                     </Text>
-                                    <Text style={tailwind('text-gray-50 mb-1')}>{currentOrganization.name}</Text>
+                                    <Text style={tailwind('text-gray-50 mb-1')}>{currentOrganization && currentOrganization.getAttribute('name')}</Text>
                                     <Text style={tailwind('text-gray-50')}>{driver.getAttribute('phone')}</Text>
                                 </View>
                             </View>
