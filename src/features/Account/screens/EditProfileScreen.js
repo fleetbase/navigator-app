@@ -77,7 +77,7 @@ const EditProfileScreen = ({ navigation }) => {
                             <PhoneInput value={phone} onChangeText={setPhone} defaultCountry={location?.country} />
                         </View>
                         <TouchableOpacity onPress={saveProfile} disabled={isLoading}>
-                            <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-14')}>
                                 {isLoading && <ActivityIndicator color={getColorCode('text-gray-50')} style={tailwind('mr-2')} />}
                                 <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Account.EditProfileScreen.saveButtonText')}</Text>
                             </View>
