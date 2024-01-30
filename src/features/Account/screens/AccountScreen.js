@@ -123,7 +123,7 @@ const AccountScreen = ({ navigation }) => {
                         </View>
                         <View style={tailwind('mb-4')}>
                             <View>
-                                <TouchableOpacity onPress={() => navigation.navigate('Organization')}>
+                                <TouchableOpacity onPress={() => navigation.navigate('Organization', { currentOrganization })}>
                                     <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
                                         <View style={tailwind('flex flex-row items-center')}>
                                             <FontAwesomeIcon icon={faBuilding} size={18} style={tailwind('mr-3 text-gray-50')} />

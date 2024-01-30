@@ -7,7 +7,8 @@ import tailwind from 'tailwind';
 import { getColorCode, logError } from 'utils';
 import { useDriver } from 'utils/Auth';
 
-const Organization = ({ navigation }) => {
+const Organization = ({ navigation, route }) => {
+    const { currentOrganization } = route.params;
     const [driver] = useDriver();
     const [organizations, setOrganizations] = useState([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -32,16 +33,23 @@ const Organization = ({ navigation }) => {
     }, []);
 
     const switchOrganization = organizationId => {
+        if (currentOrganization.id === organizationId) {
+            return Alert.alert('Warning', 'This organization already selected');
+        }
         return driver.switchOrganization(organizationId).then(() => {
             Toast.show({
                 type: 'success',
                 text1: `Switched organization`,
             });
-            navigation.goBack();
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'AccountScreen' }],
-            });
+
+            setTimeout(() => {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'AccountScreen' }],
+                });
+
+                navigation.goBack();
+            }, 1500);
         });
     };
 
