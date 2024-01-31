@@ -73,7 +73,7 @@ const DefaultHeader = props => {
                         )}
                         {shouldDisplayLogoText && (
                             <View>
-                                <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>Navigator</Text>
+                                <Text style={[tailwind('font-bold text-lg text-gray-50'), props.logoStyle ?? {}]}>ODOS Driver</Text>
                                 <Text style={[tailwind('text-xs text-white')]}>{appVersion}</Text>
                             </View>
                         )}
