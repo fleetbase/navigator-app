@@ -105,3 +105,6 @@ jobs:
 
     - name: Build iOS
       run: npx react-native run-ios --configuration Release
+    
+    - name: Generate fastlane
+      run: fastlane beta
