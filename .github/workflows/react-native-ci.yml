@@ -97,9 +97,6 @@ jobs:
     - name: Install dependencies
       run: yarn install
 
-    - name: Clean CocoaPods Cache
-      run: pod cache clean --all
-
     - name: Install CocoaPods
       run: sudo gem install cocoapods
 
