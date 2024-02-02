@@ -80,6 +80,9 @@ jobs:
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
 
+    - name: Run fastlane
+      run: fastlane internal
+
   ios_build:
     runs-on: macOS-latest
     steps:
