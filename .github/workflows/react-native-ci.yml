@@ -81,11 +81,17 @@ jobs:
       run: cd android && ./gradlew assembleDebug
     
     - name: Install bundler
-      run: sudo gem install bundler --user-install
+      run: |
+        gem install bundler
+        bundle install
 
     - name: Run fastlane
+      env:
+        JAVA_HOME: /opt/hostedtoolcache/Java_Oracle_jdk/17/x64
+        JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Oracle_jdk/17/x64
       run: |
         bundle exec fastlane internal
+
 
   ios_build:
     runs-on: macOS-latest
