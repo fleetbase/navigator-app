@@ -123,7 +123,11 @@ jobs:
     - name: Build iOS
       run: npx react-native run-ios --configuration Release
     
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+          ruby-version: '2.7.4'
+    
     - name: Install Fastlane
-      run: |
-          bundle install
-          bundle update fastlane
+      working-directory: ./android
+      run:  fastlane beta
