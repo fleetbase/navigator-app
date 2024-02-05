@@ -8,6 +8,7 @@ env:
   FLEETBASE_KEY: ${{ secrets.FLEETBASE_KEY }}
   GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
   ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+  ANDROID_RELEASE_KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
 
 jobs:
   install_and_test:
@@ -78,11 +79,8 @@ jobs:
       run: cd android && chmod +x ./gradlew
 
     - name: Generate release keystore
-      env:
-        ANDROID_RELEASE_KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
-        ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       run: |
-        echo "$ANDROID_RELEASE_KEYSTORE" > release.keystore
+        echo "$ANDROID_RELEASE_KEYSTORE" > release.keystore.asc
         gpg -d --passphrase "$ANDROID_KEYSTORE_PASSWORD" --batch release.keystore.asc > android/app/release.keystore
 
     - name: Build Android
