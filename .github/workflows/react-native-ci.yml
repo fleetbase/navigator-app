@@ -85,7 +85,16 @@ jobs:
       with:
           ruby-version: '2.7.4'
 
+    - name: Setup Fastlane
+      working-directory: ./android
+      run: bundle install
+
+    - name: Run Fastlane
+      working-directory: ./android
+      run: bundle exec fastlane android
+
     - name: Install Fastlane
+      working-directory: ./android
       run:  fastlane beta
 
   ios_build:
