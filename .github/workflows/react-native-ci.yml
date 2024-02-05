@@ -80,6 +80,11 @@ jobs:
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
 
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+          ruby-version: '2.7.4'
+
     - name: Install Fastlane
       run: |
         bundle install
@@ -119,5 +124,7 @@ jobs:
     - name: Build iOS
       run: npx react-native run-ios --configuration Release
     
-    - name: Run fastlane
-      run: fastlane internal
+    - name: Install Fastlane
+      run: |
+          bundle install
+          bundle update fastlane
