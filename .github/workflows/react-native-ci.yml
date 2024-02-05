@@ -79,11 +79,12 @@ jobs:
 
     - name: Generate release keystore
       env:
-        GOOGLE_SERVICES_JSON: ${{ secrets.RELEASE_KEYSTORE }}
+        RELEASE_KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
+        RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       run: |
-        echo "$RELEASE_KEYSTORE" > release.keystore
+        echo "$ANDROID_RELEASE_KEYSTORE" > release.keystore
         mkdir -p android/app/
-        mv release.keystore android/app
+        gpg -d --passphrase "$ANDROID_RELEASE_PASSWORD" --batch release.keystore.asc > app/release.keystore
 
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
