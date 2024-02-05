@@ -138,4 +138,4 @@ jobs:
     
     - name: Install Fastlane
       working-directory: ./ios
-      run:  fastlane internal
+      run:  fastlane beta
