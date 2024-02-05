@@ -77,6 +77,15 @@ jobs:
     - name: Make Gradlew Executable
       run: cd android && chmod +x ./gradlew
 
+    - name: Generate release keystore
+      env:
+        GOOGLE_SERVICES_JSON: ${{ secrets.RELEASE_KEYSTORE }}
+      run: |
+        echo "$RELEASE_KEYSTORE" > release.keystore
+        mkdir -p android/app/
+        mv release.keystore android/app
+    
+
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
 
@@ -91,7 +100,7 @@ jobs:
 
     - name: Install Fastlane
       working-directory: ./android
-      run:  fastlane beta
+      run:  fastlane internal
 
   ios_build:
     runs-on: macOS-latest
@@ -113,6 +122,10 @@ jobs:
     - name: Install CocoaPods
       run: sudo gem install cocoapods -v '1.14.3'
 
+    - name: Install Algolia Gem
+      run: |
+        gem install algolia
+
     - name: Install iOS pods
       run: cd ios && pod install
 
@@ -126,4 +139,4 @@ jobs:
     
     - name: Install Fastlane
       working-directory: ./ios
-      run:  fastlane beta
+      run:  fastlane internal
