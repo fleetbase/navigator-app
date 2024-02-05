@@ -84,7 +84,6 @@ jobs:
         echo "$RELEASE_KEYSTORE" > release.keystore
         mkdir -p android/app/
         mv release.keystore android/app
-    
 
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
@@ -100,7 +99,7 @@ jobs:
 
     - name: Install Fastlane
       working-directory: ./android
-      run:  fastlane internal
+      run:  fastlane beta
 
   ios_build:
     runs-on: macOS-latest
