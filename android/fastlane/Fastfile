@@ -23,12 +23,14 @@ platform :android do
 
   desc "Submit a new Beta Build to Crashlytics Beta"
   lane :beta do
-    gradle(task: "clean assembleRelease")
-    properties: {
-      "ANDROID_KEYSTORE_PASSWORD" => ENV["ANDROID_KEYSTORE_PASSWORD"],
-      "ANDROID_ALIAS" => ENV["ANDROID_ALIAS"],
-      "ANDROID_KEY_PASSWORD" => ENV["ANDROID_KEY_PASSWORD"]
-    }
+    gradle(
+      task: "clean assembleRelease",
+      properties: {
+        "ANDROID_KEYSTORE_PASSWORD" => ENV["ANDROID_KEYSTORE_PASSWORD"],
+        "ANDROID_ALIAS" => ENV["ANDROID_ALIAS"],
+        "ANDROID_KEY_PASSWORD" => ENV["ANDROID_KEY_PASSWORD"]
+      }
+    )
     crashlytics
   
     # sh "your_script.sh"
