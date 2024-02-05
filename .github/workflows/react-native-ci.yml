@@ -81,7 +81,8 @@ jobs:
       run: cd android && ./gradlew assembleDebug
 
     - name: Run fastlane
-      run: fastlane internal
+      run: |
+        bundle exec fastlane internal
 
   ios_build:
     runs-on: macOS-latest
