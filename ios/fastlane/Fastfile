@@ -16,8 +16,7 @@
 default_platform(:ios)
 
 platform :ios do
-  FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD = ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"]
-  desc "Push a new beta build to TestFlight"
+ desc "Push a new beta build to TestFlight"
   lane :beta do
     increment_build_number(xcodeproj: "NavigatorApp.xcodeproj")
     build_app(workspace: "NavigatorApp.xcworkspace", scheme: "NavigatorApp")
