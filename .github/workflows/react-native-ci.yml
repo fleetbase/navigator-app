@@ -135,5 +135,5 @@ jobs:
           ruby-version: '2.7.4'
     
     - name: Install Fastlane
-      working-directory: ios
+      working-directory: ./ios
       run:  fastlane beta
