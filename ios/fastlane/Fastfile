@@ -15,17 +15,6 @@
 
 default_platform(:ios)
 
-app_identifier (ENV("IOS_IDENTIFIER"))
-apple_id (ENV("APPLE_ID"))
-team_id (ENV("DEVELOPER_ID"))
-
-for_platform :ios do
-  team_id (ENV("DEVELOPER_ID")) # for all iOS related things
-  for_lane :test do
-    app_identifier (ENV("IOS_IDENTIFIER"))
-  end
-end
-
 platform :ios do
  desc "Push a new beta build to TestFlight"
   lane :beta do
