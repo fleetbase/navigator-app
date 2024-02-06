@@ -102,13 +102,9 @@ android {
         release {
             if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
                 storeFile file('release.keystore')
-                println "Keystore file path: ${storeFile}"
-                println "ANDROID_KEYSTORE_PASSWORD: ${project.env.get('ANDROID_KEYSTORE_PASSWORD') ?: System.getenv('ANDROID_KEYSTORE_PASSWORD')}"
-                println "ANDROID_ALIAS: ${project.env.get('ANDROID_ALIAS') ?: System.getenv('ANDROID_ALIAS')}"
-
-                storePassword project.hasProperty('ANDROID_KEYSTORE_PASSWORD') ? project.ANDROID_KEYSTORE_PASSWORD : System.getenv("ANDROID_KEYSTORE_PASSWORD")
-                keyAlias project.hasProperty('ANDROID_ALIAS') ? project.ANDROID_ALIAS : System.getenv("ANDROID_ALIAS")
-                keyPassword project.hasProperty('ANDROID_KEY_PASSWORD') ? project.ANDROID_KEY_PASSWORD : System.getenv("ANDROID_KEY_PASSWORD")
+                storePassword project.env.get("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias project.env.get("ANDROID_ALIAS") ?: System.getenv("ANDROID_ALIAS")
+                keyPassword project.env.get("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
             }
         }
         debug {
