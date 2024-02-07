@@ -24,5 +24,3 @@ platform :ios do
     slack(message: "Successfully distributed a new beta build")
   end
 end
-
-

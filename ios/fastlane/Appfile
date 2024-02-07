@@ -5,12 +5,6 @@ itc_team_id(ENV("TEAM_ID")) # App Store Connect Team ID
 team_id(ENV("DEVELOPER_ID")) # Developer Portal Team ID
 
 
-for_platform :ios do
-  team_id (ENV("DEVELOPER_ID")) # for all iOS related things
-  for_lane :test do
-    app_identifier (ENV("IOS_IDENTIFIER"))
-  end
-end
 
 # For more information about the Appfile, see:
 #     https://docs.fastlane.tools/advanced/#appfile
