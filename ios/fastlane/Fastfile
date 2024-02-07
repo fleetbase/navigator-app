@@ -24,7 +24,7 @@ platform :ios do
     api_key = app_store_connect_api_key(
       key_id: (ENV("APPLE_KEY_ID")),
       issuer_id:  (ENV("ISSUER_ID")),
-      key_filepath: (ENV("AUTH_KEY"))
+      key_filepath: "./ios/AuthKey.p8"
     )
     
     slack(message: "Successfully distributed a new beta build")
