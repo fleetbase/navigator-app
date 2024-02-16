@@ -108,6 +108,19 @@ platform :ios do
     )
   end
 
+  desc "Generate new certificates"
+  lane :generate_new_certificates do
+    sync_code_signing(
+      type: "development",
+      app_identifier: ['io.fleetbase.navigator'],
+      force_for_new_devices: true,
+      readonly: false
+    )
+    
+    # You can repeate the sync_code_signing with other types of certificates such as appstore and adhoc
+
+  end
+
   lane :buildAndShip do
     running_on_ci = ENV["CI"] || false
     options = {
