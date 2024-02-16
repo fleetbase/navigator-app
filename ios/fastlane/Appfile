@@ -1,8 +1,8 @@
-app_identifier(ENV("IOS_IDENTIFIER")) # The bundle identifier of your app
-apple_id(ENV("APPLE_ID")) # Your Apple Developer Portal username
+app_identifier ENV["IOS_IDENTIFIER"] # The bundle identifier of your app
+apple_id ENV["APPLE_ID"] # Your Apple Developer Portal username
 
-itc_team_id(ENV("TEAM_ID")) # App Store Connect Team ID
-team_id(ENV("DEVELOPER_ID")) # Developer Portal Team ID
+itc_team_id ENV["TEAM_ID"] # App Store Connect Team ID
+team_id ENV["DEVELOPER_ID"] # Developer Portal Team ID
 
 
 
