@@ -15,13 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
-### ios generate_new_certificates
+### ios certificates
 
 ```sh
-[bundle exec] fastlane ios generate_new_certificates
+[bundle exec] fastlane ios certificates
 ```
 
-Generate new certificates
+Get certificates
 
 ### ios buildAndShip
 

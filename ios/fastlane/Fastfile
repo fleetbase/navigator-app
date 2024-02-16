@@ -26,38 +26,38 @@ platform :ios do
 
   end
 
-  private_lane :certificates do | options |
-    match_type = options[:match_type]
+  # private_lane :certificates do | options |
+  #   match_type = options[:match_type]
 
-    if options[:ci]
-      create_keychain(
-        name: ENV["CI_KEYCHAIN_NAME"],
-        password: ENV["CI_KEYCHAIN_PASSWORD"],
-        default_keychain: true,
-        unlock: true,
-        timeout: 3600,
-        lock_when_sleeps: false
-      )
-      match(
-        type: match_type,
-        keychain_name: ENV["CI_KEYCHAIN_NAME"],
-        keychain_password: ENV["CI_KEYCHAIN_PASSWORD"],
-        readonly: true,
-        shallow_clone: true,
-        verbose: false,
-        clone_branch_directly: true,
-      )
-    else
-      match(
-        type: match_type,
-        readonly: true,
-        shallow_clone: true,
-        verbose: false,
-        clone_branch_directly: true,
-      )
-    end
+  #   if options[:ci]
+  #     create_keychain(
+  #       name: ENV["CI_KEYCHAIN_NAME"],
+  #       password: ENV["CI_KEYCHAIN_PASSWORD"],
+  #       default_keychain: true,
+  #       unlock: true,
+  #       timeout: 3600,
+  #       lock_when_sleeps: false
+  #     )
+  #     match(
+  #       type: match_type,
+  #       keychain_name: ENV["CI_KEYCHAIN_NAME"],
+  #       keychain_password: ENV["CI_KEYCHAIN_PASSWORD"],
+  #       readonly: true,
+  #       shallow_clone: true,
+  #       verbose: false,
+  #       clone_branch_directly: true,
+  #     )
+  #   else
+  #     match(
+  #       type: match_type,
+  #       readonly: true,
+  #       shallow_clone: true,
+  #       verbose: false,
+  #       clone_branch_directly: true,
+  #     )
+  #   end
 
-  end
+  # end
 
   private_lane :build do | options |
     build_for_development_only = options[:build_for_development_only]
