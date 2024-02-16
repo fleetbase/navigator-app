@@ -24,8 +24,7 @@ platform :ios do
       key_id: ENV['APPLE_KEY_ID'],
       issuer_id: ENV['ISSUER_ID'],
       key_filepath: "./ios/AuthKey.p8"
-    })
-    
+    }, provisioning_profile: 'ios/profile.mobileprovision')
     
     slack(message: "Successfully distributed a new beta build")
   end
