@@ -4,7 +4,7 @@ storage_mode("git")
 
 type("development") # The default type, can be: appstore, adhoc, enterprise or development
 
-app_identifier(ENV("IOS_IDENTIFIER"))
+app_identifier('io.fleetbase.navigator')
 username(ENV("APPLE_ID")) # Your Apple Developer Portal username
 
 
