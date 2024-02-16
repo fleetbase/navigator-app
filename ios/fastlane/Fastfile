@@ -1,7 +1,7 @@
 opt_out_usage
 
 # Global variables to simplify the individual adjustment
-PROJECT_NAME = "MyAwesomeProject"
+PROJECT_NAME = "NavigatorApp"
 XCODE_PROJECT = "./ios/#{PROJECT_NAME}.xcodeproj"
 XCODE_WORKSPACE = "./ios/#{PROJECT_NAME}.xcworkspace"
 OUTPUT_DIRECTORY = "./fastlane/builds/"
