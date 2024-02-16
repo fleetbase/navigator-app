@@ -113,7 +113,7 @@ platform :ios do
     options = {
       :build_for_development_only => BUILD_FOR_DEVELOPMENT_ONLY,
       :running_on_ci => running_on_ci,
-      :git_branch_name => running_on_ci ? "#{ENV['GIT_BRANCH_NAME']}"  : sh("git", "rev-parse", "--abbrev-ref", "HEAD", log: false),
+      :git_branch_name => running_on_ci ? "#{ENV['GIT_BRANCH_NAME']}"  : 'main',
       :app_identifier => ENV["IOS_IDENTIFIER"],
       :apple_id => ENV["APPLE_ID"],
       :apple_team_id => ENV["APPLE_TEAM_ID"],
