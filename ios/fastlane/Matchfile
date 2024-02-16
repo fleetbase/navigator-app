@@ -1,11 +1,11 @@
-git_url("https://github.com/fleetbase/navigator-app")
+git_url("https://github.com/fleetbase/fastlane-config")
 
 storage_mode("git")
 
 type("development") # The default type, can be: appstore, adhoc, enterprise or development
 
-app_identifier(ENV("IOS_IDENTIFIER"))
-username(ENV("APPLE_ID")) # Your Apple Developer Portal username
+app_identifier ENV["IOS_IDENTIFIER"]
+username ENV["APPLE_ID"] # Your Apple Developer Portal username
 
 
 # For all available options run `fastlane match --help`

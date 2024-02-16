@@ -26,7 +26,7 @@
         "jetify": "npx jetify",
         "test": "jest",
         "postinstall": "patch-package",
-        "ios:buildAndShip": "fastlane ios buildAndShip",
+        "ios:buildAndShip": "cd ios && fastlane ios buildAndShip",
         "lint": "eslint .",
         "generate-app-icon": "npx app-icon generate -i ./assets/app-icon.png",
         "generate-launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background-color=#111827 --logo-width=100 --flavor=main"
