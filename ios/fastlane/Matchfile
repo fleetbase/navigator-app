@@ -1,4 +1,4 @@
-git_url("https://github.com/fleetbase/fastlane-config")
+git_url("https://github.com/fleetbase/navigator-app")
 
 storage_mode("git")
 

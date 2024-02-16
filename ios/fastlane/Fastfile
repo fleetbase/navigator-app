@@ -1,159 +1,29 @@
-opt_out_usage
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
 
-# Global variables to simplify the individual adjustment
-PROJECT_NAME = "NavigatorApp"
-XCODE_PROJECT = "./ios/#{PROJECT_NAME}.xcodeproj"
-XCODE_WORKSPACE = "./ios/#{PROJECT_NAME}.xcworkspace"
-OUTPUT_DIRECTORY = "./fastlane/builds/"
-BUILD_FOR_DEVELOPMENT_ONLY = false # true = Build for Development | false = Build to create a release
-BUILD_ONLY = false
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+default_platform(:ios)
 
 platform :ios do
-  before_all do
-    ensure_git_status_clean
-  end
-
-  private_lane :pushChangesBack do | options |
-    if options[:running_on_ci]
-      repository_uri = sh("git remote show origin | awk 'NR==2{print $3}' | sed 's/git@//g' | sed 's#https://##g'", log: false)
-      push_uri = "https://x-access-token:#{options[:token]}@#{repository_uri.chomp}.git"
-      branches = "HEAD:#{options[:git_branch_name]}"
-
-      sh("git push #{push_uri} #{branches} --tags", log: false)
-    else
-      push_to_git_remote
-    end
-
-  end
-
-  # private_lane :certificates do | options |
-  #   match_type = options[:match_type]
-
-  #   if options[:ci]
-  #     create_keychain(
-  #       name: ENV["CI_KEYCHAIN_NAME"],
-  #       password: ENV["CI_KEYCHAIN_PASSWORD"],
-  #       default_keychain: true,
-  #       unlock: true,
-  #       timeout: 3600,
-  #       lock_when_sleeps: false
-  #     )
-  #     match(
-  #       type: match_type,
-  #       keychain_name: ENV["CI_KEYCHAIN_NAME"],
-  #       keychain_password: ENV["CI_KEYCHAIN_PASSWORD"],
-  #       readonly: true,
-  #       shallow_clone: true,
-  #       verbose: false,
-  #       clone_branch_directly: true,
-  #     )
-  #   else
-  #     match(
-  #       type: match_type,
-  #       readonly: true,
-  #       shallow_clone: true,
-  #       verbose: false,
-  #       clone_branch_directly: true,
-  #     )
-  #   end
-
-  # end
-
-  private_lane :build do | options |
-    build_for_development_only = options[:build_for_development_only]
-    configuration_name = build_for_development_only ? "Development" : "Release"
-    export_options_method = build_for_development_only ? "development" : "app-store"
-    match_type = build_for_development_only ? "development" : "appstore"
-
-    certificates(
-      ci: options[:running_on_ci],
-      match_type: match_type,
-    )
-
-    cocoapods(
-      repo_update: true,
-      podfile: "./ios/Podfile"
-    )
-
-    gym(
-      scheme: PROJECT_NAME,
-      workspace: XCODE_WORKSPACE,
-      silent: true,
-      clean: true,
-      configuration: configuration_name,
-      output_directory: OUTPUT_DIRECTORY,
-      output_name: "#{PROJECT_NAME}.ipa",
-      export_options: {
-        method: export_options_method,
-        provisioningProfiles: {
-          options[:app_identifier] => ENV["sigh_#{options[:app_identifier]}_#{match_type}_profile-name"],
-        }
-      },
-    )
-
-    match_type
-  end
-
-  private_lane :ship do | options |
-    pilot(
-      ipa: "#{OUTPUT_DIRECTORY}#{PROJECT_NAME}.ipa",
-      skip_waiting_for_build_processing: true,
-      verbose: false,
-      uses_non_exempt_encryption: true,
-      notify_external_testers: false,
-      username: options[:apple_id],
-      team_id: options[:apple_team_id],
-      apple_id: options[:apple_app_id],
-      itc_provider: ENV["sigh_#{options[:app_identifier]}_#{options[:match_type]}_team-id"],
-    )
-  end
-
-  desc "Get certificates"
-  lane :certificates do
-    sync_code_signing(
-      type: "development",
-      app_identifier: ['io.fleetbase.navigator'],
-      force_for_new_devices: true,
-      readonly: true
-    )
-
-    # You can repeate the sync_code_signing with other types of certificates such as appstore and adhoc
-    sync_code_signing(
-      type: "appstore",
-      app_identifier: 'io.fleetbase.navigator',
-      readonly: true
-    )
-  end
-
-  lane :buildAndShip do
-    running_on_ci = ENV["CI"] || false
-    options = {
-      :build_for_development_only => BUILD_FOR_DEVELOPMENT_ONLY,
-      :running_on_ci => running_on_ci,
-      :git_branch_name => 'main',
-      :app_identifier => ENV["IOS_IDENTIFIER"],
-      :apple_id => ENV["APPLE_ID"],
-      :apple_team_id => ENV["APPLE_TEAM_ID"],
-      :apple_app_id => ENV["APPLE_APP_ID"],
-      :token => ENV["GITHUB_TOKEN"],
-    }
-
-    match_type = build(options)
-
-    commit_version_bump(
-      xcodeproj: XCODE_PROJECT,
-      include: ["ios/Podfile.lock"],
-    )
-
-    pushChangesBack(options)
-
-    unless BUILD_ONLY
-      ship(
-        apple_id: options[:apple_id],
-        apple_team_id: options[:apple_team_id],
-        apple_app_id: options[:apple_app_id],
-        match_type: match_type,
-      )
-    end
+ desc "Push a new beta build to TestFlight"
+  lane :beta do
+    increment_build_number(xcodeproj: "NavigatorApp.xcodeproj")
+    build_app(workspace: "NavigatorApp.xcworkspace", scheme: "NavigatorApp",xcargs: "-allowProvisioningUpdates")
+    upload_to_testflight(api_key: {
+      key_id: ENV['APPLE_KEY_ID'],
+      issuer_id: ENV['ISSUER_ID'],
+      key_filepath: "./ios/AuthKey.p8"
+    }, provisioning_profile: 'ios/profile.mobileprovision')
+    slack(message: "Successfully distributed a new beta build")
   end
 end
