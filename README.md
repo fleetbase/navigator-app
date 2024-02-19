@@ -62,17 +62,10 @@ Your `.env` file should look something like this once you're done.
 ```
 # .env
 APP_NAME=
-APP_IDENTIFIER=
+APP_IDENTIFIER=io.navigator.app
+APP_LINK_PREFIX=navigator://
+FLEETBASE_HOST=https://127.0.0.1:8000
 FLEETBASE_KEY=
-GOOGLE_MAPS_KEY=
-```
-
-### Navigation using Mapbox
-To enable in-app navigation powered by Mapbox you just need to include two additional environment variables which chould be your `MAPBOX_ACCESS_TOKEN` and your `MAPBOX_SECRET_TOKEN`. When these are supplied the driver will be able to navigate between waypoints.
-
-```bash
-MAPBOX_ACCESS_TOKEN=
-MAPBOX_SECRET_TOKEN=
 ```
 
 ### Running in Simulator
