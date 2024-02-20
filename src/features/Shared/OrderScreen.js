@@ -434,30 +434,73 @@ const OrderScreen = ({ navigation, route }) => {
     // Feel free to change main path according to your requirements.
     const localFile = `${RNFS.DocumentDirectoryPath}/temporaryfile.${extension}`;
 
-    const options = {
-        fromUrl: url,
-        toFile: localFile,
+    const aa = filePath => {
+        console.log('filePath------->', filePath);
+        FileSaver.saveAs(filePath, 'image.jpg');
+        // RNFS.downloadFile({
+        //     fromUrl: filePath,
+        //     toFile: localFile,
+        // }).promise.then(() => {
+        //     FileViewer.open(localFile, { showOpenWithDialog: true })
+        //         .then(() => {
+        //             console.log('options------->', options);
+        //             // success
+        //         })
+        //         .catch(error => {
+        //             // error
+        //         });
+        // });
     };
-    const downloadMedia = options => {
+    // const openMedia = filePath => {
+    //     console.log('path----->', filePath);
+    //     const options = {
+    //         fromUrl: filePath,
+    //         toFile: localFile,
+    //     };
+    //     RNFS.downloadFile(options)
+    //         .promise.then(res => FileViewer.open(localFile))
+    //         .then(() => {
+    //             console.log('success', res);
+    //             // success
+    //         })
+    //         .catch(error => {
+    //             // error
+    //             console.log('error', error);
+    //         });
+    // };
+
+    openMedia = async url => {
+        // These all formats are acceptable.
+        console.log('url', url);
+        // this will split the whole url.
+        // const f2 = url.split('/');
+        // console.log('f2', f2);
+
+        // // then get the file name with extention.
+        // const fileName = f2[f2.length - 1];
+        // const fileExtention = url.split(".")[3];
+
+        // create a local file path from url
+
+        console.log('RNFS.DocumentDirectoryPath------->', JSON.stringify(RNFS.DocumentDirectoryPath));
+        const localFile = `${RNFS.DocumentDirectoryPath}/${url}`;
+        console.log('localFile----<', localFile);
+        const options = {
+            fromUrl: url,
+            toFile: localFile,
+        };
+
+        // last step it will download open it with fileviewer.
         RNFS.downloadFile(options)
             .promise.then(() => FileViewer.open(localFile))
-            .then(() => {
-                console.log('options------->', options);
+            .then(res => {
+                console.log('success', res);
                 // success
+                // Here you can perform any of your completion tasks
             })
             .catch(error => {
                 // error
-            });
-    };
-
-    const openMedia = filePath => {
-        FileViewer.open(filePath, { showOpenWithDialog: true }) // absolute-path-to-my-local-file.
-            .then(() => {
-                console.log('filePath----<', JSON.stringify(filePath));
-                // success
-            })
-            .catch(error => {
-                // error
+                console.log('error', error);
             });
     };
 
@@ -750,26 +793,9 @@ const OrderScreen = ({ navigation, route }) => {
                                                     <TouchableOpacity
                                                         style={tailwind('text-dark-400 items-end')}
                                                         onPress={() => {
-                                                            setSelectedFileIndex(index);
+                                                            openMedia(url);
                                                         }}>
                                                         <FontAwesomeIcon size={20} icon={faEllipsisH} style={tailwind('text-dark-400 p-3 mr-2')} />
-                                                        {selectedFileIndex == index && (
-                                                            <View style={tailwind('ml-2')}>
-                                                                <TouchableOpacity
-                                                                    onPress={() => {
-                                                                        openMedia(url);
-                                                                    }}
-                                                                    style={tailwind('mb-2')}>
-                                                                    <Text>View</Text>
-                                                                </TouchableOpacity>
-                                                                <TouchableOpacity
-                                                                    onPress={() => {
-                                                                        downloadMedia(url);
-                                                                    }}>
-                                                                    <Text>Delete</Text>
-                                                                </TouchableOpacity>
-                                                            </View>
-                                                        )}
                                                         <FastImage
                                                             key={index}
                                                             style={tailwind('w-18 h-18 m-2')}
