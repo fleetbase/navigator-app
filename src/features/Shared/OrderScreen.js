@@ -1,5 +1,5 @@
 import { Order } from '@fleetbase/sdk';
-import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes, faEllipsisH } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNetInfo } from '@react-native-community/netinfo';
 import OrderStatusBadge from 'components/OrderStatusBadge';
@@ -8,6 +8,8 @@ import { format } from 'date-fns';
 import { useDriver, useFleetbase, useLocale, useMountedState } from 'hooks';
 import React, { createRef, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Linking, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import FileViewer from 'react-native-file-viewer';
+import RNFS from 'react-native-fs';
 import ActionSheet from 'react-native-actions-sheet';
 import { EventRegister } from 'react-native-event-listeners';
 import FastImage from 'react-native-fast-image';
@@ -65,6 +67,9 @@ const OrderScreen = ({ navigation, route }) => {
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
+    const isDocument = order.getAttribute('files', []);
+
+    const [selectedFileIndex, setSelectedFileIndex] = useState();
 
     const entitiesByDestination = (() => {
         const groups = [];
@@ -418,6 +423,44 @@ const OrderScreen = ({ navigation, route }) => {
         focusPlaceOnMap(destination);
     }
 
+    const fileUrls = isDocument.map(path => path.url);
+
+    function getUrlExtension(fileUrls) {
+        return fileUrls;
+    }
+
+    const extension = getUrlExtension(fileUrls);
+
+    // Feel free to change main path according to your requirements.
+    const localFile = `${RNFS.DocumentDirectoryPath}/temporaryfile.${extension}`;
+
+    const options = {
+        fromUrl: url,
+        toFile: localFile,
+    };
+    const downloadMedia = options => {
+        RNFS.downloadFile(options)
+            .promise.then(() => FileViewer.open(localFile))
+            .then(() => {
+                console.log('options------->', options);
+                // success
+            })
+            .catch(error => {
+                // error
+            });
+    };
+
+    const openMedia = filePath => {
+        FileViewer.open(filePath, { showOpenWithDialog: true }) // absolute-path-to-my-local-file.
+            .then(() => {
+                console.log('filePath----<', JSON.stringify(filePath));
+                // success
+            })
+            .catch(error => {
+                // error
+            });
+    };
+
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
             <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg pt-2')]}>
@@ -692,6 +735,58 @@ const OrderScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         </View>
+                        <View style={tailwind('mt-2')}>
+                            <View style={tailwind('flex flex-col items-center')}>
+                                <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
+                                    <View style={tailwind('flex flex-row items-center')}>
+                                        <Text style={tailwind('font-semibold text-gray-100')}>Documents & Files</Text>
+                                    </View>
+                                </View>
+                                <View style={tailwind('w-full p-4 flex flex-start items-center justify-center')}>
+                                    <View style={tailwind('rounded-md bg-white')}>
+                                        <View style={tailwind('flex flex-row justify-center')}>
+                                            {fileUrls.map((url, index) => (
+                                                <View key={index.toString()}>
+                                                    <TouchableOpacity
+                                                        style={tailwind('text-dark-400 items-end')}
+                                                        onPress={() => {
+                                                            setSelectedFileIndex(index);
+                                                        }}>
+                                                        <FontAwesomeIcon size={20} icon={faEllipsisH} style={tailwind('text-dark-400 p-3 mr-2')} />
+                                                        {selectedFileIndex == index && (
+                                                            <View style={tailwind('ml-2')}>
+                                                                <TouchableOpacity
+                                                                    onPress={() => {
+                                                                        openMedia(url);
+                                                                    }}
+                                                                    style={tailwind('mb-2')}>
+                                                                    <Text>View</Text>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity
+                                                                    onPress={() => {
+                                                                        downloadMedia(url);
+                                                                    }}>
+                                                                    <Text>Delete</Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        )}
+                                                        <FastImage
+                                                            key={index}
+                                                            style={tailwind('w-18 h-18 m-2')}
+                                                            source={{
+                                                                uri: url,
+                                                            }}
+                                                            resizeMode={FastImage.resizeMode.contain}
+                                                        />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+
                         {order.getAttribute('payload.entities', []).length > 0 && (
                             <View>
                                 <View style={tailwind('flex flex-col items-center')}>
