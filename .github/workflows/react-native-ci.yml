@@ -8,6 +8,7 @@ env:
   FLEETBASE_KEY: ${{ secrets.FLEETBASE_KEY }}
   GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
   ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+  ANDROID_RELEASE_KEYSTORE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
 
 jobs:
   install_and_test:
@@ -77,8 +78,26 @@ jobs:
     - name: Make Gradlew Executable
       run: cd android && chmod +x ./gradlew
 
+    - name: Generate release keystore
+      run: |
+        echo "$ANDROID_RELEASE_KEYSTORE" > release.keystore.asc
+        gpg -d --passphrase "$ANDROID_KEYSTORE_PASSWORD" --batch release.keystore.asc > android/app/release.keystore
+
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
+
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+          ruby-version: '2.7.4'
+
+    - name: Setup Fastlane
+      working-directory: ./android
+      run: bundle install
+
+    - name: Install Fastlane
+      working-directory: ./android
+      run:  fastlane beta
 
   ios_build:
     runs-on: macOS-latest
@@ -98,10 +117,27 @@ jobs:
       run: yarn install
 
     - name: Install CocoaPods
-      run: sudo gem install cocoapods
+      run: sudo gem install cocoapods -v '1.14.3'
+
+    - name: Install Algolia Gem
+      run: |
+        gem install algolia
 
     - name: Install iOS pods
       run: cd ios && pod install
 
     - name: Build iOS
       run: npx react-native run-ios --configuration Release
+    
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+          ruby-version: '2.7.4'
+
+    - name: Setup Fastlane
+      working-directory: ./ios
+      run: bundle install
+    
+    - name: Install Fastlane
+      working-directory: ./ios
+      run:  fastlane beta

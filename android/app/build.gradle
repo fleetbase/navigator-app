@@ -94,17 +94,17 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         missingDimensionStrategy 'react-native-camera', 'general' 
-        versionCode project.env.get("ANDROID_VERSION_CODE")?.toInteger() ?: 1
-        versionName project.env.get("ANDROID_VERSION_NAME") ?: "1.0.0"
+        versionCode 22
+        versionName "1.1.13"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
     }
     signingConfigs {
         release {
             if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
-                storeFile file(MYAPP_UPLOAD_STORE_FILE)
-                storePassword MYAPP_UPLOAD_STORE_PASSWORD
-                keyAlias MYAPP_UPLOAD_KEY_ALIAS
-                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+                storeFile file('release.keystore')
+                storePassword project.env.get("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias 'navigator'
+                keyPassword project.env.get("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
             }
         }
         debug {
