@@ -1,5 +1,5 @@
 import { Order } from '@fleetbase/sdk';
-import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes, faFile } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNetInfo } from '@react-native-community/netinfo';
 import OrderStatusBadge from 'components/OrderStatusBadge';
@@ -12,6 +12,8 @@ import ActionSheet from 'react-native-actions-sheet';
 import { EventRegister } from 'react-native-event-listeners';
 import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FileViewer from 'react-native-file-viewer';
+import RNFS from 'react-native-fs';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
 import { getString, setString } from 'utils/Storage';
@@ -65,7 +67,7 @@ const OrderScreen = ({ navigation, route }) => {
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
-
+    const isDocument = order.getAttribute('files', []);
     const entitiesByDestination = (() => {
         const groups = [];
 
@@ -418,6 +420,35 @@ const OrderScreen = ({ navigation, route }) => {
         focusPlaceOnMap(destination);
     }
 
+    const fileUrls = isDocument.map(path => path.url);
+
+    openMedia = async url => {
+        // Extract filename from URL
+        const fileNameParts = url?.split('/')?.pop()?.split('?');
+        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
+
+        // Create local file path
+        const localFile = `${RNFS.LibraryDirectoryPath}/${fileName}`;
+
+        // Set up download options
+        const options = {
+            fromUrl: url,
+            toFile: localFile,
+        };
+
+        RNFS.downloadFile(options).promise.then(() => {
+            RNFS.readDir(RNFS.LibraryDirectoryPath).then(res => {
+                console.log('Read files:', res);
+            });
+
+            FileViewer.open(localFile);
+        });
+    };
+
+    const checkIsImage = documentType => {
+        return documentType.content_type.startsWith('image/');
+    };
+
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
             <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg pt-2')]}>
@@ -515,10 +546,6 @@ const OrderScreen = ({ navigation, route }) => {
                                                 <FontAwesomeIcon icon={faRoute} style={tailwind('text-blue-50 mb-1')} />
                                                 <Text style={tailwind('text-blue-50')}>Change</Text>
                                             </TouchableOpacity>
-                                            {/* <TouchableOpacity style={tailwind('flex-1 px-2 py-2 border-r border-blue-700 flex items-center justify-center')}>
-                                                <FontAwesomeIcon icon={faMagic} style={tailwind('text-blue-50 mb-1')} />
-                                                <Text style={tailwind('text-blue-50')}>Optimize</Text>
-                                            </TouchableOpacity> */}
                                         </View>
                                     </View>
                                 </View>
@@ -779,6 +806,41 @@ const OrderScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         )}
+                        <View style={tailwind('mt-2')}>
+                            <View style={tailwind('flex flex-col items-center')}>
+                                <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
+                                    <View style={tailwind('flex flex-row items-center')}>
+                                        <Text style={tailwind('font-semibold text-gray-100')}>Documents & Files</Text>
+                                    </View>
+                                </View>
+                                <View style={tailwind('w-full p-4 flex flex-start items-center justify-center')}>
+                                    {isDocument.map((document, index) => (
+                                        <View style={tailwind('rounded-md bg-white ')} key={index.toString()}>
+                                            <View style={tailwind('flex flex-row justify-center ')}>
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        openMedia(document.url);
+                                                    }}>
+                                                    {checkIsImage(document) ? (
+                                                        <FastImage
+                                                            style={tailwind('w-18 h-18 m-2')}
+                                                            source={{
+                                                                uri: document.url,
+                                                            }}
+                                                            resizeMode={FastImage.resizeMode.contain}
+                                                        />
+                                                    ) : (
+                                                        <View style={tailwind('flex flex-row items-center justify-between p-1')}>
+                                                            <FontAwesomeIcon size={75} icon={faFile} style={tailwind('text-gray-400')} />
+                                                        </View>
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
                         {isArray(order.getAttribute('payload.entities', [])) && order.getAttribute('payload.entities', []).length > 0 && (
                             <View>
                                 <View style={tailwind('mt-2')}>
