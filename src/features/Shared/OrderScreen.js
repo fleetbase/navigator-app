@@ -31,7 +31,6 @@ const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
     const { isConnected } = useNetInfo();
-    const [netInfo, setNetInfo] = useState('');
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
@@ -41,7 +40,6 @@ const OrderScreen = ({ navigation, route }) => {
 
     const [order, setOrder] = useState(new Order(data, fleetbase.getAdapter()));
     const [isLoadingAction, setIsLoadingAction] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [isLoadingActivity, setIsLoadingActivity] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [nextActivity, setNextActivity] = useState(null);
