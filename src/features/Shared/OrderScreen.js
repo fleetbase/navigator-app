@@ -1,5 +1,5 @@
 import { Order } from '@fleetbase/sdk';
-import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes, faFile } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faFile, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNetInfo } from '@react-native-community/netinfo';
 import OrderStatusBadge from 'components/OrderStatusBadge';
@@ -11,9 +11,9 @@ import { ActivityIndicator, Alert, Dimensions, Linking, RefreshControl, ScrollVi
 import ActionSheet from 'react-native-actions-sheet';
 import { EventRegister } from 'react-native-event-listeners';
 import FastImage from 'react-native-fast-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FileViewer from 'react-native-file-viewer';
 import RNFS from 'react-native-fs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
 import { getString, setString } from 'utils/Storage';
@@ -420,8 +420,6 @@ const OrderScreen = ({ navigation, route }) => {
         focusPlaceOnMap(destination);
     }
 
-    const fileUrls = isDocument.map(path => path.url);
-
     openMedia = async url => {
         // Extract filename from URL
         const fileNameParts = url?.split('/')?.pop()?.split('?');
@@ -447,6 +445,25 @@ const OrderScreen = ({ navigation, route }) => {
 
     const checkIsImage = documentType => {
         return documentType.content_type.startsWith('image/');
+    };
+
+    const renderDocumentItem = (document, index) => {
+        return (
+            <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')} key={index.toString()}>
+                <TouchableOpacity
+                    onPress={() => {
+                        openMedia(document.url);
+                    }}>
+                    {checkIsImage(document) ? (
+                        <FastImage style={tailwind('w-18 h-18 m-1 ')} source={{ uri: document.url }} resizeMode={FastImage.resizeMode.contain} />
+                    ) : (
+                        <View style={tailwind('items-center justify-between p-1 ')}>
+                            <FontAwesomeIcon size={70} icon={faFile} style={tailwind('text-gray-400')} />
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </View>
+        );
     };
 
     return (
@@ -813,31 +830,8 @@ const OrderScreen = ({ navigation, route }) => {
                                         <Text style={tailwind('font-semibold text-gray-100')}>Documents & Files</Text>
                                     </View>
                                 </View>
-                                <View style={tailwind('w-full p-4 flex flex-start items-center justify-center')}>
-                                    {isDocument.map((document, index) => (
-                                        <View style={tailwind('rounded-md bg-white ')} key={index.toString()}>
-                                            <View style={tailwind('flex flex-row justify-center ')}>
-                                                <TouchableOpacity
-                                                    onPress={() => {
-                                                        openMedia(document.url);
-                                                    }}>
-                                                    {checkIsImage(document) ? (
-                                                        <FastImage
-                                                            style={tailwind('w-18 h-18 m-2')}
-                                                            source={{
-                                                                uri: document.url,
-                                                            }}
-                                                            resizeMode={FastImage.resizeMode.contain}
-                                                        />
-                                                    ) : (
-                                                        <View style={tailwind('flex flex-row items-center justify-between p-1')}>
-                                                            <FontAwesomeIcon size={75} icon={faFile} style={tailwind('text-gray-400')} />
-                                                        </View>
-                                                    )}
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    ))}
+                                <View style={tailwind('w-full p-4 flex items-start flex-row  ')}>
+                                    {isDocument.map((document, index) => renderDocumentItem(document, index))}
                                 </View>
                             </View>
                         </View>
