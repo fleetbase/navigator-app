@@ -420,13 +420,13 @@ const OrderScreen = ({ navigation, route }) => {
         focusPlaceOnMap(destination);
     }
 
-    openMedia = async url => {
+    const openMedia = async url => {
         // Extract filename from URL
         const fileNameParts = url?.split('/')?.pop()?.split('?');
         const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
 
         // Create local file path
-        const localFile = `${RNFS.LibraryDirectoryPath}/${fileName}`;
+        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
 
         // Set up download options
         const options = {
@@ -435,7 +435,7 @@ const OrderScreen = ({ navigation, route }) => {
         };
 
         RNFS.downloadFile(options).promise.then(() => {
-            RNFS.readDir(RNFS.LibraryDirectoryPath).then(res => {
+            RNFS.readDir(RNFS.DocumentDirectoryPath).then(res => {
                 console.log('Read files:', res);
             });
 
@@ -830,9 +830,7 @@ const OrderScreen = ({ navigation, route }) => {
                                         <Text style={tailwind('font-semibold text-gray-100')}>Documents & Files</Text>
                                     </View>
                                 </View>
-                                <View style={tailwind('w-full p-4 flex items-start flex-row  ')}>
-                                    {isDocument.map((document, index) => renderDocumentItem(document, index))}
-                                </View>
+                                <View style={tailwind('w-full p-4 flex items-start flex-row  ')}>{isDocument.map((document, index) => renderDocumentItem(document, index))}</View>
                             </View>
                         </View>
                         {isArray(order.getAttribute('payload.entities', [])) && order.getAttribute('payload.entities', []).length > 0 && (
