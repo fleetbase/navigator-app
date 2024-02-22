@@ -65,7 +65,7 @@ const OrderScreen = ({ navigation, route }) => {
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
-    const isDocument = order.getAttribute('files', []);
+    const documents = order.getAttribute('files', []);
     const entitiesByDestination = (() => {
         const groups = [];
 
@@ -828,7 +828,7 @@ const OrderScreen = ({ navigation, route }) => {
                                         <Text style={tailwind('font-semibold text-gray-100')}>Documents & Files</Text>
                                     </View>
                                 </View>
-                                <View style={tailwind('w-full p-4 flex items-start flex-row  ')}>{isDocument.map((document, index) => renderDocumentItem(document, index))}</View>
+                                <View style={tailwind('w-full p-4 flex items-start flex-row  ')}>{documents.map((document, index) => renderDocumentItem(document, index))}</View>
                             </View>
                         </View>
                         {isArray(order.getAttribute('payload.entities', [])) && order.getAttribute('payload.entities', []).length > 0 && (
