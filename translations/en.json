@@ -7,6 +7,7 @@
             "userGreetingTitle": "Hello, {{driverName}}",
             "accountMenuTitle": "My Account",
             "config": "Instance Config",
+            "organization": "Organizations",
             "profileLinkText": "Profile",
             "ordersLinkText": "Orders",
             "placesLinkText": "Places",
