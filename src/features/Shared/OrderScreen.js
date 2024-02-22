@@ -28,6 +28,26 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
+const getOrderCurrency = order => {
+    console.log('order_', JSON.stringify(order));
+    let currency = order.getAttribute('meta.currency');
+
+    // check order for currency attribute too
+    if (!currency) {
+        currency = order.getAttribute('currency');
+    }
+
+    if (!currency) {
+        const entities = order.getAttribute('payload.entities', []);
+
+        if (isArray(entities) && entities.length) {
+            currency = entities[0].currency;
+        }
+    }
+
+    return currency ?? 'USD';
+};
+
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
     const { isConnected } = useNetInfo();
@@ -47,7 +67,7 @@ const OrderScreen = ({ navigation, route }) => {
     const [map, setMap] = useState(null);
 
     const isPickupOrder = order.getAttribute('meta.is_pickup');
-    const currency = order.getAttribute('meta.currency');
+    const currency = getOrderCurrency(order);
     const subtotal = order.getAttribute('meta.subtotal', 0);
     const total = order.getAttribute('meta.total', 0);
     const tip = order.getAttribute('meta.tip', 0);
@@ -885,12 +905,12 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('w-full p-4 border-b border-gray-700')}>
                                             <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                                                 <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.subtotal')}</Text>
-                                                <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateEntitiesSubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateEntitiesSubtotal() / 100, currency)}</Text>
                                             </View>
                                             {!isPickupOrder && (
                                                 <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                                                     <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryFee')}</Text>
-                                                    <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                    <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, currency)}</Text>
                                                 </View>
                                             )}
                                             {tip && (
@@ -909,7 +929,7 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('w-full p-4')}>
                                             <View style={tailwind('flex flex-row items-center justify-between')}>
                                                 <Text style={tailwind('font-semibold text-white')}>{translate('Shared.OrderScreen.total')}</Text>
-                                                <Text style={tailwind('font-semibold text-white')}>{formatCurrency(calculateTotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                <Text style={tailwind('font-semibold text-white')}>{formatCurrency(calculateTotal() / 100, currency)}</Text>
                                             </View>
                                         </View>
                                     </View>
