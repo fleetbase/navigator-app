@@ -433,10 +433,7 @@ const OrderScreen = ({ navigation, route }) => {
         };
 
         RNFS.downloadFile(options).promise.then(() => {
-            RNFS.readDir(RNFS.DocumentDirectoryPath).then(res => {
-                console.log('Read files:', res);
-            });
-
+            RNFS.readDir(RNFS.DocumentDirectoryPath);
             FileViewer.open(localFile);
         });
     };
