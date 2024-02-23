@@ -32,7 +32,8 @@
         },
         "SignUpScreen": {
             "driver": "Become Driver",
-            "driverName": "Driver Name",
+            "sign": "SignUp",
+            "driverName": "Name",
             "phoneNumber": "Phone Number",
             "driverLicense": "Driver License NUmber",
             "email": "Email Address",
