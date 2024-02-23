@@ -29,6 +29,15 @@
             "retryButtonText": "Retry?",
             "verifyCodeButtonText": "Verify Code",
             "codeInputPlaceholder": "Enter verification code"
+        },
+        "SignUpScreen": {
+            "driver": "Become Driver",
+            "driverName": "Driver Name",
+            "phoneNumber": "Phone Number",
+            "driverLicense": "Driver License NUmber",
+            "email": "Email Address",
+            "document": "Document Upload",
+            "saveButtonText": "Save"
         }
     },
     "Core": {
