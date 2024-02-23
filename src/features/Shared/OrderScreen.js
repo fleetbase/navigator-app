@@ -29,9 +29,7 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
 const getOrderCurrency = order => {
-    console.log('order_', JSON.stringify(order));
     let currency = order.getAttribute('meta.currency');
-
     // check order for currency attribute too
     if (!currency) {
         currency = order.getAttribute('currency');
@@ -44,7 +42,6 @@ const getOrderCurrency = order => {
             currency = entities[0].currency;
         }
     }
-
     return currency ?? 'USD';
 };
 
@@ -126,7 +123,7 @@ const OrderScreen = ({ navigation, route }) => {
         for (let index = 0; index < waypoints.length; index++) {
             const waypoint = waypoints[index];
 
-            if (!waypoint?.tracking_number || statusesToSkip.includes(waypoint.tracking_number.status_code?.toLowerCase())) {
+            if (!waypoint?.tracking || statusesToSkip.includes(waypoint.tracking?.toLowerCase())) {
                 continue;
             }
 
