@@ -4,11 +4,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import { useFleetbase, useLocale, useMountedState } from 'hooks';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { Camera, useCodeScanner, useCameraDevice } from 'react-native-vision-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen from 'react-native-signature-canvas';
+import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import tailwind from 'tailwind';
 import { getColorCode, isEmpty, logError } from 'utils';
 
@@ -16,7 +16,6 @@ const { width, height } = Dimensions.get('window');
 
 const ProofScreen = ({ navigation, route }) => {
     const { _order, _waypoint, _entity, activity } = route.params;
-
     const signatureScreenRef = useRef();
     const qrCodeScannerRef = useRef();
     const insets = useSafeAreaInsets();
@@ -27,12 +26,14 @@ const ProofScreen = ({ navigation, route }) => {
     const [order, setOrder] = useState(new Order(_order, fleetbase.getAdapter()));
     const [waypoint, setWaypoint] = useState(new Place(_waypoint, fleetbase.getAdapter()));
     const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
+
     const [isLoading, setIsLoading] = useState(false);
     const [isCapturingCode, setIsCapturingCode] = useState(false);
 
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
-    const isScanningProof = activity?.pod_method === 'scan';
-    const isSigningProof = activity?.pod_method === 'signature';
+
+    const isScanningProof = _order?.pod_method === 'scan' || activity?.pod_method === 'scan';
+    const isSigningProof = _order?.pod_method === 'signature' || activity?.pod_method === 'signature';
     const isWaypoint = !isEmpty(_waypoint);
     const isEntity = !isEmpty(_entity);
     const isOrder = !isWaypoint && !isEntity;
