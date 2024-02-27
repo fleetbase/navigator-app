@@ -4,6 +4,7 @@ import PhoneInput from 'components/PhoneInput';
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
+
 import { getColorCode, translate } from 'utils';
 
 const SignUpScreen = ({ navigation }) => {

@@ -5,6 +5,7 @@ import LoginScreen from 'auth/screens/LoginScreen';
 import CreateAccountScreen from 'auth/screens/CreateAccountScreen';
 import ConfigScreen from '../Shared/ConfigScreen';
 import SignUpScreen from './screens/SignUpScreen';
+import OrganizationSwitchScreen from './screens/OrganizationSwitchScreen';
 
 const RootStack = createStackNavigator();
 
@@ -15,6 +16,7 @@ const AuthStack = ({ route }) => {
                 <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
                 <RootStack.Screen name="CreateAccount" component={CreateAccountScreen} options={{ headerShown: false }} />
                 <RootStack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name="OrganizationSwitchScreen" component={OrganizationSwitchScreen} options={{ headerShown: false }} />
                 <RootStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ headerShown: false }} />
             </RootStack.Navigator>
         </SafeAreaProvider>

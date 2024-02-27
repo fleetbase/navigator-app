@@ -39,6 +39,9 @@
             "email": "Email Address",
             "document": "Document Upload",
             "saveButtonText": "Save"
+        },
+        "OrganizationsScreen": {
+            "searchInputPlaceholderText": "Search Organizations..."
         }
     },
     "Core": {
