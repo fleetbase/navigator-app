@@ -5,24 +5,25 @@ import React, { useState } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
 import { translate } from 'utils';
-import { clear, setString } from 'utils/Storage';
+import { clear, setString, remove } from 'utils/Storage';
 
 const ConfigScreen = ({ navigation }) => {
     const { FLEETBASE_HOST, SOCKETCLUSTER_HOST, SOCKETCLUSTER_PORT } = useConfig();
-    const [editedHost, setEditedHost] = useState(FLEETBASE_HOST);
-    const [editedSocketHost, setEditedSocketHost] = useState(SOCKETCLUSTER_HOST);
-    const [editedSocketPort, setEditedSocketPort] = useState(SOCKETCLUSTER_PORT);
+    const [isReseting, setIsReseting] = useState(false);
 
-    const handleEdit = () => {
-        setEditedHost(FLEETBASE_HOST);
-        setEditedSocketHost(SOCKETCLUSTER_HOST);
-        setEditedSocketPort(SOCKETCLUSTER_PORT);
+    const handleReset = () => {
+        setIsReseting(true)
+        remove('_FLEETBASE_HOST');
+        remove('_SOCKET_HOST');
+        remove('_SOCKET_PORT');
+        setIsReseting(false)
+
     };
 
     const handleSave = () => {
-        setString('_FLEETBASE_HOST', editedHost);
-        setString('_SOCKET_HOST', editedSocketHost);
-        setString('_SOCKET_PORT', editedSocketPort);
+        // setString('_FLEETBASE_HOST', editedHost);
+        // setString('_SOCKET_HOST', editedSocketHost);
+        // setString('_SOCKET_PORT', editedSocketPort);
     };
 
     return (
@@ -78,7 +79,7 @@ const ConfigScreen = ({ navigation }) => {
 
                 <View style={tailwind('flex flex-row items-center justify-center px-8')}>
                     <View style={tailwind('flex flex-row items-center justify-center')}>
-                        <TouchableOpacity onPress={handleEdit}>
+                        <TouchableOpacity onPress={handleReset}>
                             <View style={tailwind('btn bg-gray-900 border border-gray-700 ')}>
                                 <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Shared.ConfigScreen.reset')}</Text>
                             </View>
