@@ -154,7 +154,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
                                             </View>
                                         </View>
                                         <View style={tailwind('w-full')}>
-                                            <Text style={(tailwind(`text-xs text-gray-50 ${waypoint.completed ? 'line-through' : ''}`), textStyle)}>{waypoint.address}</Text>
+                                            <Text style={[tailwind(`text-xs text-gray-50 ${waypoint.completed ? 'line-through' : ''}`), textStyle]}>{waypoint.address}</Text>
                                             {waypoint.phone && (
                                                 <TouchableOpacity onPress={() => startCall(waypoint.phone)}>
                                                     <Text style={[tailwind('text-xs text-gray-50'), textStyle]}>{waypoint.phone}</Text>

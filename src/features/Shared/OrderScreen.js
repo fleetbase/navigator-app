@@ -29,9 +29,7 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
 const getOrderCurrency = order => {
-    console.log('order_', JSON.stringify(order));
     let currency = order.getAttribute('meta.currency');
-
     // check order for currency attribute too
     if (!currency) {
         currency = order.getAttribute('currency');
@@ -44,7 +42,6 @@ const getOrderCurrency = order => {
             currency = entities[0].currency;
         }
     }
-
     return currency ?? 'USD';
 };
 
@@ -126,7 +123,7 @@ const OrderScreen = ({ navigation, route }) => {
         for (let index = 0; index < waypoints.length; index++) {
             const waypoint = waypoints[index];
 
-            if (!waypoint?.tracking_number || statusesToSkip.includes(waypoint.tracking_number.status_code?.toLowerCase())) {
+            if (!waypoint?.tracking || statusesToSkip.includes(waypoint.tracking?.toLowerCase())) {
                 continue;
             }
 
@@ -565,20 +562,22 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('px-4 py-2 flex-1 border-b border-blue-700')}>
                                             <Text style={tailwind('font-bold text-white mb-1')}>Current Destination</Text>
                                             <Text style={tailwind('text-blue-50')}>{destination.address}</Text>
-                                            {destination?.tracking_number?.status_code && (
+                                            {destination?.tracking && (
                                                 <View style={tailwind('my-2 flex flex-row')}>
-                                                    <OrderStatusBadge status={destination?.tracking_number?.status_code ?? 'pending'} wrapperStyle={tailwind('flex-grow-0')} />
+                                                    <OrderStatusBadge status={destination?.tracking ?? 'pending'} wrapperStyle={tailwind('flex-grow-0')} />
                                                 </View>
                                             )}
                                         </View>
-                                        <View style={tailwind('flex flex-row')}>
-                                            <TouchableOpacity
-                                                onPress={toggleChangeDestinationWaypoint}
-                                                style={tailwind('flex-1 px-2 py-2 border-r border-blue-700 flex items-center justify-center')}>
-                                                <FontAwesomeIcon icon={faRoute} style={tailwind('text-blue-50 mb-1')} />
-                                                <Text style={tailwind('text-blue-50')}>Change</Text>
-                                            </TouchableOpacity>
-                                        </View>
+                                        {waypointsInProgress.length > 0 && (
+                                            <View style={tailwind('flex flex-row')}>
+                                                <TouchableOpacity
+                                                    onPress={toggleChangeDestinationWaypoint}
+                                                    style={tailwind('flex-1 px-2 py-2 border-r border-blue-700 flex items-center justify-center')}>
+                                                    <FontAwesomeIcon icon={faRoute} style={tailwind('text-blue-50 mb-1')} />
+                                                    <Text style={tailwind('text-blue-50')}>Change</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
                                     </View>
                                 </View>
                             )}
