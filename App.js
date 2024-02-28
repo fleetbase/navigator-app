@@ -132,6 +132,7 @@ const App: () => Node = () => {
             setString('_FLEETBASE_HOST', host);
             setString('_SOCKET_HOST', socketcluster_host);
             setString('_SOCKET_PORT', socketcluster_port);
+            emit('configUrl');
 
             if (navigationRef.current) {
                 navigationRef.current.reset({
@@ -189,6 +190,7 @@ const App: () => Node = () => {
     return (
         <>
             <NavigationContainer
+                ref={navigationRef}
                 linking={linking}
                 fallback={
                     <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>
