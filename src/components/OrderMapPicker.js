@@ -8,7 +8,7 @@ import tailwind from 'tailwind';
 import { deepGet, getColorCode, isEmpty, translate } from 'utils';
 
 function waypointMustHaveId(waypoint) {
-    return typeof waypoint.id === 'string' && waypoint.id.startsWith('place_');
+    return typeof waypoint?.id === 'string' && waypoint.id.startsWith('place_');
 }
 
 function getOrderDestination(order) {
