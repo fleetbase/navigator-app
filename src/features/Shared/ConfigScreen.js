@@ -1,48 +1,57 @@
 import { faWindowClose } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import config from 'config';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
-import { EventRegister } from 'react-native-event-listeners';
 import tailwind from 'tailwind';
 import { translate } from 'utils';
 import { getString, remove } from 'utils/Storage';
 
-const { addEventListener, removeEventListener } = EventRegister;
 const ConfigScreen = ({ navigation }) => {
-    const { FLEETBASE_HOST, SOCKETCLUSTER_HOST, SOCKETCLUSTER_PORT } = config;
-    const [host, setHost] = useState(FLEETBASE_HOST);
-    const [editedSocketHost, setEditedSocketHost] = useState(SOCKETCLUSTER_HOST);
-    const [editedSocketPort, setEditedSocketPort] = useState(SOCKETCLUSTER_PORT);
-
+    let { FLEETBASE_HOST, SOCKETCLUSTER_HOST, SOCKETCLUSTER_PORT } = config;
     let _FLEETBASE_HOST = getString('_FLEETBASE_HOST');
-    let _SOCKET_HOST = getString('_SOCKET_HOST');
-    let _SOCKET_PORT = getString('_SOCKET_PORT');
+    let _SOCKETCLUSTER_HOST = getString('_SOCKETCLUSTER_HOST');
+    let _SOCKETCLUSTER_PORT = getString('_SOCKETCLUSTER_PORT');
 
-    const [isReseting, setIsReseting] = useState(false);
+    if (_FLEETBASE_HOST) {
+        FLEETBASE_HOST = _FLEETBASE_HOST;
+    }
 
-    useEffect(() => {
-        const onUrlChange = addEventListener('configUrl', () => {
-            setIsReseting(!isReseting);
-        });
+    if (_SOCKETCLUSTER_HOST) {
+        SOCKETCLUSTER_HOST = _SOCKETCLUSTER_HOST;
+    }
 
-        return () => {
-            removeEventListener(onUrlChange);
-        };
-    }, []);
+    if (_SOCKETCLUSTER_PORT) {
+        SOCKETCLUSTER_PORT = _SOCKETCLUSTER_PORT;
+    }
 
-    useEffect(() => {
-        setHost(_FLEETBASE_HOST ? _FLEETBASE_HOST : FLEETBASE_HOST);
-        setEditedSocketHost(_SOCKET_HOST ? _SOCKET_HOST : SOCKETCLUSTER_HOST);
-        setEditedSocketPort(_SOCKET_PORT ? _SOCKET_PORT : SOCKETCLUSTER_PORT);
-    }, [isReseting]);
+    const [host, setHost] = useState(FLEETBASE_HOST);
+    const [socketHost, setSocketHost] = useState(SOCKETCLUSTER_HOST);
+    const [socketPort, setSocketPort] = useState(SOCKETCLUSTER_PORT);
 
-    const handleReset = () => {
-        remove('_FLEETBASE_HOST');
-        remove('_FLEETBASE_KEY');
-        remove('_SOCKET_HOST');
-        remove('_SOCKET_PORT');
-        setIsReseting(!isReseting);
+    const removeInstanceLinkValue = key => {
+        remove(key);
+        switch (key) {
+            case '_FLEETBASE_HOST':
+                setHost(config.FLEETBASE_HOST);
+                break;
+
+            case '_SOCKETCLUSTER_HOST':
+                setSocketHost(config.SOCKETCLUSTER_HOST);
+                break;
+
+            case '_SOCKETCLUSTER_PORT':
+                setSocketPort(config.SOCKETCLUSTER_PORT);
+                break;
+        }
+    };
+
+    const reset = () => {
+        console.log('RESETING INSTANCE LINK VALUES!!!');
+        removeInstanceLinkValue('_FLEETBASE_HOST');
+        removeInstanceLinkValue('_FLEETBASE_KEY');
+        removeInstanceLinkValue('_SOCKETCLUSTER_HOST');
+        removeInstanceLinkValue('_SOCKETCLUSTER_PORT');
     };
 
     return (
@@ -78,7 +87,7 @@ const ConfigScreen = ({ navigation }) => {
 
                     <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
                         <Text style={tailwind('text-gray-50 text-xs')} numberOfLines={1}>
-                            {editedSocketHost}
+                            {socketHost}
                         </Text>
                     </View>
                 </View>
@@ -91,14 +100,14 @@ const ConfigScreen = ({ navigation }) => {
 
                     <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
                         <Text style={tailwind('text-gray-50 text-xs')} numberOfLines={1}>
-                            {editedSocketPort}
+                            {socketPort}
                         </Text>
                     </View>
                 </View>
 
                 <View style={tailwind('flex items-start justify-start')}>
                     <View style={tailwind('flex flex-row items-center justify-center')}>
-                        <TouchableOpacity onPress={handleReset}>
+                        <TouchableOpacity onPress={reset}>
                             <View style={tailwind('btn bg-gray-900 border border-gray-700 ')}>
                                 <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Shared.ConfigScreen.reset')}</Text>
                             </View>

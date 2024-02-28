@@ -13,7 +13,6 @@ import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { getString, setString } from 'utils/Storage';
 import { config } from './src/utils';
-
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -132,7 +131,7 @@ const App: () => Node = () => {
             setString('_FLEETBASE_HOST', host);
             setString('_SOCKET_HOST', socketcluster_host);
             setString('_SOCKET_PORT', socketcluster_port);
-            emit('configUrl');
+            emit('instanceLinked', { key, host, socketcluster_host, socketcluster_port });
 
             if (navigationRef.current) {
                 navigationRef.current.reset({
