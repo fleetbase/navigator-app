@@ -131,7 +131,6 @@ const App: () => Node = () => {
             setString('_FLEETBASE_HOST', host);
             setString('_SOCKET_HOST', socketcluster_host);
             setString('_SOCKET_PORT', socketcluster_port);
-            emit('instanceLinked', { key, host, socketcluster_host, socketcluster_port });
 
             if (navigationRef.current) {
                 navigationRef.current.reset({

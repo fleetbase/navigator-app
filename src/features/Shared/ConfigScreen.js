@@ -47,7 +47,6 @@ const ConfigScreen = ({ navigation }) => {
     };
 
     const reset = () => {
-        console.log('RESETING INSTANCE LINK VALUES!!!');
         removeInstanceLinkValue('_FLEETBASE_HOST');
         removeInstanceLinkValue('_FLEETBASE_KEY');
         removeInstanceLinkValue('_SOCKETCLUSTER_HOST');
