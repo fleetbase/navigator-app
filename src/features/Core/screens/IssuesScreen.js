@@ -1,22 +1,21 @@
 import { useDriver, useFleetbase } from 'hooks';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
 import { getColorCode } from 'utils';
 
-const IssueListScreen = ({ navigation, route }) => {
-    // const { currentIssueListScreen } = route.params;
+const IssuestScreen = () => {
     const [driver] = useDriver();
     const fleetbase = useFleetbase();
-    const [issues, setIssueListScreens] = useState([]);
+    const [issues, setIssueList] = useState([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const fetchIssues = async () => {
         try {
             const adapter = fleetbase.getAdapter();
-            const issues = await adapter.get('issues');
-            console.log('list------>', issues);
-            return issues;
+            const response = await adapter.get('issues');
+            setIssueList(response);
+            return response;
         } catch (error) {
             console.error('Error fetching  issue:', error);
             return [];
@@ -28,11 +27,11 @@ const IssueListScreen = ({ navigation, route }) => {
     }, []);
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity onPress={() => confirmSwitchIssueListScreen(item.id)}>
+        <TouchableOpacity onPress={() => confirmSwitchIssuestScreen(item.id)}>
             <View style={[tailwind('p-1')]}>
                 <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
                     <Text style={tailwind('text-gray-50 text-base')} numberOfLines={1}>
-                        <Text>{item?.getAttribute('name')}</Text>
+                        <Text>{item.driver_name}</Text>
                     </Text>
                 </View>
             </View>
@@ -43,7 +42,7 @@ const IssueListScreen = ({ navigation, route }) => {
         <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
             <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
                 <View>
-                    <Text style={tailwind('font-bold text-white text-base')}>Issue</Text>
+                    <Text style={tailwind('font-bold text-white text-base')}>Issues</Text>
                 </View>
             </View>
 
@@ -57,4 +56,4 @@ const IssueListScreen = ({ navigation, route }) => {
     );
 };
 
-export default IssueListScreen;
+export default IssuestScreen;
