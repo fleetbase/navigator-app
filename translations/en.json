@@ -73,6 +73,14 @@
             "tip": "Tip",
             "deliveryTip": "Delivery Tip",
             "total": "Total"
+        },
+        "ConfigScreen": {
+            "title": "Instance Configuration",
+            "host": "Host",
+            "socket": "Socket host",
+            "port": "Socket port",
+            "reset": "Reset",
+            "save": "Save"
         }
     },
     "components": {

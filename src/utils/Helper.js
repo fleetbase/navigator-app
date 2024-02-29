@@ -475,8 +475,8 @@ export default class HelperUtil {
     }
 
     static async createSocketAndListen(channelId, callback) {
-        let hostname = getString('_SOCKET_HOST');
-        let port = getString('_SOCKET_PORT');
+        let hostname = getString('_SOCKETCLUSTER_HOST');
+        let port = getString('_SOCKETCLUSTER_PORT');
 
         // IF no hostname set from instance link use env
         if (!hostname) {
