@@ -1,4 +1,4 @@
-import { faCalendarDay, faClipboardList, faRoute, faUser, faWallet } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarDay, faClipboardList, faFileAlt, faRoute, faUser, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useRoute } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import { tailwind } from 'tailwind';
 import { createNewOrderLocalNotificationObject, getColorCode, listenForOrdersFromSocket, logError } from 'utils';
 import { syncDevice } from 'utils/Auth';
 import { getCurrentLocation, trackDriver } from 'utils/Geo';
+import IssueListScreen from './IssueListScreen';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
@@ -137,6 +138,9 @@ const MainScreen = ({ navigation, route }) => {
                             case 'Account':
                                 icon = faUser;
                                 break;
+                            case 'Issue':
+                                icon = faFileAlt;
+                                break;
                         }
                         // You can return any component that you like here!
                         return <FontAwesomeIcon icon={icon} size={isAndroid ? 23 : size} color={focused ? getColorCode('text-blue-400') : getColorCode('text-gray-600')} />;
@@ -155,6 +159,7 @@ const MainScreen = ({ navigation, route }) => {
                 {/* <Tab.Screen key="routes" name="Routes" component={RoutesScreen} /> */}
                 {/* <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} /> */}
                 {/* <Tab.Screen key="wallet" name="Wallet" component={WalletScreen} /> */}
+                <Tab.Screen key="issue" name="Issue" component={IssueListScreen} />
                 <Tab.Screen key="account" name="Account" component={AccountStack} />
             </Tab.Navigator>
         </>

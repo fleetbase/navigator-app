@@ -159,19 +159,6 @@ const AccountScreen = ({ navigation }) => {
                                     </View>
                                 </TouchableOpacity>
                             </View>
-                            <View>
-                                <TouchableOpacity onPress={() => navigation.navigate('IssueScreen', { attributes: driver.serialize() })}>
-                                    <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
-                                        <View style={tailwind('flex flex-row items-center')}>
-                                            <FontAwesomeIcon icon={faFileAlt} size={18} style={tailwind('mr-3 text-gray-50')} />
-                                            <Text style={tailwind('text-gray-50 text-base')}>{translate('Account.AccountScreen.issue')}</Text>
-                                        </View>
-                                        <View>
-                                            <FontAwesomeIcon icon={faChevronRight} size={18} style={tailwind('text-gray-600')} />
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
                         </View>
                         <View style={tailwind('p-4')}>
                             <View style={tailwind('flex flex-row items-center justify-center')}>
