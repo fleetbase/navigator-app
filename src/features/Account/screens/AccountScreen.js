@@ -1,4 +1,4 @@
-import { faBuilding, faChevronRight, faIdBadge, faLink, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faChevronRight, faIdBadge, faLink, faUser, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
@@ -152,6 +152,19 @@ const AccountScreen = ({ navigation }) => {
                                         <View style={tailwind('flex flex-row items-center')}>
                                             <FontAwesomeIcon icon={faLink} size={18} style={tailwind('mr-3 text-gray-50')} />
                                             <Text style={tailwind('text-gray-50 text-base')}>{translate('Account.AccountScreen.config')}</Text>
+                                        </View>
+                                        <View>
+                                            <FontAwesomeIcon icon={faChevronRight} size={18} style={tailwind('text-gray-600')} />
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                            <View>
+                                <TouchableOpacity onPress={() => navigation.navigate('IssueScreen', { attributes: driver.serialize() })}>
+                                    <View style={tailwind('flex flex-row items-center justify-between p-4 border-b border-gray-700')}>
+                                        <View style={tailwind('flex flex-row items-center')}>
+                                            <FontAwesomeIcon icon={faFileAlt} size={18} style={tailwind('mr-3 text-gray-50')} />
+                                            <Text style={tailwind('text-gray-50 text-base')}>{translate('Account.AccountScreen.issue')}</Text>
                                         </View>
                                         <View>
                                             <FontAwesomeIcon icon={faChevronRight} size={18} style={tailwind('text-gray-600')} />

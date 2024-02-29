@@ -6,6 +6,7 @@ import LoginScreen from 'auth/screens/LoginScreen';
 import CreateAccountScreen from 'auth/screens/CreateAccountScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import ChangePasswordScreen from './screens/ChangePasswordScreen';
+import IssueScreen from './screens/IssueScreen';
 import OrderScreen from 'shared/OrderScreen';
 import SearchScreen from 'core/screens/SearchScreen';
 import ConfigScreen from '../Shared/ConfigScreen';
@@ -35,6 +36,7 @@ const AccountStack = ({ route }) => {
                 <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 <RootStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ headerShown: false }} />
                 <RootStack.Screen name="Organization" component={OrganizationScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name="IssueScreen" component={IssueScreen} options={{ headerShown: false }} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );

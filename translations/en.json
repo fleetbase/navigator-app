@@ -11,6 +11,12 @@
             "profileLinkText": "Profile",
             "ordersLinkText": "Orders",
             "placesLinkText": "Places",
+            "issues": "Issues",
+            "type": "Issue type",
+            "category": "Issue category",
+            "report": "Issue report",
+            "priority": "Issue priority",
+            "save": "Save Issue",
             "signoutButtonText": "Sign Out"
         },
         "EditProfileScreen": {
