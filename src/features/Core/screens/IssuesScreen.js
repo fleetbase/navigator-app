@@ -29,7 +29,7 @@ const IssuesScreen = () => {
     }, []);
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={tailwind('bg-yellow-900 mb-2')} onPress={() => confirmSwitchIssuestScreen(item.id)}>
+        <TouchableOpacity style={tailwind('bg-yellow-900 mb-2')}>
             <View style={[tailwind('border-b border-gray-800 py-3 px-3 flex flex-row items-start justify-between')]}>
                 <View style={[tailwind('flex flex-col')]}>
                     <Text style={[tailwind('text-white font-semibold mb-1')]}>Title: {item.report}</Text>
@@ -64,7 +64,7 @@ const IssuesScreen = () => {
                             navigation.navigate('IssueScreen');
                         }}>
                         <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
-                            <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Account.AccountScreen.create')}</Text>
+                            <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.IssueScreen.create')}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>
