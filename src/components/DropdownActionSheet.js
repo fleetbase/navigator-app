@@ -1,7 +1,7 @@
 import { faAngleDown, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import React, { createRef } from 'react';
+import React, { createRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import ActionSheet from 'react-native-actions-sheet';
 import tailwind from 'tailwind';
@@ -11,6 +11,13 @@ import { getColorCode } from 'utils';
 const DropdownActionSheet = ({ items, onChange, title }) => {
     const actionSheetRef = createRef();
     const navigation = useNavigation();
+    const [selectedItem, setSelectedItem] = useState(null);
+
+    const handleItemSelection = item => {
+        setSelectedItem(item);
+        onChange(item.value);
+        actionSheetRef.current?.hide();
+    };
 
     return (
         <View style={tailwind('mb-4')}>
@@ -18,8 +25,8 @@ const DropdownActionSheet = ({ items, onChange, title }) => {
                 <View style={tailwind('btn bg-gray-900 py-0 pl-4 pr-2')}>
                     <View style={[tailwind('flex flex-col justify-between')]}>
                         <View style={tailwind('border-blue-700 py-2 pr-4 flex flex-row items-center')}>
-                            <Text style={tailwind('font-semibold text-blue-50 text-base')}>{title}</Text>
-                            <FontAwesomeIcon icon={faAngleDown} style={tailwind('text-white')} />
+                            <Text style={tailwind('font-semibold text-blue-50 text-base')}>{selectedItem ? selectedItem.label : title}</Text>
+                            {selectedItem ? '' : <FontAwesomeIcon icon={faAngleDown} style={tailwind('text-white')} />}
                         </View>
                     </View>
                 </View>
@@ -35,7 +42,7 @@ const DropdownActionSheet = ({ items, onChange, title }) => {
                 <View>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between mb-2')}>
                         <View style={tailwind('flex flex-row items-center')}>
-                            <Text style={tailwind('text-lg text-white font-semibold')}>{title}</Text>
+                            <Text style={tailwind('text-lg text-white font-semibold')}>{selectedItem ? selectedItem.label : title}</Text>
                         </View>
                         <View>
                             <TouchableOpacity onPress={() => actionSheetRef.current?.hide()}>
@@ -47,11 +54,7 @@ const DropdownActionSheet = ({ items, onChange, title }) => {
                     </View>
                     <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                         {items?.map(item => (
-                            <TouchableOpacity
-                                key={item.value}
-                                onPress={() => {
-                                    onChange(item.value, navigation.goBack());
-                                }}>
+                            <TouchableOpacity key={item.value} onPress={() => handleItemSelection(item)}>
                                 <View style={tailwind('flex flex-row items-center px-5 py-4 border-b border-gray-900')}>
                                     <Text style={tailwind('font-semibold text-lg text-gray-100')}>{item.label}</Text>
                                 </View>
