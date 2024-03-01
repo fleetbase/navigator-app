@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import tailwind from 'tailwind';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { IssueCategory, IssuePriority, IssueType } from 'constant/Enum';
-import { useFleetbase } from 'hooks';
-import { getCurrentLocation, logError } from 'utils';
+import { useDriver, useFleetbase } from 'hooks';
+import React, { useState } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import tailwind from 'tailwind';
+import { getColorCode, getCurrentLocation, logError, translate } from 'utils';
 import DropdownActionSheet from '../../../components/DropdownActionSheet';
-import { getColorCode, translate } from 'utils';
 
 const IssueScreen = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const fleetbase = useFleetbase();
+    const [driver] = useDriver();
+    const [driverId] = useState(driver.getAttribute('id'));
+    const [vehicleId] = useState(driver.getAttribute('vehicle.id'));
 
     const [issueType, setIssueType] = useState('');
     const [category, setCategory] = useState('');
@@ -33,6 +35,7 @@ const IssueScreen = ({ navigation }) => {
                 priority,
                 report,
                 location: location,
+                driver: driverId,
             })
             .then(() => {
                 setIsLoading(false);
@@ -45,7 +48,7 @@ const IssueScreen = ({ navigation }) => {
     };
 
     const validateInputs = () => {
-        if (!issueType || !category || !report.trim() || !priority) { // Adjusted condition to include priority
+        if (!issueType || !category || !report.trim() || !priority) {
             setError('Please enter a required value.');
             return false;
         }

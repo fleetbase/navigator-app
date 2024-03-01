@@ -41,8 +41,11 @@
         "IssueScreen": {
             "issues": "Issues",
             "type": "Issue type",
+            "selectType": "Select type",
             "category": "Issue category",
+            "categoryType": "Select category",
             "report": "Issue report",
+            "selectPriority": "Select priority",
             "priority": "Issue priority",
             "save": "Save Issue",
             "create": "Create Issue"
