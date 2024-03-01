@@ -1,14 +1,12 @@
+import React, { useState } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import tailwind from 'tailwind';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { IssueCategory, IssuePriority, IssueType } from 'constant/Enum';
 import { useFleetbase } from 'hooks';
-import React, { useState } from 'react';
 import { getCurrentLocation, logError } from 'utils';
 import DropdownActionSheet from '../../../components/DropdownActionSheet';
-
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import tailwind from 'tailwind';
-
 import { getColorCode, translate } from 'utils';
 
 const IssueScreen = ({ navigation }) => {
@@ -19,12 +17,16 @@ const IssueScreen = ({ navigation }) => {
     const [category, setCategory] = useState('');
     const [priority, setPriority] = useState('');
     const [report, setReport] = useState('');
+    const [error, setError] = useState('');
 
     const saveIssue = () => {
+        if (!validateInputs()) {
+            return;
+        }
         setIsLoading(true);
         const location = getCurrentLocation().then();
         const adapter = fleetbase.getAdapter();
-        return adapter
+        adapter
             .post('issues', {
                 issueType,
                 category,
@@ -32,8 +34,23 @@ const IssueScreen = ({ navigation }) => {
                 report,
                 location: location,
             })
-            .then(setIsLoading(false), navigation.goBack())
-            .catch(logError);
+            .then(() => {
+                setIsLoading(false);
+                navigation.goBack();
+            })
+            .catch(error => {
+                setIsLoading(false);
+                logError(error);
+            });
+    };
+
+    const validateInputs = () => {
+        if (!issueType || !category || !report.trim() || !priority) { // Adjusted condition to include priority
+            setError('Please enter a required value.');
+            return false;
+        }
+        setError('');
+        return true;
     };
 
     return (
@@ -58,6 +75,7 @@ const IssueScreen = ({ navigation }) => {
                                 onChange={setIssueType}
                                 title={translate('Core.IssueScreen.selectType')}
                             />
+                            {error && !issueType ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.report')}</Text>
@@ -66,10 +84,11 @@ const IssueScreen = ({ navigation }) => {
                                 onChangeText={setReport}
                                 numberOfLines={4}
                                 multiline={true}
-                                type={'text'}
+                                placeholder={translate('Core.IssueScreen.enterReport')}
                                 placeholderTextColor={getColorCode('text-gray-600')}
                                 style={tailwind('form-input text-white h-28')}
                             />
+                            {error && !report.trim() ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
 
                         <View style={tailwind('mb-4')}>
@@ -81,6 +100,7 @@ const IssueScreen = ({ navigation }) => {
                                 onChange={setCategory}
                                 title={translate('Core.IssueScreen.selectCategory')}
                             />
+                            {error && !category ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.priority')}</Text>
@@ -91,6 +111,7 @@ const IssueScreen = ({ navigation }) => {
                                 onChange={setPriority}
                                 title={translate('Core.IssueScreen.selectPriority')}
                             />
+                            {error && !priority ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <TouchableOpacity onPress={saveIssue} disabled={isLoading}>
                             <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
