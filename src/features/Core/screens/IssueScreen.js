@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { IssueCategory, IssuePriority, IssueType } from 'constant/Enum';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import tailwind from 'tailwind';
 import { getColorCode, getCurrentLocation, logError, translate } from 'utils';
 import DropdownActionSheet from '../../../components/DropdownActionSheet';
@@ -39,9 +40,7 @@ const IssueScreen = ({ navigation, route }) => {
         const location = getCurrentLocation().then();
         const adapter = fleetbase.getAdapter();
 
-        // Check if issueId is available (assuming issueId is passed as a prop)
         if (issue.issue?.id) {
-            // If issueId is available, it means it's an update request
             adapter
                 .put(`issues/${issue.issue.id}`, {
                     type,
@@ -52,6 +51,10 @@ const IssueScreen = ({ navigation, route }) => {
                     driver: driverId,
                 })
                 .then(() => {
+                    Toast.show({
+                        type: 'success',
+                        text1: `Successfully updated`,
+                    });
                     setIsLoading(false);
                     navigation.goBack();
                 })
@@ -60,7 +63,6 @@ const IssueScreen = ({ navigation, route }) => {
                     logError(error);
                 });
         } else {
-            // If issueId is not available, it's a new issue creation
             adapter
                 .post('issues', {
                     type,
@@ -71,6 +73,10 @@ const IssueScreen = ({ navigation, route }) => {
                     driver: driverId,
                 })
                 .then(() => {
+                    Toast.show({
+                        type: 'success',
+                        text1: `Successfully created`,
+                    });
                     setIsLoading(false);
                     navigation.goBack();
                 })
@@ -82,10 +88,27 @@ const IssueScreen = ({ navigation, route }) => {
     };
 
     const deleteIssues = () => {
+        Alert.alert('Confirmation', 'Are you sure you want to delete this issue?', [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'Delete',
+                onPress: () => confirmDelete(),
+            },
+        ]);
+    };
+
+    const confirmDelete = () => {
         const adapter = fleetbase.getAdapter();
         adapter
             .delete(`issues/${issue.issue.id}`)
             .then(() => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Successfully deleted`,
+                });
                 setIsLoading(false);
                 navigation.goBack();
             })
