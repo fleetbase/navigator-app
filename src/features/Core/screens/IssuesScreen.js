@@ -1,4 +1,4 @@
-import { useDriver, useFleetbase } from 'hooks';
+import { useDriver, useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
@@ -7,6 +7,7 @@ import { getColorCode, translate } from 'utils';
 
 const IssuesScreen = () => {
     const navigation = useNavigation();
+    const isMounted = useMountedState();
     const [driver] = useDriver();
     const fleetbase = useFleetbase();
     const [issues, setIssueList] = useState([]);
@@ -27,6 +28,14 @@ const IssuesScreen = () => {
     useEffect(() => {
         fetchIssues();
     }, []);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchIssues();
+        });
+
+        return unsubscribe;
+    }, [isMounted]);
 
     const renderItem = ({ item }) => (
         <TouchableOpacity style={tailwind('bg-yellow-900 mb-2')} onPress={() => navigation.navigate('IssueScreen', { issue: item })}>
