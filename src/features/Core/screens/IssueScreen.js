@@ -40,10 +40,10 @@ const IssueScreen = ({ navigation, route }) => {
         const adapter = fleetbase.getAdapter();
 
         // Check if issueId is available (assuming issueId is passed as a prop)
-        if (issueId.id) {
+        if (issue.issue?.id) {
             // If issueId is available, it means it's an update request
             adapter
-                .put(`issues/${issueId}`, {
+                .put(`issues/${issue.issue.id}`, {
                     type,
                     category,
                     priority,
@@ -59,8 +59,7 @@ const IssueScreen = ({ navigation, route }) => {
                     setIsLoading(false);
                     logError(error);
                 });
-        } else
-        {
+        } else {
             // If issueId is not available, it's a new issue creation
             adapter
                 .post('issues', {
@@ -80,6 +79,20 @@ const IssueScreen = ({ navigation, route }) => {
                     logError(error);
                 });
         }
+    };
+
+    const deleteIssues = () => {
+        const adapter = fleetbase.getAdapter();
+        adapter
+            .delete(`issues/${issue.issue.id}`)
+            .then(() => {
+                setIsLoading(false);
+                navigation.goBack();
+            })
+            .catch(error => {
+                setIsLoading(false);
+                logError(error);
+            });
     };
 
     const validateInputs = () => {
@@ -158,6 +171,11 @@ const IssueScreen = ({ navigation, route }) => {
                             <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
                                 {isLoading && <ActivityIndicator color={getColorCode('text-gray-50')} style={tailwind('mr-2')} />}
                                 <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.IssueScreen.save')}</Text>
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={deleteIssues} disabled={isLoading}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
+                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('delete')}</Text>
                             </View>
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
