@@ -38,17 +38,36 @@ const IssuesScreen = () => {
     }, [isMounted]);
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={tailwind('bg-yellow-900 mb-2')} onPress={() => navigation.navigate('IssueScreen', { issue: item, isEdit: true })}>
-            <View style={[tailwind('border-b border-gray-800 py-3 px-3 flex flex-row items-start justify-between')]}>
-                <View style={[tailwind('flex flex-col')]}>
-                    <Text style={[tailwind('text-white font-semibold mb-1')]}>Title: {item.report}</Text>
-                    <View style={[tailwind('flex flex-row')]}>
-                        <Text style={[tailwind('text-gray-100')]}>drive name: {item.driver_name}</Text>
-                        <Text style={[tailwind('text-gray-100 mx-1')]}>vehicle name: {item.vehicle_name}</Text>
+        <View style={tailwind('p-3')}>
+            <TouchableOpacity
+                style={tailwind('bg-gray-900 border border-gray-800 rounded-xl shadow-sm w-full ')}
+                onPress={() => navigation.navigate('IssueScreen', { issue: item, isEdit: true })}>
+                <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                    <View style={tailwind('flex-1')}>
+                        <Text style={tailwind('text-gray-100')}>Report:</Text>
+                    </View>
+                    <View style={tailwind('flex-1 flex-col items-end')}>
+                        <Text style={tailwind('text-gray-100')}>{item.report}</Text>
                     </View>
                 </View>
-            </View>
-        </TouchableOpacity>
+                <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                    <View style={tailwind('flex-1')}>
+                        <Text style={tailwind('text-gray-100')}>Drive name: </Text>
+                    </View>
+                    <View style={tailwind('flex-1 flex-col items-end')}>
+                        <Text style={tailwind('text-gray-100')}>{item.driver_name}</Text>
+                    </View>
+                </View>
+                <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                    <View style={tailwind('flex-1')}>
+                        <Text style={tailwind('text-gray-100')}>Vehicle name:</Text>
+                    </View>
+                    <View style={tailwind('flex-1 flex-col items-end')}>
+                        <Text style={tailwind('text-gray-100')}>{item.vehicle_name}</Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        </View>
     );
 
     return (

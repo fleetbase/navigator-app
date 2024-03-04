@@ -28,14 +28,12 @@ const DropdownActionSheet = ({ items, onChange, title, value }) => {
 
     return (
         <View style={tailwind('mb-4')}>
-            <TouchableOpacity style={tailwind('flex flex-row items-start px-4 pb-2 mt-1')} onPress={() => actionSheetRef.current?.setModalVisible()}>
-                <View style={tailwind('btn bg-gray-900 py-0 pl-4 pr-2')}>
-                    <View style={[tailwind('flex flex-col justify-between')]}>
-                        <View style={tailwind('border-blue-700 py-2 pr-4 flex flex-row items-center')}>
-                            <Text style={tailwind('font-semibold text-blue-50 text-base')}>{selectedItem ? selectedItem.label : title}</Text>
-                            {selectedItem ? '' : <FontAwesomeIcon icon={faAngleDown} style={tailwind('text-white')} />}
-                        </View>
+            <TouchableOpacity onPress={() => actionSheetRef.current?.setModalVisible()}>
+                <View style={tailwind('flex flex-row items-center justify-between pb-1  bg-gray-900 border border-gray-700 rounded-lg  px-2')}>
+                    <View style={tailwind('border-blue-700 py-2 pr-4 flex flex-row items-center')}>
+                        <Text style={[tailwind('font-semibold text-blue-50 text-base'), selectedItem && tailwind('px-2')]}>{selectedItem ? selectedItem.label : title}</Text>
                     </View>
+                    <View style={tailwind('flex flex-row items-center')}>{selectedItem ? '' : <FontAwesomeIcon icon={faAngleDown} style={tailwind('text-white')} />}</View>
                 </View>
             </TouchableOpacity>
             <ActionSheet

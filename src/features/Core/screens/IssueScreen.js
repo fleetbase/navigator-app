@@ -132,7 +132,11 @@ const IssueScreen = ({ navigation, route }) => {
         <View style={[tailwind('w-full h-full bg-gray-800')]}>
             <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
                 <View style={tailwind('flex flex-row items-center justify-between p-4')}>
-                    <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.issues').slice(0, -1)}</Text>
+                    {issue.isEdit ? (
+                        <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.update')}</Text>
+                    ) : (
+                        <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.create')}</Text>
+                    )}
                     <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('mr-4')}>
                         <View style={tailwind('rounded-full bg-gray-900 w-10 h-10 flex items-center justify-center')}>
                             <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-400')} />
@@ -141,9 +145,20 @@ const IssueScreen = ({ navigation, route }) => {
                 </View>
                 <View style={tailwind('flex w-full h-full')}>
                     <KeyboardAvoidingView style={tailwind('p-4')}>
-                        <View style={tailwind('mb-4')}>
+                        <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.type')}</Text>
-                            {isEdit.isEdit ? <Text style={tailwind('text-white')}>{type}</Text> : <></>}
+                            {isEdit.isEdit ? (
+                                <Text style={tailwind('text-white')}>{type}</Text>
+                            ) : (
+                                <DropdownActionSheet
+                                    value={type}
+                                    items={Object.keys(IssueType).map(type => {
+                                        return { label: IssueType[type], value: type };
+                                    })}
+                                    onChange={setCategory}
+                                    title={translate('Core.IssueScreen.selectType')}
+                                />
+                            )}
 
                             {error && !type ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
@@ -158,10 +173,10 @@ const IssueScreen = ({ navigation, route }) => {
                                 placeholderTextColor={getColorCode('text-gray-600')}
                                 style={tailwind('form-input text-white h-28')}
                             />
-                            {error && !report.trim() ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
+                            {error && !report?.trim() ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
 
-                        <View style={tailwind('mb-4')}>
+                        <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.category')}</Text>
                             {isEdit.isEdit ? (
                                 <Text style={tailwind('text-white')}>{category}</Text>
@@ -172,12 +187,12 @@ const IssueScreen = ({ navigation, route }) => {
                                         return { label: IssueCategory[category], value: category };
                                     })}
                                     onChange={setCategory}
-                                    title={translate('Core.IssueScreen.selectCategory')}
+                                    title={'Select category'}
                                 />
                             )}
                             {error && !category ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
-                        <View style={tailwind('mb-4')}>
+                        <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.priority')}</Text>
                             {isEdit.isEdit ? (
                                 <Text style={tailwind('text-white')}>{priority}</Text>
@@ -203,7 +218,7 @@ const IssueScreen = ({ navigation, route }) => {
                         {isEdit.isEdit && (
                             <TouchableOpacity onPress={deleteIssues} disabled={isLoading} style={tailwind('flex')}>
                                 <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
-                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('delete')}</Text>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>Delete</Text>
                                 </View>
                             </TouchableOpacity>
                         )}

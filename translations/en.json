@@ -48,7 +48,9 @@
             "selectPriority": "Select priority",
             "priority": "Issue priority",
             "save": "Save Issue",
-            "create": "Create Issue"
+            "delete": "Delete",
+            "create": "Create Issue",
+            "update": "Update Report"
         }
     },
     "Exceptions": {
