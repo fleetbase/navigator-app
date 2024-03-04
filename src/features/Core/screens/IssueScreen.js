@@ -11,6 +11,7 @@ import DropdownActionSheet from '../../../components/DropdownActionSheet';
 
 const IssueScreen = ({ navigation, route }) => {
     const issue = route.params;
+    const isEdit = route.params;
     const [isLoading, setIsLoading] = useState(false);
     const fleetbase = useFleetbase();
     const [driver] = useDriver();
@@ -142,14 +143,8 @@ const IssueScreen = ({ navigation, route }) => {
                     <KeyboardAvoidingView style={tailwind('p-4')}>
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.type')}</Text>
-                            <DropdownActionSheet
-                                value={type}
-                                items={Object.keys(IssueType).map(type => {
-                                    return { label: IssueType[type], value: type };
-                                })}
-                                onChange={setType}
-                                title={translate('Core.IssueScreen.selectType')}
-                            />
+                            {isEdit.isEdit ? <Text style={tailwind('text-white')}>{type}</Text> : <></>}
+
                             {error && !type ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={tailwind('mb-4')}>
@@ -168,39 +163,50 @@ const IssueScreen = ({ navigation, route }) => {
 
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.category')}</Text>
-                            <DropdownActionSheet
-                                value={category}
-                                items={Object.keys(IssueCategory).map(category => {
-                                    return { label: IssueCategory[category], value: category };
-                                })}
-                                onChange={setCategory}
-                                title={translate('Core.IssueScreen.selectCategory')}
-                            />
+                            {isEdit.isEdit ? (
+                                <Text style={tailwind('text-white')}>{category}</Text>
+                            ) : (
+                                <DropdownActionSheet
+                                    value={category}
+                                    items={Object.keys(IssueCategory).map(category => {
+                                        return { label: IssueCategory[category], value: category };
+                                    })}
+                                    onChange={setCategory}
+                                    title={translate('Core.IssueScreen.selectCategory')}
+                                />
+                            )}
                             {error && !category ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.priority')}</Text>
-                            <DropdownActionSheet
-                                value={priority}
-                                items={Object.keys(IssuePriority).map(priority => {
-                                    return { label: IssuePriority[priority], value: priority };
-                                })}
-                                onChange={setPriority}
-                                title={translate('Core.IssueScreen.selectPriority')}
-                            />
+                            {isEdit.isEdit ? (
+                                <Text style={tailwind('text-white')}>{priority}</Text>
+                            ) : (
+                                <DropdownActionSheet
+                                    value={priority}
+                                    items={Object.keys(IssuePriority).map(priority => {
+                                        return { label: IssuePriority[priority], value: priority };
+                                    })}
+                                    onChange={setPriority}
+                                    title={translate('Core.IssueScreen.selectPriority')}
+                                />
+                            )}
                             {error && !priority ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
-                        <TouchableOpacity onPress={saveIssue} disabled={isLoading}>
-                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
+
+                        <TouchableOpacity onPress={saveIssue} disabled={isLoading} style={tailwind('flex')}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4 ')}>
                                 {isLoading && <ActivityIndicator color={getColorCode('text-gray-50')} style={tailwind('mr-2')} />}
                                 <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.IssueScreen.save')}</Text>
                             </View>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={deleteIssues} disabled={isLoading}>
-                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
-                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('delete')}</Text>
-                            </View>
-                        </TouchableOpacity>
+                        {isEdit.isEdit && (
+                            <TouchableOpacity onPress={deleteIssues} disabled={isLoading} style={tailwind('flex')}>
+                                <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('delete')}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
                     </KeyboardAvoidingView>
                 </View>
             </Pressable>
