@@ -120,7 +120,7 @@ const IssueScreen = ({ navigation, route }) => {
     };
 
     const validateInputs = () => {
-        if (!type || !category || !report.trim() || !priority) {
+        if (!type || !category || !priority || !report.trim()) {
             setError('Please enter a required value.');
             return false;
         }
@@ -155,7 +155,7 @@ const IssueScreen = ({ navigation, route }) => {
                                     items={Object.keys(IssueType).map(type => {
                                         return { label: IssueType[type], value: type };
                                     })}
-                                    onChange={setCategory}
+                                    onChange={setType}
                                     title={translate('Core.IssueScreen.selectType')}
                                 />
                             )}
