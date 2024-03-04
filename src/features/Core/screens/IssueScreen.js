@@ -1,13 +1,14 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { IssueCategory, IssuePriority, IssueType } from 'constant/Enum';
+import { IssuePriority, IssueType } from 'constant/Enum';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import tailwind from 'tailwind';
 import { getColorCode, getCurrentLocation, logError, translate } from 'utils';
 import DropdownActionSheet from '../../../components/DropdownActionSheet';
+import getIssueCategories from '../../../constant/GetIssueCategoy';
 
 const IssueScreen = ({ navigation, route }) => {
     const issue = route.params;
@@ -16,9 +17,9 @@ const IssueScreen = ({ navigation, route }) => {
     const fleetbase = useFleetbase();
     const [driver] = useDriver();
     const [driverId] = useState(driver.getAttribute('id'));
-    const [vehicleId] = useState(driver.getAttribute('vehicle.id'));
 
     const [type, setType] = useState(issue.type);
+    const [categories, setCategories] = useState([]);
     const [category, setCategory] = useState();
     const [priority, setPriority] = useState();
     const [report, setReport] = useState(issue.report);
@@ -32,6 +33,12 @@ const IssueScreen = ({ navigation, route }) => {
             setType(issue.issue?.type);
         }
     }, []);
+
+    useEffect(()=>{
+        if(!type) return;
+
+        setCategories(getIssueCategories(type))
+    }, [type])
 
     const saveIssue = () => {
         if (!validateInputs()) {
@@ -162,6 +169,23 @@ const IssueScreen = ({ navigation, route }) => {
 
                             {error && !type ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
+
+                        <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
+                            <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.category')}</Text>
+                            {isEdit.isEdit ? (
+                                <Text style={tailwind('text-white')}>{category}</Text>
+                            ) : (
+                                <DropdownActionSheet
+                                    value={category}
+                                    items={categories?.map(category => {
+                                        return { label: category, value: category };
+                                    })}
+                                    onChange={setCategory}
+                                    title={'Select category'}
+                                />
+                            )}
+                            {error && !category ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
+                        </View>
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.report')}</Text>
                             <TextInput
@@ -174,23 +198,6 @@ const IssueScreen = ({ navigation, route }) => {
                                 style={tailwind('form-input text-white h-28')}
                             />
                             {error && !report?.trim() ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
-                        </View>
-
-                        <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
-                            <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.category')}</Text>
-                            {isEdit.isEdit ? (
-                                <Text style={tailwind('text-white')}>{category}</Text>
-                            ) : (
-                                <DropdownActionSheet
-                                    value={category}
-                                    items={Object.keys(IssueCategory).map(category => {
-                                        return { label: IssueCategory[category], value: category };
-                                    })}
-                                    onChange={setCategory}
-                                    title={'Select category'}
-                                />
-                            )}
-                            {error && !category ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.priority')}</Text>
