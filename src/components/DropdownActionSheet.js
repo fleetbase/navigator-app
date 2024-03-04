@@ -1,17 +1,24 @@
+import React, { createRef, useState, useEffect } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import ActionSheet from 'react-native-actions-sheet';
 import { faAngleDown, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import React, { createRef, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import ActionSheet from 'react-native-actions-sheet';
 import tailwind from 'tailwind';
 
 import { getColorCode } from 'utils';
 
-const DropdownActionSheet = ({ items, onChange, title }) => {
+const DropdownActionSheet = ({ items, onChange, title, value }) => {
     const actionSheetRef = createRef();
     const navigation = useNavigation();
     const [selectedItem, setSelectedItem] = useState(null);
+
+    useEffect(() => {
+        const selected = items.find(item => item.value === value);
+        if (selected) {
+            setSelectedItem(selected);
+        }
+    }, [value]);
 
     const handleItemSelection = item => {
         setSelectedItem(item);

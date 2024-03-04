@@ -29,7 +29,7 @@ const IssuesScreen = () => {
     }, []);
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={tailwind('bg-yellow-900 mb-2')}>
+        <TouchableOpacity style={tailwind('bg-yellow-900 mb-2')} onPress={() => navigation.navigate('IssueScreen', { issue: item })}>
             <View style={[tailwind('border-b border-gray-800 py-3 px-3 flex flex-row items-start justify-between')]}>
                 <View style={[tailwind('flex flex-col')]}>
                     <Text style={[tailwind('text-white font-semibold mb-1')]}>Title: {item.report}</Text>
