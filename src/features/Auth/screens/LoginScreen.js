@@ -142,7 +142,7 @@ const LoginScreen = ({ navigation, route }) => {
 
                             {isNotAwaitingVerification && (
                                 <View style={[tailwind('p-4'), config('ui.loginScreen.loginFormContainerStyle')]}>
-                                    <TouchableOpacity style={tailwind('mb-2')} onPress={() => navigation.navigate('OrganizationSwitchScreen')}>
+                                    <TouchableOpacity style={tailwind('mb-2')} onPress={() => navigation.navigate('OrganizationSearchScreen')}>
                                         <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.sendVerificationCodeButtonStyle')]}>
                                             {isLoading && <ActivityIndicator size={'small'} color={getColorCode('text-blue-500')} style={tailwind('mr-2')} />}
                                             <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.sendVerificationCodeButtonTextStyle')]}>

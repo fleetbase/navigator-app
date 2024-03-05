@@ -1,59 +1,59 @@
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import OrderCard from 'components/OrderCard';
 import { searchButtonStyle } from 'components/SearchButton';
-import { useDriver, useFleetbase, useLocale, useMountedState } from 'hooks';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
+import { useFleetbase } from 'hooks';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
-import { debounce, getColorCode, isEmpty, logError, translate } from 'utils';
+import { getColorCode, isEmpty } from 'utils';
 
 const isAndroid = Platform.OS === 'android';
 
-const OrganizationSwitchScreen = ({ navigation }) => {
+const OrganizationSearchScreen = ({ navigation }) => {
     const fleetbase = useFleetbase();
-    const isMounted = useMountedState();
     const searchInput = useRef();
-    const [driver] = useDriver();
-    const [locale] = useLocale();
 
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState([]);
-    const [query, setQuery] = useState(null);
+    const [organizations, setOrganizations] = useState([]);
+    const [search, setSearch] = useState('');
 
-    const onOrderPress = useCallback(order => {
-        navigation.push('OrderScreen', { data: order.serialize() });
-    });
-
-    const fetchResults = useCallback(async (query, cb) => {
-        setIsLoading(true);
-
-        const adapter = fleetbase.getAdapter();
-        adapter.get('organizations');
-        const results = await adapter;
-        console.log('result::::', results);
-        setIsLoading(false);
-
-        if (typeof cb === 'function') {
-            cb(results);
+    const fetchOrganizations = async () => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const response = await adapter.get('organizations');
+            setOrganizations(response);
+            return response;
+        } catch (error) {
+            console.error('Error fetching organizations:', error);
+            return [];
         }
-    });
-
-    const debouncedSearch = useCallback(
-        debounce((query, cb) => {
-            fetchResults(query, cb);
-        }, 600)
-    );
+    };
 
     useEffect(() => {
-        if (isEmpty(query)) {
-            return setResults([]);
+        fetchOrganizations();
+    }, []);
+
+    const handleSearch = text => {
+        setSearch(text);
+        if (text === '') {
+            setResults([]);
+        } else {
+            const filteredOrganizations = organizations.filter(org => org.name.toLowerCase().includes(text.toLowerCase()));
+            setResults(filteredOrganizations);
         }
+    };
 
-        debouncedSearch(query, setResults);
-    }, [query]);
-
-    console.log('[SearchScreen #results]', results);
+    const renderItem = ({ item }) => (
+        console.log("item", JSON.stringify(item)),
+        <View style={tailwind('p-4')}>
+            <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => navigation.navigate('SignUp', { organization: item })}>
+                <View style={tailwind('flex-1 flex-col items-start')}>
+                    <Text style={tailwind('text-gray-100')}>{item.name}</Text>
+                </View>
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
         <View style={[tailwind('bg-gray-800 flex-1 relative pt-4')]}>
@@ -64,36 +64,30 @@ const OrganizationSwitchScreen = ({ navigation }) => {
                     </View>
                     <TextInput
                         ref={searchInput}
-                        value={query}
-                        onChangeText={setQuery}
+                        value={search}
+                        onChangeText={handleSearch}
                         autoComplete={'off'}
                         autoCorrect={false}
                         autoCapitalize={'none'}
                         autoFocus={isAndroid ? false : true}
                         clearButtonMode={'while-editing'}
                         textAlign={'left'}
-                        style={tailwind('flex-1 h-full text-white rounded-md shadow-lg pr-2')}
-                        placeholder={translate('Auth.OrganizationsScreen.searchInputPlaceholderText')}
+                        style={tailwind('flex-1 h-full text-white')}
+                        placeholder={'Search Organizations..'}
                         placeholderTextColor={getColorCode('text-gray-600')}
                     />
                     {isLoading && (
                         <View style={tailwind('absolute inset-y-0 right-0 h-full items-center')}>
-                            <View style={[tailwind('items-center justify-center flex-1 opacity-75 mr-10'), isEmpty(query) ? tailwind('mr-3.5') : null]}>
+                            <View style={[tailwind('items-center justify-center flex-1 opacity-75 mr-10'), isEmpty(search) ? tailwind('mr-3.5') : null]}>
                                 <ActivityIndicator color={getColorCode('text-gray-400')} />
                             </View>
                         </View>
                     )}
                 </View>
             </View>
-
-            <ScrollView style={tailwind('px-4')} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
-                {results.map((order, index) => (
-                    <OrderCard key={index} order={order} onPress={() => onOrderPress(order)} wrapperStyle={tailwind('px-0')} />
-                ))}
-                <View style={tailwind('w-full h-40')}></View>
-            </ScrollView>
+            <FlatList data={results} renderItem={renderItem} keyExtractor={(item, index) => index.toString()} contentContainerStyle={{ flexGrow: 1 }} />
         </View>
     );
 };
 
-export default OrganizationSwitchScreen;
+export default OrganizationSearchScreen;

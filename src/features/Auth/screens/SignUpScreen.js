@@ -1,17 +1,62 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useNavigation } from '@react-navigation/native';
 import PhoneInput from 'components/PhoneInput';
+import { useFleetbase } from 'hooks';
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { deepGet, getColorCode, logError, translate } from 'utils';
+
+import { getLocation } from 'utils/Geo';
+
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 
-import { getColorCode, translate } from 'utils';
+const SignUpScreen = ({ route }) => {
+    const { organization } = route.params;
 
-const SignUpScreen = ({ navigation }) => {
+    const fleetbase = useFleetbase();
+    const location = getLocation();
+    const navigation = useNavigation();
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [phone, setPhone] = useState(null);
+    const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState(false);
+
+    const saveDriver = () => {
+        const adapter = fleetbase.getAdapter();
+        adapter
+            .post('driver', {
+                name,
+                email,
+                phone,
+                company_uuid: organization.id,
+            })
+            .then(() => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Successfully created`,
+                });
+                navigation.navigate('OrganizationSwitchScreen');
+                setIsLoading(false);
+            })
+            .catch(error => {
+                setIsLoading(false);
+                logError(error);
+            });
+    };
+
+    const validateInputs = () => {
+        if (!name || !phone || !email) {
+            setError('Please enter a required value.');
+            return false;
+        }
+        setError('');
+        return true;
+    };
+
     return (
         <View style={[tailwind('w-full h-full bg-gray-800')]}>
             <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
@@ -28,8 +73,8 @@ const SignUpScreen = ({ navigation }) => {
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.driverName')}</Text>
                             <TextInput
-                                value={''}
-                                onChangeText={''}
+                                value={name}
+                                onChangeText={setName}
                                 keyboardType={'default'}
                                 placeholder={translate('Auth.SignUpScreen.driverName')}
                                 placeholderTextColor={getColorCode('text-gray-600')}
@@ -39,7 +84,7 @@ const SignUpScreen = ({ navigation }) => {
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.email')}</Text>
                             <TextInput
-                                value={''}
+                                value={email}
                                 onChangeText={setEmail}
                                 keyboardType={'email-address'}
                                 placeholder={translate('Auth.SignUpScreen.email')}
@@ -47,29 +92,19 @@ const SignUpScreen = ({ navigation }) => {
                                 style={tailwind('form-input text-white')}
                             />
                         </View>
-                        <View style={tailwind('mb-4')}>
-                            <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.document')}</Text>
-                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                <Image style={{ width: 200, height: 200 }} />
-                                <TouchableOpacity>
-                                    <View style={{ backgroundColor: 'blue', padding: 10, marginTop: 20 }}>
-                                        <Text style={{ color: 'white' }}>Select Image</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
 
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.phoneNumber')}</Text>
-                            <PhoneInput value={''} onChangeText={''} />
+                            <PhoneInput value={phone} onChangeText={setPhone} defaultCountry={location?.country} autoFocus={true} defaultCountryCode={deepGet(location, 'country', '+1')} />
                         </View>
 
-                        <TouchableOpacity onPress={'saveProfile'} disabled={isLoading}>
-                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-14')}>
-                                {isLoading && <ActivityIndicator color={getColorCode('text-gray-50')} style={tailwind('mr-2')} />}
-                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Auth.SignUpScreen.saveButtonText')}</Text>
-                            </View>
-                        </TouchableOpacity>
+                        <View style={tailwind('mb-4')}>
+                            <TouchableOpacity onPress={saveDriver}>
+                                <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-14')}>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Auth.SignUpScreen.saveButtonText')}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
                     </KeyboardAvoidingView>
                 </View>
             </Pressable>
