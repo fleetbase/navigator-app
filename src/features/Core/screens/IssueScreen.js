@@ -127,8 +127,11 @@ const IssueScreen = ({ navigation, route }) => {
     };
 
     const validateInputs = () => {
-        if (!type || !category || !priority || !report.trim()) {
+        if (!type || !category || !priority || !report?.trim()) {
             setError('Please enter a required value.');
+            return false;
+        } else if (report.trim().length === 0) {
+            setError('Report cannot be empty.');
             return false;
         }
         setError('');
