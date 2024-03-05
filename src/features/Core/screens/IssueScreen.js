@@ -34,11 +34,11 @@ const IssueScreen = ({ navigation, route }) => {
         }
     }, []);
 
-    useEffect(()=>{
-        if(!type) return;
+    useEffect(() => {
+        if (!type) return;
 
-        setCategories(getIssueCategories(type))
-    }, [type])
+        setCategories(getIssueCategories(type));
+    }, [type]);
 
     const saveIssue = () => {
         if (!validateInputs()) {
@@ -199,20 +199,17 @@ const IssueScreen = ({ navigation, route }) => {
                             />
                             {error && !report?.trim() ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
-                        <View style={isEdit.isEdit ? tailwind('flex flex-row items-center justify-between pb-1') : {}}>
+                        <View>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.priority')}</Text>
-                            {isEdit.isEdit ? (
-                                <Text style={tailwind('text-white')}>{priority}</Text>
-                            ) : (
-                                <DropdownActionSheet
-                                    value={priority}
-                                    items={Object.keys(IssuePriority).map(priority => {
-                                        return { label: IssuePriority[priority], value: priority };
-                                    })}
-                                    onChange={setPriority}
-                                    title={translate('Core.IssueScreen.selectPriority')}
-                                />
-                            )}
+                            <DropdownActionSheet
+                                value={priority}
+                                items={Object.keys(IssuePriority).map(priority => {
+                                    return { label: IssuePriority[priority], value: priority };
+                                })}
+                                onChange={setPriority}
+                                title={translate('Core.IssueScreen.selectPriority')}
+                            />
+
                             {error && !priority ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
 

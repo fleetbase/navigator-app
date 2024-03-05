@@ -50,7 +50,7 @@
             "save": "Save Issue",
             "delete": "Delete",
             "create": "Create Issue",
-            "update": "Update Report"
+            "update": "Update Issue"
         }
     },
     "Exceptions": {

@@ -33,7 +33,7 @@ const DropdownActionSheet = ({ items, onChange, title, value }) => {
                     <View style={tailwind('border-blue-700 py-2 pr-4 flex flex-row items-center')}>
                         <Text style={[tailwind('font-semibold text-blue-50 text-base'), selectedItem && tailwind('px-2')]}>{selectedItem ? selectedItem.label : title}</Text>
                     </View>
-                    <View style={tailwind('flex flex-row items-center')}>{selectedItem ? '' : <FontAwesomeIcon icon={faAngleDown} style={tailwind('text-white')} />}</View>
+                    <View style={tailwind('flex flex-row items-center')}>{<FontAwesomeIcon icon={faAngleDown} style={tailwind('text-white')} />}</View>
                 </View>
             </TouchableOpacity>
             <ActionSheet
