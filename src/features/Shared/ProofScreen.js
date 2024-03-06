@@ -103,7 +103,7 @@ const ProofScreen = ({ navigation, route }) => {
         }
         if (!cameraRef.current) return console.log('No camera');
 
-        setIsLoading(true); 
+        setIsLoading(true);
 
         try {
             const response = await cameraRef.current?.takePhoto();
@@ -323,9 +323,11 @@ const ProofScreen = ({ navigation, route }) => {
                 {isPhotoProof && (
                     <View style={tailwind('relative h-full')}>
                         <Camera cameraConfig={{ type: 'back' }} ref={cameraRef} style={[{ height: height - 180 }]} device={device} isActive={true} photo={true}>
-                            <TouchableOpacity onPress={capturePhoto} style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-                                <Text style={{ marginBottom: 20, color: 'white', fontSize: 20 }}>Take Photo</Text>
-                            </TouchableOpacity>
+                            <View style={tailwind('flex-1 justify-end items-center')}>
+                                <TouchableOpacity onPress={capturePhoto} style={tailwind('mb-6')}>
+                                    <View style={tailwind('w-20 h-20 bg-white rounded-full justify-center items-center')}></View>
+                                </TouchableOpacity>
+                            </View>
                         </Camera>
                     </View>
                 )}
