@@ -34,12 +34,10 @@ const ProofScreen = ({ navigation, route }) => {
     const isWaypoint = !isEmpty(_waypoint);
     const isEntity = !isEmpty(_entity);
     const isOrder = !isWaypoint && !isEntity;
-
-    const [imageSource, setImageSource] = useState('');
-    const [showCamera, setShowCamera] = useState(false);
-
     const cameraRef = useRef(Camera);
     const device = useCameraDevice('back');
+
+
     const cameraPermission = Camera.getCameraPermissionStatus();
     const newCameraPermission = Camera.requestCameraPermission();
 
@@ -96,19 +94,42 @@ const ProofScreen = ({ navigation, route }) => {
     });
 
     const capturePhoto = async () => {
+        let subject = null;
+        if (isEntity) {
+            subject = entity;
+        }
+
+        if (isWaypoint && isMultiDropOrder) {
+            subject = waypoint;
+        }
         if (!cameraRef.current) return console.log('No camera');
-        const photo = await cameraRef.current?.takePhoto();
-        fetchImage(photo.path);
+
+        const response = await cameraRef.current?.takePhoto();
+        const photo = await fetchImage(response.path);
+        const adapter = fleetbase.getAdapter();
+
+        return adapter
+            .post(`orders/${order.id}/capture-photo`, {
+                photo,
+            })
+            .then(proof => {
+                if (activity) {
+                    return sendOrderActivityUpdate(proof);
+                }
+
+                navigation.goBack();
+            })
+            .catch(catchError)
+            .finally(() => {
+                setIsLoading(false);
+            });
     };
 
     const fetchImage = async uri => {
-        console.log('uri---->', JSON.stringify(uri));
         const imageResponse = await fetch(uri);
         const imageBlob = await imageResponse.blob();
         const base64Data = await blobToBase64(imageBlob);
-
-        console.log('base64Data----->', JSON.stringify(base64Data));
-   
+        return base64Data;
     };
 
     const blobToBase64 = blob => {
