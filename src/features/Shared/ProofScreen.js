@@ -37,7 +37,6 @@ const ProofScreen = ({ navigation, route }) => {
     const cameraRef = useRef(Camera);
     const device = useCameraDevice('back');
 
-
     const cameraPermission = Camera.getCameraPermissionStatus();
     const newCameraPermission = Camera.requestCameraPermission();
 
@@ -104,25 +103,27 @@ const ProofScreen = ({ navigation, route }) => {
         }
         if (!cameraRef.current) return console.log('No camera');
 
-        const response = await cameraRef.current?.takePhoto();
-        const photo = await fetchImage(response.path);
-        const adapter = fleetbase.getAdapter();
+        setIsLoading(true); 
 
-        return adapter
-            .post(`orders/${order.id}/capture-photo`, {
+        try {
+            const response = await cameraRef.current?.takePhoto();
+            const photo = await fetchImage(response.path);
+            const adapter = fleetbase.getAdapter();
+
+            const proof = await adapter.post(`orders/${order.id}/capture-photo`, {
                 photo,
-            })
-            .then(proof => {
-                if (activity) {
-                    return sendOrderActivityUpdate(proof);
-                }
-
-                navigation.goBack();
-            })
-            .catch(catchError)
-            .finally(() => {
-                setIsLoading(false);
             });
+
+            if (activity) {
+                await sendOrderActivityUpdate(proof);
+            }
+
+            navigation.goBack();
+        } catch (error) {
+            catchError(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const fetchImage = async uri => {
