@@ -8,7 +8,7 @@ import { deepGet, getColorCode, logError, translate } from 'utils';
 
 import { getLocation } from 'utils/Geo';
 
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 
@@ -26,9 +26,12 @@ const SignUpScreen = ({ route }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     const saveDriver = () => {
+        if (!validateInputs()) {
+            return;
+        }
         const adapter = fleetbase.getAdapter();
         adapter
-            .post('driver', {
+            .post('drivers', {
                 name,
                 email,
                 phone,
@@ -39,7 +42,6 @@ const SignUpScreen = ({ route }) => {
                     type: 'success',
                     text1: `Successfully created`,
                 });
-                navigation.navigate('OrganizationSwitchScreen');
                 setIsLoading(false);
             })
             .catch(error => {
@@ -50,7 +52,7 @@ const SignUpScreen = ({ route }) => {
 
     const validateInputs = () => {
         if (!name || !phone || !email) {
-            setError('Please enter a required value.');
+            setError('Please enter a required values.');
             return false;
         }
         setError('');
@@ -80,6 +82,7 @@ const SignUpScreen = ({ route }) => {
                                 placeholderTextColor={getColorCode('text-gray-600')}
                                 style={tailwind('form-input text-white')}
                             />
+                            {error && !name ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.email')}</Text>
@@ -95,7 +98,9 @@ const SignUpScreen = ({ route }) => {
 
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.phoneNumber')}</Text>
-                            <PhoneInput value={phone} onChangeText={setPhone} defaultCountry={location?.country} autoFocus={true} defaultCountryCode={deepGet(location, 'country', '+1')} />
+                            <View style={tailwind('mb-6 flex-row')}>
+                                <PhoneInput onChangeValue={setPhone} autoFocus={true} />
+                            </View>
                         </View>
 
                         <View style={tailwind('mb-4')}>
