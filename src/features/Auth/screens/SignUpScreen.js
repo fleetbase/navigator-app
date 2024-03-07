@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import PhoneInput from 'components/PhoneInput';
 import { useFleetbase } from 'hooks';
 import React, { useState } from 'react';
-import { deepGet, getColorCode, logError, translate } from 'utils';
+import { getColorCode, logError, translate } from 'utils';
 
 import { getLocation } from 'utils/Geo';
 
@@ -24,6 +24,7 @@ const SignUpScreen = ({ route }) => {
     const [phone, setPhone] = useState(null);
     const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState(false);
+    const isDriverdEnabled = true;
 
     const saveDriver = () => {
         if (!validateInputs()) {
@@ -42,6 +43,7 @@ const SignUpScreen = ({ route }) => {
                     type: 'success',
                     text1: `Successfully created`,
                 });
+                navigation.goBack();
                 setIsLoading(false);
             })
             .catch(error => {
@@ -58,6 +60,14 @@ const SignUpScreen = ({ route }) => {
         setError('');
         return true;
     };
+
+    if (!isDriverdEnabled) {
+        return (
+            <View style={tailwind('flex flex-1 justify-center items-center')}>
+                <Text style={tailwind('text-red-500 font-bold')}> Driver not enabled organizations </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={[tailwind('w-full h-full bg-gray-800')]}>
