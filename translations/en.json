@@ -47,10 +47,10 @@
             "report": "Issue report",
             "selectPriority": "Select priority",
             "priority": "Issue priority",
-            "save": "Save Issue",
-            "delete": "Delete",
-            "create": "Create Issue",
-            "update": "Update Issue"
+            "saveIssue": "Save Issue",
+            "deleteIssue": "Delete",
+            "createIssue": "Create Issue",
+            "updateIssue": "Update Issue"
         }
     },
     "Exceptions": {
