@@ -103,5 +103,8 @@ jobs:
     - name: Install iOS pods
       run: cd ios && pod install
 
+    - name: Build bundle
+      run: npx react-native bundle --entry-file='index.js' --bundle-output='./ios/main.jsbundle' --dev=false --platform='ios' --assets-dest='./ios'
+
     - name: Build iOS
       run: npx react-native run-ios --configuration Release
