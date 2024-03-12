@@ -53,7 +53,7 @@
             "updateIssue": "Update Issue",
             "report": "Report",
             "driverName": "Driver Name",
-            "vehicleName": "Vehicle Name",
+            "vehicleName": "Vehicle Name"
         }
     },
     "Exceptions": {
