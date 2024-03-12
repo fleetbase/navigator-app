@@ -143,9 +143,9 @@ const IssueScreen = ({ navigation, route }) => {
             <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
                 <View style={tailwind('flex flex-row items-center justify-between p-4')}>
                     {issue.isEdit ? (
-                        <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.update')}</Text>
+                        <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.updateIssue')}</Text>
                     ) : (
-                        <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.create')}</Text>
+                        <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.IssueScreen.createIssue')}</Text>
                     )}
                     <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('mr-4')}>
                         <View style={tailwind('rounded-full bg-gray-900 w-10 h-10 flex items-center justify-center')}>
@@ -219,13 +219,13 @@ const IssueScreen = ({ navigation, route }) => {
                         <TouchableOpacity onPress={saveIssue} disabled={isLoading} style={tailwind('flex')}>
                             <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4 ')}>
                                 {isLoading && <ActivityIndicator color={getColorCode('text-gray-50')} style={tailwind('mr-2')} />}
-                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.IssueScreen.save')}</Text>
+                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.IssueScreen.saveIssue')}</Text>
                             </View>
                         </TouchableOpacity>
                         {isEdit.isEdit && (
                             <TouchableOpacity onPress={deleteIssues} disabled={isLoading} style={tailwind('flex')}>
                                 <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4')}>
-                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>Delete</Text>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.IssueScreen.deleteIssue')}</Text>
                                 </View>
                             </TouchableOpacity>
                         )}

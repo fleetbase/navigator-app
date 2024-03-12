@@ -38,13 +38,13 @@ const IssuesScreen = () => {
     }, [isMounted]);
 
     const renderItem = ({ item }) => (
-        <View style={tailwind('p-3')}>
+        <View style={tailwind('px-4 py-2')}>
             <TouchableOpacity
-                style={tailwind('bg-gray-900 border border-gray-800 rounded-xl shadow-sm w-full ')}
+                style={tailwind('bg-gray-900 border border-gray-800 rounded-xl shadow-sm w-full py-2 px-1')}
                 onPress={() => navigation.navigate('IssueScreen', { issue: item, isEdit: true })}>
                 <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
                     <View style={tailwind('flex-1')}>
-                        <Text style={tailwind('text-gray-100')}>Report:</Text>
+                        <Text style={tailwind('text-gray-100 font-semibold')}>Report:</Text>
                     </View>
                     <View style={tailwind('flex-1 flex-col items-end')}>
                         <Text style={tailwind('text-gray-100')}>{item.report}</Text>
@@ -52,7 +52,7 @@ const IssuesScreen = () => {
                 </View>
                 <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
                     <View style={tailwind('flex-1')}>
-                        <Text style={tailwind('text-gray-100')}>Drive name: </Text>
+                        <Text style={tailwind('text-gray-100 font-semibold')}>Drive name:</Text>
                     </View>
                     <View style={tailwind('flex-1 flex-col items-end')}>
                         <Text style={tailwind('text-gray-100')}>{item.driver_name}</Text>
@@ -60,7 +60,7 @@ const IssuesScreen = () => {
                 </View>
                 <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
                     <View style={tailwind('flex-1')}>
-                        <Text style={tailwind('text-gray-100')}>Vehicle name:</Text>
+                        <Text style={tailwind('text-gray-100 font-semibold')}>Vehicle name:</Text>
                     </View>
                     <View style={tailwind('flex-1 flex-col items-end')}>
                         <Text style={tailwind('text-gray-100')}>{item.vehicle_name}</Text>
@@ -72,9 +72,9 @@ const IssuesScreen = () => {
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
-            <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
+            <View style={tailwind('flex flex-row items-center justify-between px-4 py-2')}>
                 <View>
-                    <Text style={tailwind('font-bold text-white text-base')}>Issues</Text>
+                    <Text style={tailwind('font-bold text-white text-base')}>{translate('Core.IssueScreen.issues')}</Text>
                 </View>
             </View>
 
@@ -92,7 +92,7 @@ const IssuesScreen = () => {
                             navigation.navigate('IssueScreen');
                         }}>
                         <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
-                            <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.IssueScreen.create')}</Text>
+                            <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.IssueScreen.createIssue')}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>
