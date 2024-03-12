@@ -37,7 +37,24 @@
         "SearchScreen": {
             "searchInputPlaceholderText": "Search Orders..."
         },
-        "StorefrontScreen": {}
+        "StorefrontScreen": {},
+        "IssueScreen": {
+            "issues": "Issues",
+            "type": "Issue Type",
+            "selectType": "Select Type",
+            "category": "Issue Category",
+            "categoryType": "Select Category",
+            "issueReport": "Issue Report",
+            "selectPriority": "Select Priority",
+            "priority": "Issue Priority",
+            "saveIssue": "Save Issue",
+            "deleteIssue": "Delete",
+            "createIssue": "Create Issue",
+            "updateIssue": "Update Issue",
+            "report": "Report",
+            "driverName": "Driver Name",
+            "vehicleName": "Vehicle Name"
+        }
     },
     "Exceptions": {
         "SetupWarningScreen": {
