@@ -35,7 +35,7 @@ const AccountStack = ({ route }) => {
                 <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 <RootStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ headerShown: false }} />
                 <RootStack.Screen name="Organization" component={OrganizationScreen} options={{ headerShown: false }} />
-            </RootStack.Navigator>
+         </RootStack.Navigator>
         </SafeAreaProvider>
     );
 };
