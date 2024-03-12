@@ -354,8 +354,10 @@ const OrderScreen = ({ navigation, route }) => {
             .then(setOrder)
             .catch(catchError)
             .finally(() => {
-                setNextActivity(null);
-                setIsLoadingActivity(false);
+                setTimeout(() => {
+                    setNextActivity(null);
+                    setIsLoadingActivity(false);
+                }, 2000);
             });
     };
 
@@ -386,6 +388,12 @@ const OrderScreen = ({ navigation, route }) => {
             Linking.openURL(metaValue);
         }
     });
+
+    useEffect(() => {
+        setTimeout(() => {
+            loadOrder();
+        }, 600);
+    }, [nextActivity]);
 
     useEffect(() => {
         if (actionSheetAction === 'change_destination') {
@@ -938,6 +946,7 @@ const OrderScreen = ({ navigation, route }) => {
                     </View>
                 </View>
             </ScrollView>
+            
             <ActionSheet
                 ref={actionSheetRef}
                 containerStyle={{ height: actionSheetHeight, backgroundColor: getColorCode('bg-gray-800') }}
