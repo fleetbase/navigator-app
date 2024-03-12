@@ -190,7 +190,7 @@ const IssueScreen = ({ navigation, route }) => {
                             {error && !category ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
                         <View style={tailwind('mb-4')}>
-                            <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.report')}</Text>
+                            <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.issueReport')}</Text>
                             <TextInput
                                 value={report}
                                 onChangeText={setReport}
