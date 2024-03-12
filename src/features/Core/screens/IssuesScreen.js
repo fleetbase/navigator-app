@@ -40,27 +40,27 @@ const IssuesScreen = () => {
     const renderItem = ({ item }) => (
         <View style={tailwind('px-4 py-2')}>
             <TouchableOpacity
-                style={tailwind('bg-gray-900 border border-gray-800 rounded-xl shadow-sm w-full py-2 px-1')}
+                style={tailwind('bg-gray-900 border border-gray-800 rounded-xl shadow-sm w-full p-4')}
                 onPress={() => navigation.navigate('IssueScreen', { issue: item, isEdit: true })}>
-                <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
-                    <View style={tailwind('flex-1')}>
-                        <Text style={tailwind('text-gray-100 font-semibold')}>Report:</Text>
+                <View style={tailwind('flex flex-col mb-3')}>
+                    <View style={tailwind('flex-1 mb-1')}>
+                        <Text style={tailwind('text-gray-100 font-semibold')}>{translate('Core.IssueScreen.report')}:</Text>
                     </View>
-                    <View style={tailwind('flex-1 flex-col items-end')}>
-                        <Text style={tailwind('text-gray-100')}>{item.report}</Text>
+                    <View style={tailwind('')}>
+                        <Text style={tailwind('text-gray-100')} numberOfLines={3}>{item.report}</Text>
                     </View>
                 </View>
-                <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                     <View style={tailwind('flex-1')}>
-                        <Text style={tailwind('text-gray-100 font-semibold')}>Drive name:</Text>
+                        <Text style={tailwind('text-gray-100 font-semibold')}>{translate('Core.IssueScreen.driverName')}:</Text>
                     </View>
                     <View style={tailwind('flex-1 flex-col items-end')}>
                         <Text style={tailwind('text-gray-100')}>{item.driver_name}</Text>
                     </View>
                 </View>
-                <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                <View style={tailwind('flex flex-row items-center justify-between')}>
                     <View style={tailwind('flex-1')}>
-                        <Text style={tailwind('text-gray-100 font-semibold')}>Vehicle name:</Text>
+                        <Text style={tailwind('text-gray-100 font-semibold')}>{translate('Core.IssueScreen.vehicleName')}:</Text>
                     </View>
                     <View style={tailwind('flex-1 flex-col items-end')}>
                         <Text style={tailwind('text-gray-100')}>{item.vehicle_name}</Text>
