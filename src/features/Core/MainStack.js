@@ -8,6 +8,7 @@ import OrderScreen from 'shared/OrderScreen';
 import ProofScreen from 'shared/ProofScreen';
 import MainScreen from './screens/MainScreen';
 import SearchScreen from './screens/SearchScreen';
+import IssueScreen from './screens/IssueScreen';
 
 const RootStack = createStackNavigator();
 
@@ -28,6 +29,7 @@ const MainStack = ({ route }) => {
                     <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                     <RootStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                     <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name="IssueScreen" component={IssueScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 </RootStack.Group>
             </RootStack.Navigator>
         </SafeAreaProvider>
