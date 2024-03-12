@@ -946,6 +946,7 @@ const OrderScreen = ({ navigation, route }) => {
                     </View>
                 </View>
             </ScrollView>
+            
             <ActionSheet
                 ref={actionSheetRef}
                 containerStyle={{ height: actionSheetHeight, backgroundColor: getColorCode('bg-gray-800') }}
