@@ -1,4 +1,4 @@
-import { faBuilding, faChevronRight, faIdBadge, faLink, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faChevronRight, faIdBadge, faLink, faUser, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
