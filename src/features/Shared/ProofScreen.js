@@ -1,12 +1,11 @@
 import { Entity, Order, Place } from '@fleetbase/sdk';
-import { faBarcode, faSignature, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBarcode, faCamera, faSignature } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import OrderStatusBadge from 'components/OrderStatusBadge';
-import { useFleetbase, useLocale, useMountedState } from 'hooks';
+import { useFleetbase } from 'hooks';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignatureScreen from 'react-native-signature-canvas';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import tailwind from 'tailwind';
@@ -16,30 +15,28 @@ const { width, height } = Dimensions.get('window');
 
 const ProofScreen = ({ navigation, route }) => {
     const { _order, _waypoint, _entity, activity } = route.params;
+
     const signatureScreenRef = useRef();
     const qrCodeScannerRef = useRef();
-    const insets = useSafeAreaInsets();
-    const isMounted = useMountedState();
     const fleetbase = useFleetbase();
-    const [locale] = useLocale();
 
     const [order, setOrder] = useState(new Order(_order, fleetbase.getAdapter()));
     const [waypoint, setWaypoint] = useState(new Place(_waypoint, fleetbase.getAdapter()));
     const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
-
     const [isLoading, setIsLoading] = useState(false);
     const [isCapturingCode, setIsCapturingCode] = useState(false);
 
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
+    const isScanningProof = activity?.pod_method === 'scan';
+    const isSigningProof = activity?.pod_method === 'signature';
+    const isPhotoProof = activity?.pod_method === 'photo';
 
-    const isScanningProof = _order?.pod_method === 'scan' || activity?.pod_method === 'scan';
-    const isSigningProof = _order?.pod_method === 'signature' || activity?.pod_method === 'signature';
     const isWaypoint = !isEmpty(_waypoint);
     const isEntity = !isEmpty(_entity);
     const isOrder = !isWaypoint && !isEntity;
-
     const cameraRef = useRef(Camera);
     const device = useCameraDevice('back');
+
     const cameraPermission = Camera.getCameraPermissionStatus();
     const newCameraPermission = Camera.requestCameraPermission();
 
@@ -94,6 +91,58 @@ const ProofScreen = ({ navigation, route }) => {
             captureScan(code);
         },
     });
+
+    const capturePhoto = async () => {
+        let subject = null;
+        if (isEntity) {
+            subject = entity;
+        }
+
+        if (isWaypoint && isMultiDropOrder) {
+            subject = waypoint;
+        }
+        if (!cameraRef.current) return console.log('No camera');
+
+        setIsLoading(true);
+
+        try {
+            const response = await cameraRef.current?.takePhoto();
+            const photo = await fetchImage(response.path);
+            const adapter = fleetbase.getAdapter();
+
+            const proof = await adapter.post(`orders/${order.id}/capture-photo`, {
+                photo,
+            });
+
+            if (activity) {
+                await sendOrderActivityUpdate(proof);
+            }
+
+            navigation.goBack();
+        } catch (error) {
+            catchError(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchImage = async uri => {
+        const imageResponse = await fetch(uri);
+        const imageBlob = await imageResponse.blob();
+        const base64Data = await blobToBase64(imageBlob);
+        return base64Data;
+    };
+
+    const blobToBase64 = blob => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = () => {
+                resolve(String(reader.result));
+            };
+            reader.readAsDataURL(blob);
+        });
+    };
 
     const captureScan = data => {
         let subject = null;
@@ -152,19 +201,22 @@ const ProofScreen = ({ navigation, route }) => {
             )}
             <View style={[tailwind('z-50 bg-gray-800 border-b border-gray-900 shadow-lg pt-2')]}>
                 <View style={tailwind('flex flex-row items-start justify-between px-4 py-2 overflow-hidden')}>
-                    <View style={tailwind('flex-1 flex items-start')}>
-                        <View style={tailwind('flex flex-row items-center')}>
-                            <FontAwesomeIcon icon={isScanningProof ? faBarcode : faSignature} style={tailwind('text-blue-100 mr-2')} size={30} />
-                            <Text style={tailwind('text-xl font-semibold text-blue-100')}>{isScanningProof ? 'Scan QR Code' : 'Please Sign'}</Text>
-                        </View>
-                    </View>
-                    <View>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('')}>
-                            <View style={tailwind('rounded-full bg-gray-900 w-10 h-10 flex items-center justify-center')}>
-                                <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-400')} />
+                    {!isPhotoProof && (
+                        <View style={tailwind('flex-1 flex items-start')}>
+                            <View style={tailwind('flex flex-row items-center')}>
+                                <FontAwesomeIcon icon={isScanningProof ? faBarcode : faSignature} style={tailwind('text-blue-100 mr-2')} size={30} />
+                                <Text style={tailwind('text-xl font-semibold text-blue-100')}>{isScanningProof ? 'Scan QR Code' : 'Please Sign'}</Text>
                             </View>
-                        </TouchableOpacity>
-                    </View>
+                        </View>
+                    )}
+                    {isPhotoProof && (
+                        <View style={tailwind('flex-1 flex items-start')}>
+                            <View style={tailwind('flex flex-row items-center')}>
+                                <FontAwesomeIcon icon={faCamera} style={tailwind('text-blue-100 mr-2')} size={20} />
+                                <Text style={tailwind('text-xl font-semibold text-blue-100')}>{'Take a Photo'}</Text>
+                            </View>
+                        </View>
+                    )}
                 </View>
             </View>
             <View>
@@ -266,6 +318,17 @@ const ProofScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         </View>
+                    </View>
+                )}
+                {isPhotoProof && (
+                    <View style={tailwind('relative h-full')}>
+                        <Camera cameraConfig={{ type: 'back' }} ref={cameraRef} style={[{ height: height - 180 }]} device={device} isActive={true} photo={true}>
+                            <View style={tailwind('flex-1 justify-end items-center')}>
+                                <TouchableOpacity onPress={capturePhoto} style={tailwind('mb-6')}>
+                                    <View style={tailwind('w-20 h-20 bg-white rounded-full justify-center items-center')}></View>
+                                </TouchableOpacity>
+                            </View>
+                        </Camera>
                     </View>
                 )}
             </View>
