@@ -64,9 +64,11 @@
             "width": "Width",
             "length": "Length",
             "weight": "Weight",
-            "value": "Value",
-            "price": "Price",
-            "save": "Save"
+            "declared_value": "Declared Value",
+            "sale_price": "Sale Price",
+            "empty": "The driver currently does not have a field to allow updating organization details",
+            "save": "Save",
+            "update": "Update Details"
         }
     },
     "Exceptions": {

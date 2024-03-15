@@ -4,12 +4,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import OrderStatusBadge from 'components/OrderStatusBadge';
 import { format } from 'date-fns';
 import { useFleetbase, useLocale, useMountedState } from 'hooks';
-import React, { createRef, useState } from 'react';
+import React, { createRef, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
-import { formatCurrency, formatMetaValue, getColorCode, isEmpty, logError, titleize } from 'utils';
+import { formatCurrency, formatMetaValue, getColorCode, isEmpty, logError, titleize, translate } from 'utils';
 
 const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
@@ -30,6 +30,12 @@ const EntityScreen = ({ navigation, route }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const customer = entity.getAttribute('customer');
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            refresh();
+        });
+    }, [isMounted]);
 
     const refresh = () => {
         setIsRefreshing(true);
@@ -81,10 +87,6 @@ const EntityScreen = ({ navigation, route }) => {
                                             <FontAwesomeIcon icon={faBarcode} style={tailwind('text-blue-50 mb-1')} />
                                             <Text style={tailwind('text-blue-50')}>Add Proof of Delivery</Text>
                                         </TouchableOpacity>
-                                        {/* <TouchableOpacity style={tailwind('flex-1 px-3 py-2 flex items-center justify-center')}>
-                                            <FontAwesomeIcon icon={faPen} style={tailwind('text-blue-50 mb-1')} />
-                                            <Text style={tailwind('text-blue-50')}>Edit Details</Text>
-                                        </TouchableOpacity> */}
                                     </View>
                                 </View>
                             </View>
@@ -303,9 +305,10 @@ const EntityScreen = ({ navigation, route }) => {
                             onPress={() => {
                                 navigation.navigate('SettingsScreen', { data: entity.getAttributes() });
                             }}
-                            style={tailwind('flex flex-row items-center justify-between py-2 px-2')}>
-                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4 ')}>
-                                <Text style={tailwind('font-semibold text-gray-100')}> Update Details</Text>
+                            disabled={isLoading}
+                            style={tailwind('flex py-2 px-2')}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-6 ')}>
+                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.SettingsScreen.update')}</Text>
                             </View>
                         </TouchableOpacity>
                     </View>
