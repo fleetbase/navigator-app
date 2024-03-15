@@ -132,6 +132,14 @@ const EntityScreen = ({ navigation, route }) => {
                                     </View>
                                     <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
                                         <View style={tailwind('flex-1')}>
+                                            <Text style={tailwind('text-gray-100')}>Name</Text>
+                                        </View>
+                                        <View style={tailwind('flex-1 flex-col items-end')}>
+                                            <Text style={tailwind('text-gray-100')}>{entity.getAttribute('name') ?? 'None'}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={tailwind('flex flex-row items-center justify-between py-2 px-3')}>
+                                        <View style={tailwind('flex-1')}>
                                             <Text style={tailwind('text-gray-100')}>Status</Text>
                                         </View>
                                         <View style={tailwind('flex-1 flex-col items-end')}>
@@ -291,6 +299,15 @@ const EntityScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         </View>
+                        <TouchableOpacity
+                            onPress={() => {
+                                navigation.navigate('SettingsScreen', { data: entity.getAttributes() });
+                            }}
+                            style={tailwind('flex flex-row items-center justify-between py-2 px-2')}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-4 ')}>
+                                <Text style={tailwind('font-semibold text-gray-100')}> Update Details</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ScrollView>

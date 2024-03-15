@@ -54,6 +54,19 @@
             "report": "Report",
             "driverName": "Driver Name",
             "vehicleName": "Vehicle Name"
+        },
+        "SettingsScreen": {
+            "title": "Update entity details",
+            "name": "Name",
+            "description": "Description",
+            "sku": "Sku",
+            "height": "Height",
+            "width": "Width",
+            "length": "Length",
+            "weight": "Weight",
+            "value": "Value",
+            "price": "Price",
+            "save": "Save"
         }
     },
     "Exceptions": {
