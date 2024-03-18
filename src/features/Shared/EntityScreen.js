@@ -22,10 +22,12 @@ const EntityScreen = ({ navigation, route }) => {
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
     const fleetbase = useFleetbase();
+    const internalInstance = useFleetbase('int/v1');
     const [locale] = useLocale();
 
     const [order, setOrder] = useState(new Order(_order, fleetbase.getAdapter()));
     const [entity, setEntity] = useState(new Entity(_entity, fleetbase.getAdapter()));
+    const [isEntityFieldsEditable, setEntityFieldsEditable] = useState();
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -48,6 +50,14 @@ const EntityScreen = ({ navigation, route }) => {
                 setIsRefreshing(false);
             });
     };
+
+    useEffect(() => {
+        const adapter = internalInstance.getAdapter();
+        adapter.get('fleet-ops/settings/entity-editing-settings').then(res => {
+            const editableEntityFields = res.isEntityFieldsEditable;
+            setEntityFieldsEditable(editableEntityFields);
+        });
+    });
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
@@ -301,16 +311,18 @@ const EntityScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         </View>
-                        <TouchableOpacity
-                            onPress={() => {
-                                navigation.navigate('SettingsScreen', { data: entity.getAttributes() });
-                            }}
-                            disabled={isLoading}
-                            style={tailwind('flex py-2 px-2')}>
-                            <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-6 ')}>
-                                <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.SettingsScreen.update')}</Text>
-                            </View>
-                        </TouchableOpacity>
+                        {isEntityFieldsEditable ? (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    navigation.navigate('SettingsScreen', { data: entity.getAttributes() });
+                                }}
+                                disabled={isLoading}
+                                style={tailwind('flex py-2 px-2')}>
+                                <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-6 ')}>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.SettingsScreen.update')}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 </View>
             </ScrollView>

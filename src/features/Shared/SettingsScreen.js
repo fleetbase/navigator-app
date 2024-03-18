@@ -43,34 +43,33 @@ const SettingsScreen = ({ route }) => {
     const saveEntitySettings = () => {
         setIsLoading(true);
         const adapter = fleetbase.getAdapter();
-        {
-            adapter
-                .put(`entities/${routeParam.data.id}`, {
-                    name: value?.name,
-                    description: value?.description,
-                    sku: value?.sku,
-                    height: value?.height,
-                    width: value?.width,
-                    length: value?.length,
-                    weight: value?.weight,
-                    declared_value: value?.declared_value,
-                    sale_price: value?.sale_price,
-                })
-                .then(() => {
-                    Toast.show({
-                        type: 'success',
-                        text1: `Successfully updated`,
-                    });
-                    setIsLoading(false);
-                    // Refresh data here
-                    fetchSettings();
-                    navigation.goBack();
-                })
-                .catch(error => {
-                    setIsLoading(false);
-                    logError(error);
+        adapter
+            .put(`entities/${routeParam.data.id}`, {
+                name: value?.name,
+                description: value?.description,
+                sku: value?.sku,
+                height: value?.height,
+                width: value?.width,
+                length: value?.length,
+                weight: value?.weight,
+                declared_value: value?.declared_value,
+                sale_price: value?.sale_price,
+            })
+            .then(() => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Successfully updated`,
                 });
-        }
+
+                setIsLoading(false);
+                fetchSettings();
+
+                navigation.goBack();
+            })
+            .catch(error => {
+                setIsLoading(false);
+                logError(error);
+            });
     };
 
     return (
