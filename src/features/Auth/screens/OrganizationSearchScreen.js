@@ -11,18 +11,35 @@ const isAndroid = Platform.OS === 'android';
 
 const OrganizationSearchScreen = ({ navigation }) => {
     const fleetbase = useFleetbase();
+    const internalInstance = useFleetbase('navigator/v1');
     const searchInput = useRef();
 
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState([]);
     const [organizations, setOrganizations] = useState([]);
+    const [settings, setSettings] = useState();
     const [search, setSearch] = useState('');
 
     const fetchOrganizations = async () => {
         try {
             const adapter = fleetbase.getAdapter();
-            const response = await adapter.get('organizations');
+            const response = await adapter.get('organizations', {
+                with_driver_onboard: true,
+            });
             setOrganizations(response);
+            console.log('response---->', JSON.stringify(response));
+            return response;
+        } catch (error) {
+            console.error('Error fetching organizations:', error);
+            return [];
+        }
+    };
+
+    const fetchSettings = async () => {
+        try {
+            const adapter = internalInstance.getAdapter();
+            const response = await adapter.get('settings/driver-onboard-settings');
+            setSettings(Object.keys(response.driverOnboardSettings)[0]);
             return response;
         } catch (error) {
             console.error('Error fetching organizations:', error);
@@ -32,6 +49,7 @@ const OrganizationSearchScreen = ({ navigation }) => {
 
     useEffect(() => {
         fetchOrganizations();
+        fetchSettings();
     }, []);
 
     const handleSearch = text => {
@@ -45,14 +63,16 @@ const OrganizationSearchScreen = ({ navigation }) => {
     };
 
     const renderItem = ({ item }) => (
-        console.log("item", JSON.stringify(item)),
-        <View style={tailwind('p-4')}>
-            <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => navigation.navigate('SignUp', { organization: item })}>
-                <View style={tailwind('flex-1 flex-col items-start')}>
-                    <Text style={tailwind('text-gray-100')}>{item.name}</Text>
-                </View>
-            </TouchableOpacity>
-        </View>
+        console.log('item', JSON.stringify(item)),
+        (
+            <View style={tailwind('p-4')}>
+                <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => navigation.navigate('SignUp', { organization: item })}>
+                    <View style={tailwind('flex-1 flex-col items-start')}>
+                        <Text style={tailwind('text-gray-100')}>{item.name}</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+        )
     );
 
     return (
