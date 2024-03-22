@@ -5,10 +5,10 @@ import PhoneInput from 'components/PhoneInput';
 import { useFleetbase } from 'hooks';
 import React, { useState } from 'react';
 import { getColorCode, logError, translate } from 'utils';
-
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { getLocation } from 'utils/Geo';
 
-import { Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View, Button } from 'react-native';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 
@@ -25,6 +25,51 @@ const SignUpScreen = ({ route }) => {
     const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState(false);
     const isDriverdEnabled = true;
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    const openImagePicker = () => {
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            maxHeight: 2000,
+            maxWidth: 2000,
+        };
+
+        launchImageLibrary(options, response => {
+            console.log('response::::::::', JSON.stringify(response));
+            if (response.didCancel) {
+                console.log('User cancelled image picker');
+            } else if (response.error) {
+                console.log('Image picker error: ', response.error);
+            } else {
+                let imageUri = response.uri || response.assets?.[0]?.uri;
+                setSelectedImage(imageUri);
+            }
+        });
+    };
+
+    handleCameraLaunch = () => {
+        const options = {
+            mediaType: 'photo',
+            includeBase64: false,
+            maxHeight: 2000,
+            maxWidth: 2000,
+        };
+
+        launchCamera(options, response => {
+            console.log('Response = ', response);
+            if (response.didCancel) {
+                console.log('User cancelled camera');
+            } else if (response.error) {
+                console.log('Camera Error: ', response.error);
+            } else {
+                // Process the captured image
+                let imageUri = response.uri || response.assets?.[0]?.uri;
+                setSelectedImage(imageUri);
+                console.log(imageUri);
+            }
+        });
+    };
 
     const saveDriver = () => {
         if (!validateInputs()) {
@@ -104,6 +149,17 @@ const SignUpScreen = ({ route }) => {
                                 placeholderTextColor={getColorCode('text-gray-600')}
                                 style={tailwind('form-input text-white')}
                             />
+                        </View>
+                        <View style={tailwind('mb-4')}>
+                            {/* <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>Upload file</Text>
+                            <Button style={tailwind('btn bg-gray-900 flex flex-1 justify-center items-center')} title="Upload File" onPress={pickImage}></Button> */}
+                            {selectedImage && <Image source={{ uri: selectedImage }} style={{ flex: 1 }} resizeMode="contain" />}
+                            <View style={{ marginTop: 20 }}>
+                                <Button title="Choose from Device" onPress={openImagePicker} />
+                            </View>
+                            <View style={{ marginTop: 20, marginBottom: 50 }}>
+                                <Button title="Open Camera" onPress={handleCameraLaunch} />
+                            </View>
                         </View>
 
                         <View style={tailwind('mb-4')}>
