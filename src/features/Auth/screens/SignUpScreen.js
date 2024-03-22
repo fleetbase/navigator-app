@@ -3,12 +3,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import PhoneInput from 'components/PhoneInput';
 import { useFleetbase } from 'hooks';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { getColorCode, logError, translate } from 'utils';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { getLocation } from 'utils/Geo';
 
-import { Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View, Button } from 'react-native';
+import { Button, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 
@@ -26,51 +26,48 @@ const SignUpScreen = ({ route }) => {
     const [isLoading, setIsLoading] = useState(false);
     const isDriverdEnabled = true;
     const [selectedImage, setSelectedImage] = useState(null);
+    const [settings, setSettings] = useState();
 
     const openImagePicker = () => {
         const options = {
             mediaType: 'photo',
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
             includeBase64: false,
-            maxHeight: 2000,
-            maxWidth: 2000,
+            maxHeight: 200,
+            maxWidth: 200,
+            multiple: true,
         };
 
         launchImageLibrary(options, response => {
-            console.log('response::::::::', JSON.stringify(response));
             if (response.didCancel) {
                 console.log('User cancelled image picker');
             } else if (response.error) {
                 console.log('Image picker error: ', response.error);
             } else {
-                let imageUri = response.uri || response.assets?.[0]?.uri;
-                setSelectedImage(imageUri);
+                let imageUris = response.assets.map(asset => asset.uri);
+                console.log('imageUris:::::', JSON.stringify(imageUris));
+                setSelectedImages(prevSelectedImages => [...prevSelectedImages, ...imageUris]);
             }
         });
     };
 
-    handleCameraLaunch = () => {
-        const options = {
-            mediaType: 'photo',
-            includeBase64: false,
-            maxHeight: 2000,
-            maxWidth: 2000,
-        };
-
-        launchCamera(options, response => {
-            console.log('Response = ', response);
-            if (response.didCancel) {
-                console.log('User cancelled camera');
-            } else if (response.error) {
-                console.log('Camera Error: ', response.error);
-            } else {
-                // Process the captured image
-                let imageUri = response.uri || response.assets?.[0]?.uri;
-                setSelectedImage(imageUri);
-                console.log(imageUri);
-            }
-        });
+    const fetchSettings = async () => {
+        try {
+            const adapter = internalInstance.getAdapter();
+            const response = await adapter.get('settings/driver-onboard-settings');
+            setSettings(Object.keys(response.driverOnboardSettings)[0]);
+            return response;
+        } catch (error) {
+            console.error('Error fetching organizations:', error);
+            return [];
+        }
     };
 
+    useEffect(() => {
+        fetchSettings();
+    });
     const saveDriver = () => {
         if (!validateInputs()) {
             return;
@@ -95,6 +92,14 @@ const SignUpScreen = ({ route }) => {
                 setIsLoading(false);
                 logError(error);
             });
+    };
+
+    const handleCancel = index => {
+        setSelectedImages(prevSelectedImages => {
+            const updatedImages = [...prevSelectedImages];
+            updatedImages.splice(index, 1);
+            return updatedImages;
+        });
     };
 
     const validateInputs = () => {
@@ -151,14 +156,14 @@ const SignUpScreen = ({ route }) => {
                             />
                         </View>
                         <View style={tailwind('mb-4')}>
-                            {/* <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>Upload file</Text>
-                            <Button style={tailwind('btn bg-gray-900 flex flex-1 justify-center items-center')} title="Upload File" onPress={pickImage}></Button> */}
-                            {selectedImage && <Image source={{ uri: selectedImage }} style={{ flex: 1 }} resizeMode="contain" />}
+                            {selectedImage.map((imageUri, index) => (
+                                <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Image source={{ uri: imageUri }} style={{ width: 50, height: 50, marginRight: 10 }} />
+                                    <Button title="Cancel" onPress={() => handleCancel(index)} />
+                                </View>
+                            ))}
                             <View style={{ marginTop: 20 }}>
                                 <Button title="Choose from Device" onPress={openImagePicker} />
-                            </View>
-                            <View style={{ marginTop: 20, marginBottom: 50 }}>
-                                <Button title="Open Camera" onPress={handleCameraLaunch} />
                             </View>
                         </View>
 
