@@ -25,7 +25,8 @@ const SignUpScreen = ({ route }) => {
     const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState(false);
     const isDriverdEnabled = true;
-    const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
+
     const [settings, setSettings] = useState();
 
     const openImagePicker = () => {
@@ -155,15 +156,19 @@ const SignUpScreen = ({ route }) => {
                                 style={tailwind('form-input text-white')}
                             />
                         </View>
-                        <View style={tailwind('mb-4')}>
-                            {selectedImage.map((imageUri, index) => (
+                        <View style={tailwind('')}>
+                            {selectedImage?.map((imageUri, index) => (
                                 <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Image source={{ uri: imageUri }} style={{ width: 50, height: 50, marginRight: 10 }} />
                                     <Button title="Cancel" onPress={() => handleCancel(index)} />
                                 </View>
                             ))}
-                            <View style={{ marginTop: 20 }}>
-                                <Button title="Choose from Device" onPress={openImagePicker} />
+                            <View style={tailwind('mb-6')}>
+                                <TouchableOpacity onPress={openImagePicker}>
+                                    <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-6')}>
+                                        <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{'Upload image'}</Text>
+                                    </View>
+                                </TouchableOpacity>
                             </View>
                         </View>
 
@@ -176,7 +181,7 @@ const SignUpScreen = ({ route }) => {
 
                         <View style={tailwind('mb-4')}>
                             <TouchableOpacity onPress={saveDriver}>
-                                <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-14')}>
+                                <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-8')}>
                                     <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Auth.SignUpScreen.saveButtonText')}</Text>
                                 </View>
                             </TouchableOpacity>
