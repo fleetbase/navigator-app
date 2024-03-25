@@ -54,35 +54,44 @@ const OrdersScreen = ({ navigation }) => {
         setParams(prevParams => ({ ...prevParams, [key]: updatedValue }));
     }, []);
 
-    const loadOrders = useCallback(async (options = {}) => {
-        if (options.isRefreshing) {
-            setIsRefreshing(true);
-        }
+    const loadOrders = useCallback(
+        async (options = {}) => {
+            if (options.isRefreshing) {
+                setIsRefreshing(true);
+            }
 
-        if (options.isQuerying) {
-            setIsQuerying(true);
-        }
+            if (options.isQuerying) {
+                setIsQuerying(true);
+            }
 
-        try {
-            const updatedParams = {
-                ...params,
-                company_uuid: currentOrganization?.id,
-            };
+            try {
+                // Fetch orders based on the selected organization
+                const updatedParams = {
+                    ...params,
+                    company: currentOrganization?.id, // Use the current organization's ID
+                };
 
-            const ordersData = await fleetbase.orders.query(updatedParams);
-            setOrders(ordersData);
-        } catch (error) {
-            logError(error);
-        } finally {
-            setIsRefreshing(false);
-            setIsQuerying(false);
-            setIsLoaded(true);
+                const ordersData = await fleetbase.orders.query(updatedParams);
+                setOrders(ordersData);
+            } catch (error) {
+                logError(error);
+            } finally {
+                setIsRefreshing(false);
+                setIsQuerying(false);
+                setIsLoaded(true);
+            }
+        },
+        [currentOrganization, params, fleetbase.orders]
+    );
+
+    useEffect(() => {
+        if (currentOrganization) {
+            loadOrders({ isQuerying: isLoaded });
         }
-    });
+    }, [currentOrganization]);
 
     useEffect(() => {
         driver.currentOrganization().then(setCurrentOrganization);
-        console.log('current::::', JSON.stringify(currentOrganization));
     }, []);
     const loadNearbyOrders = useCallback((options = {}) => {
         if (options.isRefreshing) {
