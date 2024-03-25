@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
-import { getColorCode, logError } from 'utils';
+import { getColorCode, logError, translate } from 'utils';
 import { useDriver } from 'utils/Auth';
 
 const Organization = ({ navigation, route }) => {
@@ -95,19 +95,23 @@ const Organization = ({ navigation, route }) => {
             ) : (
                 <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
                     <View>
-                        <Text style={tailwind('font-bold text-white text-base')}>Organizations</Text>
+                        <Text style={tailwind('font-bold text-white text-base')}>{translate('Account.OrganizationScreen.title')}</Text>
                     </View>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('rounded-full ')}>
                         <FontAwesomeIcon size={20} icon={faWindowClose} style={tailwind('text-red-400 ')} />
                     </TouchableOpacity>
                 </View>
             )}
-            <FlatList
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchData} tintColor={getColorCode('text-blue-200')} />}
-                data={organizations}
-                keyExtractor={item => item.id}
-                renderItem={renderItem}
-            />
+            {organizations.length === 0 ? (
+                <Text style={tailwind('text-white text-center p-4')}>{translate('Account.OrganizationScreen.empty')}</Text>
+            ) : (
+                <FlatList
+                    refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchData} tintColor={getColorCode('text-blue-200')} />}
+                    data={organizations}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                />
+            )}
         </View>
     );
 };

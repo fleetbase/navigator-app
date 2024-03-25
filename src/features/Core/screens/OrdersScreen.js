@@ -33,6 +33,8 @@ const OrdersScreen = ({ navigation }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, fleetbase.getAdapter());
     const [nearbyOrders, setNearbyOrders] = useState([]);
+    const [currentOrganization, setCurrentOrganization] = useState();
+
     const [searchingForNearbyOrders, setSearchingForNearbyOrders] = useState(false);
     const startingDate = new Date().setDate(date.getDate() - 2);
     const datesWhitelist = [
@@ -52,7 +54,7 @@ const OrdersScreen = ({ navigation }) => {
         setParams(prevParams => ({ ...prevParams, [key]: updatedValue }));
     }, []);
 
-    const loadOrders = useCallback((options = {}) => {
+    const loadOrders = useCallback(async (options = {}) => {
         if (options.isRefreshing) {
             setIsRefreshing(true);
         }
@@ -61,17 +63,27 @@ const OrdersScreen = ({ navigation }) => {
             setIsQuerying(true);
         }
 
-        return fleetbase.orders
-            .query(params)
-            .then(setOrders)
-            .catch(logError)
-            .finally(() => {
-                setIsRefreshing(false);
-                setIsQuerying(false);
-                setIsLoaded(true);
-            });
+        try {
+            const updatedParams = {
+                ...params,
+                company_uuid: currentOrganization?.id,
+            };
+
+            const ordersData = await fleetbase.orders.query(updatedParams);
+            setOrders(ordersData);
+        } catch (error) {
+            logError(error);
+        } finally {
+            setIsRefreshing(false);
+            setIsQuerying(false);
+            setIsLoaded(true);
+        }
     });
 
+    useEffect(() => {
+        driver.currentOrganization().then(setCurrentOrganization);
+        console.log('current::::', JSON.stringify(currentOrganization));
+    }, []);
     const loadNearbyOrders = useCallback((options = {}) => {
         if (options.isRefreshing) {
             setIsRefreshing(true);
