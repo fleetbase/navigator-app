@@ -1,10 +1,10 @@
-import { faWindowClose } from '@fortawesome/free-solid-svg-icons';
+import { faWindowClose, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
-import { getColorCode, logError } from 'utils';
+import { getColorCode, logError, translate } from 'utils';
 import { useDriver } from 'utils/Auth';
 
 const Organization = ({ navigation, route }) => {
@@ -79,10 +79,11 @@ const Organization = ({ navigation, route }) => {
     const renderItem = ({ item }) => (
         <TouchableOpacity onPress={() => confirmSwitchOrganization(item.id)}>
             <View style={[tailwind('p-1')]}>
-                <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
+                <View style={[tailwind('px-4 py-2 flex flex-row items-center justify-between rounded-r-md')]}>
                     <Text style={tailwind('text-gray-50 text-base')} numberOfLines={1}>
-                        <Text>{item?.getAttribute('name')}</Text>
+                        {item.getAttribute('name')}
                     </Text>
+                    {currentOrganization.getAttribute('id') === item.id && <FontAwesomeIcon icon={faCheck} size={15} style={tailwind('text-green-400')} />}
                 </View>
             </View>
         </TouchableOpacity>
@@ -95,19 +96,23 @@ const Organization = ({ navigation, route }) => {
             ) : (
                 <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
                     <View>
-                        <Text style={tailwind('font-bold text-white text-base')}>Organizations</Text>
+                        <Text style={tailwind('font-bold text-white text-base')}>{translate('Account.OrganizationScreen.title')}</Text>
                     </View>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('rounded-full ')}>
                         <FontAwesomeIcon size={20} icon={faWindowClose} style={tailwind('text-red-400 ')} />
                     </TouchableOpacity>
                 </View>
             )}
-            <FlatList
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchData} tintColor={getColorCode('text-blue-200')} />}
-                data={organizations}
-                keyExtractor={item => item.id}
-                renderItem={renderItem}
-            />
+            {organizations.length === 0 ? (
+                <Text style={tailwind('text-white text-center p-4')}>{translate('Account.OrganizationScreen.empty')}</Text>
+            ) : (
+                <FlatList
+                    refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchData} tintColor={getColorCode('text-blue-200')} />}
+                    data={organizations}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                />
+            )}
         </View>
     );
 };
