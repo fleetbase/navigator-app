@@ -33,6 +33,8 @@ const OrdersScreen = ({ navigation }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [orders, setOrders] = useResourceCollection(`orders_${format(date, 'yyyyMMdd')}`, Order, fleetbase.getAdapter());
     const [nearbyOrders, setNearbyOrders] = useState([]);
+    const [currentOrganization, setCurrentOrganization] = useState();
+
     const [searchingForNearbyOrders, setSearchingForNearbyOrders] = useState(false);
     const startingDate = new Date().setDate(date.getDate() - 2);
     const datesWhitelist = [
@@ -72,6 +74,9 @@ const OrdersScreen = ({ navigation }) => {
             });
     });
 
+    useEffect(() => {
+        driver.currentOrganization().then(setCurrentOrganization);
+    }, []);
     const loadNearbyOrders = useCallback((options = {}) => {
         if (options.isRefreshing) {
             setIsRefreshing(true);
