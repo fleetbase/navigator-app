@@ -1,4 +1,4 @@
-import { faWindowClose } from '@fortawesome/free-solid-svg-icons';
+import { faWindowClose, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
@@ -81,8 +81,9 @@ const Organization = ({ navigation, route }) => {
             <View style={[tailwind('p-1')]}>
                 <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
                     <Text style={tailwind('text-gray-50 text-base')} numberOfLines={1}>
-                        <Text>{item?.getAttribute('name')}</Text>
+                        {item.getAttribute('name')}
                     </Text>
+                    {currentOrganization.getAttribute('id') === item.id && <FontAwesomeIcon icon={faCheck} size={10} style={tailwind('ml-2 text-green-400')} />}
                 </View>
             </View>
         </TouchableOpacity>
