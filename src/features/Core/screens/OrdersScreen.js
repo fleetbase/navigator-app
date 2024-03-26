@@ -54,41 +54,25 @@ const OrdersScreen = ({ navigation }) => {
         setParams(prevParams => ({ ...prevParams, [key]: updatedValue }));
     }, []);
 
-    const loadOrders = useCallback(
-        async (options = {}) => {
-            if (options.isRefreshing) {
-                setIsRefreshing(true);
-            }
+    const loadOrders = useCallback((options = {}) => {
+        if (options.isRefreshing) {
+            setIsRefreshing(true);
+        }
 
-            if (options.isQuerying) {
-                setIsQuerying(true);
-            }
+        if (options.isQuerying) {
+            setIsQuerying(true);
+        }
 
-            try {
-                // Fetch orders based on the selected organization
-                const updatedParams = {
-                    ...params,
-                    company: currentOrganization?.id, // Use the current organization's ID
-                };
-
-                const ordersData = await fleetbase.orders.query(updatedParams);
-                setOrders(ordersData);
-            } catch (error) {
-                logError(error);
-            } finally {
+        return fleetbase.orders
+            .query(params)
+            .then(setOrders)
+            .catch(logError)
+            .finally(() => {
                 setIsRefreshing(false);
                 setIsQuerying(false);
                 setIsLoaded(true);
-            }
-        },
-        [currentOrganization, params, fleetbase.orders]
-    );
-
-    useEffect(() => {
-        if (currentOrganization) {
-            loadOrders({ isQuerying: isLoaded });
-        }
-    }, [currentOrganization]);
+            });
+    });
 
     useEffect(() => {
         driver.currentOrganization().then(setCurrentOrganization);
