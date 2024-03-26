@@ -79,11 +79,11 @@ const Organization = ({ navigation, route }) => {
     const renderItem = ({ item }) => (
         <TouchableOpacity onPress={() => confirmSwitchOrganization(item.id)}>
             <View style={[tailwind('p-1')]}>
-                <View style={[tailwind('px-4 py-2 flex flex-row items-center rounded-r-md')]}>
+                <View style={[tailwind('px-4 py-2 flex flex-row items-center justify-between rounded-r-md')]}>
                     <Text style={tailwind('text-gray-50 text-base')} numberOfLines={1}>
                         {item.getAttribute('name')}
                     </Text>
-                    {currentOrganization.getAttribute('id') === item.id && <FontAwesomeIcon icon={faCheck} size={10} style={tailwind('ml-2 text-green-400')} />}
+                    {currentOrganization.getAttribute('id') === item.id && <FontAwesomeIcon icon={faCheck} size={15} style={tailwind('text-green-400')} />}
                 </View>
             </View>
         </TouchableOpacity>
