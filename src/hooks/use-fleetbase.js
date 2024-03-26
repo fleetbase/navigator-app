@@ -1,6 +1,7 @@
 import Fleetbase from '@fleetbase/sdk';
 import config from 'config';
-import { getString, get } from 'utils/Storage';
+import { isObject } from 'utils';
+import { get, getString } from 'utils/Storage';
 
 const useFleetbase = () => {
     let { FLEETBASE_KEY, FLEETBASE_HOST, FLEETBASE_NAMESPACE } = config;
@@ -16,7 +17,7 @@ const useFleetbase = () => {
         FLEETBASE_HOST = _FLEETBASE_HOST;
     }
 
-    if (typeof _DRIVER === 'object' && typeof _DRIVER?.token === 'string') {
+    if (isObject(_DRIVER) && typeof _DRIVER.token === 'string') {
         FLEETBASE_KEY = _DRIVER.token;
     }
 

@@ -19,6 +19,10 @@
             "emailLabelText": "Your email address",
             "phoneLabelText": "Your mobile number",
             "saveButtonText": "Save Profile"
+        },
+        "OrganizationScreen": {
+            "title": "Organizations",
+            "empty": "No organizations"
         }
     },
     "Auth": {
