@@ -1,4 +1,4 @@
-import { Order } from '@fleetbase/sdk';
+import { Order, lookup } from '@fleetbase/sdk';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useFleetbase } from 'hooks';
@@ -12,7 +12,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { getString, setString } from 'utils/Storage';
-import { config } from './src/utils';
+import { config, isArray, capitalize } from './src/utils';
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -37,37 +37,50 @@ const App: () => Node = () => {
     const { isConnected } = useNetInfo();
 
     useEffect(() => {
-        const orders = JSON.parse(getString('apiRequestQueue'));
-
-        if (!isConnected || orders?.length == 0) {
+        const apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+        console.log('apiRequestQueue:::', JSON.stringify(apiRequestQueue));
+        if (!isConnected || !isArray(apiRequestQueue) || apiRequestQueue.length === 0) {
             return;
         }
-        if (orders?.length > 0) {
+
+        if (apiRequestQueue.length > 0) {
             Toast.show({
                 type: 'success',
                 text1: `Activity syncing...`,
             });
         }
 
-        orders?.forEach((item, index) => {
-            console.log('Order: ', item?.order.attributes.tracking_number.status, item?.order.attributes.id, item.action);
-            const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
+        console.log('apiRequestQueue initial:::::', JSON.stringify(apiRequestQueue));
 
-            if (item.action == 'start') {
-                startOrder(orderService, index);
-            } else if (item.action == 'updated') {
-                updateOrder(orderService, index);
+        const adapter = fleetbase.getAdapter();
+        const adapterMethods = ['get', 'put', 'patch', 'post', 'delete'];
+
+        const trackSuccess = response => {
+            console.log('#trackSuccess is it an order?', response instanceof Order);
+            if (response instanceof Order) {
+                emit('order.synced', order);
             }
-        });
+        };
 
-        if (success) {
-            emit('order');
+        for (let i = 0; i < apiRequestQueue.length; i++) {
+            const apiRequest = apiRequestQueue[i];
+            const { method, resource, resourceType, endpoint, params } = apiRequest;
+            if (adapterMethods.includes(method)) {
+                adapter[method](endpoint, params).then(trackSuccess);
+                continue;
+            }
+            console.log(JSON.stringify({ method, resourceType, endpoint, params }));
+            const resourceInstance = lookup('resource', capitalize(resourceType), resource, fleetbase.getAdapter());
+            console.log('#resourceInstance', resourceInstance);
+            if (resourceInstance) {
+                if (typeof resourceInstance[method] === 'function') {
+                    resourceInstance[method](params).then(trackSuccess);
+                }
+                continue;
+            }
         }
 
-        success.forEach(item => {
-            orders.splice(item);
-        });
-        setString('apiRequestQueue', JSON.stringify(orders));
+        setString('apiRequestQueue', JSON.stringify([]));
     }, [isConnected]);
 
     const updateOrder = (order, index) => {
@@ -98,7 +111,7 @@ const App: () => Node = () => {
                 console.log('Sync sucess: ', res);
             })
             .catch(error => {
-                console.log('attributes error----->', error);
+                console.log('startOrder error----->', error);
                 if (error.message.includes('already started')) {
                     success.push(index);
                 }

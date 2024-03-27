@@ -16,7 +16,7 @@ import RNFS from 'react-native-fs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
-import { getString, setString } from 'utils/Storage';
+import { getString, setString, remove } from 'utils/Storage';
 import OrderMapPicker from '../../components/OrderMapPicker';
 
 const { addEventListener, removeEventListener } = EventRegister;
@@ -213,19 +213,15 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
-    const addToRequestQueue = (type, params, order, action) => {
+    const addToRequestQueue = ({ method, params, resource, resourceType, endpoint }) => {
         let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
-        const queueItem = {
-            type: type,
-            params,
-            order,
-            action: action,
-            time: new Date(),
-        };
+        console.log('Order::::', JSON.stringify(apiRequestQueue));
+        if (isArray(apiRequestQueue)) {
+            apiRequestQueue.push({ method, params, resource, resourceType, endpoint });
+        } else {
+            apiRequestQueue = [{ method, params, resource, resourceType, endpoint }];
+        }
 
-        if (apiRequestQueue?.length > 0) {
-            apiRequestQueue.push(queueItem);
-        } else apiRequestQueue = [queueItem];
         setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
     };
 
@@ -250,7 +246,7 @@ const OrderScreen = ({ navigation, route }) => {
         setIsLoadingAction(true);
 
         if (!isConnected) {
-            addToRequestQueue('startOrder', params, order, 'start');
+            addToRequestQueue({ method: 'start', resource: order.serialize(), resourceType: 'Order', params });
             setIsLoadingAction(false);
             return;
         }
@@ -291,7 +287,7 @@ const OrderScreen = ({ navigation, route }) => {
         setActionSheetAction('update_activity');
 
         if (!isConnected) {
-            addToRequestQueue('updateOrder', '', order, 'updated');
+            addToRequestQueue({ method: 'updateOrder', params: { skipDispatch: true }, resouce: order.serialize(), resourceType: 'Order' });
             setIsLoadingAction(false);
             return;
         }
@@ -946,7 +942,7 @@ const OrderScreen = ({ navigation, route }) => {
                     </View>
                 </View>
             </ScrollView>
-            
+
             <ActionSheet
                 ref={actionSheetRef}
                 containerStyle={{ height: actionSheetHeight, backgroundColor: getColorCode('bg-gray-800') }}

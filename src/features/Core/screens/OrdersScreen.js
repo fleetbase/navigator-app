@@ -141,7 +141,7 @@ const OrdersScreen = ({ navigation }) => {
     }, [isMounted]);
 
     useEffect(() => {
-        const orders = addEventListener('order', () => loadOrders({ isQuerying: true }));
+        const orders = addEventListener('order.synced', () => loadOrders({ isQuerying: true }));
 
         return () => {
             removeEventListener(orders);
