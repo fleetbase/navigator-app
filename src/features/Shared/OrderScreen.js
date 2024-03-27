@@ -213,21 +213,33 @@ const OrderScreen = ({ navigation, route }) => {
             });
     };
 
-    const addToRequestQueue = (type, params, order, action) => {
+    const addToRequestQueue = ({ method, params, resource, resourceType, endpoint }) => {
         let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
-        const queueItem = {
-            type: type,
-            params,
-            order,
-            action: action,
-            time: new Date(),
-        };
+        if (isArray(apiRequestQueue)) {
+            apiRequestQueue.push({ method, params, resource, resourceType, endpoint });
+        } else {
+            apiRequestQueue = [{ method, params, resource, resourceType, endpoint }];
+        }
 
-        if (apiRequestQueue?.length > 0) {
-            apiRequestQueue.push(queueItem);
-        } else apiRequestQueue = [queueItem];
         setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
     };
+
+    // const addToRequestQueue = (type, params, order, action) => {
+    //     let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
+    //     const queueItem = {
+    //         type: type,
+    //         params,
+    //         order,
+    //         action: action,
+    //         time: new Date(),
+    //     };
+
+    //     if (apiRequestQueue?.length > 0) {
+    //         console.log('queueItem----->', JSON.stringify(queueItem));
+    //         apiRequestQueue.push(queueItem);
+    //     } else apiRequestQueue = [queueItem];
+    //     setString('apiRequestQueue', JSON.stringify(apiRequestQueue));
+    // };
 
     const setOrderDestination = waypoint => {
         if (!waypoint) {
@@ -250,7 +262,8 @@ const OrderScreen = ({ navigation, route }) => {
         setIsLoadingAction(true);
 
         if (!isConnected) {
-            addToRequestQueue('startOrder', params, order, 'start');
+            addToRequestQueue({ method: 'startOrder', resource: order.serialize(), resourceType: 'order', params });
+            // addToRequestQueue('startOrder', params, order, 'start');
             setIsLoadingAction(false);
             return;
         }
@@ -291,7 +304,8 @@ const OrderScreen = ({ navigation, route }) => {
         setActionSheetAction('update_activity');
 
         if (!isConnected) {
-            addToRequestQueue('updateOrder', '', order, 'updated');
+            addToRequestQueue({ method: 'updateActivity', params: { skipDispatch: true }, resouce: order.serialize(), resourceType: 'order' });
+            // addToRequestQueue('updateOrder', '', order, 'updated');
             setIsLoadingAction(false);
             return;
         }
@@ -946,7 +960,7 @@ const OrderScreen = ({ navigation, route }) => {
                     </View>
                 </View>
             </ScrollView>
-            
+
             <ActionSheet
                 ref={actionSheetRef}
                 containerStyle={{ height: actionSheetHeight, backgroundColor: getColorCode('bg-gray-800') }}
