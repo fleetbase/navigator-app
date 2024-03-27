@@ -12,7 +12,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { getString, setString } from 'utils/Storage';
-import { config, isArray } from './src/utils';
+import { config, isArray, capitalize } from './src/utils';
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -50,10 +50,18 @@ const App: () => Node = () => {
             });
         }
 
-        console.log('App Connected:::::', JSON.stringify(apiRequestQueue));
+        console.log('apiRequestQueue initial:::::', JSON.stringify(apiRequestQueue));
+
         const adapter = fleetbase.getAdapter();
         const adapterMethods = ['get', 'put', 'patch', 'post', 'delete'];
-        const trackSuccess = response => success.push(response);
+
+        const trackSuccess = response => {
+            console.log('#trackSuccess is it an order?', response instanceof Order);
+            if (response instanceof Order) {
+                emit('order.synced', order);
+            }
+        };
+
         for (let i = 0; i < apiRequestQueue.length; i++) {
             const apiRequest = apiRequestQueue[i];
             const { method, resource, resourceType, endpoint, params } = apiRequest;
@@ -61,32 +69,17 @@ const App: () => Node = () => {
                 adapter[method](endpoint, params).then(trackSuccess);
                 continue;
             }
-
-            const resouceInstance = lookup('resource', resourceType, resource);
-            if (resouceInstance) {
-                resouceInstance[method](params).then(trackSuccess);
+            console.log(JSON.stringify({ method, resourceType, endpoint, params }));
+            const resourceInstance = lookup('resource', capitalize(resourceType), resource, fleetbase.getAdapter());
+            console.log('#resourceInstance', resourceInstance);
+            if (resourceInstance) {
+                if (typeof resourceInstance[method] === 'function') {
+                    resourceInstance[method](params).then(trackSuccess);
+                }
                 continue;
             }
         }
 
-        orders?.forEach((item, index) => {
-            console.log('Order: ', item?.order.attributes.tracking_number.status, item?.order.attributes.id, item.action);
-            const orderService = new Order(item?.order.attributes, fleetbase.getAdapter());
-
-            if (item.action == 'start') {
-                startOrder(orderService, index);
-            } else if (item.action == 'updated') {
-                updateOrder(orderService, index);
-            }
-        });
-
-        if (success) {
-            emit('order');
-        }
-
-        // success.forEach(item => {
-        //     orders.splice(item);
-        // });
         setString('apiRequestQueue', JSON.stringify([]));
     }, [isConnected]);
 
