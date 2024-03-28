@@ -245,7 +245,7 @@ const OrderScreen = ({ navigation, route }) => {
         setIsLoadingAction(true);
 
         if (!isConnected) {
-            addToRequestQueue({ method: 'start', resource: order.serialize(), resourceType: 'Order', params });
+            addToRequestQueue({ method: 'start', params: { skipDispatch: true }, resource: order.serialize(), resourceType: 'Order' });
             setIsLoadingAction(false);
             return;
         }
