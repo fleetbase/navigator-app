@@ -215,7 +215,6 @@ const OrderScreen = ({ navigation, route }) => {
 
     const addToRequestQueue = ({ method, params, resource, resourceType, endpoint }) => {
         let apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
-        console.log('Order::::', JSON.stringify(apiRequestQueue));
         if (isArray(apiRequestQueue)) {
             apiRequestQueue.push({ method, params, resource, resourceType, endpoint });
         } else {
@@ -287,7 +286,7 @@ const OrderScreen = ({ navigation, route }) => {
         setActionSheetAction('update_activity');
 
         if (!isConnected) {
-            addToRequestQueue({ method: 'updateOrder', params: { skipDispatch: true }, resouce: order.serialize(), resourceType: 'Order' });
+            addToRequestQueue({ method: 'updateActivity', params: { skipDispatch: true }, resource: order.serialize(), resourceType: 'Order' });
             setIsLoadingAction(false);
             return;
         }

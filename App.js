@@ -12,7 +12,7 @@ import { EventRegister } from 'react-native-event-listeners';
 import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { getString, setString } from 'utils/Storage';
-import { config, isArray, capitalize } from './src/utils';
+import { config, isArray, capitalize, logError } from './src/utils';
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -34,11 +34,11 @@ const App: () => Node = () => {
     const navigationRef = useRef();
     const [isLoading, setLoading] = useState(true);
     const fleetbase = useFleetbase();
-    const { isConnected } = useNetInfo();
+    const { type, isConnected, isInternetReachable } = useNetInfo();
 
     useEffect(() => {
         const apiRequestQueue = JSON.parse(getString('apiRequestQueue'));
-        console.log('apiRequestQueue:::', JSON.stringify(apiRequestQueue));
+        console.log('#apiRequestQueue', JSON.stringify(apiRequestQueue));
         if (!isConnected || !isArray(apiRequestQueue) || apiRequestQueue.length === 0) {
             return;
         }
@@ -50,15 +50,12 @@ const App: () => Node = () => {
             });
         }
 
-        console.log('apiRequestQueue initial:::::', JSON.stringify(apiRequestQueue));
-
         const adapter = fleetbase.getAdapter();
         const adapterMethods = ['get', 'put', 'patch', 'post', 'delete'];
 
         const trackSuccess = response => {
-            console.log('#trackSuccess is it an order?', response instanceof Order);
             if (response instanceof Order) {
-                emit('order.synced', order);
+                emit('order.synced', response);
             }
         };
 
@@ -69,12 +66,14 @@ const App: () => Node = () => {
                 adapter[method](endpoint, params).then(trackSuccess);
                 continue;
             }
-            console.log(JSON.stringify({ method, resourceType, endpoint, params }));
+            console.log('#queuedApiRequest', JSON.stringify({ method, resourceType, endpoint, params }));
             const resourceInstance = lookup('resource', capitalize(resourceType), resource, fleetbase.getAdapter());
-            console.log('#resourceInstance', resourceInstance);
+            console.log('#resourceInstance', JSON.stringify(resourceInstance));
             if (resourceInstance) {
+                console.log('#resourceInstance ID', resourceInstance.id);
+                console.log('#resourceInstance method', method, typeof resourceInstance[method]);
                 if (typeof resourceInstance[method] === 'function') {
-                    resourceInstance[method](params).then(trackSuccess);
+                    resourceInstance[method](params).then(trackSuccess).catch(logError);
                 }
                 continue;
             }
@@ -82,41 +81,6 @@ const App: () => Node = () => {
 
         setString('apiRequestQueue', JSON.stringify([]));
     }, [isConnected]);
-
-    const updateOrder = (order, index) => {
-        order
-            .updateActivity({ skipDispatch: true })
-            .then(res => {
-                Toast.show({
-                    type: 'success',
-                    text1: `Activity synced.`,
-                });
-                success.push(index);
-                console.log('Order updated------->', res);
-            })
-            .catch(err => {
-                console.error('Order update error------->', err);
-            });
-    };
-
-    const startOrder = (order, index) => {
-        order
-            .start({ skipDispatch: true })
-            .then(res => {
-                Toast.show({
-                    type: 'success',
-                    text1: `Activity synced.`,
-                });
-                success.push(index);
-                console.log('Sync sucess: ', res);
-            })
-            .catch(error => {
-                console.log('startOrder error----->', error);
-                if (error.message.includes('already started')) {
-                    success.push(index);
-                }
-            });
-    };
 
     const parseDeepLinkUrl = useCallback(url => {
         const urlParts = url.split('?');
