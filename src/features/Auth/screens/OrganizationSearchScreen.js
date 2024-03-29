@@ -1,11 +1,11 @@
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { searchButtonStyle } from 'components/SearchButton';
-import { useFleetbase } from 'hooks';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import tailwind from 'tailwind';
-import { getColorCode, isEmpty } from 'utils';
+import { getColorCode, isEmpty, translate } from 'utils';
+import { useFleetbase } from 'hooks';
+import { searchButtonStyle } from 'components/SearchButton';
 
 const isAndroid = Platform.OS === 'android';
 
@@ -57,10 +57,8 @@ const OrganizationSearchScreen = ({ navigation }) => {
     const handleOrganizationSelection = async item => {
         setIsLoading(true);
         const settings = await fetchSettings(item.uuid);
-        
-        setIsLoading(false);
 
-        console.log('settings', JSON.stringify(settings.length));
+        setIsLoading(false);
 
         if (settings.length === 0) {
             Alert.alert('Error', 'Driver onboarding is not enabled for this organization.');
@@ -70,8 +68,8 @@ const OrganizationSearchScreen = ({ navigation }) => {
     };
 
     const renderItem = ({ item }) => (
-        <View style={tailwind('p-4')}>
-            <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => handleOrganizationSelection(item)}>
+        <View style={tailwind('p-2')}>
+            <TouchableOpacity style={tailwind('p-2 border border-gray-800 rounded-lg shadow-sm ')} onPress={() => handleOrganizationSelection(item)}>
                 <View style={tailwind('flex-1 flex-col items-start')}>
                     <Text style={tailwind('text-gray-100')}>{item.name}</Text>
                 </View>
@@ -109,7 +107,13 @@ const OrganizationSearchScreen = ({ navigation }) => {
                     )}
                 </View>
             </View>
-            <FlatList data={results} renderItem={renderItem} keyExtractor={(item, index) => index.toString()} contentContainerStyle={{ flexGrow: 1 }} />
+            {results.length > 0 ? (
+                <FlatList data={results} renderItem={renderItem} keyExtractor={(item, index) => index.toString()} contentContainerStyle={{ flexGrow: 1 }} />
+            ) : (
+                <View style={tailwind('flex-1 justify-center items-center')}>
+                    <Text style={tailwind('text-gray-400')}>{translate('Auth.SignUpScreen.empty')}</Text>
+                </View>
+            )}
         </View>
     );
 };

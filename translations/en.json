@@ -38,7 +38,8 @@
             "driverLicense": "Driver License NUmber",
             "email": "Email Address",
             "document": "Document Upload",
-            "saveButtonText": "Save"
+            "save": "Save",
+            "empty": "No organizations to display"
         },
         "OrganizationsScreen": {
             "searchInputPlaceholderText": "Search Organizations..."

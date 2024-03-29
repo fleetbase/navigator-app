@@ -3,72 +3,24 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import PhoneInput from 'components/PhoneInput';
 import { useFleetbase } from 'hooks';
-import React, { useEffect, useState } from 'react';
-import { launchImageLibrary } from 'react-native-image-picker';
+import React, { useState } from 'react';
 import { getColorCode, logError, translate } from 'utils';
-import { getLocation } from 'utils/Geo';
 
-import { Button, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import tailwind from 'tailwind';
 
 const SignUpScreen = ({ route }) => {
-    const { organization } = route.params;
-
+    const { item } = route.params;
     const fleetbase = useFleetbase();
-    const location = getLocation();
     const navigation = useNavigation();
-
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState(null);
     const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState(false);
-    const isDriverdEnabled = true;
-    const [selectedImages, setSelectedImages] = useState([]);
+    let errorMessage = 'An error occurred';
 
-    const [settings, setSettings] = useState();
-
-    const openImagePicker = () => {
-        const options = {
-            mediaType: 'photo',
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-            includeBase64: false,
-            maxHeight: 200,
-            maxWidth: 200,
-            multiple: true,
-        };
-
-        launchImageLibrary(options, response => {
-            if (response.didCancel) {
-                console.log('User cancelled image picker');
-            } else if (response.error) {
-                console.log('Image picker error: ', response.error);
-            } else {
-                let imageUris = response.assets.map(asset => asset.uri);
-                console.log('imageUris:::::', JSON.stringify(imageUris));
-                setSelectedImages(prevSelectedImages => [...prevSelectedImages, ...imageUris]);
-            }
-        });
-    };
-
-    const fetchSettings = async () => {
-        try {
-            const adapter = internalInstance.getAdapter();
-            const response = await adapter.get('settings/driver-onboard-settings');
-            setSettings(Object.keys(response.driverOnboardSettings)[0]);
-            return response;
-        } catch (error) {
-            console.error('Error fetching organizations:', error);
-            return [];
-        }
-    };
-
-    useEffect(() => {
-        fetchSettings();
-    });
     const saveDriver = () => {
         if (!validateInputs()) {
             return;
@@ -79,7 +31,7 @@ const SignUpScreen = ({ route }) => {
                 name,
                 email,
                 phone,
-                company_uuid: organization.id,
+                company_uuid: item.uuid,
             })
             .then(() => {
                 Toast.show({
@@ -88,19 +40,16 @@ const SignUpScreen = ({ route }) => {
                 });
                 navigation.goBack();
                 setIsLoading(false);
+                navigation.goBack();
             })
             .catch(error => {
                 setIsLoading(false);
+                Toast.show({
+                    type: 'error',
+                    text1: errorMessage,
+                });
                 logError(error);
             });
-    };
-
-    const handleCancel = index => {
-        setSelectedImages(prevSelectedImages => {
-            const updatedImages = [...prevSelectedImages];
-            updatedImages.splice(index, 1);
-            return updatedImages;
-        });
     };
 
     const validateInputs = () => {
@@ -111,14 +60,6 @@ const SignUpScreen = ({ route }) => {
         setError('');
         return true;
     };
-
-    if (!isDriverdEnabled) {
-        return (
-            <View style={tailwind('flex flex-1 justify-center items-center')}>
-                <Text style={tailwind('text-red-500 font-bold')}> Driver not enabled organizations </Text>
-            </View>
-        );
-    }
 
     return (
         <View style={[tailwind('w-full h-full bg-gray-800')]}>
@@ -156,22 +97,6 @@ const SignUpScreen = ({ route }) => {
                                 style={tailwind('form-input text-white')}
                             />
                         </View>
-                        <View style={tailwind('')}>
-                            {selectedImage?.map((imageUri, index) => (
-                                <View key={index} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Image source={{ uri: imageUri }} style={{ width: 50, height: 50, marginRight: 10 }} />
-                                    <Button title="Cancel" onPress={() => handleCancel(index)} />
-                                </View>
-                            ))}
-                            <View style={tailwind('mb-6')}>
-                                <TouchableOpacity onPress={openImagePicker}>
-                                    <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-6')}>
-                                        <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{'Upload image'}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
                         <View style={tailwind('mb-4')}>
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Auth.SignUpScreen.phoneNumber')}</Text>
                             <View style={tailwind('mb-6 flex-row')}>
@@ -181,8 +106,8 @@ const SignUpScreen = ({ route }) => {
 
                         <View style={tailwind('mb-4')}>
                             <TouchableOpacity onPress={saveDriver}>
-                                <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-8')}>
-                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Auth.SignUpScreen.saveButtonText')}</Text>
+                                <View style={tailwind('btn bg-gray-900 border border-gray-700 ')}>
+                                    <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Auth.SignUpScreen.save')}</Text>
                                 </View>
                             </TouchableOpacity>
                         </View>
