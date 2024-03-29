@@ -11,23 +11,20 @@ const isAndroid = Platform.OS === 'android';
 
 const OrganizationSearchScreen = ({ navigation }) => {
     const fleetbase = useFleetbase();
-    const internalInstance = useFleetbase('navigator/v1');
     const searchInput = useRef();
 
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState([]);
     const [organizations, setOrganizations] = useState([]);
+    const [organizationId, setOrganizationId] = useState([]);
     const [settings, setSettings] = useState();
     const [search, setSearch] = useState('');
 
     const fetchOrganizations = async () => {
         try {
             const adapter = fleetbase.getAdapter();
-            const response = await adapter.get('organizations', {
-                with_driver_onboard: true,
-            });
+            const response = await adapter.get('organizations');
             setOrganizations(response);
-            console.log('response---->', JSON.stringify(response));
             return response;
         } catch (error) {
             console.error('Error fetching organizations:', error);
@@ -35,21 +32,22 @@ const OrganizationSearchScreen = ({ navigation }) => {
         }
     };
 
-    const fetchSettings = async () => {
+    const fetchSettings = async organizationId => {
         try {
-            const adapter = internalInstance.getAdapter();
-            const response = await adapter.get('settings/driver-onboard-settings');
+            const adapter = fleetbase.getAdapter();
+            const response = await adapter.get(`onboard/driver-onboard-settings?organizationId=${organizationId}`);
+            console.log('response;:::', JSON.stringify(response));
             setSettings(Object.keys(response.driverOnboardSettings)[0]);
+            navigation.navigate('SignUp', { organization: item });
             return response;
         } catch (error) {
-            console.error('Error fetching organizations:', error);
+            console.error('Error fetching settings:', error);
             return [];
         }
     };
 
     useEffect(() => {
         fetchOrganizations();
-        fetchSettings();
     }, []);
 
     const handleSearch = text => {
@@ -62,17 +60,19 @@ const OrganizationSearchScreen = ({ navigation }) => {
         }
     };
 
+    const handleOrganizationSelection = organizationId => {
+        console.log('item--->', JSON.stringify(organizationId));
+        fetchSettings(organizationId);
+    };
+
     const renderItem = ({ item }) => (
-        console.log('item', JSON.stringify(item)),
-        (
-            <View style={tailwind('p-4')}>
-                <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => navigation.navigate('SignUp', { organization: item })}>
-                    <View style={tailwind('flex-1 flex-col items-start')}>
-                        <Text style={tailwind('text-gray-100')}>{item.name}</Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
-        )
+        <View style={tailwind('p-4')}>
+            <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => handleOrganizationSelection(item.uuid)}>
+                <View style={tailwind('flex-1 flex-col items-start')}>
+                    <Text style={tailwind('text-gray-100')}>{item.name}</Text>
+                </View>
+            </TouchableOpacity>
+        </View>
     );
 
     return (
