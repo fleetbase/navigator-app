@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { searchButtonStyle } from 'components/SearchButton';
 import { useFleetbase } from 'hooks';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
 import { getColorCode, isEmpty } from 'utils';
 
@@ -12,12 +12,9 @@ const isAndroid = Platform.OS === 'android';
 const OrganizationSearchScreen = ({ navigation }) => {
     const fleetbase = useFleetbase();
     const searchInput = useRef();
-
     const [isLoading, setIsLoading] = useState(false);
     const [results, setResults] = useState([]);
     const [organizations, setOrganizations] = useState([]);
-    const [organizationId, setOrganizationId] = useState([]);
-    const [settings, setSettings] = useState();
     const [search, setSearch] = useState('');
 
     const fetchOrganizations = async () => {
@@ -28,20 +25,6 @@ const OrganizationSearchScreen = ({ navigation }) => {
             return response;
         } catch (error) {
             console.error('Error fetching organizations:', error);
-            return [];
-        }
-    };
-
-    const fetchSettings = async organizationId => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            const response = await adapter.get(`onboard/driver-onboard-settings?organizationId=${organizationId}`);
-            console.log('response;:::', JSON.stringify(response));
-            setSettings(Object.keys(response.driverOnboardSettings)[0]);
-            navigation.navigate('SignUp', { organization: item });
-            return response;
-        } catch (error) {
-            console.error('Error fetching settings:', error);
             return [];
         }
     };
@@ -60,14 +43,35 @@ const OrganizationSearchScreen = ({ navigation }) => {
         }
     };
 
-    const handleOrganizationSelection = organizationId => {
-        console.log('item--->', JSON.stringify(organizationId));
-        fetchSettings(organizationId);
+    const fetchSettings = async organizationId => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const response = await adapter.get(`onboard/driver-onboard-settings/${organizationId}`);
+            return response.driverOnboardSettings;
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+            return null;
+        }
+    };
+
+    const handleOrganizationSelection = async item => {
+        setIsLoading(true);
+        const settings = await fetchSettings(item.uuid);
+        
+        setIsLoading(false);
+
+        console.log('settings', JSON.stringify(settings.length));
+
+        if (settings.length === 0) {
+            Alert.alert('Error', 'Driver onboarding is not enabled for this organization.');
+        } else {
+            navigation.navigate('SignUp', { item });
+        }
     };
 
     const renderItem = ({ item }) => (
         <View style={tailwind('p-4')}>
-            <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => handleOrganizationSelection(item.uuid)}>
+            <TouchableOpacity style={tailwind('p-3 bg-gray-900 border border-gray-800 rounded-xl shadow-sm')} onPress={() => handleOrganizationSelection(item)}>
                 <View style={tailwind('flex-1 flex-col items-start')}>
                     <Text style={tailwind('text-gray-100')}>{item.name}</Text>
                 </View>
