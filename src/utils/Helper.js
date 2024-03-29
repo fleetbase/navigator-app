@@ -475,8 +475,8 @@ export default class HelperUtil {
     }
 
     static async createSocketAndListen(channelId, callback) {
-        let hostname = getString('_SOCKET_HOST');
-        let port = getString('_SOCKET_PORT');
+        let hostname = getString('_SOCKETCLUSTER_HOST');
+        let port = getString('_SOCKETCLUSTER_PORT');
 
         // IF no hostname set from instance link use env
         if (!hostname) {
@@ -575,6 +575,10 @@ export default class HelperUtil {
             subtitle,
         };
     }
+
+    static isObject(obj) {
+        return obj && typeof obj === 'object' && Object.prototype.toString.call(obj) === '[object Object]';
+    }
 }
 
 const listCountries = HelperUtil.listCountries;
@@ -588,6 +592,7 @@ const isApple = HelperUtil.isApple();
 const isVoid = HelperUtil.isVoid;
 const isEmpty = HelperUtil.isEmpty;
 const isFalsy = HelperUtil.isFalsy;
+const isObject = HelperUtil.isObject;
 const logError = HelperUtil.logError;
 const mutatePlaces = HelperUtil.mutatePlaces;
 const debounce = HelperUtil.debounce;
@@ -613,6 +618,7 @@ export {
     isArray,
     isEmpty,
     isFalsy,
+    isObject,
     isLastIndex,
     isVoid,
     listCountries,

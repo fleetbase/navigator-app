@@ -13,7 +13,6 @@ import tailwind from 'tailwind';
 import { useDriver } from 'utils/Auth';
 import { getString, setString } from 'utils/Storage';
 import { config } from './src/utils';
-
 import { useNetInfo } from '@react-native-community/netinfo';
 import CoreStack from './src/features/Core/CoreStack';
 
@@ -189,6 +188,7 @@ const App: () => Node = () => {
     return (
         <>
             <NavigationContainer
+                ref={navigationRef}
                 linking={linking}
                 fallback={
                     <View style={tailwind('bg-gray-800 flex items-center justify-center w-full h-full')}>

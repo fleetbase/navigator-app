@@ -1,5 +1,5 @@
 import { Order } from '@fleetbase/sdk';
-import { faBell, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faFile, faLightbulb, faMapMarkerAlt, faMoneyBillWave, faRoute, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNetInfo } from '@react-native-community/netinfo';
 import OrderStatusBadge from 'components/OrderStatusBadge';
@@ -11,6 +11,8 @@ import { ActivityIndicator, Alert, Dimensions, Linking, RefreshControl, ScrollVi
 import ActionSheet from 'react-native-actions-sheet';
 import { EventRegister } from 'react-native-event-listeners';
 import FastImage from 'react-native-fast-image';
+import FileViewer from 'react-native-file-viewer';
+import RNFS from 'react-native-fs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { calculatePercentage, formatCurrency, formatMetaValue, getColorCode, getStatusColors, isArray, isEmpty, logError, titleize, translate } from 'utils';
@@ -26,10 +28,26 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
 
+const getOrderCurrency = order => {
+    let currency = order.getAttribute('meta.currency');
+    // check order for currency attribute too
+    if (!currency) {
+        currency = order.getAttribute('currency');
+    }
+
+    if (!currency) {
+        const entities = order.getAttribute('payload.entities', []);
+
+        if (isArray(entities) && entities.length) {
+            currency = entities[0].currency;
+        }
+    }
+    return currency ?? 'USD';
+};
+
 const OrderScreen = ({ navigation, route }) => {
     const { data } = route.params;
     const { isConnected } = useNetInfo();
-    const [netInfo, setNetInfo] = useState('');
     const insets = useSafeAreaInsets();
     const isMounted = useMountedState();
     const actionSheetRef = createRef();
@@ -39,7 +57,6 @@ const OrderScreen = ({ navigation, route }) => {
 
     const [order, setOrder] = useState(new Order(data, fleetbase.getAdapter()));
     const [isLoadingAction, setIsLoadingAction] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [isLoadingActivity, setIsLoadingActivity] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [nextActivity, setNextActivity] = useState(null);
@@ -47,7 +64,7 @@ const OrderScreen = ({ navigation, route }) => {
     const [map, setMap] = useState(null);
 
     const isPickupOrder = order.getAttribute('meta.is_pickup');
-    const currency = order.getAttribute('meta.currency');
+    const currency = getOrderCurrency(order);
     const subtotal = order.getAttribute('meta.subtotal', 0);
     const total = order.getAttribute('meta.total', 0);
     const tip = order.getAttribute('meta.tip', 0);
@@ -65,7 +82,7 @@ const OrderScreen = ({ navigation, route }) => {
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
-
+    const documents = order.getAttribute('files', []);
     const entitiesByDestination = (() => {
         const groups = [];
 
@@ -106,7 +123,7 @@ const OrderScreen = ({ navigation, route }) => {
         for (let index = 0; index < waypoints.length; index++) {
             const waypoint = waypoints[index];
 
-            if (!waypoint?.tracking_number || statusesToSkip.includes(waypoint.tracking_number.status_code?.toLowerCase())) {
+            if (!waypoint?.tracking || statusesToSkip.includes(waypoint.tracking?.toLowerCase())) {
                 continue;
             }
 
@@ -337,8 +354,10 @@ const OrderScreen = ({ navigation, route }) => {
             .then(setOrder)
             .catch(catchError)
             .finally(() => {
-                setNextActivity(null);
-                setIsLoadingActivity(false);
+                setTimeout(() => {
+                    setNextActivity(null);
+                    setIsLoadingActivity(false);
+                }, 2000);
             });
     };
 
@@ -369,6 +388,12 @@ const OrderScreen = ({ navigation, route }) => {
             Linking.openURL(metaValue);
         }
     });
+
+    useEffect(() => {
+        setTimeout(() => {
+            loadOrder();
+        }, 600);
+    }, [nextActivity]);
 
     useEffect(() => {
         if (actionSheetAction === 'change_destination') {
@@ -417,6 +442,49 @@ const OrderScreen = ({ navigation, route }) => {
     if (destination) {
         focusPlaceOnMap(destination);
     }
+
+    const openMedia = async url => {
+        // Extract filename from URL
+        const fileNameParts = url?.split('/')?.pop()?.split('?');
+        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
+
+        // Create local file path
+        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+
+        // Set up download options
+        const options = {
+            fromUrl: url,
+            toFile: localFile,
+        };
+
+        RNFS.downloadFile(options).promise.then(() => {
+            RNFS.readDir(RNFS.DocumentDirectoryPath);
+            FileViewer.open(localFile);
+        });
+    };
+
+    const checkIsImage = documentType => {
+        return documentType.content_type.startsWith('image/');
+    };
+
+    const renderDocumentItem = (document, index) => {
+        return (
+            <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')} key={index.toString()}>
+                <TouchableOpacity
+                    onPress={() => {
+                        openMedia(document.url);
+                    }}>
+                    {checkIsImage(document) ? (
+                        <FastImage style={tailwind('w-18 h-18 m-1 ')} source={{ uri: document.url }} resizeMode={FastImage.resizeMode.contain} />
+                    ) : (
+                        <View style={tailwind('items-center justify-between p-1 ')}>
+                            <FontAwesomeIcon size={70} icon={faFile} style={tailwind('text-gray-400')} />
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </View>
+        );
+    };
 
     return (
         <View style={[tailwind('bg-gray-800 h-full')]}>
@@ -502,24 +570,22 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('px-4 py-2 flex-1 border-b border-blue-700')}>
                                             <Text style={tailwind('font-bold text-white mb-1')}>Current Destination</Text>
                                             <Text style={tailwind('text-blue-50')}>{destination.address}</Text>
-                                            {destination?.tracking_number?.status_code && (
+                                            {destination?.tracking && (
                                                 <View style={tailwind('my-2 flex flex-row')}>
-                                                    <OrderStatusBadge status={destination?.tracking_number?.status_code ?? 'pending'} wrapperStyle={tailwind('flex-grow-0')} />
+                                                    <OrderStatusBadge status={destination?.tracking ?? 'pending'} wrapperStyle={tailwind('flex-grow-0')} />
                                                 </View>
                                             )}
                                         </View>
-                                        <View style={tailwind('flex flex-row')}>
-                                            <TouchableOpacity
-                                                onPress={toggleChangeDestinationWaypoint}
-                                                style={tailwind('flex-1 px-2 py-2 border-r border-blue-700 flex items-center justify-center')}>
-                                                <FontAwesomeIcon icon={faRoute} style={tailwind('text-blue-50 mb-1')} />
-                                                <Text style={tailwind('text-blue-50')}>Change</Text>
-                                            </TouchableOpacity>
-                                            {/* <TouchableOpacity style={tailwind('flex-1 px-2 py-2 border-r border-blue-700 flex items-center justify-center')}>
-                                                <FontAwesomeIcon icon={faMagic} style={tailwind('text-blue-50 mb-1')} />
-                                                <Text style={tailwind('text-blue-50')}>Optimize</Text>
-                                            </TouchableOpacity> */}
-                                        </View>
+                                        {waypointsInProgress.length > 0 && (
+                                            <View style={tailwind('flex flex-row')}>
+                                                <TouchableOpacity
+                                                    onPress={toggleChangeDestinationWaypoint}
+                                                    style={tailwind('flex-1 px-2 py-2 border-r border-blue-700 flex items-center justify-center')}>
+                                                    <FontAwesomeIcon icon={faRoute} style={tailwind('text-blue-50 mb-1')} />
+                                                    <Text style={tailwind('text-blue-50')}>Change</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
                                     </View>
                                 </View>
                             )}
@@ -779,6 +845,16 @@ const OrderScreen = ({ navigation, route }) => {
                                 </View>
                             </View>
                         )}
+                        <View style={tailwind('mt-2')}>
+                            <View style={tailwind('flex flex-col items-center')}>
+                                <View style={tailwind('flex flex-row items-center justify-between w-full p-4 border-t border-b border-gray-700')}>
+                                    <View style={tailwind('flex flex-row items-center')}>
+                                        <Text style={tailwind('font-semibold text-gray-100')}>Documents & Files</Text>
+                                    </View>
+                                </View>
+                                <View style={tailwind('w-full p-4 flex items-start flex-row  ')}>{documents.map((document, index) => renderDocumentItem(document, index))}</View>
+                            </View>
+                        </View>
                         {isArray(order.getAttribute('payload.entities', [])) && order.getAttribute('payload.entities', []).length > 0 && (
                             <View>
                                 <View style={tailwind('mt-2')}>
@@ -836,12 +912,12 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('w-full p-4 border-b border-gray-700')}>
                                             <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                                                 <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.subtotal')}</Text>
-                                                <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateEntitiesSubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateEntitiesSubtotal() / 100, currency)}</Text>
                                             </View>
                                             {!isPickupOrder && (
                                                 <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                                                     <Text style={tailwind('text-gray-100')}>{translate('Shared.OrderScreen.deliveryFee')}</Text>
-                                                    <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                    <Text style={tailwind('text-gray-100')}>{formatCurrency(calculateDeliverySubtotal() / 100, currency)}</Text>
                                                 </View>
                                             )}
                                             {tip && (
@@ -860,7 +936,7 @@ const OrderScreen = ({ navigation, route }) => {
                                         <View style={tailwind('w-full p-4')}>
                                             <View style={tailwind('flex flex-row items-center justify-between')}>
                                                 <Text style={tailwind('font-semibold text-white')}>{translate('Shared.OrderScreen.total')}</Text>
-                                                <Text style={tailwind('font-semibold text-white')}>{formatCurrency(calculateTotal() / 100, order.getAttribute('meta.currency'))}</Text>
+                                                <Text style={tailwind('font-semibold text-white')}>{formatCurrency(calculateTotal() / 100, currency)}</Text>
                                             </View>
                                         </View>
                                     </View>
@@ -870,6 +946,7 @@ const OrderScreen = ({ navigation, route }) => {
                     </View>
                 </View>
             </ScrollView>
+            
             <ActionSheet
                 ref={actionSheetRef}
                 containerStyle={{ height: actionSheetHeight, backgroundColor: getColorCode('bg-gray-800') }}

@@ -52,6 +52,7 @@ target 'NavigatorApp' do
   pod 'Permission-Contacts', :path => "#{permissions_path}/Contacts"
   pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
   # pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
+  pod 'RNFileViewer', :path => '../node_modules/react-native-file-viewer'
 
   target 'NavigatorAppTests' do
     inherit! :complete
