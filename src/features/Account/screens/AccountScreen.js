@@ -29,7 +29,7 @@ const AccountScreen = ({ navigation }) => {
     useEffect(() => {
         driver.currentOrganization().then(setCurrentOrganization);
     }, []);
-
+    
     const RenderBackground = props => {
         if (driver) {
             return (
