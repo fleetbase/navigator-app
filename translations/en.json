@@ -36,7 +36,7 @@
         },
         "SignUpScreen": {
             "driver": "Become Driver",
-            "sign": "SignUp",
+            "sign": "Create driver account",
             "driverName": "Name",
             "phoneNumber": "Phone Number",
             "driverLicense": "Driver License NUmber",
