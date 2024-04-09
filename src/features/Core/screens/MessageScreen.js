@@ -54,7 +54,7 @@ const MessageScreen = () => {
                     <TouchableOpacity style={tailwind('w-full')} onPress={() => navigation.navigate('ChatScreen', { userName: item.userName })}>
                         <View style={tailwind('inset-x-4')}>
                             {/* <Image style={tailwind('w-50 h-50 rounded-full')} source={item.userImg} /> */}
-                            <View style={tailwind('flex flex-row justify-between mb-5 justify-center p-15 pl-0 ml-10 w-6/12 border-b border-gray-300')}>
+                            <View style={tailwind('flex flex-row justify-between mb-3.5 justify-center border-b border-gray-300')}>
                                 <Text>{item.userName}</Text>
                                 <Text>{item.messageTime}</Text>
                             </View>
