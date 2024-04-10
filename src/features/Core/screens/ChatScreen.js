@@ -1,4 +1,4 @@
-import { faAngleLeft, faPhone, faPhotoVideo } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faPhone, faVideo,faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -42,7 +42,9 @@ const ChatScreen = () => {
     const renderSend = props => {
         return (
             <Send {...props}>
-                <View></View>
+                <View style={tailwind('rounded-full bg-blue-500 p-2 mb-2 mr-2')}>
+                    <FontAwesomeIcon icon={faPaperPlane} size={14} color="#fff" />
+                </View>
             </Send>
         );
     };
@@ -70,22 +72,28 @@ const ChatScreen = () => {
     };
 
     return (
-        <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
-            <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={tailwind('rounded-full ')}>
-                    <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-red-300')} />
+        <View style={tailwind('w-full h-full bg-gray-200 flex-grow p-2')}>
+            <View style={tailwind('flex flex-row ')}>
+                <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.goBack()}>
+                    <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-blue-500')} />
                 </TouchableOpacity>
-                <View>
-                    <Text style={tailwind('font-bold text-white text-base')}>{'Name'}</Text>
+                <View style={tailwind('flex ml-2')}>
+                    <View style={tailwind('flex flex-col ml-2 mt-4')}>
+                        <Text style={tailwind('text-sm text-gray-600 w-64 text-center')}>{'name'}</Text>
+                    </View>
                 </View>
-                <TouchableOpacity style={tailwind('rounded-full ')}>
-                    <FontAwesomeIcon size={18} icon={faPhone} style={tailwind('text-red-400 ')} />
-                </TouchableOpacity>
-                <TouchableOpacity style={tailwind('rounded-full ')}>
-                    <FontAwesomeIcon size={18} icon={faPhotoVideo} style={tailwind('text-red-400 ')} />
-                </TouchableOpacity>
+                <View style={tailwind('flex flex-col items-center mr-4')}>
+                    <TouchableOpacity style={tailwind('rounded-full mt-4 ')}>
+                        <FontAwesomeIcon size={18} icon={faPhone} style={[tailwind('text-blue-500'), { transform: [{ rotate: '90deg' }] }]} />
+                    </TouchableOpacity>
+                </View>
+                <View style={tailwind('flex flex-col items-center mr-4')}>
+                    <TouchableOpacity style={tailwind('rounded-full mt-4')}>
+                        <FontAwesomeIcon size={22} icon={faVideo} style={tailwind('text-blue-500')} />
+                    </TouchableOpacity>
+                </View>
             </View>
-            <View style={tailwind('flex-1 p-6')}>
+            <View style={tailwind('flex-1 p-4 mb-4')}>
                 <GiftedChat
                     messages={messages}
                     onSend={messages => onSend(messages)}
@@ -95,6 +103,7 @@ const ChatScreen = () => {
                     renderBubble={renderBubble}
                     alwaysShowSend
                     scrollToBottom
+                    renderSend={renderSend}
                     scrollToBottomComponent={scrollToBottomComponent}
                 />
             </View>

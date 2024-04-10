@@ -16,7 +16,7 @@ import { createNewOrderLocalNotificationObject, getColorCode, listenForOrdersFro
 import { syncDevice } from 'utils/Auth';
 import { getCurrentLocation, trackDriver } from 'utils/Geo';
 import IssuesScreen from './IssuesScreen';
-import MessageScreen from './MessageScreen';
+import ChatsScreen from './ChatsScreen';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
@@ -142,7 +142,7 @@ const MainScreen = ({ navigation, route }) => {
                             case 'Issue':
                                 icon = faFileAlt;
                                 break;
-                            case 'Message':
+                            case 'Chat':
                                 icon = faTextHeight;
                                 break;
                         }
@@ -164,7 +164,7 @@ const MainScreen = ({ navigation, route }) => {
                 {/* <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} /> */}
                 {/* <Tab.Screen key="wallet" name="Wallet" component={WalletScreen} /> */}
                 <Tab.Screen key="issue" name="Issue" component={IssuesScreen} />
-                <Tab.Screen key="message" name="Message" component={MessageScreen} />
+                <Tab.Screen key="chat" name="Chat" component={ChatsScreen} />
                 <Tab.Screen key="account" name="Account" component={AccountStack} />
             </Tab.Navigator>
         </>
