@@ -53,13 +53,13 @@ const ChatsScreen = () => {
 
     const MessageItem = ({ imageUri, name, message, time }) => {
         return (
-            <TouchableOpacity onPress={() => navigation.navigate('ChatScreen')} style={tailwind('flex flex-row bg-gray-100 mt-2 p-2 rounded mx-2')}>
+            <TouchableOpacity onPress={() => navigation.navigate('ChatScreen')} style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 rounded mx-2')}>
                 <View style={tailwind('p-2')}>
                     <Image source={{ uri: imageUri }} style={tailwind('rounded-full w-10 h-10')} />
                 </View>
                 <View style={tailwind('flex ml-2')}>
                     <View style={tailwind('flex flex-col ml-2')}>
-                        <Text style={tailwind('font-medium text-black')}>{name}</Text>
+                        <Text style={tailwind('font-medium text-white')}>{name}</Text>
                         <Text style={tailwind('text-sm text-gray-400 w-64')}>{message}</Text>
                     </View>
                 </View>
