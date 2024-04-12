@@ -1,16 +1,25 @@
 import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { useFleetbase } from 'hooks';
+import { useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { tailwind } from 'tailwind';
-import { SwipeListView} from 'react-native-swipe-list-view';
+import { SwipeListView } from 'react-native-swipe-list-view';
 
 const ChatsScreen = () => {
     const navigation = useNavigation();
+    const isMounted = useMountedState();
     const fleetbase = useFleetbase();
     const [channel, setChannel] = useState([]);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchChannels();
+        });
+
+        return unsubscribe;
+    }, [isMounted]);
 
     const fetchChannels = async () => {
         try {
@@ -72,12 +81,7 @@ const ChatsScreen = () => {
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
-            <SwipeListView
-                data={channel}
-                renderItem={renderItem}
-                renderHiddenItem={renderHiddenItem}
-                rightOpenValue={-75}
-            />
+            <SwipeListView data={channel} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
             <View style={tailwind('p-4')}>
                 <View style={tailwind('flex flex-row items-center justify-center')}>
                     <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChatScreen')}>
