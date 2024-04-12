@@ -6,7 +6,9 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { tailwind } from 'tailwind';
 
-const ChatScreen = () => {
+const ChatScreen = ({ route }) => {
+    const { data, channelData } = route.params;
+
     const navigation = useNavigation();
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState();
@@ -106,7 +108,7 @@ const ChatScreen = () => {
                 </TouchableOpacity>
                 <View style={tailwind('flex ml-2')}>
                     <View style={tailwind('flex flex-col ml-2 mt-4')}>
-                        <Text style={tailwind('text-sm text-gray-600 w-64 text-center')}>{'Jessica Koel'}</Text>
+                        <Text style={tailwind('text-sm text-gray-600 w-64 text-center')}>{data?.name}</Text>
                     </View>
                 </View>
                 <View style={tailwind('flex flex-col items-center mr-4')}>

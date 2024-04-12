@@ -1,61 +1,43 @@
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useFleetbase } from 'hooks';
+import FastImage from 'react-native-fast-image';
+import { format } from 'date-fns';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { tailwind } from 'tailwind';
 
 const ChatsScreen = () => {
     const navigation = useNavigation();
+    const fleetbase = useFleetbase();
+    const [channel, setChannel] = useState([]);
 
-    const messages = [
-        {
-            id: 1,
-            imageUri: 'https://i.imgur.com/aq39RMA.jpg',
-            name: 'Jessica Koel',
-            message: "Hey, Joel, I'm here to help you out please tell me",
-            time: '11:26',
-        },
-        {
-            id: 2,
-            imageUri: 'https://i.imgur.com/eMaYwXn.jpg',
-            name: 'Komeial Bolger',
-            message: 'I will send you all documents as soon as possible',
-            time: '12:26',
-        },
-        {
-            id: 3,
-            imageUri: 'https://i.imgur.com/zQZSWrt.jpg',
-            name: 'Tamaara Suiale',
-            message: 'Are you going on a business trip next week?',
-            time: '8:26',
-        },
-        {
-            id: 4,
-            imageUri: 'https://i.imgur.com/agRGhBc.jpg',
-            name: 'Sam Nielson',
-            message: 'I suggest starting a new business soon',
-            time: '7:16',
-        },
-        {
-            id: 5,
-            imageUri: 'https://i.imgur.com/uIgDDDd.jpg',
-            name: 'Caroline Nexon',
-            message: 'We need to start a new research center.',
-            time: '9:26',
-        },
-        {
-            id: 6,
-            imageUri: 'https://i.imgur.com/tT8rjKC.jpg',
-            name: 'Patrick Koeler',
-            message: 'Maybe yes',
-            time: '3:26',
-        },
-    ];
+    const fetchChannels = async () => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const response = await adapter.get('chat-channels');
+            setChannel(response);
+            return response;
+        } catch (error) {
+            console.error('Error fetching  channel:', error);
+            return [];
+        }
+    };
+
+    const formatTime = dateTime => {
+        const date = new Date(dateTime);
+        const formattedTime = format(date, 'HH:mm');
+        return formattedTime;
+    };
+
+    useEffect(() => {
+        fetchChannels();
+    }, []);
 
     const MessageItem = ({ imageUri, name, message, time }) => {
         return (
             <TouchableOpacity onPress={() => navigation.navigate('ChatScreen')} style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 rounded mx-2')}>
                 <View style={tailwind('p-2')}>
-                    <Image source={{ uri: imageUri }} style={tailwind('rounded-full w-10 h-10')} />
+                    <FastImage source={imageUri ? { uri: imageUri } : require('../../../../assets/icon.png')} style={tailwind('w-10 h-10 rounded-full')} />
                 </View>
                 <View style={tailwind('flex ml-2')}>
                     <View style={tailwind('flex flex-col ml-2')}>
@@ -63,19 +45,28 @@ const ChatsScreen = () => {
                         <Text style={tailwind('text-sm text-gray-400 w-64')}>{message}</Text>
                     </View>
                 </View>
-                <View style={tailwind('flex flex-col items-center mr-4')}>
-                    <Text style={tailwind('text-gray-600 ')}>{time}</Text>
+                <View style={tailwind('flex flex-col items-center right-2')}>
+                    <Text style={tailwind('text-gray-600')}>{formatTime(time)}</Text>
                 </View>
             </TouchableOpacity>
         );
     };
 
     return (
-        <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
+        <View style={tailwind('w-full h-full bg-gray-800')}>
             <ScrollView>
-                {messages.map(message => (
-                    <MessageItem key={message.id} imageUri={message.imageUri} name={message.name} message={message.message} time={message.time} />
+                {channel.map(item => (
+                    <MessageItem key={item.id} imageUri={item.participants.avatar_url} name={item.name} message={item.message} time={item.created_at} />
                 ))}
+                <View style={tailwind('p-4')}>
+                    <View style={tailwind('flex flex-row items-center justify-center')}>
+                        <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChatScreen', { channelData: item })}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
+                                <Text style={tailwind('font-semibold text-gray-50 text-base')}>{'create'}</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </ScrollView>
         </View>
     );

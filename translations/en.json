@@ -58,6 +58,10 @@
             "report": "Report",
             "driverName": "Driver Name",
             "vehicleName": "Vehicle Name"
+        },
+        "ChannelScreen": {
+            "name": "Name",
+            "title":"Create channel"
         }
     },
     "Exceptions": {
