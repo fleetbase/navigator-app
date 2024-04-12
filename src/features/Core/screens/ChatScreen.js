@@ -103,7 +103,7 @@ const ChatScreen = ({ route }) => {
     return (
         <View style={tailwind('w-full h-full bg-gray-200 flex-grow')}>
             <View style={tailwind('flex flex-row ')}>
-                <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.goBack()}>
+                <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.navigate('ChatsScreen')}>
                     <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-blue-500')} />
                 </TouchableOpacity>
                 <View style={tailwind('flex ml-2')}>
