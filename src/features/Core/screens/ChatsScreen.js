@@ -6,6 +6,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { tailwind } from 'tailwind';
 import { SwipeListView } from 'react-native-swipe-list-view';
+import { HelperUtil } from 'utils';
 
 const ChatsScreen = () => {
     const navigation = useNavigation();
@@ -21,6 +22,34 @@ const ChatsScreen = () => {
         return unsubscribe;
     }, [isMounted]);
 
+    const listenForOrdersFromSocket = (channelId, callback) => {
+        HelperUtil.createSocketAndListen(`chat.${chatChannelRecord.public_id}`, socketEvent => {
+            const { event, data } = socketEvent;
+            switch (event) {
+                case 'chat.added_participant':
+                case 'chat.removed_participant':
+                case 'chat_participant.created':
+                case 'chat_participant.deleted':
+                    this.channel.reloadParticipants();
+                    this.loadAvailableUsers();
+                    break;
+                case 'chat_message.created':
+                    this.chat.insertChatMessageFromSocket(this.channel, data);
+                    break;
+                case 'chat_log.created':
+                    this.chat.insertChatLogFromSocket(this.channel, data);
+                    break;
+                case 'chat_attachment.created':
+                    this.chat.insertChatAttachmentFromSocket(this.channel, data);
+                    break;
+                case 'chat_receipt.created':
+                    this.chat.insertChatReceiptFromSocket(this.channel, data);
+                    break;
+            }
+            this.handleChatFeedScroll();
+        });
+    };
+
     const fetchChannels = async () => {
         try {
             const adapter = fleetbase.getAdapter();
@@ -33,15 +62,15 @@ const ChatsScreen = () => {
         }
     };
 
+    useEffect(() => {
+        fetchChannels();
+    }, []);
+
     const formatTime = dateTime => {
         const date = new Date(dateTime);
         const formattedTime = format(date, 'HH:mm');
         return formattedTime;
     };
-
-    useEffect(() => {
-        fetchChannels();
-    }, []);
 
     const handleDelete = async itemId => {
         try {
@@ -84,7 +113,7 @@ const ChatsScreen = () => {
             <SwipeListView data={channel} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
             <View style={tailwind('p-4')}>
                 <View style={tailwind('flex flex-row items-center justify-center')}>
-                    <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChatScreen')}>
+                    <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
                         <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
                             <Text style={tailwind('font-semibold text-gray-50 text-base')}>Create Channel</Text>
                         </View>

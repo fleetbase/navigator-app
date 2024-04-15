@@ -3,7 +3,7 @@ import config from 'config';
 import { isObject } from 'utils';
 import { get, getString } from 'utils/Storage';
 
-const useFleetbase = () => {
+const useFleetbase = (namespace) => {
     let { FLEETBASE_KEY, FLEETBASE_HOST, FLEETBASE_NAMESPACE } = config;
     let _DRIVER = get('driver');
     let _FLEETBASE_KEY = getString('_FLEETBASE_KEY');
@@ -23,7 +23,7 @@ const useFleetbase = () => {
 
     const fleetbase = new Fleetbase(FLEETBASE_KEY, {
         host: FLEETBASE_HOST,
-        namespace: FLEETBASE_NAMESPACE,
+        namespace: FLEETBASE_NAMESPACE ?? namespace,
     });
 
     return fleetbase;

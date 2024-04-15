@@ -2,28 +2,45 @@ import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
 import { getColorCode, logError, translate } from 'utils';
 
-const ChannelScreen = () => {
+const ChannelScreen = ({ route }) => {
     const navigation = useNavigation();
     const fleetbase = useFleetbase();
     const [name, setName] = useState();
     const [isLoading, setIsLoading] = useState(false);
+    const [channelId, setChannelId] = useState();
+
+    useEffect(() => {
+        if (route?.params?.channel) {
+            const { channel } = route.params;
+            setChannelId(channel.id);
+            console.log('channel.id:::', channel.id);
+            setName(channel.name);
+        }
+    }, [route]);
 
     const saveChannel = () => {
-        setIsLoading(true);
-        const adapter = fleetbase.getAdapter();
-        return adapter
-            .post('chat-channels', {
-                name,
-            })
-            .then(res => {
-                navigation.navigate('ChatScreen', { data: res });
-            })
-            .catch(logError);
+        if (channelId) {
+            return adapter
+                .put(`chat-channels/${channelId}`, name)
+                .then(res => {
+                    navigation.navigate('ChatScreen', { data: res });
+                })
+                .catch(logError)
+                .finally(() => setIsLoading(false));
+        } else {
+            return adapter
+                .post('chat-channels', name)
+                .then(res => {
+                    navigation.navigate('ChatScreen', { data: res });
+                })
+                .catch(logError)
+                .finally(() => setIsLoading(false));
+        }
     };
 
     return (
