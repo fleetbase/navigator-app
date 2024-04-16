@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { tailwind } from 'tailwind';
 import { SwipeListView } from 'react-native-swipe-list-view';
@@ -83,7 +83,7 @@ const ChatsScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity onPress={() => navigation.navigate('ChatScreen')} style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 rounded mx-2')}>
+        <TouchableOpacity style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-2')} onPress={() => navigation.navigate('ChatScreen')}>
             <View style={tailwind('p-2')}>
                 <FastImage
                     source={item.participants.avatar_url ? { uri: item.participants.avatar_url } : require('../../../../assets/icon.png')}
@@ -101,8 +101,8 @@ const ChatsScreen = () => {
     );
 
     const renderHiddenItem = ({ item }) => (
-        <View style={tailwind('bg-white w-full h-full p-2')}>
-            <TouchableOpacity onPress={() => handleDelete(item.id)} style={tailwind('flex items-center w-20 bg-red-600')}>
+        <View style={tailwind(' w-full h-full p-2')}>
+            <TouchableOpacity onPress={() => handleDelete(item.id)} style={[styles.backRightBtn, styles.backRightBtnRight]}>
                 <Text style={tailwind('text-white font-semibold')}>Delete</Text>
             </TouchableOpacity>
         </View>
@@ -110,7 +110,6 @@ const ChatsScreen = () => {
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
-            <SwipeListView data={channel} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
             <View style={tailwind('p-4')}>
                 <View style={tailwind('flex flex-row items-center justify-center')}>
                     <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
@@ -120,8 +119,27 @@ const ChatsScreen = () => {
                     </TouchableOpacity>
                 </View>
             </View>
+            <SwipeListView data={channel} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
         </View>
     );
 };
 
 export default ChatsScreen;
+
+const styles = StyleSheet.create({
+    backRightBtn: {
+        alignItems: 'center',
+        bottom: 0,
+        justifyContent: 'center',
+        position: 'absolute',
+        top: 0,
+        width: 75,
+    },
+    backRightBtnRight: {
+        backgroundColor: '#FF3A3A',
+        right: 0,
+        top: 8,
+        marginRight: 12,
+        marginLeft: 6,
+    },
+});
