@@ -1,4 +1,4 @@
-import { faAngleLeft, faPaperPlane, faUpload, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faPaperPlane, faUpload, faUser, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
@@ -41,9 +41,9 @@ const ChatScreen = ({ route }) => {
 
     const addParticipant = async id => {
         try {
-            const adapter = fleetbase.getAdapter();
-            const res = await adapter.post(`chat-channels/${id}/add-participant`);
-            console.log('res:::', JSON.stringify(res));
+            // const adapter = fleetbase.getAdapter();
+            // const res = await adapter.post(`chat-channels/${id}/add-participant`);
+            // console.log('res:::', JSON.stringify(res));
             setShowUserList(false);
         } catch (error) {
             console.error('Add participant:', error);
@@ -150,18 +150,21 @@ const ChatScreen = ({ route }) => {
     return (
         <View style={tailwind('w-full h-full bg-gray-200')}>
             <View style={tailwind('flex flex-row ')}>
-                <View style={tailwind('flex flex-row ')}>
+                <View style={tailwind('flex flex-row items-center')}>
                     <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.goBack()}>
                         <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-blue-500')} />
                     </TouchableOpacity>
-                    <View style={tailwind('flex ml-2')}>
-                        <View style={tailwind('flex flex-col ml-2 mt-4')}>
-                            <Text style={tailwind('text-sm text-gray-600 w-64 text-center')}>{'name'}</Text>
-                        </View>
+                    <View style={tailwind('flex flex-row items-center')}>
+                        <Text style={tailwind('text-sm text-gray-600 w-72 text-center')}>
+                            {'name '}
+                            <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen')}>
+                                <FontAwesomeIcon size={15} icon={faEdit} style={tailwind('text-blue-500')} />
+                            </TouchableOpacity>
+                        </Text>
                     </View>
 
-                    <View style={tailwind('flex flex-col items-center left-10')}>
-                        <TouchableOpacity style={tailwind('rounded-full mt-4')} onPress={toggleUserList}>
+                    <View style={tailwind('flex flex-col items-center left-6')}>
+                        <TouchableOpacity style={tailwind('rounded-full')} onPress={toggleUserList}>
                             <FontAwesomeIcon size={15} icon={faUser} style={tailwind('text-blue-500')} />
                         </TouchableOpacity>
                     </View>
