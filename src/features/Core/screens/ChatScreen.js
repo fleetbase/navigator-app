@@ -8,8 +8,7 @@ import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gi
 import { tailwind } from 'tailwind';
 
 const ChatScreen = ({ route }) => {
-    const { data, channelData } = route.params;
-
+    const { data, itemData } = route.params;
     const fleetbase = useFleetbase();
     const getUser = useFleetbase('int/v1');
     const navigation = useNavigation();
@@ -22,7 +21,6 @@ const ChatScreen = ({ route }) => {
         try {
             const adapter = getUser.getAdapter();
             const response = await adapter.get('users');
-            console.log('user::::', JSON.stringify(response.users));
             setUsers(response.users);
             return response;
         } catch (error) {
@@ -36,14 +34,14 @@ const ChatScreen = ({ route }) => {
     }, []);
 
     const toggleUserList = () => {
-        setShowUserList(!showUserList); // Toggle the user list visibility
+        setShowUserList(!showUserList);
     };
 
-    const addParticipant = async id => {
+    const addParticipant = async participantId => {
         try {
-            // const adapter = fleetbase.getAdapter();
-            // const res = await adapter.post(`chat-channels/${id}/add-participant`);
-            // console.log('res:::', JSON.stringify(res));
+            const adapter = fleetbase.getAdapter();
+            const res = await adapter.post(`chat-channels/${participantId}/add-participant`);
+            console.log('res:::', JSON.stringify(res));
             setShowUserList(false);
         } catch (error) {
             console.error('Add participant:', error);
@@ -156,9 +154,9 @@ const ChatScreen = ({ route }) => {
                     </TouchableOpacity>
                     <View style={tailwind('flex flex-row items-center')}>
                         <Text style={tailwind('text-sm text-gray-600 w-72 text-center')}>
-                            {'name '}
-                            <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen')}>
-                                <FontAwesomeIcon size={15} icon={faEdit} style={tailwind('text-blue-500')} />
+                            {itemData?.name || data.name}{' '}
+                            <TouchableOpacity style={tailwind('rounded-full ')} onPress={() => navigation.navigate('ChannelScreen', { data: itemData })}>
+                                <FontAwesomeIcon size={18} icon={faEdit} style={tailwind('text-blue-500 mt-1')} />
                             </TouchableOpacity>
                         </Text>
                     </View>

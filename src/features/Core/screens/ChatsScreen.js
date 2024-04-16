@@ -83,7 +83,7 @@ const ChatsScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-2')} onPress={() => navigation.navigate('ChatScreen')}>
+        <TouchableOpacity style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-2')} onPress={() => navigation.navigate('ChatScreen', { itemData: item })}>
             <View style={tailwind('p-2')}>
                 <FastImage
                     source={item.participants.avatar_url ? { uri: item.participants.avatar_url } : require('../../../../assets/icon.png')}
