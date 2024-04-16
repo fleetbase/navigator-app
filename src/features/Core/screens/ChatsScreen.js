@@ -2,17 +2,19 @@ import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { tailwind } from 'tailwind';
 import { SwipeListView } from 'react-native-swipe-list-view';
+import Toast from 'react-native-toast-message';
+import { tailwind } from 'tailwind';
 import { HelperUtil } from 'utils';
 
 const ChatsScreen = () => {
     const navigation = useNavigation();
     const isMounted = useMountedState();
     const fleetbase = useFleetbase();
-    const [channel, setChannel] = useState([]);
+    const [channels, setChannels] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -51,13 +53,16 @@ const ChatsScreen = () => {
     };
 
     const fetchChannels = async () => {
+        setIsLoading(true);
         try {
             const adapter = fleetbase.getAdapter();
             const response = await adapter.get('chat-channels');
-            setChannel(response);
+            setChannels(response);
+            setIsLoading(false);
             return response;
         } catch (error) {
             console.error('Error fetching channels:', error);
+            setIsLoading(false);
             return [];
         }
     };
@@ -75,8 +80,13 @@ const ChatsScreen = () => {
     const handleDelete = async itemId => {
         try {
             const adapter = fleetbase.getAdapter();
-            await adapter.delete(`chat-channels/${itemId}`);
-            setChannel(channel.filter(item => item.id !== itemId));
+            await adapter.delete(`chat-channels/${itemId}`).then(res => {
+                Toast.show({
+                    type: 'success',
+                    text1: `Channel deleted`,
+                });
+            });
+            setChannels(channels.filter(item => item.id !== itemId));
         } catch (error) {
             console.error('Error deleting channel:', error);
         }
@@ -101,7 +111,7 @@ const ChatsScreen = () => {
     );
 
     const renderHiddenItem = ({ item }) => (
-        <View style={tailwind(' w-full h-full p-2')}>
+        <View style={tailwind('w-full h-full p-2')}>
             <TouchableOpacity onPress={() => handleDelete(item.id)} style={[styles.backRightBtn, styles.backRightBtnRight]}>
                 <Text style={tailwind('text-white font-semibold')}>Delete</Text>
             </TouchableOpacity>
@@ -110,6 +120,11 @@ const ChatsScreen = () => {
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
+            {isLoading && (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#FFFFFF" />
+                </View>
+            )}
             <View style={tailwind('p-4')}>
                 <View style={tailwind('flex flex-row items-center justify-center')}>
                     <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
@@ -119,7 +134,7 @@ const ChatsScreen = () => {
                     </TouchableOpacity>
                 </View>
             </View>
-            <SwipeListView data={channel} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
+            <SwipeListView data={channels} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
         </View>
     );
 };
@@ -141,5 +156,12 @@ const styles = StyleSheet.create({
         top: 8,
         marginRight: 12,
         marginLeft: 6,
+    },
+    loaderContainer: {
+        position: 'absolute',
+        top: '50%',
+        left: '60%',
+        transform: [{ translateX: -50 }, { translateY: -50 }],
+        zIndex: 10,
     },
 });

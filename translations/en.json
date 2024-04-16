@@ -61,9 +61,12 @@
         },
         "ChannelScreen": {
             "name": "Name",
-            "title":"Create channel",
+            "title": "Create channel",
             "update": "Update",
-            "update-channel":"Update channel"
+            "update-channel": "Update channel"
+        },
+        "ChatsScreen": {
+            "delete": "Delete"
         }
     },
     "Exceptions": {
