@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { tailwind } from 'tailwind';
 
@@ -16,13 +16,14 @@ const ChatScreen = ({ route }) => {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState();
     const [users, setUsers] = useState([]);
+    const [showUserList, setShowUserList] = useState(false);
 
     const fetchUsers = async () => {
         try {
             const adapter = getUser.getAdapter();
             const response = await adapter.get('users');
-            console.log('user::::', JSON.stringify(response));
-            setUsers(response.name);
+            console.log('user::::', JSON.stringify(response.users));
+            setUsers(response.users);
             return response;
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -34,11 +35,16 @@ const ChatScreen = ({ route }) => {
         fetchUsers();
     }, []);
 
+    const toggleUserList = () => {
+        setShowUserList(!showUserList); // Toggle the user list visibility
+    };
+
     const addParticipant = async id => {
         try {
             const adapter = fleetbase.getAdapter();
-            const res = await adapter.delete(`chat-channels/${id}/add-participant`);
+            const res = await adapter.post(`chat-channels/${id}/add-participant`);
             console.log('res:::', JSON.stringify(res));
+            setShowUserList(false);
         } catch (error) {
             console.error('Add participant:', error);
         }
@@ -142,23 +148,44 @@ const ChatScreen = ({ route }) => {
     };
 
     return (
-        <View style={tailwind('w-full h-full bg-gray-200 flex-grow')}>
+        <View style={tailwind('w-full h-full bg-gray-200')}>
             <View style={tailwind('flex flex-row ')}>
-                <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.navigate('ChatsScreen')}>
-                    <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-blue-500')} />
-                </TouchableOpacity>
-                <View style={tailwind('flex ml-2')}>
-                    <TouchableOpacity style={tailwind('flex flex-col ml-2 mt-4')} onPress={() => navigation.navigate('ChannelScreen')}>
-                        <Text>{data?.name}</Text>
+                <View style={tailwind('flex flex-row ')}>
+                    <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.goBack()}>
+                        <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-blue-500')} />
                     </TouchableOpacity>
-                </View>
-                <View style={tailwind('flex flex-col items-center mr-4')}>
-                    {users?.map(item => (
-                        <TouchableOpacity size={22} icon={faUser} style={tailwind('text-blue-500')} key={item.id} onPress={() => addParticipant(item.id)}>
-                            <Text style={tailwind('user-item')}>{user.name}</Text>
+                    <View style={tailwind('flex ml-2')}>
+                        <View style={tailwind('flex flex-col ml-2 mt-4')}>
+                            <Text style={tailwind('text-sm text-gray-600 w-64 text-center')}>{'name'}</Text>
+                        </View>
+                    </View>
+
+                    <View style={tailwind('flex flex-col items-center left-10')}>
+                        <TouchableOpacity style={tailwind('rounded-full mt-4')} onPress={toggleUserList}>
+                            <FontAwesomeIcon size={15} icon={faUser} style={tailwind('text-blue-500')} />
                         </TouchableOpacity>
-                    ))}
+                    </View>
                 </View>
+
+                {showUserList && (
+                    <View style={tailwind('flex-1 justify-center items-center inset-0 top-14')}>
+                        <View style={tailwind('bg-white w-60 h-40 rounded-lg shadow-lg p-4 right-40')}>
+                            <FlatList
+                                data={users}
+                                keyExtractor={item => item.id.toString()}
+                                renderItem={({ item }) => (
+                                    <View style={tailwind('flex flex-row items-center py-2')}>
+                                        <TouchableOpacity onPress={() => addParticipant(item.id)} style={tailwind('flex flex-row items-center')}>
+                                            <View style={tailwind(item.status === 'active' ? 'bg-green-500 w-2 h-2 rounded-full mr-2' : 'bg-yellow-500 w-2 h-2 rounded-full mr-2')} />
+                                            <FontAwesomeIcon icon={faUser} size={15} color="#168AFF" style={tailwind('mr-2')} />
+                                            <Text style={tailwind('text-sm')}>{item.name}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            />
+                        </View>
+                    </View>
+                )}
             </View>
             <View style={tailwind('flex-1 p-4')}>
                 <GiftedChat
