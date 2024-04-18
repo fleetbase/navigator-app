@@ -24,34 +24,6 @@ const ChatsScreen = () => {
         return unsubscribe;
     }, [isMounted]);
 
-    const listenForOrdersFromSocket = (channelId, callback) => {
-        HelperUtil.createSocketAndListen(`chat.${chatChannelRecord.public_id}`, socketEvent => {
-            const { event, data } = socketEvent;
-            switch (event) {
-                case 'chat.added_participant':
-                case 'chat.removed_participant':
-                case 'chat_participant.created':
-                case 'chat_participant.deleted':
-                    this.channel.reloadParticipants();
-                    this.loadAvailableUsers();
-                    break;
-                case 'chat_message.created':
-                    this.chat.insertChatMessageFromSocket(this.channel, data);
-                    break;
-                case 'chat_log.created':
-                    this.chat.insertChatLogFromSocket(this.channel, data);
-                    break;
-                case 'chat_attachment.created':
-                    this.chat.insertChatAttachmentFromSocket(this.channel, data);
-                    break;
-                case 'chat_receipt.created':
-                    this.chat.insertChatReceiptFromSocket(this.channel, data);
-                    break;
-            }
-            this.handleChatFeedScroll();
-        });
-    };
-
     const fetchChannels = async () => {
         setIsLoading(true);
         try {

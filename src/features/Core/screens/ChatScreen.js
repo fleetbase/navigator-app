@@ -7,9 +7,11 @@ import { Alert, FlatList, Text, TouchableOpacity, View, ScrollView, ActivityIndi
 import FastImage from 'react-native-fast-image';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
+import RNFS from 'react-native-fs';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
-import { translate } from 'utils';
+
+import { translate, HelperUtil } from 'utils';
 
 const ChatScreen = ({ route }) => {
     const { channelData, chatsData } = route.params;
@@ -24,6 +26,7 @@ const ChatScreen = ({ route }) => {
 
     useEffect(() => {
         fetchUsers(chatsData?.id || channelData.id);
+        uploadFile();
     }, []);
 
     useEffect(() => {
@@ -51,6 +54,33 @@ const ChatScreen = ({ route }) => {
         ]);
     }, []);
 
+    const listenForOrdersFromSocket = (channelId, callback) => {
+        HelperUtil.createSocketAndListen(`chat.${chatChannelRecord.public_id}`, socketEvent => {
+            const { event, data } = socketEvent;
+            switch (event) {
+                case 'chat.added_participant':
+                case 'chat.removed_participant':
+                case 'chat_participant.created':
+                case 'chat_participant.deleted':
+                    this.channel.reloadParticipants();
+                    this.loadAvailableUsers();
+                    break;
+                case 'chat_message.created':
+                    this.chat.insertChatMessageFromSocket(this.channel, data);
+                    break;
+                case 'chat_log.created':
+                    this.chat.insertChatLogFromSocket(this.channel, data);
+                    break;
+                case 'chat_attachment.created':
+                    this.chat.insertChatAttachmentFromSocket(this.channel, data);
+                    break;
+                case 'chat_receipt.created':
+                    this.chat.insertChatReceiptFromSocket(this.channel, data);
+                    break;
+            }
+            this.handleChatFeedScroll();
+        });
+    };
     const addChannelCreationMessage = () => {
         const newMessage = {
             _id: new Date().getTime(),
@@ -62,6 +92,32 @@ const ChatScreen = ({ route }) => {
             },
         };
         setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
+    };
+
+    
+    const uploadFile = async url => {
+        // Extract filename from URL
+
+        console.log('res>>>>>>>>', JSON.stringify(url));
+        // const fileNameParts = url?.split('/')?.pop()?.split('?');
+
+        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
+
+        console.log('fileName::::', JSON.stringify(url));
+        // Create local file path
+        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+
+        console.log('localFile::::', JSON.stringify(localFile));
+        // Set up download options
+        const options = {
+            fromUrl: url,
+            toFile: localFile,
+        };
+
+        RNFS.uploadFiles(options).promise.then(() => {
+            RNFS.readDir(RNFS.DocumentDirectoryPath);
+            FileViewer.open(localFile);
+        });
     };
 
     const toggleUserList = () => {
@@ -230,15 +286,15 @@ const ChatScreen = ({ route }) => {
         return <FontAwesomeIcon name="angle-double-down" size={22} color="#333" />;
     };
 
-    const uploadFile = async file => {
-        const formData = new FormData();
-        formData.append('file', {
-            uri: file.uri,
-            name: file.name,
-            type: file.type,
-        });
+    const sentMessage = async channelId => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const res = await adapter.post(`chat-channels/${channelId}/send-message`, { sender: participantId, content: content, file: file });
 
-        //todo
+            setShowUserList(false);
+        } catch (error) {
+            console.error('Add participant:', error);
+        }
     };
 
     const chooseFile = () => {
@@ -256,12 +312,8 @@ const ChatScreen = ({ route }) => {
             } else if (response.error) {
                 console.log('ImagePicker Error: ', response.error);
             } else {
-                const file = {
-                    uri: response.uri,
-                    name: response.fileName,
-                    type: response.type,
-                };
-                uploadFile(file);
+                console.log('response::::', JSON.stringify(response.assets[0]));
+                uploadFile(response.assets[0]);
             }
         });
     };

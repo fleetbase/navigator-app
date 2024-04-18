@@ -87,7 +87,7 @@
         "react-native-maps": "^2.0.0-beta.14",
         "react-native-maps-directions": "^1.8.0",
         "react-native-mmkv-storage": "^0.9.0",
-        "react-native-modal": "^12.0.2",
+        "react-native-modal": "^13.0.1",
         "react-native-navigation-apps": "^1.0.27",
         "react-native-open-maps": "^0.4.0",
         "react-native-permissions": "^3.0.5",
