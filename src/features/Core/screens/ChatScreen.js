@@ -1,9 +1,9 @@
-import { faAngleLeft, faEdit, faPaperPlane, faUpload, faUser, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUpload, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { tailwind } from 'tailwind';
@@ -15,13 +15,11 @@ const ChatScreen = ({ route }) => {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState();
     const [users, setUsers] = useState([]);
-    const [channel, setChannel] = useState([]);
     const [showUserList, setShowUserList] = useState(false);
     const [addedParticipants, setAddedParticipants] = useState([]);
 
     useEffect(() => {
         fetchUsers(itemData?.id);
-        fetchChannels();
     }, []);
 
     useEffect(() => {
@@ -51,7 +49,7 @@ const ChatScreen = ({ route }) => {
 
     const addChannelCreationMessage = () => {
         const newMessage = {
-            _id: new Date().getTime(), // Use current timestamp as a unique ID
+            _id: new Date().getTime(),
             text: 'Channel created successfully',
             createdAt: new Date(),
             user: {
@@ -62,17 +60,6 @@ const ChatScreen = ({ route }) => {
         setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
     };
 
-    const fetchChannels = async () => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            const response = await adapter.get('chat-channels');
-            setChannel(response);
-            addChannelCreationMessage();
-        } catch (error) {
-            console.error('Error fetching channels:', error);
-        }
-    };
-
     const toggleUserList = () => {
         setShowUserList(!showUserList);
     };
@@ -81,6 +68,7 @@ const ChatScreen = ({ route }) => {
         try {
             const adapter = fleetbase.getAdapter();
             const response = await adapter.get(`chat-channels/${id}/available-participants`);
+            console.log('response:::::::', JSON.stringify(response));
             setUsers(response);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -118,28 +106,6 @@ const ChatScreen = ({ route }) => {
         }
     };
 
-    const deleteParticipant = async participantId => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            await adapter.delete(`chat-channels/remove-participant/${participantId}`);
-
-            setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
-
-            const newMessage = {
-                _id: new Date().getTime(),
-                text: `Removed participant from this channel`,
-                createdAt: new Date(),
-                user: {
-                    _id: 1,
-                    name: 'System',
-                },
-            };
-            setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
-        } catch (error) {
-            console.error('Remove participant:', error);
-        }
-    };
-
     const AddedParticipants = ({ participants, onDelete }) => {
         return (
             <View style={tailwind('flex flex-row items-center p-2')}>
@@ -166,7 +132,7 @@ const ChatScreen = ({ route }) => {
                                         right: -4,
                                     },
                                 ]}
-                                onPress={() => removeParticipant(participant.id)}>
+                                onPress={() => confirmRemove(participant.id)}>
                                 <FontAwesomeIcon icon={faTrash} size={14} color="#FF0000" />
                             </TouchableOpacity>
                         </View>
@@ -177,15 +143,45 @@ const ChatScreen = ({ route }) => {
         );
     };
 
+    const confirmRemove = participantId => {
+        Alert.alert(
+            'Confirmation',
+            'Are you sure you wish to remove this participant from the chat?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'OK',
+                    onPress: () => removeParticipant(participantId),
+                },
+            ],
+            { cancelable: false }
+        );
+    };
+
     const removeParticipant = async participantId => {
         try {
             const adapter = fleetbase.getAdapter();
-            const res = await adapter.delete(`chat-channels/remove-participant/${participantId}`);
+            await adapter.delete(`chat-channels/remove-participant/${participantId}`);
+
+            setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
+
+            const newMessage = {
+                _id: new Date().getTime(),
+                text: `Removed participant from this channel`,
+                createdAt: new Date(),
+                user: {
+                    _id: 1,
+                    name: 'System',
+                },
+            };
+            setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
         } catch (error) {
             console.error('Remove participant:', error);
         }
     };
-
     const onSend = useCallback((messages = []) => {
         setMessages(previousMessages => GiftedChat.append(previousMessages, messages));
     }, []);
@@ -287,7 +283,7 @@ const ChatScreen = ({ route }) => {
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
             <View style={tailwind('flex flex-row')}>
-                <View style={tailwind('flex flex-row items-center')}>
+                <View style={tailwind('flex flex-row items-center top-2')}>
                     <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.goBack()}>
                         <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-gray-300')} />
                     </TouchableOpacity>
@@ -327,8 +323,7 @@ const ChatScreen = ({ route }) => {
                 )}
             </View>
             <View style={tailwind('flex-1 p-4')}>
-                <AddedParticipants participants={addedParticipants} onDelete={deleteParticipant} />
-
+                <AddedParticipants participants={data?.participants || itemData.participants} onDelete={confirmRemove} />
                 <GiftedChat
                     messages={messages}
                     onSend={onSend}
