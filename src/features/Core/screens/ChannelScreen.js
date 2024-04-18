@@ -29,7 +29,7 @@ const ChannelScreen = ({ route }) => {
             return adapter
                 .put(`chat-channels/${channelId}`, data)
                 .then(res => {
-                    navigation.navigate('ChatScreen', { data: res });
+                    navigation.navigate('ChatScreen', { channelData: res });
                 })
                 .catch(logError)
                 .finally(() => setIsLoading(false));
@@ -37,7 +37,7 @@ const ChannelScreen = ({ route }) => {
             return adapter
                 .post('chat-channels', { name })
                 .then(res => {
-                    navigation.navigate('ChatScreen', { data: res });
+                    navigation.navigate('ChatScreen', { channelData: res });
                 })
                 .catch(logError)
                 .finally(() => setIsLoading(false));

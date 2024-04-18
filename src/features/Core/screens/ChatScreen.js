@@ -9,7 +9,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { tailwind } from 'tailwind';
 
 const ChatScreen = ({ route }) => {
-    const { data, itemData } = route.params;
+    const { channelData, chatsData } = route.params;
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
     const [messages, setMessages] = useState([]);
@@ -19,7 +19,7 @@ const ChatScreen = ({ route }) => {
     const [addedParticipants, setAddedParticipants] = useState([]);
 
     useEffect(() => {
-        fetchUsers(itemData?.id);
+        fetchUsers(chatsData?.id || channelData.id);
     }, []);
 
     useEffect(() => {
@@ -289,9 +289,9 @@ const ChatScreen = ({ route }) => {
                     </TouchableOpacity>
                     <View style={tailwind('flex flex-row items-center')}>
                         <Text style={tailwind('text-sm text-gray-300 w-72 text-center')}>
-                            {itemData?.name || data.name}
+                            {chatsData?.name || channelData.name}
                             {'  '}
-                            <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen', { data: itemData })}>
+                            <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen', { data: chatsData })}>
                                 <FontAwesomeIcon size={18} icon={faEdit} style={tailwind('text-gray-300 mt-1')} />
                             </TouchableOpacity>
                         </Text>
@@ -311,7 +311,9 @@ const ChatScreen = ({ route }) => {
                                 data={users}
                                 keyExtractor={item => item.id.toString()}
                                 renderItem={({ item }) => (
-                                    <TouchableOpacity onPress={() => addParticipant(itemData.id, item.id, item.name, item.avatar_url)} style={tailwind('flex flex-row items-center py-2')}>
+                                    <TouchableOpacity
+                                        onPress={() => addParticipant(chatsData.id, item.id, item.name, item.avatar_url)}
+                                        style={tailwind('flex flex-row items-center py-2')}>
                                         <View style={tailwind(item.status === 'active' ? 'bg-green-500 w-2 h-2 rounded-full mr-2' : 'bg-yellow-500 w-2 h-2 rounded-full mr-2')} />
                                         <FontAwesomeIcon icon={faUser} size={15} color="#fff" style={tailwind('mr-2')} />
                                         <Text style={tailwind('text-sm')}>{item.name}</Text>
@@ -323,7 +325,7 @@ const ChatScreen = ({ route }) => {
                 )}
             </View>
             <View style={tailwind('flex-1 p-4')}>
-                <AddedParticipants participants={data?.participants || itemData.participants} onDelete={confirmRemove} />
+                <AddedParticipants participants={channelData?.participants || chatsData.participants} onDelete={confirmRemove} />
                 <GiftedChat
                     messages={messages}
                     onSend={onSend}
