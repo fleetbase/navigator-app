@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { tailwind } from 'tailwind';
@@ -112,24 +113,31 @@ const ChatScreen = ({ route }) => {
                 {participants.map(participant => (
                     <View key={participant.id} style={tailwind('flex flex-col items-center mr-2')}>
                         <View style={tailwind('relative')}>
-                            <View
-                                style={[
-                                    tailwind(participant.status === 'active' ? 'bg-green-500 w-4 h-4 rounded-full absolute left-0' : 'bg-yellow-500 w-3 h-3 rounded-full absolute left-0'),
-                                    {
-                                        zIndex: 2,
-                                        marginTop: -2,
-                                        left: -2,
-                                    },
-                                ]}
-                            />
-                            <Image source={{ uri: participant.avatar }} style={tailwind('w-10 h-10 rounded-full')} />
+                            <View style={tailwind('flex flex-row items-center')}>
+                                <View
+                                    style={[
+                                        tailwind(participant.status === 'active' ? 'bg-green-500 w-4 h-4 rounded-full' : 'bg-yellow-500 w-3 h-3 rounded-full'),
+                                        {
+                                            position: 'absolute',
+                                            left: 2,
+                                            top: -2,
+                                            zIndex: 1,
+                                        },
+                                    ]}
+                                />
+                                <FastImage
+                                    source={participant.avatar_url ? { uri: participant.avatar_url } : require('../../../../assets/icon.png')}
+                                    style={tailwind('w-10 h-10 rounded-full')}
+                                />
+                            </View>
                             <TouchableOpacity
                                 style={[
                                     tailwind('absolute right-0'),
                                     {
-                                        zIndex: 3,
-                                        marginTop: -4,
-                                        right: -4,
+                                        position: 'absolute',
+                                        top: -4,
+                                        right: -2,
+                                        zIndex: 2,
                                     },
                                 ]}
                                 onPress={() => confirmRemove(participant.id)}>
@@ -312,7 +320,7 @@ const ChatScreen = ({ route }) => {
                                 keyExtractor={item => item.id.toString()}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
-                                        onPress={() => addParticipant(chatsData.id, item.id, item.name, item.avatar_url)}
+                                        onPress={() => addParticipant(chatsData.id || channelData?.id, item.id, item.name, item.avatar_url)}
                                         style={tailwind('flex flex-row items-center py-2')}>
                                         <View style={tailwind(item.status === 'active' ? 'bg-green-500 w-2 h-2 rounded-full mr-2' : 'bg-yellow-500 w-2 h-2 rounded-full mr-2')} />
                                         <FontAwesomeIcon icon={faUser} size={15} color="#fff" style={tailwind('mr-2')} />
