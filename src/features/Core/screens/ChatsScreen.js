@@ -94,7 +94,7 @@ const ChatsScreen = () => {
 
     const renderItem = ({ item }) => (
         <TouchableHighlight
-            style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-2')}
+            style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-4 rounded-lg')}
             onPress={() => navigation.navigate('ChatScreen', { chatsData: item })}
             underlayColor={tailwind('bg-gray-900')}>
             <View style={tailwind('flex flex-row')}>
@@ -155,10 +155,11 @@ const styles = StyleSheet.create({
     },
     backRightBtnRight: {
         backgroundColor: '#FF3A3A',
-        right: 0,
+        right: 4,
         top: 8,
         marginRight: 12,
         marginLeft: 6,
+        borderRadius: 12,
     },
     loaderContainer: {
         position: 'absolute',

@@ -339,7 +339,7 @@ const ChatScreen = ({ route }) => {
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
                                         onPress={() => addParticipant(chatsData.id || channelData?.id, item.id, item.name, item.avatar_url)}
-                                        style={tailwind('flex flex-row items-center py-2 border border-gray-500 rounded-lg mb-2')}>
+                                        style={tailwind('flex flex-row items-center py-2  bg-gray-900 rounded-lg mb-2')}>
                                         <View style={tailwind('flex flex-row items-center ml-2')}>
                                             <View
                                                 style={[
