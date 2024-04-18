@@ -78,6 +78,13 @@ const ChatScreen = ({ route }) => {
     };
 
     const addParticipant = async (channelId, participantId, participantName, avatar) => {
+        const isParticipantAdded = addedParticipants.some(participant => participant.id === participantId);
+
+        if (isParticipantAdded) {
+            Alert.alert('Alert', `${participantName} is already a part of this channel.`, [{ text: 'OK' }]);
+            return;
+        }
+
         try {
             const adapter = fleetbase.getAdapter();
             const res = await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
