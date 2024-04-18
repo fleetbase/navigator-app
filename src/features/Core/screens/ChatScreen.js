@@ -3,11 +3,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
 import React, { useCallback, useEffect, useState } from 'react';
-import FastImage from 'react-native-fast-image';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
+import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
+import { translate } from 'utils';
 
 const ChatScreen = ({ route }) => {
     const { channelData, chatsData } = route.params;
@@ -69,7 +71,6 @@ const ChatScreen = ({ route }) => {
         try {
             const adapter = fleetbase.getAdapter();
             const response = await adapter.get(`chat-channels/${id}/available-participants`);
-            console.log('response:::::::', JSON.stringify(response));
             setUsers(response);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -98,7 +99,6 @@ const ChatScreen = ({ route }) => {
                     name: 'System',
                 },
             };
-
             setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
 
             setShowUserList(false);
@@ -150,7 +150,6 @@ const ChatScreen = ({ route }) => {
             </View>
         );
     };
-
     const confirmRemove = participantId => {
         Alert.alert(
             'Confirmation',
@@ -311,26 +310,43 @@ const ChatScreen = ({ route }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
-
-                {showUserList && (
-                    <View style={tailwind('flex-1 justify-center items-center inset-0 top-14')}>
-                        <View style={tailwind('bg-gray-500 w-60 h-40 rounded-lg shadow-lg p-4 right-40')}>
-                            <FlatList
-                                data={users}
-                                keyExtractor={item => item.id.toString()}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        onPress={() => addParticipant(chatsData.id || channelData?.id, item.id, item.name, item.avatar_url)}
-                                        style={tailwind('flex flex-row items-center py-2')}>
-                                        <View style={tailwind(item.status === 'active' ? 'bg-green-500 w-2 h-2 rounded-full mr-2' : 'bg-yellow-500 w-2 h-2 rounded-full mr-2')} />
-                                        <FontAwesomeIcon icon={faUser} size={15} color="#fff" style={tailwind('mr-2')} />
-                                        <Text style={tailwind('text-sm')}>{item.name}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        </View>
+                <Modal
+                    isVisible={showUserList}
+                    onBackdropPress={toggleUserList}
+                    style={tailwind('justify-end m-0')}
+                    backdropOpacity={0.5}
+                    useNativeDriver
+                    animationIn="slideInUp"
+                    animationOut="slideOutDown">
+                    <View style={tailwind(' bg-gray-800 w-full h-72 rounded-lg p-4 ')}>
+                        <Text style={tailwind('text-lg mb-2 text-gray-300')}>{translate('Core.ChatScreen.title')}:</Text>
+                        <FlatList
+                            data={users}
+                            keyExtractor={item => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    onPress={() => addParticipant(chatsData.id || channelData?.id, item.id, item.name, item.avatar_url)}
+                                    style={tailwind('flex flex-row items-center py-2 border border-gray-500 rounded-lg mb-2')}>
+                                    <View style={tailwind('flex flex-row items-center ml-2')}>
+                                        <View
+                                            style={[
+                                                tailwind(item.status === 'active' ? 'bg-green-500 w-4 h-4 rounded-full' : 'bg-yellow-500 w-3 h-3 rounded-full'),
+                                                {
+                                                    position: 'absolute',
+                                                    left: 2,
+                                                    top: -2,
+                                                    zIndex: 1,
+                                                },
+                                            ]}
+                                        />
+                                        <FastImage source={item.avatar_url ? { uri: item.avatar_url } : require('../../../../assets/icon.png')} style={tailwind('w-10 h-10 rounded-full')} />
+                                    </View>
+                                    <Text style={tailwind('text-sm text-white ml-2')}>{item.name}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
                     </View>
-                )}
+                </Modal>
             </View>
             <View style={tailwind('flex-1 p-4')}>
                 <AddedParticipants participants={channelData?.participants || chatsData.participants} onDelete={confirmRemove} />
