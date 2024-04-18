@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, TouchableHighlight } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import Toast from 'react-native-toast-message';
@@ -93,21 +93,24 @@ const ChatsScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-2')} onPress={() => navigation.navigate('ChatScreen', { chatsData: item })}>
-            <View style={tailwind('p-2')}>
+        <TouchableHighlight
+            style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-2')}
+            onPress={() => navigation.navigate('ChatScreen', { chatsData: item })}
+            underlayColor={tailwind('bg-gray-900')}>
+            <View style={tailwind('flex flex-row')}>
                 <FastImage
                     source={item.participants.avatar_url ? { uri: item.participants.avatar_url } : require('../../../../assets/icon.png')}
                     style={tailwind('w-10 h-10 rounded-full')}
                 />
+                <View style={tailwind('flex ml-2')}>
+                    <Text style={tailwind('font-medium text-white')}>{item.name}</Text>
+                    <Text style={tailwind('text-sm text-gray-400 w-64')}>{item.message}</Text>
+                </View>
+                <View style={tailwind('flex flex-col items-center right-2')}>
+                    <Text style={tailwind('text-gray-600')}>{formatTime(item.created_at)}</Text>
+                </View>
             </View>
-            <View style={tailwind('flex ml-2')}>
-                <Text style={tailwind('font-medium text-white')}>{item.name}</Text>
-                <Text style={tailwind('text-sm text-gray-400 w-64')}>{item.message}</Text>
-            </View>
-            <View style={tailwind('flex flex-col items-center right-2')}>
-                <Text style={tailwind('text-gray-600')}>{formatTime(item.created_at)}</Text>
-            </View>
-        </TouchableOpacity>
+        </TouchableHighlight>
     );
 
     const renderHiddenItem = ({ item }) => (

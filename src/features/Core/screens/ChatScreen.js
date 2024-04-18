@@ -298,7 +298,7 @@ const ChatScreen = ({ route }) => {
         <View style={tailwind('w-full h-full bg-gray-800')}>
             <View style={tailwind('flex flex-row')}>
                 <View style={tailwind('flex flex-row items-center top-2')}>
-                    <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.goBack()}>
+                    <TouchableOpacity style={tailwind('p-2')} onPress={() => navigation.pop(2)}>
                         <FontAwesomeIcon size={25} icon={faAngleLeft} style={tailwind('text-gray-300')} />
                     </TouchableOpacity>
                     <View style={tailwind('flex flex-row items-center')}>
@@ -330,7 +330,7 @@ const ChatScreen = ({ route }) => {
 
                         {isLoading ? (
                             <View style={tailwind('flex items-center justify-center h-full')}>
-                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                <ActivityIndicator size="large" color="#FFFFFF" />
                             </View>
                         ) : (
                             <FlatList

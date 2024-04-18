@@ -23,6 +23,7 @@ const ChannelScreen = ({ route }) => {
     }, [route]);
 
     const saveChannel = () => {
+        setIsLoading(true);
         const adapter = fleetbase.getAdapter();
         const data = { name };
         if (channelId) {
@@ -32,7 +33,7 @@ const ChannelScreen = ({ route }) => {
                     navigation.navigate('ChatScreen', { channelData: res });
                 })
                 .catch(logError)
-                .finally(() => setIsLoading(false));
+                .finally(() => setIsLoading(false)); // End the loading indicator
         } else {
             return adapter
                 .post('chat-channels', { name })
@@ -40,7 +41,7 @@ const ChannelScreen = ({ route }) => {
                     navigation.navigate('ChatScreen', { channelData: res });
                 })
                 .catch(logError)
-                .finally(() => setIsLoading(false));
+                .finally(() => setIsLoading(false)); // End the loading indicator
         }
     };
 
@@ -49,7 +50,7 @@ const ChannelScreen = ({ route }) => {
             <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
                 <View style={tailwind('flex flex-row items-center justify-between p-4')}>
                     <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{channelId ? translate('Core.ChannelScreen.update-channel') : translate('Core.ChannelScreen.title')}</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('ChatsScreen')} style={tailwind('mr-4')}>
+                    <TouchableOpacity onPress={() => navigation.pop(2)} style={tailwind('mr-4')}>
                         <View style={tailwind('rounded-full bg-gray-900 w-10 h-10 flex items-center justify-center')}>
                             <FontAwesomeIcon icon={faTimes} style={tailwind('text-red-400')} />
                         </View>
