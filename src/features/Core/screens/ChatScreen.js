@@ -11,7 +11,6 @@ import { tailwind } from 'tailwind';
 const ChatScreen = ({ route }) => {
     const { data, itemData } = route.params;
     const fleetbase = useFleetbase();
-    const getUser = useFleetbase('int/v1');
     const navigation = useNavigation();
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState();
@@ -19,53 +18,10 @@ const ChatScreen = ({ route }) => {
     const [channel, setChannel] = useState([]);
     const [showUserList, setShowUserList] = useState(false);
 
-    const fetchUsers = async () => {
-        try {
-            const adapter = getUser.getAdapter();
-            const response = await adapter.get('users');
-            setUsers(response.users);
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        }
-    };
-
-    const fetchChannels = async () => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            const response = await adapter.get('chat-channels');
-            setChannel(response);
-        } catch (error) {
-            console.error('Error fetching channels:', error);
-        }
-    };
-
     useEffect(() => {
-        fetchUsers();
+        fetchUsers(itemData?.id);
         fetchChannels();
     }, []);
-
-    const toggleUserList = () => {
-        setShowUserList(!showUserList);
-    };
-
-    const addParticipant = async participantId => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            const res = await adapter.post(`chat-channels/${participantId}/add-participant`);
-            setShowUserList(false);
-        } catch (error) {
-            console.error('Add participant:', error);
-        }
-    };
-
-    const removeParticipant = async participantId => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            const res = await adapter.delete(`chat-channels/remove-participant/${participantId}`);
-        } catch (error) {
-            console.error('Remove participant:', error);
-        }
-    };
 
     useEffect(() => {
         setMessages([
@@ -91,6 +47,76 @@ const ChatScreen = ({ route }) => {
             },
         ]);
     }, []);
+
+    const addChannelCreationMessage = () => {
+        const newMessage = {
+            _id: new Date().getTime(), // Use current timestamp as a unique ID
+            text: 'Channel created successfully',
+            createdAt: new Date(),
+            user: {
+                _id: 1,
+                name: 'System',
+            },
+        };
+        setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
+    };
+
+    const fetchChannels = async () => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const response = await adapter.get('chat-channels');
+            setChannel(response);
+            addChannelCreationMessage();
+        } catch (error) {
+            console.error('Error fetching channels:', error);
+        }
+    };
+
+    const toggleUserList = () => {
+        setShowUserList(!showUserList);
+    };
+
+    const fetchUsers = async id => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const response = await adapter.get(`chat-channels/${id}/available-participants`);
+            setUsers(response);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        }
+    };
+
+    const addParticipant = async (channelId, participantId, participantName) => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const res = await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
+
+            const newMessage = {
+                _id: new Date().getTime(),
+                text: `Added ${participantName} to this channel`,
+                createdAt: new Date(),
+                user: {
+                    _id: 1,
+                    name: 'System',
+                },
+            };
+
+            setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
+
+            setShowUserList(false);
+        } catch (error) {
+            console.error('Add participant:', error);
+        }
+    };
+
+    const removeParticipant = async participantId => {
+        try {
+            const adapter = fleetbase.getAdapter();
+            const res = await adapter.delete(`chat-channels/remove-participant/${participantId}`);
+        } catch (error) {
+            console.error('Remove participant:', error);
+        }
+    };
 
     const onSend = useCallback((messages = []) => {
         setMessages(previousMessages => GiftedChat.append(previousMessages, messages));
@@ -221,7 +247,7 @@ const ChatScreen = ({ route }) => {
                                 data={users}
                                 keyExtractor={item => item.id.toString()}
                                 renderItem={({ item }) => (
-                                    <TouchableOpacity onPress={() => addParticipant(item.id)} style={tailwind('flex flex-row items-center py-2')}>
+                                    <TouchableOpacity onPress={() => addParticipant(itemData.id, item.id, item.name)} style={tailwind('flex flex-row items-center py-2')}>
                                         <View style={tailwind(item.status === 'active' ? 'bg-green-500 w-2 h-2 rounded-full mr-2' : 'bg-yellow-500 w-2 h-2 rounded-full mr-2')} />
                                         <FontAwesomeIcon icon={faUser} size={15} color="#fff" style={tailwind('mr-2')} />
                                         <Text style={tailwind('text-sm')}>{item.name}</Text>
