@@ -10,8 +10,9 @@ import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gi
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
-
-import { HelperUtil, translate } from 'utils';
+import { createSocketAndListen } from 'utils';
+import { translate } from 'utils';
+import ChatService from '../../../services/ChatService';
 
 const ChatScreen = ({ route }) => {
     const { channelData, chatsData } = route.params;
@@ -28,37 +29,40 @@ const ChatScreen = ({ route }) => {
 
     useEffect(() => {
         fetchUsers(chatsData?.id || channelData.id);
+        listenForChatFromSocket(chatsData?.id || channelData.id);
     }, []);
 
     const participantId = chatsData.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
 
-    const listenForOrdersFromSocket = (channelId, callback) => {
-        HelperUtil.createSocketAndListen(`chat.${chatChannelRecord.public_id}`, socketEvent => {
+    const listenForChatFromSocket = id => {
+        const channelID = `chat_channel.${id}`;
+
+        createSocketAndListen(channelID, socketEvent => {
             const { event, data } = socketEvent;
+
             switch (event) {
-                case 'chat.added_participant':
-                case 'chat.removed_participant':
-                case 'chat_participant.created':
-                case 'chat_participant.deleted':
-                    this.channel.reloadParticipants();
-                    this.loadAvailableUsers();
-                    break;
                 case 'chat_message.created':
-                    this.chat.insertChatMessageFromSocket(this.channel, data);
+                    ChatService.insertChatMessageFromSocket(this.channel, data);
                     break;
+
                 case 'chat_log.created':
-                    this.chat.insertChatLogFromSocket(this.channel, data);
+                    ChatService.insertChatLogFromSocket(this.channel, data);
                     break;
+
                 case 'chat_attachment.created':
-                    this.chat.insertChatAttachmentFromSocket(this.channel, data);
+                    ChatService.insertChatAttachmentFromSocket(this.channel, data);
                     break;
+
                 case 'chat_receipt.created':
-                    this.chat.insertChatReceiptFromSocket(this.channel, data);
+                    ChatService.insertChatReceiptFromSocket(this.channel, data);
+                    break;
+
+                default:
+                    console.log(`Unhandled event type: ${event}`);
                     break;
             }
-            this.handleChatFeedScroll();
         });
     };
     const addChannelCreationMessage = () => {
@@ -274,17 +278,6 @@ const ChatScreen = ({ route }) => {
         return <FontAwesomeIcon name="angle-double-down" size={22} color="#333" />;
     };
 
-    const sentMessage = async channelId => {
-        try {
-            const adapter = fleetbase.getAdapter();
-            const res = await adapter.post(`chat-channels/${channelId}/send-message`, { sender: participantId, content: content, file: file });
-
-            setShowUserList(false);
-        } catch (error) {
-            console.error('Add participant:', error);
-        }
-    };
-
     const chooseFile = () => {
         const options = {
             title: 'Select File',
@@ -322,16 +315,6 @@ const ChatScreen = ({ route }) => {
 
     const MessengerBarContainer = props => {
         return <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />;
-    };
-
-    const AdditionalContainer = () => {
-        return (
-            <View style={tailwind('flex flex-row items-center justify-center')}>
-                <TouchableOpacity style={tailwind('p-2 mb-1')}>
-                    <FontAwesomeIcon size={22} icon={faUpload} color="#0084FF" />
-                </TouchableOpacity>
-            </View>
-        );
     };
 
     return (
