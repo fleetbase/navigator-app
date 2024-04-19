@@ -1,57 +1,38 @@
 import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUpload, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import { useFleetbase } from 'hooks';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
+import { useDriver, useFleetbase } from 'hooks';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
+import RNFS from 'react-native-fs';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
-import RNFS from 'react-native-fs';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
 
-import { translate, HelperUtil } from 'utils';
+import { HelperUtil, translate } from 'utils';
 
 const ChatScreen = ({ route }) => {
     const { channelData, chatsData } = route.params;
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
+    const driver = useDriver();
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState();
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showUserList, setShowUserList] = useState(false);
     const [addedParticipants, setAddedParticipants] = useState([]);
+    const driverUser = driver[0].attributes.user;
 
     useEffect(() => {
         fetchUsers(chatsData?.id || channelData.id);
     }, []);
 
-    useEffect(() => {
-        setMessages([
-            {
-                _id: 1,
-                text: 'Hello developer',
-                createdAt: new Date(),
-                user: {
-                    _id: 2,
-                    name: 'React Native',
-                    avatar: 'https://placeimg.com/140/140/any',
-                },
-            },
-            {
-                _id: 2,
-                text: 'Hello world',
-                createdAt: new Date(),
-                user: {
-                    _id: 1,
-                    name: 'React Native',
-                    avatar: 'https://placeimg.com/140/140/any',
-                },
-            },
-        ]);
-    }, []);
+    const participantId = chatsData.participants.find(chatParticipant => {
+        return chatParticipant.user === driverUser;
+    });
 
     const listenForOrdersFromSocket = (channelId, callback) => {
         HelperUtil.createSocketAndListen(`chat.${chatChannelRecord.public_id}`, socketEvent => {
@@ -255,7 +236,7 @@ const ChatScreen = ({ route }) => {
         try {
             console.log('Sending: ', newMessage);
             const adapter = fleetbase.getAdapter();
-            const res = await adapter.post(`chat-channels/${chatsData?.id || channelData.id}/send-message`, { sender: "ts", content: newMessage[0].text });
+            const res = await adapter.post(`chat-channels/${chatsData?.id || channelData.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
             setShowUserList(false);
             setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
         } catch (error) {
