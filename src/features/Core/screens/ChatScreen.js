@@ -26,7 +26,6 @@ const ChatScreen = ({ route }) => {
 
     useEffect(() => {
         fetchUsers(chatsData?.id || channelData.id);
-        uploadFile();
     }, []);
 
     useEffect(() => {
@@ -94,7 +93,6 @@ const ChatScreen = ({ route }) => {
         setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
     };
 
-    
     const uploadFile = async url => {
         // Extract filename from URL
 
@@ -252,9 +250,18 @@ const ChatScreen = ({ route }) => {
             console.error('Remove participant:', error);
         }
     };
-    const onSend = useCallback((messages = []) => {
-        setMessages(previousMessages => GiftedChat.append(previousMessages, messages));
-    }, []);
+
+    const onSend = async newMessage => {
+        try {
+            console.log('Sending: ', newMessage);
+            const adapter = fleetbase.getAdapter();
+            const res = await adapter.post(`chat-channels/${chatsData?.id || channelData.id}/send-message`, { sender: "ts", content: newMessage[0].text });
+            setShowUserList(false);
+            setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
+        } catch (error) {
+            console.error('Send error:', error);
+        }
+    };
 
     const renderSend = props => {
         return (
@@ -428,7 +435,7 @@ const ChatScreen = ({ route }) => {
                     renderBubble={renderBubble}
                     alwaysShowSend
                     scrollToBottom
-                    renderInputToolbar={MessengerBarContainer}
+                    renderInputToolbar={props => MessengerBarContainer(props)}
                     renderActions={renderActions}
                     scrollToBottomComponent={scrollToBottomComponent}
                     renderSend={renderSend}

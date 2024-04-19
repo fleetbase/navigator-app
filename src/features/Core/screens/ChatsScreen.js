@@ -128,7 +128,8 @@ const styles = StyleSheet.create({
     backRightBtnRight: {
         backgroundColor: '#FF3A3A',
         right: 4,
-        top: 8,
+        top: 10,
+        bottom: 2,
         marginRight: 12,
         marginLeft: 6,
         borderRadius: 12,
