@@ -7,7 +7,7 @@ import FastImage from 'react-native-fast-image';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import Toast from 'react-native-toast-message';
 import { tailwind } from 'tailwind';
-import { HelperUtil } from 'utils';
+import { HelperUtil, translate } from 'utils';
 
 const ChatsScreen = () => {
     const navigation = useNavigation();
@@ -88,7 +88,7 @@ const ChatsScreen = () => {
     const renderHiddenItem = ({ item }) => (
         <View style={tailwind('w-full h-full p-2')}>
             <TouchableOpacity onPress={() => handleDelete(item.id)} style={[styles.backRightBtn, styles.backRightBtnRight]}>
-                <Text style={tailwind('text-white font-semibold')}>Delete</Text>
+                <Text style={tailwind('text-white font-semibold')}>{translate('Core.ChatsScreen.delete')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -104,7 +104,7 @@ const ChatsScreen = () => {
                 <View style={tailwind('flex flex-row items-center justify-center')}>
                     <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
                         <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
-                            <Text style={tailwind('font-semibold text-gray-50 text-base')}>Create Channel</Text>
+                            <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.ChatsScreen.create-channel')}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>

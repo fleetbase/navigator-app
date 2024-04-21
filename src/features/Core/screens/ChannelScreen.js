@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
+import Toast from 'react-native-toast-message';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import tailwind from 'tailwind';
 import { getColorCode, logError, translate } from 'utils';
@@ -33,15 +34,19 @@ const ChannelScreen = ({ route }) => {
                     navigation.navigate('ChatScreen', { channelData: res });
                 })
                 .catch(logError)
-                .finally(() => setIsLoading(false)); // End the loading indicator
+                .finally(() => setIsLoading(false));
         } else {
             return adapter
                 .post('chat-channels', { name })
                 .then(res => {
                     navigation.navigate('ChatScreen', { channelData: res });
+                    Toast.show({
+                        type: 'success',
+                        text1: `Channel created successfully`,
+                    });
                 })
                 .catch(logError)
-                .finally(() => setIsLoading(false)); // End the loading indicator
+                .finally(() => setIsLoading(false));
         }
     };
 

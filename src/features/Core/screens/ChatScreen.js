@@ -1,7 +1,7 @@
-import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUpload, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import { useDriver, useFleetbase } from 'hooks';
+import { useDriver, useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
@@ -10,19 +10,18 @@ import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gi
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
-import { createSocketAndListen } from 'utils';
-import { translate } from 'utils';
+import { createSocketAndListen, translate } from 'utils';
 import ChatService from '../../../services/ChatService';
 
 const ChatScreen = ({ route }) => {
     const { channelData, chatsData } = route.params;
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
+    const isMounted = useMountedState();
     const driver = useDriver();
     const [messages, setMessages] = useState([]);
-    const [text, setText] = useState();
     const [users, setUsers] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading] = useState(false);
     const [showUserList, setShowUserList] = useState(false);
     const [addedParticipants, setAddedParticipants] = useState([]);
     const driverUser = driver[0].attributes.user;
@@ -32,10 +31,27 @@ const ChatScreen = ({ route }) => {
         listenForChatFromSocket(chatsData?.id || channelData.id);
     }, []);
 
-    const participantId = chatsData.participants.find(chatParticipant => {
+    useEffect(() => {
+        // Check for errors in the console log
+        console.log('Component rendered');
+
+        // Inspect state changes
+        console.log('Messages:', messages);
+        console.log('Users:', users);
+        console.log('Added Participants:', addedParticipants);
+    }, [messages, users, addedParticipants]); // Add dependencies as needed
+
+    const participantId = chatsData?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
 
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchUsers(chatsData?.id || channelData.id);
+        });
+
+        return unsubscribe;
+    }, [isMounted]);
     const listenForChatFromSocket = id => {
         const channelID = `chat_channel.${id}`;
 
@@ -64,18 +80,6 @@ const ChatScreen = ({ route }) => {
                     break;
             }
         });
-    };
-    const addChannelCreationMessage = () => {
-        const newMessage = {
-            _id: new Date().getTime(),
-            text: 'Channel created successfully',
-            createdAt: new Date(),
-            user: {
-                _id: 1,
-                name: 'System',
-            },
-        };
-        setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
     };
 
     const uploadFile = async url => {
@@ -127,7 +131,7 @@ const ChatScreen = ({ route }) => {
 
         try {
             const adapter = fleetbase.getAdapter();
-            const res = await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
+            await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
 
             setAddedParticipants(prevParticipants => [
                 ...prevParticipants,
@@ -220,7 +224,7 @@ const ChatScreen = ({ route }) => {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
 
             setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
-
+            fetchUsers(chatsData?.id || channelData.id);
             const newMessage = {
                 _id: new Date().getTime(),
                 text: `Removed participant from this channel`,
@@ -238,9 +242,8 @@ const ChatScreen = ({ route }) => {
 
     const onSend = async newMessage => {
         try {
-            console.log('Sending: ', newMessage);
             const adapter = fleetbase.getAdapter();
-            const res = await adapter.post(`chat-channels/${chatsData?.id || channelData.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
+            await adapter.post(`chat-channels/${chatsData?.id || channelData.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
             setShowUserList(false);
             setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
         } catch (error) {
@@ -313,10 +316,6 @@ const ChatScreen = ({ route }) => {
         />
     );
 
-    const MessengerBarContainer = props => {
-        return <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />;
-    };
-
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
             <View style={tailwind('flex flex-row')}>
@@ -388,8 +387,10 @@ const ChatScreen = ({ route }) => {
                     </View>
                 </Modal>
             </View>
+            <View style={tailwind('p-4')}>
+                <AddedParticipants participants={channelData?.participants || chatsData?.participants} onDelete={confirmRemove} />
+            </View>
             <View style={tailwind('flex-1 p-4')}>
-                <AddedParticipants participants={channelData?.participants || chatsData.participants} onDelete={confirmRemove} />
                 <GiftedChat
                     messages={messages}
                     onSend={onSend}
@@ -399,7 +400,7 @@ const ChatScreen = ({ route }) => {
                     renderBubble={renderBubble}
                     alwaysShowSend
                     scrollToBottom
-                    renderInputToolbar={props => MessengerBarContainer(props)}
+                    renderInputToolbar={props => <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />}
                     renderActions={renderActions}
                     scrollToBottomComponent={scrollToBottomComponent}
                     renderSend={renderSend}
