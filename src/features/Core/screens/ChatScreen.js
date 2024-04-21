@@ -24,7 +24,6 @@ const ChatScreen = ({ route }) => {
     const [users, setUsers] = useState([]);
     const [isLoading] = useState(false);
     const [showUserList, setShowUserList] = useState(false);
-    const [addedParticipants, setAddedParticipants] = useState([]);
     const driverUser = driver[0].attributes.user;
 
     const adapter = fleetbase.getAdapter();
@@ -232,7 +231,6 @@ const ChatScreen = ({ route }) => {
         try {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
 
-            setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
             await reloadChannel(channel.id)
             const newMessage = {
                 _id: new Date().getTime(),
