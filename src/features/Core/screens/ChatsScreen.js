@@ -67,7 +67,7 @@ const ChatsScreen = () => {
     const renderItem = ({ item }) => (
         <TouchableHighlight
             style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-4 rounded-lg')}
-            onPress={() => navigation.navigate('ChatScreen', { chatsData: item })}
+            onPress={() => navigation.navigate('ChatScreen', { channel: item })}
             underlayColor={tailwind('bg-gray-900')}>
             <View style={tailwind('flex flex-row')}>
                 <FastImage

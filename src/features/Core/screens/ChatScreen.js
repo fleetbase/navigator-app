@@ -14,7 +14,7 @@ import { createSocketAndListen, translate } from 'utils';
 import ChatService from '../../../services/ChatService';
 
 const ChatScreen = ({ route }) => {
-    const { channelData, chatsData } = route.params;
+    const { channel } = route.params;
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
     const isMounted = useMountedState();
@@ -27,9 +27,57 @@ const ChatScreen = ({ route }) => {
     const driverUser = driver[0].attributes.user;
 
     useEffect(() => {
-        fetchUsers(chatsData?.id || channelData.id);
-        listenForChatFromSocket(chatsData?.id || channelData.id);
+        fetchUsers(channel?.id);
+
+        // const newMessage = {
+        //     _id: new Date().getTime(),
+        //     text: `Added ${participantName} to this channel`,
+        //     createdAt: new Date(),
+        //     user: {
+        //         _id: 1,
+        //         name: 'System',
+        //     },
+        // };
+
+        // setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
+        listenForChatFromSocket(channel?.id);
+        console.log('Messages: ', messages);
     }, []);
+
+    useEffect(() => {
+        const messages = parseMessages(channel.feed);
+        setMessages(messages);
+    }, [route.params]);
+
+    useEffect(() => {
+        console.log('channel------->>>', JSON.stringify(channel));
+        console.log('Messages: ', messages);
+    }, [messages]);
+
+    const parseMessages = (messages) => {
+        return messages
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .map((message, index) => {
+                return parseMessage(message, index)
+            });
+    };
+
+    const parseMessage = (message, index) => {
+        const isSystem = message.type == "log";
+                const user =
+                    isSystem
+                        ? { _id: index, name: 'System' }
+                        : { _id: index, name: message.data.sender.name, avatar: message.data.sender.avatar };
+    
+                return {
+                    _id: message.data.id,
+                    text: isSystem ? message.data.resolved_content : message.data.content,
+                    createdAt: message.data.updated_at,
+                    system: isSystem,
+                    user,
+                };
+    }
+    
 
     useEffect(() => {
         // Check for errors in the console log
@@ -41,13 +89,13 @@ const ChatScreen = ({ route }) => {
         console.log('Added Participants:', addedParticipants);
     }, [messages, users, addedParticipants]); // Add dependencies as needed
 
-    const participantId = chatsData?.participants.find(chatParticipant => {
+    const participantId = channel?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            fetchUsers(chatsData?.id || channelData.id);
+            fetchUsers(channel?.id);
         });
 
         return unsubscribe;
@@ -60,19 +108,19 @@ const ChatScreen = ({ route }) => {
 
             switch (event) {
                 case 'chat_message.created':
-                    ChatService.insertChatMessageFromSocket(this.channel, data);
+                    ChatService.insertChatMessageFromSocket(data);
                     break;
 
                 case 'chat_log.created':
-                    ChatService.insertChatLogFromSocket(this.channel, data);
+                    ChatService.insertChatLogFromSocket(data);
                     break;
 
                 case 'chat_attachment.created':
-                    ChatService.insertChatAttachmentFromSocket(this.channel, data);
+                    ChatService.insertChatAttachmentFromSocket(data);
                     break;
 
                 case 'chat_receipt.created':
-                    ChatService.insertChatReceiptFromSocket(this.channel, data);
+                    ChatService.insertChatReceiptFromSocket(data);
                     break;
 
                 default:
@@ -80,6 +128,18 @@ const ChatScreen = ({ route }) => {
                     break;
             }
         });
+    };
+
+    const fetchChannel = channelId => {
+        const newMessage = {
+            _id: new Date().getTime(),
+            text: `Removed participant from this channel`,
+            createdAt: new Date(),
+            user: {
+                _id: 1,
+                name: 'System',
+            },
+        };
     };
 
     const uploadFile = async url => {
@@ -145,6 +205,7 @@ const ChatScreen = ({ route }) => {
                 _id: new Date().getTime(),
                 text: `Added ${participantName} to this channel`,
                 createdAt: new Date(),
+                system: true,
                 user: {
                     _id: 1,
                     name: 'System',
@@ -224,7 +285,7 @@ const ChatScreen = ({ route }) => {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
 
             setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
-            fetchUsers(chatsData?.id || channelData.id);
+            fetchUsers(channel?.id);
             const newMessage = {
                 _id: new Date().getTime(),
                 text: `Removed participant from this channel`,
@@ -243,7 +304,7 @@ const ChatScreen = ({ route }) => {
     const onSend = async newMessage => {
         try {
             const adapter = fleetbase.getAdapter();
-            await adapter.post(`chat-channels/${chatsData?.id || channelData.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
+            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
             setShowUserList(false);
             setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
         } catch (error) {
@@ -325,9 +386,8 @@ const ChatScreen = ({ route }) => {
                     </TouchableOpacity>
                     <View style={tailwind('flex flex-row items-center')}>
                         <Text style={tailwind('text-sm text-gray-300 w-72 text-center')}>
-                            {chatsData?.name || channelData.name}
-                            {'  '}
-                            <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen', { data: chatsData })}>
+                            {channel?.name} {' '}
+                            <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen', { data: channel })}>
                                 <FontAwesomeIcon size={18} icon={faEdit} style={tailwind('text-gray-300 mt-1')} />
                             </TouchableOpacity>
                         </Text>
@@ -360,7 +420,7 @@ const ChatScreen = ({ route }) => {
                                 keyExtractor={item => item.id.toString()}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
-                                        onPress={() => addParticipant(chatsData.id || channelData?.id, item.id, item.name, item.avatar_url)}
+                                        onPress={() => addParticipant(channel.id, item.id, item.name, item.avatar_url)}
                                         style={tailwind('flex flex-row items-center py-2  bg-gray-900 rounded-lg mb-2')}>
                                         <View style={tailwind('flex flex-row items-center ml-2')}>
                                             <View
@@ -388,7 +448,7 @@ const ChatScreen = ({ route }) => {
                 </Modal>
             </View>
             <View style={tailwind('p-4')}>
-                <AddedParticipants participants={channelData?.participants || chatsData?.participants} onDelete={confirmRemove} />
+                <AddedParticipants participants={channel?.participants} onDelete={confirmRemove} />
             </View>
             <View style={tailwind('flex-1 p-4')}>
                 <GiftedChat

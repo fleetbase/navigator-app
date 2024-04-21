@@ -31,7 +31,7 @@ const ChannelScreen = ({ route }) => {
             return adapter
                 .put(`chat-channels/${channelId}`, data)
                 .then(res => {
-                    navigation.navigate('ChatScreen', { channelData: res });
+                    navigation.navigate('ChatScreen', { channel: res });
                 })
                 .catch(logError)
                 .finally(() => setIsLoading(false));
@@ -39,7 +39,7 @@ const ChannelScreen = ({ route }) => {
             return adapter
                 .post('chat-channels', { name })
                 .then(res => {
-                    navigation.navigate('ChatScreen', { channelData: res });
+                    navigation.navigate('ChatScreen', { channel: res });
                     Toast.show({
                         type: 'success',
                         text1: `Channel created successfully`,
