@@ -14,9 +14,10 @@ import { createSocketAndListen, translate } from 'utils';
 import ChatService from '../../../services/ChatService';
 
 const ChatScreen = ({ route }) => {
-    const { channel } = route.params;
+    const { channel: channelProps } = route.params;
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
+    const [channel, setChannel] = useState(channelProps)
     const isMounted = useMountedState();
     const driver = useDriver();
     const [messages, setMessages] = useState([]);
@@ -26,68 +27,55 @@ const ChatScreen = ({ route }) => {
     const [addedParticipants, setAddedParticipants] = useState([]);
     const driverUser = driver[0].attributes.user;
 
+    const adapter = fleetbase.getAdapter();
+
     useEffect(() => {
+        setChannel(channelProps)
+    }, [route.params]);
+    
+    useEffect(()=>{
+
+        if(!channel) return;
+        console.log("Channel: ", channel)
         fetchUsers(channel?.id);
 
-        // const newMessage = {
-        //     _id: new Date().getTime(),
-        //     text: `Added ${participantName} to this channel`,
-        //     createdAt: new Date(),
-        //     user: {
-        //         _id: 1,
-        //         name: 'System',
-        //     },
-        // };
+        const channelID = `chat.${channel.id}`;
 
-        // setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
-        listenForChatFromSocket(channel?.id);
-        console.log('Messages: ', messages);
-    }, []);
+        console.log('Socket: ', channelID);
 
-    useEffect(() => {
+        createSocketAndListen(channelID, socketEvent => {
+            console.log('Socket event: ', socketEvent);
+            const { event, data } = socketEvent;
+
+            reloadChannel(channel?.id).then((res)=>{
+                console.log("Channel :", channel)
+            })
+        });
         const messages = parseMessages(channel.feed);
         setMessages(messages);
-    }, [route.params]);
+    }, [channel])
 
-    useEffect(() => {
-        console.log('channel------->>>', JSON.stringify(channel));
-        console.log('Messages: ', messages);
-    }, [messages]);
-
-    const parseMessages = (messages) => {
+    const parseMessages = messages => {
         return messages
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             .map((message, index) => {
-                return parseMessage(message, index)
+                return parseMessage(message, index);
             });
     };
 
     const parseMessage = (message, index) => {
-        const isSystem = message.type == "log";
-                const user =
-                    isSystem
-                        ? { _id: index, name: 'System' }
-                        : { _id: index, name: message.data.sender.name, avatar: message.data.sender.avatar };
-    
-                return {
-                    _id: message.data.id,
-                    text: isSystem ? message.data.resolved_content : message.data.content,
-                    createdAt: message.data.updated_at,
-                    system: isSystem,
-                    user,
-                };
-    }
-    
+        const isSystem = message.type == 'log';
+        const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message.data.sender.name, avatar: message.data.sender.avatar };
 
-    useEffect(() => {
-        // Check for errors in the console log
-        console.log('Component rendered');
-
-        // Inspect state changes
-        console.log('Messages:', messages);
-        console.log('Users:', users);
-        console.log('Added Participants:', addedParticipants);
-    }, [messages, users, addedParticipants]); // Add dependencies as needed
+        return {
+            _id: message.data.id,
+            text: isSystem ? message.data.resolved_content : message.data.content,
+            createdAt: message.data.updated_at,
+            system: isSystem,
+            sent: true,
+            user,
+        };
+    };
 
     const participantId = channel?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
@@ -100,47 +88,6 @@ const ChatScreen = ({ route }) => {
 
         return unsubscribe;
     }, [isMounted]);
-    const listenForChatFromSocket = id => {
-        const channelID = `chat_channel.${id}`;
-
-        createSocketAndListen(channelID, socketEvent => {
-            const { event, data } = socketEvent;
-
-            switch (event) {
-                case 'chat_message.created':
-                    ChatService.insertChatMessageFromSocket(data);
-                    break;
-
-                case 'chat_log.created':
-                    ChatService.insertChatLogFromSocket(data);
-                    break;
-
-                case 'chat_attachment.created':
-                    ChatService.insertChatAttachmentFromSocket(data);
-                    break;
-
-                case 'chat_receipt.created':
-                    ChatService.insertChatReceiptFromSocket(data);
-                    break;
-
-                default:
-                    console.log(`Unhandled event type: ${event}`);
-                    break;
-            }
-        });
-    };
-
-    const fetchChannel = channelId => {
-        const newMessage = {
-            _id: new Date().getTime(),
-            text: `Removed participant from this channel`,
-            createdAt: new Date(),
-            user: {
-                _id: 1,
-                name: 'System',
-            },
-        };
-    };
 
     const uploadFile = async url => {
         // Extract filename from URL
@@ -173,7 +120,6 @@ const ChatScreen = ({ route }) => {
 
     const fetchUsers = async id => {
         try {
-            const adapter = fleetbase.getAdapter();
             const response = await adapter.get(`chat-channels/${id}/available-participants`);
             setUsers(response);
         } catch (error) {
@@ -181,8 +127,17 @@ const ChatScreen = ({ route }) => {
         }
     };
 
+    const reloadChannel = async id => {
+        try {
+            const res = await adapter.get(`chat-channels/${id}`)
+            setChannel(res)
+        } catch (error) {
+            console.error("Error: ", error)
+        }
+    }
+
     const addParticipant = async (channelId, participantId, participantName, avatar) => {
-        const isParticipantAdded = addedParticipants.some(participant => participant.id === participantId);
+        const isParticipantAdded = channel.participants.some(participant => participant.id === participantId);
 
         if (isParticipantAdded) {
             Alert.alert('Alert', `${participantName} is already a part of this channel.`, [{ text: 'OK' }]);
@@ -193,19 +148,14 @@ const ChatScreen = ({ route }) => {
             const adapter = fleetbase.getAdapter();
             await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
 
-            setAddedParticipants(prevParticipants => [
-                ...prevParticipants,
-                {
-                    id: participantId,
-                    name: participantName,
-                    avatar: avatar,
-                },
-            ]);
+            await reloadChannel(channel.id)
+        
             const newMessage = {
                 _id: new Date().getTime(),
                 text: `Added ${participantName} to this channel`,
                 createdAt: new Date(),
                 system: true,
+                sent: true,
                 user: {
                     _id: 1,
                     name: 'System',
@@ -218,7 +168,7 @@ const ChatScreen = ({ route }) => {
             console.error('Add participant:', error);
         }
     };
-    const AddedParticipants = ({ participants, onDelete }) => {
+    const renderPartificants = ({ participants, onDelete }) => {
         return (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tailwind('p-2')}>
                 {participants.map(participant => (
@@ -285,7 +235,7 @@ const ChatScreen = ({ route }) => {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
 
             setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
-            fetchUsers(channel?.id);
+            await reloadChannel(channel.id)
             const newMessage = {
                 _id: new Date().getTime(),
                 text: `Removed participant from this channel`,
@@ -386,7 +336,7 @@ const ChatScreen = ({ route }) => {
                     </TouchableOpacity>
                     <View style={tailwind('flex flex-row items-center')}>
                         <Text style={tailwind('text-sm text-gray-300 w-72 text-center')}>
-                            {channel?.name} {' '}
+                            {channel?.name}{' '}
                             <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen', { data: channel })}>
                                 <FontAwesomeIcon size={18} icon={faEdit} style={tailwind('text-gray-300 mt-1')} />
                             </TouchableOpacity>
@@ -448,7 +398,8 @@ const ChatScreen = ({ route }) => {
                 </Modal>
             </View>
             <View style={tailwind('p-4')}>
-                <AddedParticipants participants={channel?.participants} onDelete={confirmRemove} />
+                {renderPartificants({
+                    participants: channel?.participants || [], onDelete: removeParticipant})}
             </View>
             <View style={tailwind('flex-1 p-4')}>
                 <GiftedChat
