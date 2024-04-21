@@ -145,7 +145,6 @@ const ChatScreen = ({ route }) => {
         }
 
         try {
-            const adapter = fleetbase.getAdapter();
             await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
 
             await reloadChannel(channel.id)
@@ -231,7 +230,6 @@ const ChatScreen = ({ route }) => {
 
     const removeParticipant = async participantId => {
         try {
-            const adapter = fleetbase.getAdapter();
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
 
             setAddedParticipants(prevParticipants => prevParticipants.filter(participant => participant.id !== participantId));
@@ -253,7 +251,6 @@ const ChatScreen = ({ route }) => {
 
     const onSend = async newMessage => {
         try {
-            const adapter = fleetbase.getAdapter();
             await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
             setShowUserList(false);
             setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
