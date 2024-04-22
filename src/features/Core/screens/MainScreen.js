@@ -17,7 +17,6 @@ import { syncDevice } from 'utils/Auth';
 import { getCurrentLocation, trackDriver } from 'utils/Geo';
 import IssuesScreen from './IssuesScreen';
 import ChatsScreen from './ChatsScreen';
-import { createSocketAndListen } from '../../../utils/Helper';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();

@@ -36,11 +36,9 @@ const ChatScreen = ({ route }) => {
         console.log('Channel: ', channel);
         fetchUsers(channel?.id);
 
-        const channelID = `chat.${channel.id}`;
+        console.log('Socket channel id: ', channel.id);
 
-        console.log('Socket: ', channelID);
-
-        createSocketAndListen(channelID, socketEvent => {
+        createSocketAndListen(channel.id, socketEvent => {
             console.log('Socket event: ', socketEvent);
             const { event, data } = socketEvent;
             console.log('Socket event: ', event, data);
@@ -78,14 +76,6 @@ const ChatScreen = ({ route }) => {
     const participantId = channel?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
-
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
-            fetchUsers(channel?.id);
-        });
-
-        return unsubscribe;
-    }, [isMounted]);
 
     const uploadFile = async url => {
         // Extract filename from URL
@@ -258,7 +248,7 @@ const ChatScreen = ({ route }) => {
     const renderSend = props => {
         return (
             <Send {...props}>
-                <FontAwesomeIcon icon={faPaperPlane} size={20} color="#168AFF" style={tailwind('mr-2')} />
+                <FontAwesomeIcon icon={faPaperPlane} size={20} color="#919498" style={tailwind('mr-2')} />
             </Send>
         );
     };
@@ -407,7 +397,6 @@ const ChatScreen = ({ route }) => {
                     alwaysShowSend
                     scrollToBottom
                     renderInputToolbar={props => <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />}
-                    renderActions={renderActions}
                     scrollToBottomComponent={scrollToBottomComponent}
                     renderSend={renderSend}
                 />
