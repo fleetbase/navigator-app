@@ -11,13 +11,12 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
 import { createSocketAndListen, translate } from 'utils';
-import ChatService from '../../../services/ChatService';
 
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
-    const [channel, setChannel] = useState(channelProps)
+    const [channel, setChannel] = useState(channelProps);
     const isMounted = useMountedState();
     const driver = useDriver();
     const [messages, setMessages] = useState([]);
@@ -29,13 +28,12 @@ const ChatScreen = ({ route }) => {
     const adapter = fleetbase.getAdapter();
 
     useEffect(() => {
-        setChannel(channelProps)
+        setChannel(channelProps);
     }, [route.params]);
-    
-    useEffect(()=>{
 
-        if(!channel) return;
-        console.log("Channel: ", channel)
+    useEffect(() => {
+        if (!channel) return;
+        console.log('Channel: ', channel);
         fetchUsers(channel?.id);
 
         const channelID = `chat.${channel.id}`;
@@ -45,14 +43,15 @@ const ChatScreen = ({ route }) => {
         createSocketAndListen(channelID, socketEvent => {
             console.log('Socket event: ', socketEvent);
             const { event, data } = socketEvent;
-
-            reloadChannel(channel?.id).then((res)=>{
-                console.log("Channel :", channel)
-            })
+            console.log('Socket event: ', event, data);
+            reloadChannel(channel?.id).then(res => {
+                console.log('Channel :', channel);
+            });
         });
+
         const messages = parseMessages(channel.feed);
         setMessages(messages);
-    }, [channel])
+    }, [channel]);
 
     const parseMessages = messages => {
         return messages
@@ -128,12 +127,12 @@ const ChatScreen = ({ route }) => {
 
     const reloadChannel = async id => {
         try {
-            const res = await adapter.get(`chat-channels/${id}`)
-            setChannel(res)
+            const res = await adapter.get(`chat-channels/${id}`);
+            setChannel(res);
         } catch (error) {
-            console.error("Error: ", error)
+            console.error('Error: ', error);
         }
-    }
+    };
 
     const addParticipant = async (channelId, participantId, participantName, avatar) => {
         const isParticipantAdded = channel.participants.some(participant => participant.id === participantId);
@@ -146,8 +145,7 @@ const ChatScreen = ({ route }) => {
         try {
             await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
 
-            await reloadChannel(channel.id)
-        
+            await reloadChannel(channel.id);
             const newMessage = {
                 _id: new Date().getTime(),
                 text: `Added ${participantName} to this channel`,
@@ -203,7 +201,7 @@ const ChatScreen = ({ route }) => {
                                 <FontAwesomeIcon icon={faTrash} size={14} color="#FF0000" />
                             </TouchableOpacity>
                         </View>
-                        <Text style={tailwind('text-sm text-gray-300')}>{participant.name}</Text>
+                        <Text style={tailwind('text-sm text-gray-300')}>{participant.name.length > 7 ? participant.name.substring(0, 7) + '..' : participant.name}</Text>
                     </View>
                 ))}
             </ScrollView>
@@ -231,7 +229,7 @@ const ChatScreen = ({ route }) => {
         try {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
 
-            await reloadChannel(channel.id)
+            await reloadChannel(channel.id);
             const newMessage = {
                 _id: new Date().getTime(),
                 text: `Removed participant from this channel`,
@@ -394,7 +392,9 @@ const ChatScreen = ({ route }) => {
             </View>
             <View style={tailwind('p-4')}>
                 {renderPartificants({
-                    participants: channel?.participants || [], onDelete: removeParticipant})}
+                    participants: channel?.participants || [],
+                    onDelete: removeParticipant,
+                })}
             </View>
             <View style={tailwind('flex-1 p-4')}>
                 <GiftedChat
