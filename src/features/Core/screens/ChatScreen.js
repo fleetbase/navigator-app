@@ -1,7 +1,7 @@
 import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import { useDriver, useFleetbase, useMountedState } from 'hooks';
+import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
@@ -17,12 +17,11 @@ const ChatScreen = ({ route }) => {
     const fleetbase = useFleetbase();
     const navigation = useNavigation();
     const [channel, setChannel] = useState(channelProps);
-    const isMounted = useMountedState();
-    const driver = useDriver();
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
     const [isLoading] = useState(false);
     const [showUserList, setShowUserList] = useState(false);
+    const driver = useDriver();
     const driverUser = driver[0].attributes.user;
 
     const adapter = fleetbase.getAdapter();
@@ -33,23 +32,28 @@ const ChatScreen = ({ route }) => {
 
     useEffect(() => {
         if (!channel) return;
-        console.log('Channel: ', channel);
         fetchUsers(channel?.id);
-
-        console.log('Socket channel id: ', channel.id);
-
-        createSocketAndListen(channel.id, socketEvent => {
-            console.log('Socket event: ', socketEvent);
-            const { event, data } = socketEvent;
-            console.log('Socket event: ', event, data);
-            reloadChannel(channel?.id).then(res => {
-                console.log('Channel :', channel);
-            });
-        });
 
         const messages = parseMessages(channel.feed);
         setMessages(messages);
     }, [channel]);
+
+    // Listen for new channels via Socket Connection
+    useEffect(() => {
+        // Assuming createSocketAndListen returns a Promise that resolves with socketEvent
+        createSocketAndListen(channel.id)
+            .then(socketEvent => {
+                console.log('Socket channel id: ', channel.id);
+                console.log('Socket event: ', socketEvent);
+                const { event, data } = socketEvent;
+                console.log('Socket event: ', event, data);
+                return reloadChannel(channel?.id); // Return the Promise chain
+            })
+            .then(res => {
+                console.log('Channel :', channel);
+            })
+            .catch(error => console.log('error:::', JSON.stringify(error)));
+    }, [channel]); // Make sure to include channel in the dependency array if it's used inside the effect
 
     const parseMessages = messages => {
         return messages
@@ -271,10 +275,6 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const scrollToBottomComponent = () => {
-        return <FontAwesomeIcon name="angle-double-down" size={22} color="#333" />;
-    };
-
     const chooseFile = () => {
         const options = {
             title: 'Select File',
@@ -395,9 +395,7 @@ const ChatScreen = ({ route }) => {
                     }}
                     renderBubble={renderBubble}
                     alwaysShowSend
-                    scrollToBottom
                     renderInputToolbar={props => <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />}
-                    scrollToBottomComponent={scrollToBottomComponent}
                     renderSend={renderSend}
                 />
             </View>
