@@ -38,10 +38,17 @@ const ChatScreen = ({ route }) => {
         setMessages(messages);
     }, [channel]);
 
-    // Listen for new channels via Socket Connection
     useEffect(() => {
-        // Assuming createSocketAndListen returns a Promise that resolves with socketEvent
-        createSocketAndListen(channel.id)
+        if (!channel) return;
+
+        async function subscribeChannels() {
+            const event = await createSocketAndListen(`chat.${channel.id}`, event => {
+                console.log('Event: ', event);
+            });
+
+            console.log('Event: ', event);
+        }
+        createSocketAndListen(`chat.${channel.id}`)
             .then(socketEvent => {
                 console.log('Socket channel id: ', channel.id);
                 console.log('Socket event: ', socketEvent);
@@ -49,10 +56,9 @@ const ChatScreen = ({ route }) => {
                 console.log('Socket event: ', event, data);
                 return reloadChannel(channel?.id); // Return the Promise chain
             })
-            .then(res => {
-                console.log('Channel :', channel);
-            })
             .catch(error => console.log('error:::', JSON.stringify(error)));
+
+        subscribeChannels();
     }, [channel]); // Make sure to include channel in the dependency array if it's used inside the effect
 
     const parseMessages = messages => {
