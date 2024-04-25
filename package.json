@@ -105,7 +105,7 @@
         "react-native-webview": "^13.6.0",
         "react-native-youtube": "^2.0.2",
         "react-redux": "^7.2.5",
-        "socketcluster-client": "^16.0.4",
+        "socketcluster-client": "^17.1.1",
         "tailwind-rn": "^3.0.1",
         "tailwindcss": "^2.2.4",
         "uuid": "^9.0.0"
@@ -113,6 +113,7 @@
     "devDependencies": {
         "@babel/core": "^7.20.0",
         "@babel/plugin-transform-async-generator-functions": "^7.22.15",
+        "@babel/plugin-transform-async-to-generator": "^7.24.1",
         "@babel/preset-env": "^7.20.0",
         "@babel/runtime": "^7.20.0",
         "@react-native/eslint-config": "^0.72.2",

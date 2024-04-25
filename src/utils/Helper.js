@@ -501,21 +501,21 @@ export default class HelperUtil {
         // Create socket connection
         const socket = socketClusterClient.create(socketConnectionConfig);
 
-        // Listen for socket connection errors
-        (async () => {
-            // eslint-disable-next-line no-unused-vars
-            for await (let event of socket.listener('error')) {
-                console.log('[Socket Error]', event);
-            }
-        })();
+        // // Listen for socket connection errors
+        // (async () => {
+        //     // eslint-disable-next-line no-unused-vars
+        //     for await (let event of socket.listener('error')) {
+        //         console.log('[Socket Error]', event);
+        //     }
+        // })();
 
-        // Listen for socket connection
-        (async () => {
-            // eslint-disable-next-line no-unused-vars
-            for await (let event of socket.listener('connect')) {
-                console.log('[Socket Connected]', event);
-            }
-        })();
+        // // Listen for socket connection
+        // (async () => {
+        //     // eslint-disable-next-line no-unused-vars
+        //     for await (let event of socket.listener('connect')) {
+        //         console.log('[Socket Connected]', event);
+        //     }
+        // })();
 
         // create channel from channel id
         const channel = socket.subscribe(channelId);
@@ -523,14 +523,51 @@ export default class HelperUtil {
         // subscribe to channel
         await channel.listener('subscribe').once();
 
-        // listen to incoming data with callback
-        (async () => {
-            for await (let output of channel) {
-                if (typeof callback === 'function') {
-                    callback(output);
+        const handleAsyncIteration = async asyncIterable => {
+            console.log('[handleAsyncIteration]');
+            const iterator = asyncIterable[Symbol.asyncIterator]();
+
+            const processNext = async () => {
+                console.log('[processNext]');
+                try {
+                    const { value, done } = await iterator.next();
+                    console.log('[processNext is done?]', done);
+                    console.log('[processNext has value]', JSON.stringify(value));
+                    if (done) {
+                        // If no more data, exit the function
+                        return;
+                    }
+
+                    // Process the value
+                    console.log('[processNext has value]', JSON.stringify(value));
+                    if (typeof callback === 'function') {
+                        callback(value);
+                    }
+
+                    // Recursively process the next item
+                    return processNext();
+                } catch (error) {
+                    console.error('Error during async iteration:', error);
+                    // Optionally, handle the error or re-throw it
+                    // throw error;
                 }
-            }
+            };
+
+            // Start processing
+            return processNext();
+        };
+
+        (async () => {
+            await handleAsyncIteration(channel);
         })();
+        // // listen to incoming data with callback
+        // (async () => {
+        //     for await (let output of channel) {
+        //         if (typeof callback === 'function') {
+        //             callback(output);
+        //         }
+        //     }
+        // })();
     }
 
     static async listenForOrdersFromSocket(channelId, callback) {

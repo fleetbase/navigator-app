@@ -32,7 +32,7 @@ const ChatScreen = ({ route }) => {
 
     useEffect(() => {
         if (!channel) return;
-        fetchUsers(channel?.id);
+        // fetchUsers(channel?.id);
 
         const messages = parseMessages(channel.feed);
         setMessages(messages);
@@ -41,25 +41,15 @@ const ChatScreen = ({ route }) => {
     useEffect(() => {
         if (!channel) return;
 
-        async function subscribeChannels() {
-            const event = await createSocketAndListen(`chat.${channel.id}`, event => {
-                console.log('Event: ', event);
-            });
-
-            console.log('Event: ', event);
-        }
-        createSocketAndListen(`chat.${channel.id}`)
-            .then(socketEvent => {
-                console.log('Socket channel id: ', channel.id);
-                console.log('Socket event: ', socketEvent);
-                const { event, data } = socketEvent;
-                console.log('Socket event: ', event, data);
-                return reloadChannel(channel?.id); // Return the Promise chain
-            })
-            .catch(error => console.log('error:::', JSON.stringify(error)));
-
-        subscribeChannels();
-    }, [channel]); // Make sure to include channel in the dependency array if it's used inside the effect
+        console.log(`[Connecting to socket on channel chat.${channel.id}]`);
+        createSocketAndListen(`chat.${channel.id}`, socketEvent => {
+            console.log('Socket channel id: ', channel.id);
+            console.log('Socket event: ', socketEvent);
+            const { event, data } = socketEvent;
+            console.log('Socket event: ', event, data);
+            return reloadChannel(channel?.id);
+        });
+    }, [channel]);
 
     const parseMessages = messages => {
         return messages
@@ -173,7 +163,7 @@ const ChatScreen = ({ route }) => {
                             <View style={tailwind('flex flex-row items-center')}>
                                 <View
                                     style={[
-                                        tailwind(participant.status === 'active' ? 'bg-green-500 w-4 h-4 rounded-full' : 'bg-yellow-500 w-3 h-3 rounded-full'),
+                                        tailwind(participant.is_online === true ? 'bg-green-500 w-4 h-4 rounded-full' : 'bg-yellow-500 w-3 h-3 rounded-full'),
                                         {
                                             position: 'absolute',
                                             left: 2,

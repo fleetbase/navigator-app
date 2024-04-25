@@ -2,6 +2,7 @@ module.exports = {
     presets: ['module:metro-react-native-babel-preset'],
     plugins: [
         '@babel/plugin-transform-async-generator-functions',
+        '@babel/plugin-transform-async-to-generator',
         'react-native-reanimated/plugin',
         'preval',
         [
