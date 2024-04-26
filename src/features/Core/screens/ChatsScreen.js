@@ -2,12 +2,14 @@ import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, TouchableHighlight } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableHighlight, TouchableOpacity, View, Platform } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import Toast from 'react-native-toast-message';
 import { tailwind } from 'tailwind';
-import { HelperUtil, translate } from 'utils';
+import { translate } from 'utils';
+
+const isAndroid = Platform.OS === 'android';
 
 const ChatsScreen = () => {
     const navigation = useNavigation();
@@ -78,7 +80,7 @@ const ChatsScreen = () => {
                     <Text style={tailwind('font-medium text-white')}>{item.name}</Text>
                     <Text style={tailwind('text-sm text-gray-400 w-64')}>{item.message}</Text>
                 </View>
-                <View style={tailwind('flex flex-col items-center right-2')}>
+                <View style={isAndroid ? tailwind('flex flex-col items-center right-8') : tailwind('flex flex-col items-center right-2')}>
                     <Text style={tailwind('text-gray-600')}>{formatTime(item.created_at)}</Text>
                 </View>
             </View>

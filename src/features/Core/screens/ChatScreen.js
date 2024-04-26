@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, ScrollView, Text, TouchableOpacity, View, Platform } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import RNFS from 'react-native-fs';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
@@ -11,6 +11,8 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
 import { createSocketAndListen, translate } from 'utils';
+
+const isAndroid = Platform.OS === 'android';
 
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
@@ -156,9 +158,9 @@ const ChatScreen = ({ route }) => {
     };
     const renderPartificants = ({ participants, onDelete }) => {
         return (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tailwind('p-2')}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={isAndroid ? tailwind('p-0') : tailwind('p-2')}>
                 {participants.map(participant => (
-                    <View key={participant.id} style={tailwind('flex flex-col items-center mr-2')}>
+                    <View key={participant.id} style={isAndroid ? tailwind('flex flex-col items-center mt-2') : tailwind('flex flex-col items-center mr-2')}>
                         <View style={tailwind('relative')}>
                             <View style={tailwind('flex flex-row items-center')}>
                                 <View
@@ -317,12 +319,12 @@ const ChatScreen = ({ route }) => {
                         <Text style={tailwind('text-sm text-gray-300 w-72 text-center')}>
                             {channel?.name}{' '}
                             <TouchableOpacity style={tailwind('rounded-full')} onPress={() => navigation.navigate('ChannelScreen', { data: channel })}>
-                                <FontAwesomeIcon size={18} icon={faEdit} style={tailwind('text-gray-300 mt-1')} />
+                                <FontAwesomeIcon size={isAndroid ? 14 : 18} icon={faEdit} style={isAndroid ? tailwind('text-gray-300') : tailwind('text-gray-300 mt-1')} />
                             </TouchableOpacity>
                         </Text>
                     </View>
 
-                    <View style={tailwind('flex flex-col items-center left-6')}>
+                    <View style={isAndroid ? tailwind('flex flex-col items-center') : tailwind('flex flex-col items-center left-6')}>
                         <TouchableOpacity style={tailwind('rounded-full')} onPress={toggleUserList}>
                             <FontAwesomeIcon size={15} icon={faUser} style={tailwind('text-gray-300')} />
                         </TouchableOpacity>
