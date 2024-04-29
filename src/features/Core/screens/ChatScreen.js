@@ -12,6 +12,8 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
 import { createSocketAndListen, translate } from 'utils';
+import { isObject } from 'utils';
+import { get } from 'utils/Storage';
 
 const isAndroid = Platform.OS === 'android';
 let { FLEETBASE_KEY } = config;
@@ -83,29 +85,36 @@ const ChatScreen = ({ route }) => {
     });
 
     const uploadFile = async url => {
+        let _DRIVER = get('driver');
+
+        const axiosClient = axios.create({
+            baseURL: `${adapterInt.host}/${adapterInt.namespace}`,
+            headers: {
+                Authorization: isObject(_DRIVER) && typeof _DRIVER.token === 'string' ? `Bearer ${_DRIVER.token}` : `Bearer ${FLEETBASE_KEY}`,
+                'User-Agent': '@fleetbase/sdk;node',
+                'Content-Type': 'multipart/form-data',
+                Accept: 'multipart/form-data',
+            },
+        });
+
         try {
-            const axiosClient = axios.create({
-                baseURL: `${adapterInt.host}/${adapterInt.namespace}`,
-                headers: {
-                    Authorization: `Bearer ${FLEETBASE_KEY}`,
-                    'User-Agent': '@fleetbase/sdk;node',
-                },
-            });
             console.log('url::::::', JSON.stringify(url));
-            console.log('adapter::::', adapter);
+
+            if (!url || !url.uri || !url.type || !url.fileName) {
+                throw new Error('Invalid file URL');
+            }
 
             const formData = new FormData();
             formData.append('file', {
                 uri: url.uri,
                 type: url.type,
-                name: url.name,
+                name: url.fileName,
             });
 
             const res = await axiosClient.post('files/upload', formData);
-
-            console.log('File upload successful:', res);
+            console.log('Upload response:', res.data);
         } catch (error) {
-            console.error('File upload failed:', error);
+            console.error('Error uploading file:', error);
         }
     };
 
