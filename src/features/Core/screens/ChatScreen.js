@@ -1,6 +1,8 @@
 import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import config from 'config';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -12,12 +14,15 @@ import { tailwind } from 'tailwind';
 import { createSocketAndListen, translate } from 'utils';
 
 const isAndroid = Platform.OS === 'android';
+let { FLEETBASE_KEY } = config;
 
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
     const fleetbase = useFleetbase();
     const fleetbases = useFleetbase('int/v1');
     const adapter = fleetbase.getAdapter();
+
+    const adapterInt = fleetbases.getAdapter();
     const navigation = useNavigation();
     const [channel, setChannel] = useState(channelProps);
     const [messages, setMessages] = useState([]);
@@ -77,17 +82,17 @@ const ChatScreen = ({ route }) => {
         return chatParticipant.user === driverUser;
     });
 
-    const header = adapter.setHeaders({
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-
     const uploadFile = async url => {
         try {
+            const axiosClient = axios.create({
+                baseURL: `${adapterInt.host}/${adapterInt.namespace}`,
+                headers: {
+                    Authorization: `Bearer ${FLEETBASE_KEY}`,
+                    'User-Agent': '@fleetbase/sdk;node',
+                },
+            });
             console.log('url::::::', JSON.stringify(url));
-            console.log('header::::', JSON.stringify(header));
-            const adapter = fleetbases.getAdapter();
+            console.log('adapter::::', adapter);
 
             const formData = new FormData();
             formData.append('file', {
@@ -96,13 +101,7 @@ const ChatScreen = ({ route }) => {
                 name: url.name,
             });
 
-            console.log('');
-
-            const res = await adapter.post('files/upload', {
-                method: 'post',
-                body: formData,
-                headers: header,
-            });
+            const res = await axiosClient.post('files/upload', formData);
 
             console.log('File upload successful:', res);
         } catch (error) {
