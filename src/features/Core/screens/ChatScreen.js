@@ -16,7 +16,7 @@ const isAndroid = Platform.OS === 'android';
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
     const fleetbase = useFleetbase();
-    const fleetbases = useFleetbase('int/');
+    const fleetbases = useFleetbase('int/v1');
     const adapter = fleetbase.getAdapter();
     const navigation = useNavigation();
     const [channel, setChannel] = useState(channelProps);
@@ -77,18 +77,36 @@ const ChatScreen = ({ route }) => {
         return chatParticipant.user === driverUser;
     });
 
+    const header = adapter.setHeaders({
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+
     const uploadFile = async url => {
         try {
+            console.log('url::::::', JSON.stringify(url));
+            console.log('header::::', JSON.stringify(header));
             const adapter = fleetbases.getAdapter();
-            JSON.parse('fetchImage', JSON.stringify(url.uri));
-            const photo = await fetchImage(url.uri);
-            JSON.parse('fetchImage', JSON.stringify(photo));
-            const res = await adapter.post('files/upload', { photo });
-            console.log('res:::::::', JSON.stringify(res));
-        } catch (error) {
-            console.error('File upload failed:', JSON.stringify(error));
 
-            return;
+            const formData = new FormData();
+            formData.append('file', {
+                uri: url.uri,
+                type: url.type,
+                name: url.name,
+            });
+
+            console.log('');
+
+            const res = await adapter.post('files/upload', {
+                method: 'post',
+                body: formData,
+                headers: header,
+            });
+
+            console.log('File upload successful:', res);
+        } catch (error) {
+            console.error('File upload failed:', error);
         }
     };
 
@@ -100,23 +118,11 @@ const ChatScreen = ({ route }) => {
                 path: 'images',
             },
         };
-        launchImageLibrary(options, response => {
-            if (response.didCancel) {
-                console.log('User cancelled image picker');
-            } else if (response.error) {
-                console.log('ImagePicker Error: ', response.error);
-            } else {
-                console.log('response::::', JSON.stringify(response.assets[0]));
-                uploadFile(response.assets[0]);
-            }
+        const images = launchImageLibrary(options, response => {
+            console.log('response.assets[0]::::', JSON.stringify(response.assets[0]));
+            uploadFile(response.assets[0]);
         });
-    };
-
-    const fetchImage = async uri => {
-        const imageResponse = await fetch(uri);
-        const imageBlob = await imageResponse.blob();
-        const base64Data = await blobToBase64(imageBlob);
-        return base64Data;
+        console.log('images', JSON.stringify(images));
     };
 
     const blobToBase64 = blob => {
