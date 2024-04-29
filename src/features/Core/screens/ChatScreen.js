@@ -3,9 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, ScrollView, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import RNFS from 'react-native-fs';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
@@ -17,6 +16,8 @@ const isAndroid = Platform.OS === 'android';
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
     const fleetbase = useFleetbase();
+    const fleetbases = useFleetbase('int/');
+    const adapter = fleetbase.getAdapter();
     const navigation = useNavigation();
     const [channel, setChannel] = useState(channelProps);
     const [messages, setMessages] = useState([]);
@@ -26,16 +27,13 @@ const ChatScreen = ({ route }) => {
     const driver = useDriver();
     const driverUser = driver[0].attributes.user;
 
-    const adapter = fleetbase.getAdapter();
-
     useEffect(() => {
         setChannel(channelProps);
     }, [route.params]);
 
     useEffect(() => {
         if (!channel) return;
-        // fetchUsers(channel?.id);
-
+        fetchUsers(channel?.id);
         const messages = parseMessages(channel.feed);
         setMessages(messages);
     }, [channel]);
@@ -80,27 +78,55 @@ const ChatScreen = ({ route }) => {
     });
 
     const uploadFile = async url => {
-        // Extract filename from URL
+        try {
+            const adapter = fleetbases.getAdapter();
+            JSON.parse('fetchImage', JSON.stringify(url.uri));
+            const photo = await fetchImage(url.uri);
+            JSON.parse('fetchImage', JSON.stringify(photo));
+            const res = await adapter.post('files/upload', { photo });
+            console.log('res:::::::', JSON.stringify(res));
+        } catch (error) {
+            console.error('File upload failed:', JSON.stringify(error));
 
-        console.log('res>>>>>>>>', JSON.stringify(url));
-        // const fileNameParts = url?.split('/')?.pop()?.split('?');
+            return;
+        }
+    };
 
-        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
-
-        console.log('fileName::::', JSON.stringify(url));
-        // Create local file path
-        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-
-        console.log('localFile::::', JSON.stringify(localFile));
-        // Set up download options
+    const chooseFile = () => {
         const options = {
-            fromUrl: url,
-            toFile: localFile,
+            title: 'Select File',
+            storageOptions: {
+                skipBackup: true,
+                path: 'images',
+            },
         };
+        launchImageLibrary(options, response => {
+            if (response.didCancel) {
+                console.log('User cancelled image picker');
+            } else if (response.error) {
+                console.log('ImagePicker Error: ', response.error);
+            } else {
+                console.log('response::::', JSON.stringify(response.assets[0]));
+                uploadFile(response.assets[0]);
+            }
+        });
+    };
 
-        RNFS.uploadFiles(options).promise.then(() => {
-            RNFS.readDir(RNFS.DocumentDirectoryPath);
-            FileViewer.open(localFile);
+    const fetchImage = async uri => {
+        const imageResponse = await fetch(uri);
+        const imageBlob = await imageResponse.blob();
+        const base64Data = await blobToBase64(imageBlob);
+        return base64Data;
+    };
+
+    const blobToBase64 = blob => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = () => {
+                resolve(String(reader.result));
+            };
+            reader.readAsDataURL(blob);
         });
     };
 
@@ -273,27 +299,6 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const chooseFile = () => {
-        const options = {
-            title: 'Select File',
-            storageOptions: {
-                skipBackup: true,
-                path: 'images',
-            },
-        };
-
-        launchImageLibrary(options, response => {
-            if (response.didCancel) {
-                console.log('User cancelled image picker');
-            } else if (response.error) {
-                console.log('ImagePicker Error: ', response.error);
-            } else {
-                console.log('response::::', JSON.stringify(response.assets[0]));
-                uploadFile(response.assets[0]);
-            }
-        });
-    };
-
     const renderActions = () => (
         <Actions
             options={{
@@ -395,6 +400,7 @@ const ChatScreen = ({ route }) => {
                     alwaysShowSend
                     renderInputToolbar={props => <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />}
                     renderSend={renderSend}
+                    renderActions={renderActions}
                 />
             </View>
         </View>
