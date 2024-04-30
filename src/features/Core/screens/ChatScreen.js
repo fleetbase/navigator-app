@@ -126,7 +126,13 @@ const ChatScreen = ({ route }) => {
             },
         };
         launchImageLibrary(options, response => {
-            uploadFile(response?.assets[0]);
+            if (response.didCancel) {
+                if (!response) return;
+            } else if (response.error) {
+                console.log('ImagePicker Error: ', response.error);
+            } else {
+                uploadFile(response?.assets[0]);
+            }
         });
     };
 
