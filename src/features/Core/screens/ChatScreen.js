@@ -11,8 +11,7 @@ import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gi
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
 import { tailwind } from 'tailwind';
-import { createSocketAndListen, translate } from 'utils';
-import { isObject } from 'utils';
+import { createSocketAndListen, isObject, translate } from 'utils';
 import { get } from 'utils/Storage';
 
 const isAndroid = Platform.OS === 'android';
@@ -28,6 +27,7 @@ const ChatScreen = ({ route }) => {
     const [channel, setChannel] = useState(channelProps);
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
+    const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
     const [isLoading] = useState(false);
     const [showUserList, setShowUserList] = useState(false);
     const driver = useDriver();
@@ -67,8 +67,9 @@ const ChatScreen = ({ route }) => {
 
     const parseMessage = (message, index) => {
         const isSystem = message.type == 'log';
-        const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message.data.sender.name, avatar: message.data.sender.avatar };
+        const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message?.data?.sender?.name, avatar: message?.data?.sender?.avatar };
 
+        console.log('message.data.content', JSON.stringify(message));
         return {
             _id: message.data.id,
             text: isSystem ? message.data.resolved_content : message.data.content,
@@ -97,8 +98,6 @@ const ChatScreen = ({ route }) => {
         });
 
         try {
-            console.log('url::::::', JSON.stringify(url));
-
             if (!url || !url.uri || !url.type || !url.fileName) {
                 throw new Error('Invalid file URL');
             }
@@ -110,6 +109,13 @@ const ChatScreen = ({ route }) => {
                 name: url.fileName,
             });
 
+            const message = {
+                _id: Math.random().toString(36).substring(2, 15),
+                createdAt: new Date(),
+                image: url.uri,
+            };
+
+            setMessages(previousMessages => GiftedChat.append(previousMessages, message));
             const res = await axiosClient.post('files/upload', formData);
             console.log('Upload response:', res.data);
         } catch (error) {
@@ -298,9 +304,6 @@ const ChatScreen = ({ route }) => {
             options={{
                 'Choose From Library': () => {
                     chooseFile();
-                },
-                Cancel: () => {
-                    console.log('Cancel');
                 },
             }}
             optionTintColor="#222B45"
