@@ -23,7 +23,6 @@ const ChatScreen = ({ route }) => {
     const fleetbase = useFleetbase();
     const fleetbases = useFleetbase('int/v1');
     const adapter = fleetbase.getAdapter();
-
     const adapterInt = fleetbases.getAdapter();
     const navigation = useNavigation();
     const [channel, setChannel] = useState(channelProps);
@@ -126,21 +125,8 @@ const ChatScreen = ({ route }) => {
                 path: 'images',
             },
         };
-        const images = launchImageLibrary(options, response => {
-            console.log('response.assets[0]::::', JSON.stringify(response.assets[0]));
-            uploadFile(response.assets[0]);
-        });
-        console.log('images', JSON.stringify(images));
-    };
-
-    const blobToBase64 = blob => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onerror = reject;
-            reader.onload = () => {
-                resolve(String(reader.result));
-            };
-            reader.readAsDataURL(blob);
+        launchImageLibrary(options, response => {
+            uploadFile(response?.assets[0]);
         });
     };
 
@@ -178,25 +164,13 @@ const ChatScreen = ({ route }) => {
             await adapter.post(`chat-channels/${channelId}/add-participant`, { user: participantId });
 
             await reloadChannel(channel.id);
-            const newMessage = {
-                _id: new Date().getTime(),
-                text: `Added ${participantName} to this channel`,
-                createdAt: new Date(),
-                system: true,
-                sent: true,
-                user: {
-                    _id: 1,
-                    name: 'System',
-                },
-            };
-            setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
 
             setShowUserList(false);
         } catch (error) {
             console.error('Add participant:', error);
         }
     };
-    const renderPartificants = ({ participants, onDelete }) => {
+    const renderPartificants = ({ participants }) => {
         return (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={isAndroid ? tailwind('p-0') : tailwind('p-2')}>
                 {participants.map(participant => (
