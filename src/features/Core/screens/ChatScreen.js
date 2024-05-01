@@ -69,7 +69,6 @@ const ChatScreen = ({ route }) => {
         const isSystem = message.type == 'log';
         const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message?.data?.sender?.name, avatar: message?.data?.sender?.avatar };
 
-        console.log('message.data.content', JSON.stringify(message));
         return {
             _id: message.data.id,
             text: isSystem ? message.data.resolved_content : message.data.content,
@@ -115,8 +114,12 @@ const ChatScreen = ({ route }) => {
                 image: url.uri,
             };
 
-            setMessages(previousMessages => GiftedChat.append(previousMessages, message));
             const res = await axiosClient.post('files/upload', formData);
+
+            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: res.data.file.original_filename });
+
+            setMessages(previousMessages => GiftedChat.append(previousMessages, message));
+
             console.log('Upload response:', res.data);
         } catch (error) {
             console.error('Error uploading file:', error);
