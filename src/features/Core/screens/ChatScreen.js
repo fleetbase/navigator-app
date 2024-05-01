@@ -1,21 +1,22 @@
-import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser, faFile } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import config from 'config';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View, KeyboardAvoidingView } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
+import RNFS from 'react-native-fs';
 import { tailwind } from 'tailwind';
 import { createSocketAndListen, isObject, translate } from 'utils';
 import { get } from 'utils/Storage';
 
 const isAndroid = Platform.OS === 'android';
-let { FLEETBASE_KEY } = config;
+let { FLEETBASE_KEY, FLEETBASE_HOST } = config;
 
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
@@ -115,7 +116,9 @@ const ChatScreen = ({ route }) => {
             };
 
             const res = await axiosClient.post('files/upload', formData);
-
+            const imageUrl = res.data.file;
+            JSON.stringify('imageUrl::::::', JSON.stringify(imageUrl));
+            setUploadedImageUrl(imageUrl);
             await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: res.data.file.original_filename });
 
             setMessages(previousMessages => GiftedChat.append(previousMessages, message));
@@ -284,6 +287,49 @@ const ChatScreen = ({ route }) => {
         );
     };
 
+    const openMedia = async url => {
+        const fileNameParts = url?.split('/')?.pop()?.split('?');
+        console.log('fileNameParts:::', JSON.stringify(fileNameParts));
+        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
+
+        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+
+        const options = {
+            fromUrl: url,
+            toFile: localFile,
+        };
+
+        RNFS.downloadFile(options).promise.then(() => {
+            RNFS.readDir(RNFS.DocumentDirectoryPath);
+            FileViewer.open(localFile);
+        });
+    };
+
+    const checkIsImage = item => {
+        if (item && item.content_type) {
+            return item.content_type.startsWith('image/');
+        }
+    };
+
+    const renderDocumentItem = image => {
+        return (
+            <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')}>
+                <TouchableOpacity
+                    onPress={() => {
+                        openMedia(`${FLEETBASE_HOST}${image?.url}`);
+                    }}>
+                    {checkIsImage(image?.original_filename) ? (
+                        <FastImage style={tailwind('w-4 h-4 m-1 ')} source={{ uri: `${FLEETBASE_HOST}${image?.url}` }} resizeMode={FastImage.resizeMode.contain} />
+                    ) : (
+                        <View style={tailwind('items-center justify-between p-1 ')}>
+                            <FontAwesomeIcon size={70} icon={faFile} style={tailwind('text-gray-400')} />
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </View>
+        );
+    };
+
     const renderBubble = props => {
         return (
             <Bubble
@@ -298,6 +344,7 @@ const ChatScreen = ({ route }) => {
                         color: '#fff',
                     },
                 }}
+                onPress={() => renderDocumentItem(uploadedImageUrl)}
             />
         );
     };
