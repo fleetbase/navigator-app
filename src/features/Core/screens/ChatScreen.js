@@ -1,29 +1,25 @@
-import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser, faFile } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faEdit, faFile, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import config from 'config';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View, KeyboardAvoidingView } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
+import RNFS from 'react-native-fs';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
-import RNFS from 'react-native-fs';
 import { tailwind } from 'tailwind';
-import { createSocketAndListen, isObject, translate } from 'utils';
-import { get } from 'utils/Storage';
+import { createSocketAndListen, translate } from 'utils';
 
 const isAndroid = Platform.OS === 'android';
-let { FLEETBASE_KEY, FLEETBASE_HOST } = config;
+let { FLEETBASE_HOST } = config;
 
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
     const fleetbase = useFleetbase();
-    const fleetbases = useFleetbase('int/v1');
     const adapter = fleetbase.getAdapter();
-    const adapterInt = fleetbases.getAdapter();
     const navigation = useNavigation();
     const [channel, setChannel] = useState(channelProps);
     const [messages, setMessages] = useState([]);
@@ -85,18 +81,6 @@ const ChatScreen = ({ route }) => {
     });
 
     const uploadFile = async url => {
-        let _DRIVER = get('driver');
-
-        const axiosClient = axios.create({
-            baseURL: `${adapterInt.host}/${adapterInt.namespace}`,
-            headers: {
-                Authorization: isObject(_DRIVER) && typeof _DRIVER.token === 'string' ? `Bearer ${_DRIVER.token}` : `Bearer ${FLEETBASE_KEY}`,
-                'User-Agent': '@fleetbase/sdk;node',
-                'Content-Type': 'multipart/form-data',
-                Accept: 'multipart/form-data',
-            },
-        });
-
         try {
             if (!url || !url.uri || !url.type || !url.fileName) {
                 throw new Error('Invalid file URL');
@@ -115,15 +99,14 @@ const ChatScreen = ({ route }) => {
                 image: url.uri,
             };
 
-            const res = await axiosClient.post('files/upload', formData);
-            const imageUrl = res.data.file;
-            JSON.stringify('imageUrl::::::', JSON.stringify(imageUrl));
+            const res = await adapter.post('files', formData);
+            const imageUrl = res.url;
             setUploadedImageUrl(imageUrl);
-            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: res.data.file.original_filename });
+            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: res.original_filename });
 
             setMessages(previousMessages => GiftedChat.append(previousMessages, message));
 
-            console.log('Upload response:', res.data);
+            console.log('Upload response:', res);
         } catch (error) {
             console.error('Error uploading file:', error);
         }
@@ -439,7 +422,7 @@ const ChatScreen = ({ route }) => {
             <View style={tailwind('flex-1 p-4')}>
                 <GiftedChat
                     messages={messages}
-                    onSend={onSend}
+                    onSend={messages => onSend(messages)}
                     user={{
                         _id: 1,
                     }}
