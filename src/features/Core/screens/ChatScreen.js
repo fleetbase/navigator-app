@@ -279,24 +279,45 @@ const ChatScreen = ({ route }) => {
     };
 
     const renderBubble = props => {
-        return (
-            <Bubble
-                {...props}
-                wrapperStyle={{
-                    right: {
-                        backgroundColor: '#919498',
-                    },
-                }}
-                textStyle={{
-                    right: {
-                        color: '#fff',
-                    },
-                }}
-                onPress={() => {
-                    renderImage(uploadedImageUrl);
-                }}
-            />
-        );
+        if (props?.currentMessage?.user._id === participantId?.id) {
+            return (
+                <Bubble
+                    {...props}
+                    wrapperStyle={{
+                        left: {
+                            backgroundColor: '#f0f0f0',
+                        },
+                        right: {
+                            backgroundColor: '#919498',
+                            color: '#fff',
+                            alignSelf: 'flex-end',
+                        },
+                    }}
+                    onPress={() => {
+                        renderImage(uploadedImageUrl);
+                    }}
+                />
+            );
+        } else {
+            return (
+                <Bubble
+                    {...props}
+                    wrapperStyle={{
+                        left: {
+                            backgroundColor: '#f0f0f0',
+                        },
+                        right: {
+                            backgroundColor: 'white',
+                            color: '#fff',
+                            alignSelf: 'flex-start',
+                        },
+                    }}
+                    onPress={() => {
+                        renderImage(uploadedImageUrl);
+                    }}
+                />
+            );
+        }
     };
 
     const renderActions = () => (
