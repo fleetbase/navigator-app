@@ -1,12 +1,10 @@
-import { faAngleLeft, faEdit, faFile, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import config from 'config';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import RNFS from 'react-native-fs';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
@@ -14,7 +12,6 @@ import { tailwind } from 'tailwind';
 import { createSocketAndListen, translate } from 'utils';
 
 const isAndroid = Platform.OS === 'android';
-let { FLEETBASE_HOST } = config;
 
 const ChatScreen = ({ route }) => {
     const { channel: channelProps } = route.params;
@@ -79,6 +76,8 @@ const ChatScreen = ({ route }) => {
     const participantId = channel?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
+
+    const channelUsers = channel?.participants.map(item => item.id);
 
     const uploadFile = async url => {
         try {
@@ -270,45 +269,11 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const openMedia = async url => {
-        const fileNameParts = url?.split('/')?.pop()?.split('?');
-        console.log('fileNameParts:::', JSON.stringify(fileNameParts));
-        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
-
-        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-
-        const options = {
-            fromUrl: url,
-            toFile: localFile,
-        };
-
-        RNFS.downloadFile(options).promise.then(() => {
-            RNFS.readDir(RNFS.DocumentDirectoryPath);
-            FileViewer.open(localFile);
-        });
-    };
-
-    const checkIsImage = item => {
-        if (item && item.content_type) {
-            return item.content_type.startsWith('image/');
-        }
-    };
-
-    const renderDocumentItem = image => {
+    const renderImage = async image => {
+        console.log('item', image);
         return (
             <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')}>
-                <TouchableOpacity
-                    onPress={() => {
-                        openMedia(`${FLEETBASE_HOST}${image?.url}`);
-                    }}>
-                    {checkIsImage(image?.original_filename) ? (
-                        <FastImage style={tailwind('w-4 h-4 m-1 ')} source={{ uri: `${FLEETBASE_HOST}${image?.url}` }} resizeMode={FastImage.resizeMode.contain} />
-                    ) : (
-                        <View style={tailwind('items-center justify-between p-1 ')}>
-                            <FontAwesomeIcon size={70} icon={faFile} style={tailwind('text-gray-400')} />
-                        </View>
-                    )}
-                </TouchableOpacity>
+                <Image source={{ uri: image }} style={tailwind('w-6 h-6')} onError={() => console.warn('Image failed to load')} />
             </View>
         );
     };
@@ -327,7 +292,9 @@ const ChatScreen = ({ route }) => {
                         color: '#fff',
                     },
                 }}
-                onPress={() => renderDocumentItem(uploadedImageUrl)}
+                onPress={() => {
+                    renderImage(uploadedImageUrl);
+                }}
             />
         );
     };
@@ -424,7 +391,7 @@ const ChatScreen = ({ route }) => {
                     messages={messages}
                     onSend={messages => onSend(messages)}
                     user={{
-                        _id: 1,
+                        _id: channelUsers?.id,
                     }}
                     renderBubble={renderBubble}
                     alwaysShowSend
