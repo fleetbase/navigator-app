@@ -118,7 +118,11 @@ const ChatScreen = ({ route }) => {
                 skipBackup: true,
                 path: 'images',
             },
+            quality: 0.5,
+            maxWidth: 800,
+            maxHeight: 600,
         };
+
         launchImageLibrary(options, response => {
             if (response.didCancel) {
                 if (!response) return;
@@ -152,8 +156,8 @@ const ChatScreen = ({ route }) => {
         }
     };
 
-    const addParticipant = async (channelId, participantId, participantName, avatar) => {
-        const isParticipantAdded = channel.participants.some(participant => participant.id === participantId);
+    const addParticipant = async (channelId, participantId, participantName) => {
+        const isParticipantAdded = channel.participants.some(participant => participant.user === participantId);
 
         if (isParticipantAdded) {
             Alert.alert('Alert', `${participantName} is already a part of this channel.`, [{ text: 'OK' }]);
@@ -170,6 +174,7 @@ const ChatScreen = ({ route }) => {
             console.error('Add participant:', error);
         }
     };
+
     const renderPartificants = ({ participants }) => {
         return (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={isAndroid ? tailwind('p-0') : tailwind('p-2')}>
@@ -234,18 +239,7 @@ const ChatScreen = ({ route }) => {
     const removeParticipant = async participantId => {
         try {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
-
             await reloadChannel(channel.id);
-            const newMessage = {
-                _id: new Date().getTime(),
-                text: `Removed participant from this channel`,
-                createdAt: new Date(),
-                user: {
-                    _id: 1,
-                    name: 'System',
-                },
-            };
-            setMessages(previousMessages => GiftedChat.append(previousMessages, [newMessage]));
         } catch (error) {
             console.error('Remove participant:', error);
         }
@@ -279,57 +273,27 @@ const ChatScreen = ({ route }) => {
     };
 
     const renderBubble = props => {
-        if (props?.currentMessage?.user._id === participantId?.id) {
-            return (
-                <Bubble
-                    {...props}
-                    wrapperStyle={{
-                        left: {
-                            backgroundColor: '#f0f0f0',
-                        },
-                        right: {
-                            backgroundColor: '#919498',
-                            color: '#fff',
-                            alignSelf: 'flex-end',
-                        },
-                    }}
-                    onPress={() => {
-                        renderImage(uploadedImageUrl);
-                    }}
-                />
-            );
-        } else {
-            return (
-                <Bubble
-                    {...props}
-                    wrapperStyle={{
-                        left: {
-                            backgroundColor: '#f0f0f0',
-                        },
-                        right: {
-                            backgroundColor: 'white',
-                            color: '#fff',
-                            alignSelf: 'flex-start',
-                        },
-                    }}
-                    onPress={() => {
-                        renderImage(uploadedImageUrl);
-                    }}
-                />
-            );
-        }
+        return (
+            <Bubble
+                {...props}
+                wrapperStyle={{
+                    right: {
+                        backgroundColor: '#919498',
+                    },
+                }}
+                textStyle={{
+                    right: {
+                        color: '#fff',
+                    },
+                }}
+                onPress={() => {
+                    renderImage(uploadedImageUrl);
+                }}
+            />
+        );
     };
 
-    const renderActions = () => (
-        <Actions
-            options={{
-                'Choose From Library': () => {
-                    chooseFile();
-                },
-            }}
-            optionTintColor="#222B45"
-        />
-    );
+    const renderActions = () => <Actions onPressActionButton={() => chooseFile()} optionTintColor="#222B45" />;
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
