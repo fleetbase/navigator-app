@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -64,11 +64,12 @@ const ChatScreen = ({ route }) => {
         const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message?.data?.sender?.name, avatar: message?.data?.sender?.avatar };
 
         return {
-            _id: message.data.id,
+            _id: message?.data?.id,
             text: isSystem ? message.data.resolved_content : message.data.content,
             createdAt: message.data.updated_at,
             system: isSystem,
             sent: true,
+            image: message?.data?.attachments?.length > 0 ? message.data.attachments[0].url : '',
             user,
         };
     };
@@ -83,31 +84,19 @@ const ChatScreen = ({ route }) => {
 
     const uploadFile = async url => {
         try {
-            if (!url || !url.uri || !url.type || !url.fileName) {
-                throw new Error('Invalid file URL');
-            }
-
-            const formData = new FormData();
-            formData.append('file', {
-                uri: url.uri,
-                type: url.type,
-                name: url.fileName,
+            const resBase64 = await adapter.post('files/base64', {
+                data: url.base64,
+                file_name: url.fileName,
+                subject_id: channel.id,
+                subject_type: 'chat_attachment',
+                type: 'chat_channel',
             });
 
-            const message = {
-                _id: Math.random().toString(36).substring(2, 15),
-                createdAt: new Date(),
-                image: url.uri,
-            };
+            const messageRes = await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: resBase64.original_filename, file: resBase64.id });
 
-            const res = await adapter.post('files', formData);
-            const imageUrl = res.url;
-            setUploadedImageUrl(imageUrl);
-            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: res.original_filename });
+            setMessages(previousMessages => GiftedChat.append(previousMessages, parseMessage({ data: messageRes }, messageRes.id)));
 
-            setMessages(previousMessages => GiftedChat.append(previousMessages, message));
-
-            console.log('Upload response:', res);
+            console.log('Upload response:', resBase64);
         } catch (error) {
             console.error('Error uploading file:', error);
         }
@@ -123,6 +112,7 @@ const ChatScreen = ({ route }) => {
             quality: 0.5,
             maxWidth: 800,
             maxHeight: 600,
+            includeBase64: true,
         };
 
         launchImageLibrary(options, response => {
@@ -220,6 +210,7 @@ const ChatScreen = ({ route }) => {
             </ScrollView>
         );
     };
+
     const confirmRemove = participantId => {
         Alert.alert(
             'Confirmation',
@@ -266,7 +257,7 @@ const ChatScreen = ({ route }) => {
     };
 
     const renderImage = async image => {
-        console.log('item', image);
+        console.log('item:::', image);
         return (
             <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')}>
                 <FastImage source={image ? { uri: image } : require('../../../../assets/icon.png')} style={tailwind('w-6 h-6')} onError={() => console.warn('Image failed to load')} />
