@@ -73,9 +73,11 @@ const ChatScreen = ({ route }) => {
         };
     };
 
-    const participantId = channel?.participants.find(chatParticipant => {
+    const currentParticipant = channel?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
+
+    console.log('currentParticipant', currentParticipant);
 
     const channelUsers = channel?.participants.map(item => item.id);
 
@@ -101,7 +103,7 @@ const ChatScreen = ({ route }) => {
             const res = await adapter.post('files', formData);
             const imageUrl = res.url;
             setUploadedImageUrl(imageUrl);
-            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: res.original_filename });
+            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: res.original_filename });
 
             setMessages(previousMessages => GiftedChat.append(previousMessages, message));
 
@@ -247,7 +249,7 @@ const ChatScreen = ({ route }) => {
 
     const onSend = async newMessage => {
         try {
-            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: participantId.id, content: newMessage[0].text });
+            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: newMessage[0].text });
             setShowUserList(false);
             setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
         } catch (error) {
@@ -267,7 +269,7 @@ const ChatScreen = ({ route }) => {
         console.log('item', image);
         return (
             <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')}>
-                <Image source={{ uri: image }} style={tailwind('w-6 h-6')} onError={() => console.warn('Image failed to load')} />
+                <FastImage source={image ? { uri: image } : require('../../../../assets/icon.png')} style={tailwind('w-6 h-6')} onError={() => console.warn('Image failed to load')} />
             </View>
         );
     };
