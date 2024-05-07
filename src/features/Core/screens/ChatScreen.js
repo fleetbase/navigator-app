@@ -78,8 +78,6 @@ const ChatScreen = ({ route }) => {
         return chatParticipant.user === driverUser;
     });
 
-    console.log('currentParticipant', currentParticipant);
-
     const channelUsers = channel?.participants.map(item => item.id);
 
     const uploadFile = async url => {
@@ -257,7 +255,6 @@ const ChatScreen = ({ route }) => {
     };
 
     const renderImage = async image => {
-        console.log('item:::', image);
         return (
             <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')}>
                 <FastImage source={image ? { uri: image } : require('../../../../assets/icon.png')} style={tailwind('w-6 h-6')} onError={() => console.warn('Image failed to load')} />
