@@ -5,6 +5,8 @@ import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
+import FileViewer from 'react-native-file-viewer';
+import RNFS from 'react-native-fs';
 import { Actions, Bubble, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Modal from 'react-native-modal';
@@ -21,7 +23,6 @@ const ChatScreen = ({ route }) => {
     const [channel, setChannel] = useState(channelProps);
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
-    const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
     const [isLoading] = useState(false);
     const [showUserList, setShowUserList] = useState(false);
     const driver = useDriver();
@@ -34,6 +35,7 @@ const ChatScreen = ({ route }) => {
     useEffect(() => {
         if (!channel) return;
         fetchUsers(channel?.id);
+        console.log('channel.feed', JSON.stringify(channel.feed));
         const messages = parseMessages(channel.feed);
         setMessages(messages);
     }, [channel]);
@@ -90,11 +92,13 @@ const ChatScreen = ({ route }) => {
                 type: 'chat_channel',
             });
 
-            const messageRes = await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: resBase64.original_filename, file: resBase64.id });
+            await adapter.post(`chat-channels/${channel?.id}/send-message`, {
+                sender: currentParticipant?.id,
+                content: resBase64.original_filename,
+                file: resBase64.id,
+            });
 
             setMessages(previousMessages => GiftedChat.append(previousMessages, parseMessage({ data: messageRes }, messageRes.id)));
-
-            console.log('Upload response:', resBase64);
         } catch (error) {
             console.error('Error uploading file:', error);
         }
@@ -121,6 +125,23 @@ const ChatScreen = ({ route }) => {
             } else {
                 uploadFile(response?.assets[0]);
             }
+        });
+    };
+
+    const openMedia = async url => {
+        const fileNameParts = url?.split('/')?.pop()?.split('?');
+        const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
+
+        const localFile = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+
+        const options = {
+            fromUrl: url,
+            toFile: localFile,
+        };
+
+        RNFS.downloadFile(options).promise.then(() => {
+            RNFS.readDir(RNFS.DocumentDirectoryPath);
+            FileViewer.open(localFile);
         });
     };
 
@@ -254,33 +275,26 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const renderImage = async image => {
-        return (
-            <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 ')}>
-                <FastImage source={image ? { uri: image } : require('../../../../assets/icon.png')} style={tailwind('w-6 h-6')} onError={() => console.warn('Image failed to load')} />
-            </View>
-        );
-    };
-
     const renderBubble = props => {
-        return (
-            <Bubble
-                {...props}
-                wrapperStyle={{
-                    right: {
-                        backgroundColor: '#919498',
-                    },
-                }}
-                textStyle={{
-                    right: {
-                        color: '#fff',
-                    },
-                }}
-                onPress={() => {
-                    renderImage(uploadedImageUrl);
-                }}
-            />
-        );
+        if (props.currentMessage.image) {
+            return (
+                <TouchableOpacity onPress={() => openMedia(props.currentMessage.image)}>
+                    <FastImage source={{ uri: props.currentMessage.image }} style={tailwind('w-28 h-28 rounded')} />
+                </TouchableOpacity>
+            );
+        } else {
+            return (
+                <Bubble
+                    {...props}
+                    textStyle={{
+                        right: {
+                            color: '#fff',
+                        },
+                    }}
+                    position={'left'}
+                />
+            );
+        }
     };
 
     const renderActions = () => <Actions onPressActionButton={() => chooseFile()} optionTintColor="#222B45" />;
