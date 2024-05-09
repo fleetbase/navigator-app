@@ -35,7 +35,6 @@ const ChatScreen = ({ route }) => {
     useEffect(() => {
         if (!channel) return;
         fetchUsers(channel?.id);
-        console.log('channel.feed', JSON.stringify(channel.feed));
         const messages = parseMessages(channel.feed);
         setMessages(messages);
     }, [channel]);
@@ -63,6 +62,7 @@ const ChatScreen = ({ route }) => {
 
     const parseMessage = (message, index) => {
         const isSystem = message.type == 'log';
+
         const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message?.data?.sender?.name, avatar: message?.data?.sender?.avatar };
 
         return {
@@ -92,7 +92,7 @@ const ChatScreen = ({ route }) => {
                 type: 'chat_channel',
             });
 
-            await adapter.post(`chat-channels/${channel?.id}/send-message`, {
+            const messageRes = await adapter.post(`chat-channels/${channel?.id}/send-message`, {
                 sender: currentParticipant?.id,
                 content: resBase64.original_filename,
                 file: resBase64.id,
@@ -261,7 +261,8 @@ const ChatScreen = ({ route }) => {
         try {
             await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: newMessage[0].text });
             setShowUserList(false);
-            setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
+            setMessages(previousMessages => GiftedChat.append(previousMessages, {
+                ...newMessage, sent: false}));
         } catch (error) {
             console.error('Send error:', error);
         }
@@ -286,9 +287,9 @@ const ChatScreen = ({ route }) => {
             return (
                 <Bubble
                     {...props}
-                    textStyle={{
-                        right: {
-                            color: '#fff',
+                    wrapperStyle={{
+                        left: {
+                            backgroundColor: 'white',
                         },
                     }}
                     position={'left'}
