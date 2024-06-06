@@ -12,6 +12,7 @@ import IssueScreen from './screens/IssueScreen';
 import ChatScreen from './screens/ChatScreen';
 import ChatsScreen from './screens/ChatsScreen';
 import ChannelScreen from './screens/ChannelScreen';
+import SettingsScreen from '../Shared/SettingsScreen';
 
 const RootStack = createStackNavigator();
 
@@ -36,6 +37,7 @@ const MainStack = ({ route }) => {
                     <RootStack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                     <RootStack.Screen name="ChatsScreen" component={ChatsScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                     <RootStack.Screen name="ChannelScreen" component={ChannelScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name="SettingsScreen" component={SettingsScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 </RootStack.Group>
             </RootStack.Navigator>
         </SafeAreaProvider>
