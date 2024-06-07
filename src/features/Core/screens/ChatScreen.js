@@ -53,27 +53,54 @@ const ChatScreen = ({ route }) => {
     }, [channel]);
 
     const parseMessages = messages => {
-        return messages
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .map((message, index) => {
-                return parseMessage(message, index);
-            });
+        return messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).flatMap((message, index) => parseMessage(message, index));
     };
 
     const parseMessage = (message, index) => {
-        const isSystem = message.type == 'log';
-
+        const isSystem = message.type === 'log';
         const user = isSystem ? { _id: index, name: 'System' } : { _id: index, name: message?.data?.sender?.name, avatar: message?.data?.sender?.avatar };
 
-        return {
-            _id: message?.data?.id,
-            text: isSystem ? message.data.resolved_content : message.data.content,
-            createdAt: message.data.updated_at,
-            system: isSystem,
-            sent: true,
-            image: message?.data?.attachments?.length > 0 ? message.data.attachments[0].url : '',
-            user,
-        };
+        if (isSystem) {
+            return [
+                {
+                    _id: message?.data?.id,
+                    text: message.data.resolved_content,
+                    createdAt: message.data.updated_at,
+                    system: true,
+                    sent: true,
+                    user,
+                },
+            ];
+        } else {
+            const messages = [];
+            // Add the text message if it exists
+            if (message.data.content) {
+                messages.push({
+                    _id: `${message.data.id}-text`,
+                    text: message.data.content,
+                    createdAt: message.data.updated_at,
+                    system: false,
+                    sent: true,
+                    user,
+                });
+            }
+
+            if (message.data.attachments && message.data.attachments.length > 0) {
+                message.data.attachments.forEach((attachment, attachmentIndex) => {
+                    messages.push({
+                        _id: `${message.data.id}-image-${attachmentIndex}`,
+                        text: '',
+                        createdAt: message.data.updated_at,
+                        system: false,
+                        sent: true,
+                        image: attachment.url,
+                        user,
+                    });
+                });
+            }
+
+            return messages;
+        }
     };
 
     const currentParticipant = channel?.participants.find(chatParticipant => {
@@ -261,8 +288,12 @@ const ChatScreen = ({ route }) => {
         try {
             await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: newMessage[0].text });
             setShowUserList(false);
-            setMessages(previousMessages => GiftedChat.append(previousMessages, {
-                ...newMessage, sent: false}));
+            setMessages(previousMessages =>
+                GiftedChat.append(previousMessages, {
+                    ...newMessage,
+                    sent: false,
+                })
+            );
         } catch (error) {
             console.error('Send error:', error);
         }
