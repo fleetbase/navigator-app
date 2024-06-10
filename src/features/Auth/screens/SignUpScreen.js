@@ -31,7 +31,7 @@ const SignUpScreen = ({ route }) => {
                 name,
                 email,
                 phone,
-                company_uuid: item.uuid,
+                company_uuid: item.id,
             })
             .then(() => {
                 Toast.show({

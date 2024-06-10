@@ -56,7 +56,7 @@ const OrganizationSearchScreen = ({ navigation }) => {
 
     const handleOrganizationSelection = async item => {
         setIsLoading(true);
-        const settings = await fetchSettings(item.uuid);
+        const settings = await fetchSettings(item.id);
 
         setIsLoading(false);
 
