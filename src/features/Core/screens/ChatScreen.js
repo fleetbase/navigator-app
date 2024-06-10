@@ -44,8 +44,6 @@ const ChatScreen = ({ route }) => {
 
         console.log(`[Connecting to socket on channel chat.${channel.id}]`);
         createSocketAndListen(`chat.${channel.id}`, socketEvent => {
-            console.log('Socket channel id: ', channel.id);
-            console.log('Socket event: ', socketEvent);
             const { event, data } = socketEvent;
             console.log('Socket event: ', event, data);
             return reloadChannel(channel?.id);
@@ -63,7 +61,7 @@ const ChatScreen = ({ route }) => {
         if (isSystem) {
             return [
                 {
-                    _id: message?.data?.id,
+                    _id: message?.data?.id ?? `${index}-text`,
                     text: message.data.resolved_content,
                     createdAt: message.data.updated_at,
                     system: true,
@@ -76,7 +74,7 @@ const ChatScreen = ({ route }) => {
             // Add the text message if it exists
             if (message.data.content) {
                 messages.push({
-                    _id: `${message.data.id}-text`,
+                    _id: `${message.data.id || index}-text`,
                     text: message.data.content,
                     createdAt: message.data.updated_at,
                     system: false,
@@ -121,7 +119,7 @@ const ChatScreen = ({ route }) => {
 
             const messageRes = await adapter.post(`chat-channels/${channel?.id}/send-message`, {
                 sender: currentParticipant?.id,
-                content: resBase64.original_filename,
+                content: '',
                 file: resBase64.id,
             });
 
@@ -286,14 +284,9 @@ const ChatScreen = ({ route }) => {
 
     const onSend = async newMessage => {
         try {
-            await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: newMessage[0].text });
+            const message = await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: newMessage[0].text });
             setShowUserList(false);
-            setMessages(previousMessages =>
-                GiftedChat.append(previousMessages, {
-                    ...newMessage,
-                    sent: false,
-                })
-            );
+            setMessages(previousMessages => GiftedChat.append(previousMessages, parseMessage({ data: message })));
         } catch (error) {
             console.error('Send error:', error);
         }
@@ -412,7 +405,7 @@ const ChatScreen = ({ route }) => {
                     messages={messages}
                     onSend={messages => onSend(messages)}
                     user={{
-                        _id: channelUsers?.id,
+                        _id: currentParticipant?.id,
                     }}
                     renderBubble={renderBubble}
                     alwaysShowSend
