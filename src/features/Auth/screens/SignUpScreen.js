@@ -19,7 +19,6 @@ const SignUpScreen = ({ route }) => {
     const [phone, setPhone] = useState(null);
     const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState(false);
-    let errorMessage = 'An error occurred';
 
     const saveDriver = () => {
         if (!validateInputs()) {
@@ -46,7 +45,7 @@ const SignUpScreen = ({ route }) => {
                 setIsLoading(false);
                 Toast.show({
                     type: 'error',
-                    text1: errorMessage,
+                    text1: 'error',
                 });
                 logError(error);
             });

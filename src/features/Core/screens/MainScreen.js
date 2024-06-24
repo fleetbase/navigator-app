@@ -1,4 +1,4 @@
-import { faCalendarDay, faClipboardList, faFileAlt, faRoute, faUser, faWallet, faTextHeight } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarDay, faClipboardList, faCommentDots, faFileAlt, faRoute, faUser, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useRoute } from '@react-navigation/native';
@@ -15,8 +15,8 @@ import { tailwind } from 'tailwind';
 import { createNewOrderLocalNotificationObject, getColorCode, listenForOrdersFromSocket, logError } from 'utils';
 import { syncDevice } from 'utils/Auth';
 import { getCurrentLocation, trackDriver } from 'utils/Geo';
-import IssuesScreen from './IssuesScreen';
 import ChatsScreen from './ChatsScreen';
+import IssuesScreen from './IssuesScreen';
 
 const { addEventListener, removeEventListener } = EventRegister;
 const Tab = createBottomTabNavigator();
@@ -143,7 +143,7 @@ const MainScreen = ({ navigation, route }) => {
                                 icon = faFileAlt;
                                 break;
                             case 'Chat':
-                                icon = faTextHeight;
+                                icon = faCommentDots;
                                 break;
                         }
                         // You can return any component that you like here!

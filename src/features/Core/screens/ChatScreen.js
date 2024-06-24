@@ -1,7 +1,7 @@
 import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import { useDriver, useFleetbase } from 'hooks';
+import { useDriver, useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
@@ -27,6 +27,7 @@ const ChatScreen = ({ route }) => {
     const [showUserList, setShowUserList] = useState(false);
     const driver = useDriver();
     const driverUser = driver[0].attributes.user;
+    const isMounted = useMountedState();
 
     useEffect(() => {
         setChannel(channelProps);
@@ -40,15 +41,31 @@ const ChatScreen = ({ route }) => {
     }, [channel]);
 
     useEffect(() => {
+        console.log('[channel]', channel);
         if (!channel) return;
 
         console.log(`[Connecting to socket on channel chat.${channel.id}]`);
         createSocketAndListen(`chat.${channel.id}`, socketEvent => {
+            // const { event, data } = socketEvent;
+            console.log('Socket event: ', socketEvent, typeof socketEvent);
             const { event, data } = socketEvent;
             console.log('Socket event: ', event, data);
-            return reloadChannel(channel?.id);
+            switch (event) {
+                case 'chat.added_participant':
+                case 'chat.removed_participant':
+                case 'chat_participant.created':
+                case 'chat_participant.deleted':
+                case 'chat_message.created':
+                case 'chat_log.created':
+                case 'chat_attachment.created':
+                case 'chat_receipt.created':
+                    reloadChannel(channel?.id);
+                    break;
+            }
+
+            // return reloadChannel(channel?.id);
         });
-    }, [channel]);
+    }, [isMounted]);
 
     const parseMessages = messages => {
         return messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).flatMap((message, index) => parseMessage(message, index));
@@ -104,8 +121,6 @@ const ChatScreen = ({ route }) => {
     const currentParticipant = channel?.participants.find(chatParticipant => {
         return chatParticipant.user === driverUser;
     });
-
-    const channelUsers = channel?.participants.map(item => item.id);
 
     const uploadFile = async url => {
         try {
