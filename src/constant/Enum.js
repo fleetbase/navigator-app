@@ -25,4 +25,19 @@ const IssuePriority = {
     SCHEDULED_MAINTENANCE: 'Scheduled Maintenance',
     OPERATIONAL_SUGGESTION: 'Operational Suggestion',
 };
-export { IssuePriority, IssueType, IssueCategory };
+
+const Status = {
+    Pending: 'Pending',
+    InProgress: 'In Progress',
+    Backlogged: 'Backlogged',
+    RequiresUpdate: 'Requires Update',
+    InReview: 'In Review',
+    ReOpened: 'Re Opened',
+    Duplicate: 'Duplicate',
+    PendingReview: 'Pending Review',
+    Escalated: 'Escalated',
+    Completed: 'Completed',
+    Canceled: 'Canceled',
+    Pending: 'Pending',
+};
+export { IssuePriority, IssueType, IssueCategory, Status };

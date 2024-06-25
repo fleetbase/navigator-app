@@ -1,4 +1,4 @@
-import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faEdit, faPaperPlane, faTrash, faUser, faFile } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { useDriver, useFleetbase, useMountedState } from 'hooks';
@@ -46,7 +46,6 @@ const ChatScreen = ({ route }) => {
 
         console.log(`[Connecting to socket on channel chat.${channel.id}]`);
         createSocketAndListen(`chat.${channel.id}`, socketEvent => {
-            // const { event, data } = socketEvent;
             console.log('Socket event: ', socketEvent, typeof socketEvent);
             const { event, data } = socketEvent;
             console.log('Socket event: ', event, data);
@@ -62,8 +61,6 @@ const ChatScreen = ({ route }) => {
                     reloadChannel(channel?.id);
                     break;
             }
-
-            // return reloadChannel(channel?.id);
         });
     }, [isMounted]);
 
@@ -315,11 +312,21 @@ const ChatScreen = ({ route }) => {
         );
     };
 
+    const checkIsImage = documentType => {
+        return documentType.content_type.startsWith('image/');
+    };
+
     const renderBubble = props => {
         if (props.currentMessage.image) {
             return (
                 <TouchableOpacity onPress={() => openMedia(props.currentMessage.image)}>
-                    <FastImage source={{ uri: props.currentMessage.image }} style={tailwind('w-28 h-28 rounded')} />
+                    {checkIsImage(props.currentMessage.image) ? (
+                        <FastImage source={{ uri: props.currentMessage.image }} style={tailwind('w-28 h-28 rounded')} />
+                    ) : (
+                        <View style={tailwind('flex rounded-md bg-white mt-2 mr-3 items-center justify-between p-1')}>
+                            <FontAwesomeIcon size={70} icon={faFile} style={tailwind('text-gray-400')} />
+                        </View>
+                    )}
                 </TouchableOpacity>
             );
         } else {

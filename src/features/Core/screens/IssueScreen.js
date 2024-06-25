@@ -1,6 +1,6 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { IssuePriority, IssueType } from 'constant/Enum';
+import { IssuePriority, IssueType, Status } from 'constant/Enum';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -22,6 +22,7 @@ const IssueScreen = ({ navigation, route }) => {
     const [categories, setCategories] = useState([]);
     const [category, setCategory] = useState();
     const [priority, setPriority] = useState();
+    const [status, setStatus] = useState();
     const [report, setReport] = useState(issue.report);
     const [error, setError] = useState('');
 
@@ -31,12 +32,12 @@ const IssueScreen = ({ navigation, route }) => {
             setPriority(issue.issue?.priority);
             setReport(issue.issue?.report);
             setType(issue.issue?.type);
+            setStatus(issue.issue?.status);
         }
     }, []);
 
     useEffect(() => {
         if (!type) return;
-
         setCategories(getIssueCategories(type));
     }, [type]);
 
@@ -55,6 +56,7 @@ const IssueScreen = ({ navigation, route }) => {
                     category,
                     priority,
                     report,
+                    status,
                     location: location,
                     driver: driverId,
                 })
@@ -77,6 +79,7 @@ const IssueScreen = ({ navigation, route }) => {
                     category,
                     priority,
                     report,
+                    status,
                     location: location,
                     driver: driverId,
                 })
@@ -127,7 +130,7 @@ const IssueScreen = ({ navigation, route }) => {
     };
 
     const validateInputs = () => {
-        if (!type || !category || !priority || !report?.trim()) {
+        if (!type || !category || !priority || !status ||!report?.trim()) {
             setError('Please enter a required value.');
             return false;
         } else if (report.trim().length === 0) {
@@ -214,6 +217,19 @@ const IssueScreen = ({ navigation, route }) => {
                             />
 
                             {error && !priority ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
+                        </View>
+                        <View>
+                            <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.status')}</Text>
+                            <DropdownActionSheet
+                                value={status}
+                                items={Object.keys(Status).map(status => {
+                                    return { label: Status[status], value: status };
+                                })}
+                                onChange={setStatus}
+                                title={translate('Core.IssueScreen.selectStatus')}
+                            />
+
+                            {error && !status ? <Text style={tailwind('text-red-500 mb-2')}>{error}</Text> : null}
                         </View>
 
                         <TouchableOpacity onPress={saveIssue} disabled={isLoading} style={tailwind('flex')}>
