@@ -312,8 +312,10 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const checkIsImage = documentType => {
-        return documentType.content_type.startsWith('image/');
+    const checkIsImage = url => {
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+        const urlExtension = url.split('.').pop().split('?')[0].toLowerCase();
+        return imageExtensions.includes(urlExtension);
     };
 
     const renderBubble = props => {
