@@ -78,7 +78,7 @@ const ChatsScreen = () => {
                 />
                 <View style={tailwind('flex ml-2')}>
                     <Text style={tailwind('font-medium text-white')}>{item.name}</Text>
-                    <Text style={tailwind('text-sm text-gray-400 w-64')}>{item.last_message.content}</Text>
+                    <Text style={tailwind('text-sm text-gray-400 w-64')}>{item?.last_message?.content}</Text>
                 </View>
                 <View style={isAndroid ? tailwind('flex flex-col items-center right-8') : tailwind('flex flex-col items-center right-2')}>
                     <Text style={tailwind('text-gray-600')}>{formatTime(item.created_at)}</Text>
