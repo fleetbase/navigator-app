@@ -60,7 +60,7 @@ const OrganizationSearchScreen = ({ navigation }) => {
 
         setIsLoading(false);
 
-        if (settings.length === 0) {
+        if (settings.enableDriverOnboardFromApp === false) {
             Alert.alert('Error', 'Driver onboarding is not enabled for this organization.');
         } else {
             navigation.navigate('SignUp', { item });
