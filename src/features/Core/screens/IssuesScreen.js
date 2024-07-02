@@ -1,8 +1,8 @@
-import { useDriver, useFleetbase, useMountedState } from 'hooks';
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import tailwind from 'tailwind';
 import { useNavigation } from '@react-navigation/native';
+import { useDriver, useFleetbase, useMountedState } from 'hooks';
 import { getColorCode, translate } from 'utils';
 
 const IssuesScreen = () => {
@@ -12,16 +12,19 @@ const IssuesScreen = () => {
     const fleetbase = useFleetbase();
     const [issues, setIssueList] = useState([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); 
 
     const fetchIssues = async () => {
+        setIsLoading(true); 
         try {
             const adapter = fleetbase.getAdapter();
             const response = await adapter.get('issues');
             setIssueList(response);
-            return response;
         } catch (error) {
-            console.error('Error fetching  issue:', error);
-            return [];
+            console.error('Error fetching issue:', error);
+            setIssueList([]); 
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -47,7 +50,9 @@ const IssuesScreen = () => {
                         <Text style={tailwind('text-gray-100 font-semibold')}>{translate('Core.IssueScreen.report')}:</Text>
                     </View>
                     <View style={tailwind('')}>
-                        <Text style={tailwind('text-gray-100')} numberOfLines={3}>{item.report}</Text>
+                        <Text style={tailwind('text-gray-100')} numberOfLines={3}>
+                            {item.report}
+                        </Text>
                     </View>
                 </View>
                 <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
@@ -69,6 +74,14 @@ const IssuesScreen = () => {
             </TouchableOpacity>
         </View>
     );
+
+    if (isLoading) {
+        return (
+            <View style={[tailwind('flex flex-1 items-center justify-center bg-gray-800')]}>
+                <ActivityIndicator size="large"  color="#FFFFFF" />
+            </View>
+        );
+    }
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>

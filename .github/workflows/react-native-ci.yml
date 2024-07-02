@@ -77,6 +77,9 @@ jobs:
     - name: Make Gradlew Executable
       run: cd android && chmod +x ./gradlew
 
+    - name: Clean android
+      run: cd android && ./gradlew clean
+
     - name: Build Android
       run: cd android && ./gradlew assembleDebug
 

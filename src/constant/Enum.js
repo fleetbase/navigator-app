@@ -18,11 +18,26 @@ const IssueCategory = {
 };
 
 const IssuePriority = {
-    LOW: 'Low',
-    MEDIUM: 'Medium',
-    HIGH: 'High',
-    CRITICAL: 'Critical',
-    SCHEDULED_MAINTENANCE: 'Scheduled Maintenance',
-    OPERATIONAL_SUGGESTION: 'Operational Suggestion',
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+    critical: 'Critical',
+    'scheduled-maintenance': 'Scheduled Maintenance',
+    'operational-suggestion': 'Operational Suggestion',
 };
-export { IssuePriority, IssueType, IssueCategory };
+
+const Status = {
+    pending: 'Pending',
+    'in-progress': 'In Progress',
+    backlogged: 'Backlogged',
+    'requires-update': 'Requires Update',
+    'in-review': 'In Review',
+    're-opened': 'Re Opened',
+    duplicate: 'Duplicate',
+    'pending-review': 'Pending Review',
+    escalated: 'Escalated',
+    completed: 'Completed',
+    canceled: 'Canceled',
+};
+
+export { IssuePriority, IssueType, IssueCategory, Status };
