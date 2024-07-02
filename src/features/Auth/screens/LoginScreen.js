@@ -141,6 +141,18 @@ const LoginScreen = ({ navigation, route }) => {
                             )}
 
                             {isNotAwaitingVerification && (
+                                <View style={[tailwind('p-4'), config('ui.loginScreen.loginFormContainerStyle')]}>
+                                    <TouchableOpacity style={tailwind('mb-2')} onPress={() => navigation.navigate('OrganizationSearchScreen')}>
+                                        <View style={[tailwind('btn bg-gray-900 border border-gray-700'), config('ui.loginScreen.sendVerificationCodeButtonStyle')]}>
+                                            <Text style={[tailwind('font-semibold text-gray-50 text-lg text-center'), config('ui.loginScreen.sendVerificationCodeButtonTextStyle')]}>
+                                                {translate('Auth.SignUpScreen.driver')}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            {isNotAwaitingVerification && (
                                 <View style={tailwind('flex items-end mr-4  rounded-full')}>
                                     <TouchableOpacity
                                         style={tailwind('rounded-lg mb-3 bg-gray-900 w-10 h-10 border border-gray-700 flex items-center justify-center')}
