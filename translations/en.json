@@ -33,6 +33,20 @@
             "retryButtonText": "Retry?",
             "verifyCodeButtonText": "Verify Code",
             "codeInputPlaceholder": "Enter verification code"
+        },
+        "SignUpScreen": {
+            "driver": "Become Driver",
+            "sign": "Create driver account",
+            "driverName": "Name",
+            "phoneNumber": "Phone Number",
+            "driverLicense": "Driver License NUmber",
+            "email": "Email Address",
+            "document": "Document Upload",
+            "save": "Save",
+            "empty": "No organizations to display"
+        },
+        "OrganizationsScreen": {
+            "searchInputPlaceholderText": "Search Organizations..."
         }
     },
     "Core": {
@@ -50,7 +64,9 @@
             "categoryType": "Select Category",
             "issueReport": "Issue Report",
             "selectPriority": "Select Priority",
+            "selectStatus": "Select Status",
             "priority": "Issue Priority",
+            "status": "Issue Status",
             "saveIssue": "Save Issue",
             "deleteIssue": "Delete",
             "createIssue": "Create Issue",
@@ -58,6 +74,34 @@
             "report": "Report",
             "driverName": "Driver Name",
             "vehicleName": "Vehicle Name"
+        },
+        "ChannelScreen": {
+            "name": "Name",
+            "title": "Create channel",
+            "update": "Update",
+            "update-channel": "Update channel"
+        },
+        "ChatsScreen": {
+            "delete": "Delete",
+            "create-channel": "Create channel"
+        },
+        "ChatScreen": {
+            "title": "Select User"
+        },
+        "SettingsScreen": {
+            "title": "Update entity details",
+            "name": "Name",
+            "description": "Description",
+            "sku": "Sku",
+            "height": "Height",
+            "width": "Width",
+            "length": "Length",
+            "weight": "Weight",
+            "declared_value": "Declared Value",
+            "sale_price": "Sale Price",
+            "empty": "The driver currently does not have a field to allow updating organization details",
+            "save": "Save",
+            "update": "Update Details"
         }
     },
     "Exceptions": {
