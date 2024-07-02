@@ -41,10 +41,6 @@ const ChatsScreen = () => {
         }
     };
 
-    useEffect(() => {
-        fetchChannels();
-    }, []);
-
     const formatTime = dateTime => {
         const date = new Date(dateTime);
         const formattedTime = format(date, 'HH:mm');
@@ -95,13 +91,15 @@ const ChatsScreen = () => {
         </View>
     );
 
+    if (isLoading) {
+        return (
+            <View style={[tailwind('flex flex-1 items-center justify-center bg-gray-800')]}>
+                <ActivityIndicator size="large" color="#FFFFFF" />
+            </View>
+        );
+    }
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
-            {isLoading && (
-                <View style={styles.loaderContainer}>
-                    <ActivityIndicator size="large" color="#FFFFFF" />
-                </View>
-            )}
             <View style={tailwind('p-4')}>
                 <View style={tailwind('flex flex-row items-center justify-center')}>
                     <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
