@@ -62,7 +62,7 @@ const IssuesScreen = () => {
                     <View style={tailwind('flex-1')}>
                         <Text style={tailwind('text-gray-100 font-semibold')}>{translate('Core.IssueScreen.createdAt')}:</Text>
                     </View>
-                    <Text style={tailwind('text-gray-100')}>{format(new Date(item.created_at), 'MM/dd/yyyy-- HH:mm')}</Text>
+                    <Text style={tailwind('text-gray-100')}>{format(new Date(item.created_at), 'MM/dd/yyyy HH:mm')}</Text>
                 </View>
                 <View style={tailwind('flex flex-row items-center justify-between mb-2')}>
                     <View style={tailwind('flex-1')}>
@@ -92,36 +92,28 @@ const IssuesScreen = () => {
                 </View>
             </View>
 
-            {isCreatingIssue && (
-                <View style={[tailwind('flex flex-1 items-center justify-center bg-gray-800')]}>
-                    <ActivityIndicator size="large" color="#FFFFFF" />
-                </View>
-            )}
-
-            {!isCreatingIssue && (
-                <>
-                    <FlatList
-                        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchIssues} tintColor={getColorCode('text-blue-200')} />}
-                        data={issues}
-                        keyExtractor={item => item.id}
-                        renderItem={renderItem}
-                    />
-                    <View style={tailwind('p-4')}>
-                        <View style={tailwind('flex flex-row items-center justify-center')}>
-                            <TouchableOpacity
-                                style={tailwind('flex-1')}
-                                onPress={() => {
-                                    setIsCreatingIssue(true);
-                                    navigation.navigate('IssueScreen');
-                                }}>
-                                <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
-                                    <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.IssueScreen.createIssue')}</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
+            <>
+                <FlatList
+                    refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchIssues} tintColor={getColorCode('text-blue-200')} />}
+                    data={issues}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                />
+                <View style={tailwind('p-4')}>
+                    <View style={tailwind('flex flex-row items-center justify-center')}>
+                        <TouchableOpacity
+                            style={tailwind('flex-1')}
+                            onPress={() => {
+                                setIsCreatingIssue(true);
+                                navigation.navigate('IssueScreen');
+                            }}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
+                                <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.IssueScreen.createIssue')}</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
-                </>
-            )}
+                </View>
+            </>
         </View>
     );
 };

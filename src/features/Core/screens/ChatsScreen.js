@@ -94,25 +94,18 @@ const ChatsScreen = () => {
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
-            {isCreatingChat && (
-                <View style={[tailwind('flex flex-1 items-center justify-center bg-gray-800')]}>
-                    <ActivityIndicator size="large" color="#FFFFFF" />
-                </View>
-            )}
-            {!isCreatingChat && (
-                <>
-                    <View style={tailwind('p-4')}>
-                        <View style={tailwind('flex flex-row items-center justify-center')}>
-                            <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
-                                <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
-                                    <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.ChatsScreen.create-channel')}</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
+            <>
+                <View style={tailwind('p-4')}>
+                    <View style={tailwind('flex flex-row items-center justify-center')}>
+                        <TouchableOpacity style={tailwind('flex-1')} onPress={() => navigation.navigate('ChannelScreen')}>
+                            <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
+                                <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.ChatsScreen.create-channel')}</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
-                    <SwipeListView data={channels} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
-                </>
-            )}
+                </View>
+                <SwipeListView data={channels} renderItem={renderItem} renderHiddenItem={renderHiddenItem} rightOpenValue={-75} />
+            </>
         </View>
     );
 };

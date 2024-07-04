@@ -1,6 +1,6 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { IssuePriority, IssueType, Status } from 'constant/Enum';
+import { IssuePriority, IssueType, Status, IssueCategory } from 'constant/Enum';
 import { useDriver, useFleetbase } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -19,7 +19,7 @@ const IssueScreen = ({ navigation, route }) => {
     const [driverId] = useState(driver.getAttribute('id'));
 
     const [type, setType] = useState(issue.type);
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState(getIssueCategories('VEHICLE'));
     const [category, setCategory] = useState();
     const [priority, setPriority] = useState();
     const [status, setStatus] = useState();
@@ -130,7 +130,7 @@ const IssueScreen = ({ navigation, route }) => {
     };
 
     const validateInputs = () => {
-        if (!type || !category || !priority || !status ||!report?.trim()) {
+        if (!type || !category || !priority || !status || !report?.trim()) {
             setError('Please enter a required value.');
             return false;
         } else if (report.trim().length === 0) {
