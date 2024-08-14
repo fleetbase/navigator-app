@@ -129,8 +129,8 @@ const App: () => Node = () => {
         return await new Promise(() => {
             setString('_FLEETBASE_KEY', key);
             setString('_FLEETBASE_HOST', host);
-            setString('_SOCKET_HOST', socketcluster_host);
-            setString('_SOCKET_PORT', socketcluster_port);
+            setString('_SOCKETCLUSTER_HOST', socketcluster_host);
+            setString('_SOCKETCLUSTER_PORT', socketcluster_port);
 
             if (navigationRef.current) {
                 navigationRef.current.reset({
