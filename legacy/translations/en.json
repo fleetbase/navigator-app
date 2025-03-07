@@ -1,0 +1,190 @@
+{
+    "Account": {
+        "AccountScreen": {
+            "title": "Create an account or login",
+            "loginButtonText": "Login",
+            "createAccountButtonText": "Create Account",
+            "userGreetingTitle": "Hello, {{driverName}}",
+            "accountMenuTitle": "My Account",
+            "config": "Instance Config",
+            "organization": "Organizations",
+            "profileLinkText": "Profile",
+            "ordersLinkText": "Orders",
+            "placesLinkText": "Places",
+            "signoutButtonText": "Sign Out"
+        },
+        "EditProfileScreen": {
+            "title": "Your profile",
+            "nameLabelText": "Your name",
+            "emailLabelText": "Your email address",
+            "phoneLabelText": "Your mobile number",
+            "saveButtonText": "Save Profile"
+        },
+        "OrganizationScreen": {
+            "title": "Organizations",
+            "empty": "No organizations"
+        }
+    },
+    "Auth": {
+        "LoginScreen": {
+            "title": "Login",
+            "sendVerificationCodeButtonText": "Send Verification Code",
+            "createAccountButtonText": "or Create Account",
+            "retryButtonText": "Retry?",
+            "verifyCodeButtonText": "Verify Code",
+            "codeInputPlaceholder": "Enter verification code"
+        },
+        "SignUpScreen": {
+            "driver": "Become Driver",
+            "sign": "Create driver account",
+            "driverName": "Name",
+            "phoneNumber": "Phone Number",
+            "driverLicense": "Driver License NUmber",
+            "email": "Email Address",
+            "document": "Document Upload",
+            "save": "Save",
+            "empty": "No organizations to display"
+        },
+        "OrganizationsScreen": {
+            "searchInputPlaceholderText": "Search Organizations..."
+        }
+    },
+    "Core": {
+        "BootScreen": {},
+        "NetworkScreen": {},
+        "SearchScreen": {
+            "searchInputPlaceholderText": "Search Orders..."
+        },
+        "NavigatorScreen": {},
+        "IssueScreen": {
+            "issues": "Issues",
+            "type": "Issue Type",
+            "selectType": "Select Type",
+            "category": "Issue Category",
+            "categoryType": "Select Category",
+            "issueReport": "Issue Report",
+            "selectPriority": "Select Priority",
+            "selectStatus": "Select Status",
+            "priority": "Issue Priority",
+            "status": "Issue Status",
+            "saveIssue": "Save Issue",
+            "deleteIssue": "Delete",
+            "createIssue": "Create Issue",
+            "updateIssue": "Update Issue",
+            "report": "Report",
+            "driverName": "Driver Name",
+            "vehicleName": "Vehicle Name"
+        },
+        "ChannelScreen": {
+            "name": "Name",
+            "title": "Create channel",
+            "update": "Update",
+            "update-channel": "Update channel"
+        },
+        "ChatsScreen": {
+            "delete": "Delete",
+            "create-channel": "Create channel"
+        },
+        "ChatScreen": {
+            "title": "Select User"
+        },
+        "SettingsScreen": {
+            "title": "Update entity details",
+            "name": "Name",
+            "description": "Description",
+            "sku": "Sku",
+            "height": "Height",
+            "width": "Width",
+            "length": "Length",
+            "weight": "Weight",
+            "declared_value": "Declared Value",
+            "sale_price": "Sale Price",
+            "empty": "The driver currently does not have a field to allow updating organization details",
+            "save": "Save",
+            "update": "Update Details"
+        }
+    },
+    "Exceptions": {
+        "SetupWarningScreen": {
+            "title": "Configurations Missing!",
+            "subtitle": "Looks like you haven't properly configured your app.",
+            "envMissingText": "is missing from environment!"
+        }
+    },
+    "Shared": {
+        "OrderCompletedScreen": {
+            "title": "Order received!",
+            "pickupOrderFrom": "Pickup order from",
+            "orderNotes": "Order Notes",
+            "qrCode": "QR Code",
+            "orderSummary": "Order Summary",
+            "cash": "Cash",
+            "subtotal": "Subtotal",
+            "deliveryFee": "Delivery Fee",
+            "tip": "Tip",
+            "deliveryTip": "Delivery Tip",
+            "total": "Total"
+        },
+        "OrderScreen": {
+            "title": "Order {{orderStatus}}",
+            "arrivingIn": "Arriving in {{estimatedDuration}}",
+            "pickupOrderFrom": "Pickup order from",
+            "orderNotes": "Order Notes",
+            "qrCode": "QR Code",
+            "orderSummary": "Order Summary",
+            "cash": "Cash",
+            "subtotal": "Subtotal",
+            "deliveryFee": "Delivery Fee",
+            "tip": "Tip",
+            "deliveryTip": "Delivery Tip",
+            "total": "Total"
+        },
+        "ConfigScreen": {
+            "title": "Instance Configuration",
+            "host": "Host",
+            "socket": "Socket host",
+            "port": "Socket port",
+            "reset": "Reset",
+            "save": "Save"
+        }
+    },
+    "components": {
+        "interface": {
+            "headers": {
+                "DefaultHeader": {
+                    "search": "Search"
+                }
+            },
+            "LangPicker": {
+                "title": "Select language"
+            },
+            "MapPicker": {
+                "title": "Select Map"
+            },
+            "PhoneInput": {
+                "selectCountry": "Select Country"
+            }
+        }
+    },
+
+    "terms": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "loading": "Loading...",
+        "searching": "Searching...",
+        "more": "More",
+        "sort": "Sort",
+        "filter": "Filter",
+        "date": "Date",
+        "search": "Search"
+    },
+    "status": {
+        "created": "Created",
+        "preparing": "Preparing",
+        "dispatched": "Dispatched",
+        "driver_enroute": "Driver en-route",
+        "pending": "Pending",
+        "in_progress": "In progress",
+        "completed": "Completed"
+    }
+}

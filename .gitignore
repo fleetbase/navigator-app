@@ -1,6 +1,6 @@
 # OSX
 #
-*.DS_Store
+.DS_Store
 
 # Xcode
 #
@@ -20,7 +20,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
-ios/.xcode.env.local
+**/.xcode.env.local
 
 # Android/IntelliJ
 #
@@ -29,21 +29,15 @@ build/
 .gradle
 local.properties
 *.iml
-*.hprof
 android/*.hprof
 android/app/build
-*.apk
-*.aab
-.cxx/
-*.keystore
-!debug.keystore
+android/.kotlin
 
 # node.js
 #
 node_modules/
 npm-debug.log
 yarn-error.log
-yarn.lock
 .env
 .env.*
 
@@ -53,6 +47,17 @@ buck-out/
 *.keystore
 !debug.keystore
 
+# testing
+/coverage
+ 
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
@@ -60,23 +65,15 @@ buck-out/
 # For more information about the recommended setup visit:
 # https://docs.fastlane.tools/best-practices/source-control/
 
-**/fastlane/report.xml
-**/fastlane/Preview.html
-**/fastlane/screenshots
-**/fastlane/test_output
+*/fastlane/report.xml
+*/fastlane/Preview.html
+*/fastlane/screenshots
 
 # Bundle artifact
 *.jsbundle
 
-# Ruby / CocoaPods
-/ios/Pods/
-/vendor/bundle/
-
-
-# Temporary files created by Metro to check the health of the file watcher
-.metro-health-check*
-# testing
-/coverage
+# CocoaPods
+**/Pods/
 
 # react-native-config codegen
 ios/tmp.xcconfig
@@ -85,7 +82,8 @@ ios/tmp.xcconfig
 #
 android/app/google-services.json
 
-# App Configuration Files
+# Navigator assets/configurations
 #
-config/app.js
-config/interface.js
+storefront.config.js
+.tamagui
+vendor
