@@ -1,12 +1,21 @@
 import { useMemo, useState, useEffect } from 'react';
 import Fleetbase from '@fleetbase/sdk';
 import Config from 'react-native-config';
-import useStorage from './use-storage';
+import useStorage, { getString } from './use-storage';
+
+const getFleetbaseAuthKey = () => {
+    const driverAuthToken = getString('_driver_token');
+    if (driverAuthToken) {
+        return driverAuthToken;
+    }
+
+    return FLEETBASE_KEY;
+};
 
 const { FLEETBASE_KEY, FLEETBASE_HOST } = Config;
 
 // Global default instance used if no token-based instance is created
-export let instance = new Fleetbase(FLEETBASE_KEY, { host: FLEETBASE_HOST });
+export let instance = new Fleetbase(getFleetbaseAuthKey(), { host: FLEETBASE_HOST });
 export let adapter = instance.getAdapter();
 
 export const hasFleetbaseConfig = () => {
@@ -32,7 +41,7 @@ const useFleetbase = () => {
     // Memoize the adapter so that its reference only changes when the fleetbase instance updates.
     const fleetbaseAdapter = useMemo(() => {
         return fleetbase ? fleetbase.getAdapter() : adapter;
-    }, [fleetbase]);
+    }, [fleetbase, authToken]);
 
     // Memoize the returned object to prevent unnecessary re-renders.
     const api = useMemo(
@@ -42,7 +51,7 @@ const useFleetbase = () => {
             error,
             hasFleetbaseConfig,
         }),
-        [fleetbase, fleetbaseAdapter, error]
+        [fleetbase, fleetbaseAdapter, error, authToken]
     );
 
     return api;

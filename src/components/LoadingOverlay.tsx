@@ -15,19 +15,20 @@ interface LoadingOverlayProps {
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     visible = false,
     text,
-    spinnerSize = 48,
+    spinnerSize = 'lg',
     spinnerColor = '$textPrimary',
     textColor = '$textPrimary',
     bgColor = 'gray',
-    overlayOpacity = 0.8,
+    overlayOpacity = 0.85,
+    numberOfLines = 1,
 }) => {
     const theme = useTheme();
     const gradientColors = useMemo(() => {
         try {
-            return [theme[`$${bgColor}-900`].val, theme[`$${bgColor}-800`].val, theme[`$${bgColor}-700`].val, theme[`$${bgColor}-500`].val];
+            return [theme[`$black`].val, theme[`$${bgColor}-900`].val, theme[`$${bgColor}-800`].val, theme[`$${bgColor}-900`].val, theme[`$black`].val];
         } catch (e) {
             // Fallback static colors if theme lookup fails.
-            return ['#111827', '#1f2937', '#374151', '#6b7280'];
+            return ['#111827', '#1f2937', '#374151', '#4b5563'];
         }
     }, [bgColor, theme]);
 
@@ -40,12 +41,21 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                 end={{ x: 0, y: 1 }}
                 style={{ position: 'absolute', opacity: overlayOpacity, top: 0, left: 0, right: 0, bottom: 0 }}
             />
-            <Spinner size={spinnerSize} color={spinnerColor} />
-            {text && (
-                <Text marginTop='$2' fontSize={16} color={textColor}>
-                    {text}
-                </Text>
-            )}
+            <YStack flex={1} alignItems='center' justifyContent='center'>
+                <Spinner size={spinnerSize} color={spinnerColor} />
+                {text && (
+                    <Text
+                        marginTop='$2'
+                        fontSize={16}
+                        color={textColor}
+                        numberOfLines={numberOfLines}
+                        mt='$5'
+                        style={{ textShadowColor: 'rgba(0, 0, 0, 0.9)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 }}
+                    >
+                        {text}
+                    </Text>
+                )}
+            </YStack>
         </YStack>
     );
 };

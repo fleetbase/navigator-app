@@ -1,49 +1,135 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { ScrollView, SafeAreaView } from 'react-native';
-import { Separator, Button, Image, Stack, Text, YStack, XStack, useTheme } from 'tamagui';
-import { Order } from '@fleetbase/sdk';
-import { Store } from '@fleetbase/storefront';
-import { adapter as fleetbaseAdapter } from '../hooks/use-fleetbase';
+import { ScrollView, RefreshControl, SafeAreaView, StyleSheet, Alert } from 'react-native';
+import { Separator, Button, Image, Stack, Text, YStack, XStack, Spinner, useTheme } from 'tamagui';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPaperPlane, faPenToSquare, faFlagCheckered } from '@fortawesome/free-solid-svg-icons';
+import { BlurView } from '@react-native-community/blur';
+import FastImage from 'react-native-fast-image';
+import { Order, Place } from '@fleetbase/sdk';
+import { adapter } from '../hooks/use-fleetbase';
 import { format as formatDate, formatDistance, add } from 'date-fns';
-import { formatCurrency } from '../utils/format';
-import { loadPersistedResource } from '../utils';
-import LiveOrderRoute from '../components/LiveOrderRoute';
-import useStorefrontInfo from '../hooks/use-storefront-info';
-import { adapter as storefrontAdapter } from '../hooks/use-storefront';
+import { titleize } from 'inflected';
+import { formatCurrency, formatMeters, formatDuration, smartHumanize } from '../utils/format';
+import { restoreFleetbasePlace } from '../utils/location';
+import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useOrderManager } from '../contexts/OrderManagerContext';
+import { useTempStore } from '../contexts/TempStoreContext';
+import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import useStorage from '../hooks/use-storage';
+import useAppTheme from '../hooks/use-app-theme';
+import useOrderResource from '../hooks/use-order-resource';
+import usePromiseWithLoading from '../hooks/use-promise-with-loading';
+import LiveOrderRoute from '../components/LiveOrderRoute';
 import PlaceCard from '../components/PlaceCard';
 import OrderItems from '../components/OrderItems';
 import OrderTotal from '../components/OrderTotal';
-import AlertPromptBox from '../components/AlertPromptBox';
+import OrderWaypointList from '../components/OrderWaypointList';
+import OrderPayloadEntities from '../components/OrderPayloadEntities';
+import OrderDocumentFiles from '../components/OrderDocumentFiles';
+import OrderCustomerCard from '../components/OrderCustomerCard';
+import OrderProgressBar from '../components/OrderProgressBar';
+import OrderCommentThread from '../components/OrderCommentThread';
+import CurrentDestinationSelect from '../components/CurrentDestinationSelect';
+import OrderActivitySelect from '../components/OrderActivitySelect';
+import LoadingOverlay from '../components/LoadingOverlay';
 import Badge from '../components/Badge';
-import useSocketClusterClient from '../hooks/use-socket-cluster-client';
-import FastImage from 'react-native-fast-image';
+import Spacer from '../components/Spacer';
+import BackButton from '../components/BackButton';
+import { SectionHeader, SectionInfoLine, ActionContainer } from '../components/Content';
 
 const OrderScreen = ({ route }) => {
     const params = route.params || {};
     const theme = useTheme();
+    const navigation = useNavigation();
+    const { isDarkMode } = useAppTheme();
     const { customer } = useAuth();
-    const { info } = useStorefrontInfo();
     const { listen } = useSocketClusterClient();
-    const [order, setOrder] = useState(new Order(params.order, fleetbaseAdapter));
-    const [store, setStore] = useStorage(`${order.getAttribute('meta.storefront_id')}`, info);
+    const { runWithLoading, isLoading } = usePromiseWithLoading();
+    const { updateStorageOrder } = useOrderManager();
+    const { store, removeValue } = useTempStore();
+    const [order, setOrder] = useState(new Order(params.order, adapter));
+    const [activityLoading, setActivityLoading] = useState();
     const [distanceMatrix, setDistanceMatrix] = useState();
+    const [nextActivity, setNextActivity] = useState([]);
+    const [loadingOverlayMessage, setLoadingOverlayMessage] = useState();
+    const { trackerData } = useOrderResource(order);
     const distanceLoadedRef = useRef(false);
-    const isPickup = order.getAttribute('meta.is_pickup');
-    const isPickupReady = isPickup && order.getAttribute('status') === 'pickup_ready';
-    const isEnroute = order.getAttribute('status') === 'driver_enroute';
     const listenerRef = useRef();
+    const activitySheetRef = useRef();
+    const isAdhoc = order.getAttribute('adhoc') === true;
+    const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
+    const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
+    const isNotStarted = order.isNotStarted && !order.isCanceled && !isOrderPing && order.getAttribute('status') !== 'completed';
+    const isNavigatable = (order.isDispatched || order.isInProgress) && !['completed', 'canceled'].includes(order.getAttribute('status'));
+    const isMultipleWaypointOrder = (order.getAttribute('payload.waypoints', []) ?? []).length > 0;
+    const customFieldKeys = order.getAttribute('custom_fields', []) ?? [];
+    const showLoadingOverlay = isLoading('activityUpdate');
 
-    const confirmOrderPickup = useCallback(async () => {
-        try {
-            await customer.performAuthorizedRequest('orders/picked-up', { order: order.id }, 'PUT');
-            reloadOrder();
-        } catch (err) {
-            console.error('Error confirming order pickup:', err);
+    const destination = useMemo(() => {
+        const pickup = order.getAttribute('payload.pickup');
+        const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
+        const dropoff = order.getAttribute('payload.dropoff');
+        const currentWaypoint = order.getAttribute('payload.current_waypoint');
+        const locations = [pickup, ...waypoints, dropoff].filter(Boolean);
+        const destination = locations.find((place) => place?.id === currentWaypoint) ?? locations[0];
+
+        return new Place(destination, adapter);
+    }, [order, adapter]);
+
+    const entitiesByDestination = useMemo(() => {
+        const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
+        const entities = order.getAttribute('payload.entities', []) ?? [];
+
+        // Return an empty array if there are no waypoints.
+        if (!waypoints || waypoints.length === 0) {
+            return [];
         }
-    }, [order, customer]);
+
+        // Build the groups based on destination id.
+        return waypoints.reduce((groups, waypoint) => {
+            const destination = waypoint?.id;
+            if (destination) {
+                const destinationEntities = entities.filter((entity) => entity.destination === destination);
+                if (destinationEntities.length > 0) {
+                    groups.push({
+                        destination,
+                        waypoint,
+                        entities: destinationEntities,
+                    });
+                }
+            }
+            return groups;
+        }, []);
+    }, [order]);
+
+    const waypointsInProgress = useMemo(() => {
+        const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
+        const statusesToSkip = ['completed', 'canceled'];
+
+        if (waypoints.length === 0) {
+            const pickup = restoreFleetbasePlace(order.getAttribute('payload.pickup'));
+            const dropoff = restoreFleetbasePlace(order.getAttribute('payload.dropoff'));
+
+            return [pickup, dropoff];
+        }
+
+        return waypoints
+            .filter((waypoint) => {
+                // Ensure waypoint.tracking exists and isn't one of the skipped statuses.
+                return waypoint?.tracking && !statusesToSkip.includes(waypoint.tracking.toLowerCase());
+            })
+            .map((waypoint) => restoreFleetbasePlace(waypoint));
+    }, [order]);
+
+    const updateOrder = useCallback(
+        (order) => {
+            setOrder(order);
+            updateStorageOrder(order.serialize(), ['current', 'active', 'recent']);
+        },
+        [setOrder, updateStorageOrder]
+    );
 
     const getDistanceMatrix = useCallback(async () => {
         if (distanceLoadedRef.current) return;
@@ -52,39 +138,146 @@ const OrderScreen = ({ route }) => {
             setDistanceMatrix(distanceMatrixData);
             distanceLoadedRef.current = true;
         } catch (err) {
-            console.error('Error loading order distance matrix:', err);
+            console.warn('Error loading order distance matrix:', err);
         }
     }, [order]);
 
     const reloadOrder = useCallback(async () => {
         try {
-            const reloadedOrder = await order.reload();
-            setOrder(reloadedOrder);
+            const reloadedOrder = await runWithLoading(order.reload(), 'isReloading');
+            updateOrder(reloadedOrder);
             distanceLoadedRef.current = false;
         } catch (err) {
-            console.error('Error reloading order:', err);
+            console.warn('Error reloading order:', err);
         }
     }, [order]);
 
-    const getStoreOrderedFrom = async () => {
-        if (info.is_store) {
-            return setStore(info);
-        }
+    const setOrderDestination = useCallback(
+        async (waypoint) => {
+            if (!waypoint) {
+                return;
+            }
+
+            try {
+                const updatedOrder = await runWithLoading(order.setDestination(waypoint.id), 'setOrderDestination');
+                updateOrder(updatedOrder);
+            } catch (err) {
+                console.warn('Error changing order destination:', err);
+            }
+        },
+        [order]
+    );
+
+    const startOrder = useCallback(
+        async (params = {}) => {
+            try {
+                const updatedOrder = await runWithLoading(order.start(params), 'startOrder');
+                updateOrder(updatedOrder);
+            } catch (err) {
+                console.warn('Error starting order:', err);
+                const errorMessage = err.message ?? '';
+                if (errorMessage.startsWith('Order has not been dispatched')) {
+                    return Alert.alert('Order Not Dispatched Yet', 'This order is not yet dispatched, are you sure you want to continue?', [
+                        {
+                            text: 'Yes',
+                            onPress: () => {
+                                return startOrder({ skipDispatch: true });
+                            },
+                        },
+                        {
+                            text: 'Cancel',
+                            onPress: () => {
+                                return reloadOrder();
+                            },
+                        },
+                    ]);
+                }
+            }
+        },
+        [order]
+    );
+
+    const updateOrderActivity = useCallback(async () => {
+        activitySheetRef.current?.openBottomSheet();
 
         try {
-            const lookup = await storefrontAdapter.get(`lookup/${order.getAttribute('meta.storefront_id')}`);
-            setStore(lookup);
-        } catch (err) {
-            console.error('Unable to lookup store ordered from:', err);
-            toast.err(err.message);
-        }
-    };
+            const activity = await runWithLoading(order.getNextActivity({ waypoint: destination?.id }), 'nextOrderActivity');
+            if (activity.code === 'dispatched') {
+                return Alert.alert('Warning!', 'This order is not yet dispatched, are you sure you want to continue?', [
+                    {
+                        text: 'Yes',
+                        onPress: async () => {
+                            try {
+                                const updatedOrder = await order.updateActivity({ skipDispatch: true });
+                                updateOrder(updatedOrder);
+                            } catch (err) {
+                                console.warn('Error updating order activity:', err);
+                            }
+                        },
+                    },
+                    {
+                        text: 'Cancel',
+                        onPress: () => {
+                            return reloadOrder();
+                        },
+                    },
+                ]);
+            }
 
-    useEffect(() => {
-        if (!store) {
-            getStoreOrderedFrom();
+            setNextActivity(activity);
+        } catch (err) {
+            console.warn('Error fetching next activity for order:', err);
         }
-    }, []);
+    }, [order]);
+
+    const sendOrderActivityUpdate = useCallback(
+        async (activity, proof) => {
+            setActivityLoading(activity.code);
+
+            if (activity.require_pod && !proof) {
+                activitySheetRef.current?.closeBottomSheet();
+                return navigation.navigate('ProofOfDelivery', { activity, order: order.serialize(), waypoint: destination.serialize() });
+            }
+
+            setLoadingOverlayMessage(`Updating Activity: ${activity.status}`);
+
+            try {
+                const updatedOrder = await runWithLoading(order.updateActivity({ activity, proof: proof?.id }), 'activityUpdate');
+                updateOrder(updatedOrder);
+                setNextActivity([]);
+                setLoadingOverlayMessage(null);
+                toast.success(`Order status updated to: ${activity.status}`);
+            } catch (err) {
+                console.warn('Error updating order activity:', err);
+            } finally {
+                setActivityLoading(null);
+                setLoadingOverlayMessage(null);
+                activitySheetRef.current?.closeBottomSheet();
+            }
+        },
+        [order]
+    );
+
+    const completeOrder = useCallback(
+        async (activity) => {
+            setActivityLoading(activity.code);
+
+            try {
+                const updatedOrder = await runWithLoading(order.complete(), 'completeOrder');
+                updateOrder(updatedOrder);
+                setNextActivity([]);
+            } catch (err) {
+                console.warn('Error updating order activity:', err);
+            } finally {
+                setActivityLoading(null);
+            }
+        },
+        [order]
+    );
+
+    const declineOrder = useCallback(() => {
+        return navigation.goBack();
+    }, [navigation]);
 
     useEffect(() => {
         if (order && !distanceLoadedRef.current) {
@@ -118,91 +311,194 @@ const OrderScreen = ({ route }) => {
         };
     }, [listen, order.id]);
 
+    useEffect(() => {
+        const updateActivityWithProof = async (activity, proof) => {
+            try {
+                await sendOrderActivityUpdate(activity, proof);
+            } catch (err) {
+                console.warn('Error attempting to update activity with proof:', err);
+            } finally {
+                removeValue('proof');
+            }
+        };
+
+        if (store.proof) {
+            // Storage has new proof
+            console.log('Temp store is containing recent proof!', store.proof);
+            const { activity, proof } = store.proof;
+            updateActivityWithProof(activity, proof);
+        }
+    }, [store.proof]);
+
     return (
         <YStack flex={1} bg='$background'>
-            <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
-                <YStack width='100%' height={400} borderBottomWidth={1} borderColor='$borderColorWithShadow'>
-                    <LiveOrderRoute order={order} zoom={4} />
-                </YStack>
-                <YStack space='$2'>
-                    <YStack mt='$4' px='$4' py='$2' alignItems='center' justifyContent='center' space='$2'>
-                        <Image mb='$2' width={80} height={80} bg='white' source={{ uri: `data:image/png;base64,${order.getAttribute('tracking_number.qr_code')}` }} />
-                        <Text fontSize='$8' fontWeight='bold'>
-                            {order.id}
-                        </Text>
-                        <Text fontSize='$4' color='$textSecondary'>
-                            {formatDate(order.createdAt, `PP 'at' p`)}
-                        </Text>
-                        <Badge status={order.getAttribute('status')} />
-                        {isEnroute && (
+            <LoadingOverlay text={loadingOverlayMessage} visible={showLoadingOverlay} />
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={isLoading('isReloading')} onRefresh={reloadOrder} tintColor={theme['$blue-500'].val} />}
+            >
+                <YStack position='relative' width='100%' height={350} borderBottomWidth={1} borderColor='$borderColorWithShadow'>
+                    <YStack position='absolute' top={0} left={0} right={0} zIndex={1}>
+                        <XStack bg='$info' borderBottomWidth={1} borderColor='$infoBorder' padding='$3' space='$2'>
                             <YStack>
-                                <Text fontSize='$4' color='$primary'>
-                                    Order arriving in {formatDistance(new Date(), add(new Date(), { seconds: distanceMatrix.time }))}
-                                </Text>
+                                <Image
+                                    width={60}
+                                    height={60}
+                                    bg='white'
+                                    padding='$1'
+                                    borderRadius='$1'
+                                    source={{ uri: `data:image/png;base64,${order.getAttribute('tracking_number.qr_code')}` }}
+                                />
                             </YStack>
-                        )}
-                        <AlertPromptBox
-                            show={isPickupReady}
-                            promptTitle='Your order is ready for pickup'
-                            prompt='Once collected please confirm your order has been picked up by pressing the confirm button below.'
-                            confirmTitle='Order Picked Up'
-                            confirmMessage='Has your order been collected and received by you?'
-                            confirmAlertButtonText='Yes'
-                            confirmButtonText='Confirm Pickup'
-                            confirmButtonText='Confirm Pickup'
-                            colorScheme='green'
-                            onConfirm={confirmOrderPickup}
-                            mt='$2'
-                        />
-                    </YStack>
-                    <YStack px='$4' py='$2'>
-                        <XStack px='$4' py='$3' bg='$surface' borderRadius='$4' borderWidth={1} borderColor='$borderColorWithShadow'>
-                            <YStack mr='$3'>
-                                <FastImage source={{ uri: store.logo_url }} style={{ width: 40, height: 40, borderRadius: 6 }} />
-                            </YStack>
-                            <YStack>
-                                <Text color='$textPrimary' fontSize='$5' fontWeight='bold'>
-                                    {store.name}
-                                </Text>
-                                <Text color='$textSecondary' fontSize='$4'>
-                                    {order.getAttribute('payload.pickup.name')}
-                                </Text>
-                                <Text color='$textSecondary' fontSize='$4'>
-                                    {order.getAttribute('payload.pickup.street1')}
-                                </Text>
-                            </YStack>
+                            <XStack flex={1} justifyContent='space-between'>
+                                <YStack flex={1}>
+                                    <Text color='$textPrimary' fontSize={19} fontWeight='bold'>
+                                        {order.getAttribute('tracking_number.tracking_number')}
+                                    </Text>
+                                    <Text color='$textPrimary' fontSize={15}>
+                                        {formatDate(new Date(order.getAttribute('created_at')), 'PP HH:mm')}
+                                    </Text>
+                                </YStack>
+                                <YStack>
+                                    <Badge status={order.getAttribute('status')} />
+                                </YStack>
+                            </XStack>
                         </XStack>
                     </YStack>
-                    <YStack px='$4' py='$2'>
-                        <PlaceCard
-                            place={isPickup ? order.getAttribute('payload.pickup') : order.getAttribute('payload.dropoff')}
-                            name={isPickup ? 'Pickup Location' : 'Delivery Location'}
-                            headerComponent={
-                                <Text mb='$2' fontSize='$5' color='$textPrimary' fontWeight='bold'>
-                                    {isPickup ? 'Pickup Location' : 'Delivery Location'}
-                                </Text>
-                            }
+                    <LiveOrderRoute
+                        order={order}
+                        zoom={4}
+                        edgePaddingTop={80}
+                        edgePaddingBottom={30}
+                        edgePaddingLeft={30}
+                        edgePaddingRight={30}
+                        focusCurrentDestination={isMultipleWaypointOrder}
+                        currentDestination={destination}
+                    />
+                </YStack>
+                <ActionContainer space='$3'>
+                    <XStack space='$2' ml={-5}>
+                        {isNotStarted && (
+                            <Button onPress={() => startOrder()} bg='$success' borderWidth={1} borderColor='$successBorder'>
+                                <Button.Icon>
+                                    {isLoading('startOrder') ? <Spinner color='$successText' /> : <FontAwesomeIcon icon={faFlagCheckered} color={theme.successText.val} />}
+                                </Button.Icon>
+                                <Button.Text color='$successText'>Start Order</Button.Text>
+                            </Button>
+                        )}
+                        {order.isInProgress && (
+                            <Button onPress={() => updateOrderActivity()} bg='$success' borderWidth={1} borderColor='$successBorder'>
+                                <Button.Icon>
+                                    {isLoading('nextOrderActivity') ? <Spinner color='successText' /> : <FontAwesomeIcon icon={faPenToSquare} color={theme.infoText.val} />}
+                                </Button.Icon>
+                                <Button.Text color='$successText'>Update Activity</Button.Text>
+                            </Button>
+                        )}
+                        {isNavigatable && (
+                            <Button bg='$info' borderWidth={1} borderColor='$infoBorder'>
+                                <Button.Icon>{isLoading('startNavigation') ? <Spinner color='$infoText' /> : <FontAwesomeIcon icon={faPaperPlane} color={theme.infoText.val} />}</Button.Icon>
+                                <Button.Text color='$infoText'>Start Navigation</Button.Text>
+                            </Button>
+                        )}
+                    </XStack>
+                    <YStack>
+                        <CurrentDestinationSelect
+                            destination={destination}
+                            waypoints={waypointsInProgress}
+                            onChange={setOrderDestination}
+                            isLoading={isLoading('setOrderDestination')}
+                            snapTo='80%'
                         />
                     </YStack>
-                    <YStack px='$4' py='$2'>
-                        <YStack space='$2' px='$4' py='$3' bg='$surface' borderRadius='$4' borderWidth={1} borderColor='$borderColorWithShadow'>
-                            <Text color='$textPrimary' fontSize='$5' fontWeight='bold'>
-                                Order Notes
-                            </Text>
-                            <Text color='$textSecondary' fontSize='$4'>
-                                {order.getAttribute('notes', 'N/A') ?? 'N/A'}
-                            </Text>
+                </ActionContainer>
+                <SectionHeader title='Order Information' />
+                <YStack py='$4'>
+                    <SectionInfoLine title='ID' value={order.id} />
+                    <Separator />
+                    <SectionInfoLine title='Internal ID' value={order.getAttribute('internal_id')} />
+                    <Separator />
+                    <SectionInfoLine title='Tracking Number' value={order.getAttribute('tracking_number.tracking_number')} />
+                    <Separator />
+                    <SectionInfoLine title='Proof of Delivery' value={order.getAttribute('pod_required') ? titleize(order.getAttribute('pod_method')) : 'N/A'} />
+                    <Separator />
+                    <SectionInfoLine title='Type' value={titleize(order.getAttribute('type'))} />
+                    <Separator />
+                    <SectionInfoLine title='Date Created' value={formatDate(new Date(order.getAttribute('created_at')), 'PP HH:mm')} />
+                    <Separator />
+                    <SectionInfoLine title='Date Scheduled' value={order.getAttribute('scheduled_at') ? formatDate(new Date(order.getAttribute('scheduled_at')), 'PP HH:mm') : '-'} />
+                    <Separator />
+                    <SectionInfoLine title='Date Dispatched' value={order.getAttribute('dispatched_at') ? formatDate(new Date(order.getAttribute('dispatched_at')), 'PP HH:mm') : '-'} />
+                    {customFieldKeys.map((key, index) => (
+                        <YStack key={index}>
+                            <Separator />
+                            <SectionInfoLine title={smartHumanize(key)} value={order.getAttribute(key)} />
                         </YStack>
+                    ))}
+                </YStack>
+                <SectionHeader title='Order Route' />
+                <YStack px='$3' py='$4'>
+                    <OrderWaypointList order={order} />
+                </YStack>
+                <SectionHeader title='Order Progress' />
+                <YStack>
+                    <YStack px='$3' py='$4'>
+                        <OrderProgressBar
+                            order={order}
+                            progress={trackerData.progress_percentage}
+                            firstWaypointCompleted={trackerData.first_waypoint_completed}
+                            lastWaypointCompleted={trackerData.last_waypoint_completed}
+                        />
                     </YStack>
-                    <YStack px='$4' py='$2'>
-                        <OrderItems order={order} />
-                    </YStack>
-                    <YStack px='$4' py='$2'>
-                        <OrderTotal order={order} />
+                    <YStack pb='$3'>
+                        <SectionInfoLine title='Current Destination' value={trackerData.current_destination?.address} />
+                        <Separator />
+                        <SectionInfoLine title='Next Destination' value={trackerData.next_destination?.address} />
+                        <Separator />
+                        <SectionInfoLine title='Total Distance' value={formatMeters(trackerData.total_distance)} />
+                        <Separator />
+                        <SectionInfoLine title='Start Time' value={trackerData.start_time ? '-' : trackerData.start_time} />
+                        <Separator />
+                        <SectionInfoLine title='Current ETA' value={trackerData.current_destination_eta === -1 ? 'N/A' : formatDuration(trackerData.current_destination_eta)} />
+                        <Separator />
+                        <SectionInfoLine title='ECT' value={trackerData.estimated_completion_time_formatted} />
                     </YStack>
                 </YStack>
-                <YStack width='100%' height={200} />
+                <SectionHeader title='Order Notes' />
+                <YStack px='$3' py='$4'>
+                    <Text color='$textPrimary'>{order.getAttribute('notes', 'N/A') ?? 'N/A'}</Text>
+                </YStack>
+                <SectionHeader title='Order Payload' />
+                <YStack>
+                    <OrderPayloadEntities order={order} onPress={({ entity, waypoint }) => navigation.navigate('Entity', { entity, waypoint })} />
+                </YStack>
+                {order.isAttributeFilled('customer') && (
+                    <>
+                        <SectionHeader title='Customer' />
+                        <YStack px='$3' py='$4'>
+                            <OrderCustomerCard customer={order.getAttribute('customer')} />
+                        </YStack>
+                    </>
+                )}
+                <SectionHeader title='Order Documents & Files' />
+                <YStack>
+                    <OrderDocumentFiles order={order} />
+                </YStack>
+                <SectionHeader title='Order Comments' />
+                <YStack px='$2' py='$4'>
+                    <OrderCommentThread order={order} />
+                </YStack>
+                <Spacer height={200} />
             </ScrollView>
+            <OrderActivitySelect
+                ref={activitySheetRef}
+                onChange={sendOrderActivityUpdate}
+                waypoint={destination}
+                activities={nextActivity}
+                activityLoading={activityLoading}
+                isLoading={isLoading('nextOrderActivity')}
+                snapTo='80%'
+            />
         </YStack>
     );
 };

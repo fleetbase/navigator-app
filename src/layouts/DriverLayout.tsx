@@ -16,7 +16,19 @@ const DriverLayout = ({ children, state, descriptors, navigation: tabNavigation 
         }
 
         const handlePushNotification = async (notification, action) => {
-            console.log('[incomingPushNotification]', notification, action);
+            console.log('[PushNotification]', notification);
+            const { payload } = notification;
+            const id = payload.id;
+            const type = payload.type;
+
+            if (typeof id === 'string' && id.startsWith('order_')) {
+                try {
+                    const order = await fleetbase.orders.findRecord(id);
+                    tabNavigation.navigate('DriverTaskTab', { screen: 'Order', params: { order: order.serialize() } });
+                } catch (err) {
+                    console.warn('Error navigating to order:', err);
+                }
+            }
         };
 
         addNotificationListener(handlePushNotification);
