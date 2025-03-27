@@ -3,6 +3,8 @@ import { FlatList, TextInput, Keyboard } from 'react-native';
 import { countries, getEmojiFlag } from 'countries-list';
 import BottomSheet, { BottomSheetView, BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTheme, View, Text, Button, XStack, YStack, Input } from 'tamagui';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { Portal } from '@gorhom/portal';
 import { debounce } from '../utils';
 import { currencies, getCurrency } from '../utils/currencies';
@@ -100,8 +102,18 @@ const MoneyInput = ({
     }, [selectedCurrency, value, onChange]);
 
     return (
-        <YStack space='$4' {...wrapperProps}>
-            <XStack width='100%' paddingHorizontal={0} shadowOpacity={0} shadowRadius={0} borderWidth={1} borderColor='$borderColor' borderRadius='$5' bg={backgroundColor}>
+        <YStack {...wrapperProps}>
+            <XStack
+                width='100%'
+                alignItems='center'
+                paddingHorizontal={0}
+                shadowOpacity={0}
+                shadowRadius={0}
+                borderWidth={1}
+                borderColor='$borderColor'
+                borderRadius='$5'
+                bg={backgroundColor}
+            >
                 <XStack alignItems='center' justifyContent='flex-end' pl='$4'>
                     <Text fontSize={14} numberOfLines={1}>
                         {selectedCurrencyObject.symbol}
@@ -123,13 +135,26 @@ const MoneyInput = ({
                     overflow='hidden'
                     pl={5}
                 />
-                <Button justifyContent='flex-end' onPress={openBottomSheet} bg={backgroundColor} borderWidth={0} width={130} maxWidth={130}>
-                    <XStack alignItems='center' space='$2'>
-                        <Text fontSize={17} numberOfLines={1}>
+                <YStack padding='$2'>
+                    <Button
+                        alignSelf='flex-start'
+                        justifyContent='flex-end'
+                        flexGrow={0}
+                        onPress={openBottomSheet}
+                        bg='$info'
+                        borderWidth={1}
+                        borderColor='$infoBorder'
+                        borderRadius='$5'
+                        height={30}
+                    >
+                        <Button.Icon>
+                            <FontAwesomeIcon icon={faPenToSquare} color={theme.infoText.val} />
+                        </Button.Icon>
+                        <Button.Text color='$infoText' fontSize={15} numberOfLines={1}>
                             {selectedCurrency}
-                        </Text>
-                    </XStack>
-                </Button>
+                        </Button.Text>
+                    </Button>
+                </YStack>
             </XStack>
 
             <Portal hostName={portalHost}>

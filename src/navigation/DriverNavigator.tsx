@@ -26,6 +26,9 @@ import { useIsNotAuthenticated, useIsAuthenticated } from '../contexts/AuthConte
 import { useTempStore } from '../contexts/TempStoreContext';
 import DriverDashboardScreen from '../screens/DriverDashboardScreen';
 import DriverOrderManagementScreen from '../screens/DriverOrderManagementScreen';
+import OrderScreen from '../screens/OrderScreen';
+import EntityScreen from '../screens/EntityScreen';
+import ProofOfDeliveryScreen from '../screens/ProofOfDeliveryScreen';
 import DriverReportScreen from '../screens/DriverReportScreen';
 import CreateIssueScreen from '../screens/CreateIssueScreen';
 import EditIssueScreen from '../screens/EditIssueScreen';
@@ -34,15 +37,19 @@ import CreateFuelReportScreen from '../screens/CreateFuelReportScreen';
 import EditFuelReportScreen from '../screens/EditFuelReportScreen';
 import FuelReportScreen from '../screens/FuelReportScreen';
 import ChatHomeScreen from '../screens/ChatHomeScreen';
+import ChatChannelScreen from '../screens/ChatChannelScreen';
+import ChatParticipantsScreen from '../screens/ChatParticipantsScreen';
+import CreateChatChannelScreen from '../screens/CreateChatChannelScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import DriverAccountScreen from '../screens/DriverAccountScreen';
 import { useOrderManager } from '../contexts/OrderManagerContext';
-import useChat from '../hooks/use-chat';
+import { useChat } from '../contexts/ChatContext';
 import useAppTheme from '../hooks/use-app-theme';
 import DriverLayout from '../layouts/DriverLayout';
 import DriverOnlineToggle from '../components/DriverOnlineToggle';
 import BackButton from '../components/BackButton';
 import HeaderButton from '../components/HeaderButton';
+import Badge from '../components/Badge';
 
 const importedIconsMap = {
     faHome,
@@ -102,14 +109,14 @@ function createTabScreens() {
         DriverChatTab: {
             screen: DriverChatTab,
             options: () => {
-                const { unreadChannels } = useChat();
+                const { unreadCount } = useChat();
 
                 return {
                     tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', 'Chat'),
-                    tabBarBadge: unreadChannels.length,
+                    tabBarBadge: unreadCount,
                     tabBarBadgeStyle: {
                         marginRight: -5,
-                        opacity: unreadChannels.length ? 1 : 0.5,
+                        opacity: unreadCount ? 1 : 0.5,
                     },
                 };
             },
@@ -205,6 +212,50 @@ const DriverTaskTab = createNativeStackNavigator({
     screens: {
         DriverOrderManagement: {
             screen: DriverOrderManagementScreen,
+            options: ({ route, navigation }) => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        Order: {
+            screen: OrderScreen,
+            options: ({ route, navigation }) => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        Entity: {
+            screen: EntityScreen,
+            options: ({ route, navigation }) => {
+                const params = route.params ?? {};
+                const entity = params.entity;
+
+                return {
+                    headerTitle: '',
+                    headerShown: true,
+                    headerLeft: (props) => (
+                        <Text color='$textPrimary' fontSize={20} fontWeight='bold' numberOfLines={1}>
+                            {entity.name ?? entity.tracking_number.tracking_number}
+                        </Text>
+                    ),
+                    headerRight: (props) => (
+                        <XStack alignItems='center' space='$2'>
+                            <Badge status={entity.tracking_number.status_code.toLowerCase()} />
+                            <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />
+                        </XStack>
+                    ),
+                    headerStyle: {
+                        backgroundColor: getTheme('background'),
+                        headerTintColor: getTheme('borderColor'),
+                    },
+                    presentation: 'modal',
+                };
+            },
+        },
+        ProofOfDelivery: {
+            screen: ProofOfDeliveryScreen,
             options: ({ route, navigation }) => {
                 return {
                     headerShown: false,
@@ -364,6 +415,32 @@ const DriverChatTab = createNativeStackNavigator({
             options: ({ route, navigation }) => {
                 return {
                     headerShown: false,
+                };
+            },
+        },
+        ChatChannel: {
+            screen: ChatChannelScreen,
+            options: ({ route, navigation }) => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        ChatParticipants: {
+            screen: ChatParticipantsScreen,
+            options: ({ route, navigation }) => {
+                return {
+                    headerShown: false,
+                    presentation: 'modal',
+                };
+            },
+        },
+        CreateChatChannel: {
+            screen: CreateChatChannelScreen,
+            options: ({ route, navigation }) => {
+                return {
+                    headerShown: false,
+                    presentation: 'modal',
                 };
             },
         },

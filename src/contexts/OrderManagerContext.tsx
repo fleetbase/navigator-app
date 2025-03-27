@@ -1,9 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useTheme } from 'tamagui';
 import { format } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
 import { useAuth } from './AuthContext';
 import useFleetbase from '../hooks/use-fleetbase';
 import useStorage from '../hooks/use-storage';
+import { isArray } from '../utils';
 
 function serializeCollection(collection) {
     return collection.map((resource) => resource.serialize());
@@ -16,6 +18,7 @@ function restoreCollection(collection, adapter) {
 const OrderManagerContext = createContext(null);
 
 export const OrderManagerProvider: React.FC = ({ children }) => {
+    const theme = useTheme();
     const { driver } = useAuth();
     const { fleetbase, adapter } = useFleetbase();
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -42,12 +45,35 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
         return allRecentOrders.filter((order) => !nonActiveOrderStatuses.has(order.status));
     }, [allRecentOrders, nonActiveOrderStatuses]);
 
+    // Create a marked dates array for calendar strip from active orders
+    const activeOrderMarkedDates = useMemo(() => {
+        // Group orders by formatted date string (e.g., "2025-03-06")
+        const ordersGroupedByDate = allActiveOrders.reduce((acc, order) => {
+            const dateKey = format(new Date(order.created_at), 'yyyy-MM-dd');
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push(order);
+            return acc;
+        }, {});
+
+        // Map each group into the required format
+        return Object.entries(ordersGroupedByDate).map(([date, orders]) => ({
+            date: new Date(date),
+            dots: orders.map(() => ({
+                color: theme['$red-600'].val,
+                // You can optionally add selectedColor here if needed
+            })),
+        }));
+    }, [allActiveOrders, theme]);
+
     // Generic function to query orders from Fleetbase API
     const queryOrders = useCallback(
         async (params = {}, setIsFetching) => {
             if (!fleetbase) return;
             if (setIsFetching) setIsFetching(true);
-            params.with_tracker_data = true;
+            // params.with_tracker_data = true;
+            params.sort = '-created_at';
             try {
                 const orders = await fleetbase.orders.query(params);
                 return orders;
@@ -129,19 +155,35 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
         [fleetbase, driver, currentDate, queryOrders, setCurrentOrders]
     );
 
+    // Allows an update of a sigle order in the storage
+    const updateStorageOrder = (order, storageKey = 'current') => {
+        const storageMap = {
+            current: { storage: currentOrders, update: setCurrentOrders },
+            recent: { storage: allRecentOrders, update: setAllRecentOrders },
+            active: { storage: allActiveOrders, update: setAllActiveOrders },
+        };
+
+        if (isArray(storageKey)) {
+            storageKey.forEach((key) => updateStorageOrder(order, key));
+            return;
+        }
+
+        const { storage, update } = storageMap[storageKey] || storageMap.current;
+        const updatedStorage = storage.map((storedOrder) => (storedOrder.id === order.id ? { ...order, tracker_data: order.tracker_data ?? storedOrder.tracker_data } : storedOrder));
+
+        update(updatedStorage);
+    };
+
     // Trigger active and recent order fetches when driver and fleetbase are available.
     useEffect(() => {
         if (driver && fleetbase) {
             fetchActiveOrders();
-            fetchRecentOrders();
         }
     }, [driver, fleetbase, fetchActiveOrders, fetchRecentOrders]);
 
     // Whenever the currentDate state changes, reset and fetch current orders.
     useEffect(() => {
         if (driver && fleetbase && currentDate) {
-            hasLoadedCurrentRef.current = false;
-            currentOrdersPromiseRef.current = null;
             fetchCurrentOrders();
         }
     }, [driver, fleetbase, currentDate, fetchCurrentOrders]);
@@ -203,6 +245,8 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             isFetchingActiveOrders,
             isFetchingRecentOrders,
             isFetchingCurrentOrders,
+            activeOrderMarkedDates,
+            updateStorageOrder,
         }),
         [
             queryOrders,
@@ -217,6 +261,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             isFetchingActiveOrders,
             isFetchingRecentOrders,
             isFetchingCurrentOrders,
+            activeOrderMarkedDates,
         ]
     );
 

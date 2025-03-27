@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		24E6AD9F5C97D1B4D72446A9 /* libPods-NavigatorApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1612B8D4BD50E15566F3CD42 /* libPods-NavigatorApp.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		D30686B2F86D1216E3CA9ABF /* libPods-NavigatorApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4582082878954F8C8280EDB3 /* libPods-NavigatorApp.a */; };
 		E4AFEC662CF6BA4C000EDE15 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = E4AFEC652CF6BA4C000EDE15 /* Config.xcconfig */; };
 		E4CDF7812CE20AF900D34FBB /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E4CDF7802CE20AF900D34FBB /* BootSplash.storyboard */; };
 		FB15EE06433579CB8F2910C6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
@@ -21,11 +21,11 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = NavigatorApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = NavigatorApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = NavigatorApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		1612B8D4BD50E15566F3CD42 /* libPods-NavigatorApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-NavigatorApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		3A1579441247371417A67647 /* Pods-NavigatorApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.release.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.release.xcconfig"; sourceTree = "<group>"; };
+		4582082878954F8C8280EDB3 /* libPods-NavigatorApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-NavigatorApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = NavigatorApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = NavigatorApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		A829120950333BFC9AEFB52B /* Pods-NavigatorApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.debug.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.debug.xcconfig"; sourceTree = "<group>"; };
+		9C1F153BEE684B7399DB9F6C /* Pods-NavigatorApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.release.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.release.xcconfig"; sourceTree = "<group>"; };
+		C65E5AB6F3200AE02CD3085B /* Pods-NavigatorApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.debug.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.debug.xcconfig"; sourceTree = "<group>"; };
 		E4AFEC652CF6BA4C000EDE15 /* Config.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		E4C5571E2D3A1BFA00B22EA8 /* NavigatorApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = NavigatorApp.entitlements; path = NavigatorApp/NavigatorApp.entitlements; sourceTree = "<group>"; };
 		E4CDF7802CE20AF900D34FBB /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = NavigatorApp/BootSplash.storyboard; sourceTree = "<group>"; };
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				24E6AD9F5C97D1B4D72446A9 /* libPods-NavigatorApp.a in Frameworks */,
+				D30686B2F86D1216E3CA9ABF /* libPods-NavigatorApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,7 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				1612B8D4BD50E15566F3CD42 /* libPods-NavigatorApp.a */,
+				4582082878954F8C8280EDB3 /* libPods-NavigatorApp.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -100,8 +100,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				A829120950333BFC9AEFB52B /* Pods-NavigatorApp.debug.xcconfig */,
-				3A1579441247371417A67647 /* Pods-NavigatorApp.release.xcconfig */,
+				C65E5AB6F3200AE02CD3085B /* Pods-NavigatorApp.debug.xcconfig */,
+				9C1F153BEE684B7399DB9F6C /* Pods-NavigatorApp.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -113,13 +113,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "NavigatorApp" */;
 			buildPhases = (
-				FC429536E3FA0AEF62650630 /* [CP] Check Pods Manifest.lock */,
+				1B0FEAB432AB9B7C1F7C5586 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				2415008AF8BE04789CCCC75D /* [CP] Embed Pods Frameworks */,
-				C6854B7B21079AAF03878F4E /* [CP] Copy Pods Resources */,
+				1323646AD0BC058AED3D162E /* [CP] Embed Pods Frameworks */,
+				0CCD7CD8E83DAB0F076E758D /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -193,24 +193,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		2415008AF8BE04789CCCC75D /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		C6854B7B21079AAF03878F4E /* [CP] Copy Pods Resources */ = {
+		0CCD7CD8E83DAB0F076E758D /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -227,7 +210,24 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		FC429536E3FA0AEF62650630 /* [CP] Check Pods Manifest.lock */ = {
+		1323646AD0BC058AED3D162E /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		1B0FEAB432AB9B7C1F7C5586 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -265,23 +265,23 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A829120950333BFC9AEFB52B /* Pods-NavigatorApp.debug.xcconfig */;
+			baseConfigurationReference = C65E5AB6F3200AE02CD3085B /* Pods-NavigatorApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -298,22 +298,22 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3A1579441247371417A67647 /* Pods-NavigatorApp.release.xcconfig */;
+			baseConfigurationReference = 9C1F153BEE684B7399DB9F6C /* Pods-NavigatorApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -397,10 +397,7 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -470,10 +467,7 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

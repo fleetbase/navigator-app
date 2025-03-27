@@ -13,10 +13,14 @@ import { TempStoreProvider } from './src/contexts/TempStoreContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ThemeProvider, useThemeContext } from './src/contexts/ThemeContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
+import { ChatProvider } from './src/contexts/ChatContext';
+import { LocationProvider } from './src/contexts/LocationContext';
 import config from './tamagui.config';
+import { clear } from './src/utils/storage';
 
 function AppContent(): React.JSX.Element {
     const { appTheme } = useThemeContext();
+    // clear();
 
     return (
         <TamaguiProvider config={config} theme={appTheme}>
@@ -28,15 +32,19 @@ function AppContent(): React.JSX.Element {
                                 <LanguageProvider>
                                     <AuthProvider>
                                         <SocketClusterProvider>
-                                            <TempStoreProvider>
-                                                <OrderManagerProvider>
-                                                    <AppNavigator />
-                                                    <Toasts extraInsets={{ bottom: 80 }} />
-                                                    <PortalHost name='MainPortal' />
-                                                    <PortalHost name='BottomSheetPanelPortal' />
-                                                    <PortalHost name='LocationPickerPortal' />
-                                                </OrderManagerProvider>
-                                            </TempStoreProvider>
+                                            <LocationProvider>
+                                                <TempStoreProvider>
+                                                    <ChatProvider>
+                                                        <OrderManagerProvider>
+                                                            <AppNavigator />
+                                                            <Toasts extraInsets={{ bottom: 80 }} />
+                                                            <PortalHost name='MainPortal' />
+                                                            <PortalHost name='BottomSheetPanelPortal' />
+                                                            <PortalHost name='LocationPickerPortal' />
+                                                        </OrderManagerProvider>
+                                                    </ChatProvider>
+                                                </TempStoreProvider>
+                                            </LocationProvider>
                                         </SocketClusterProvider>
                                     </AuthProvider>
                                 </LanguageProvider>

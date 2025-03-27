@@ -7,8 +7,8 @@ export function useOrderResource(order, options = {}) {
     const { adapter } = useFleetbase();
 
     // Initialize storage with the order's attributes as defaults
-    const [trackerData, setTrackerData] = useStorage(`${order?.id}_tracker_data`, order.getAttribute('tracker_data'));
-    const [etaData, setEtaData] = useStorage(`${order?.id}_eta_data`, order.getAttribute('eta'));
+    const [trackerData, setTrackerData] = useStorage(`${order?.id}_tracker_data`, order.getAttribute('tracker_data') ?? {});
+    const [etaData, setEtaData] = useStorage(`${order?.id}_eta_data`, order.getAttribute('eta') ?? {});
     const [error, setError] = useState(null);
     const [isFetchingTracker, setIsFetchingTracker] = useState(false);
     const [isFetchingEta, setIsFetchingEta] = useState(false);

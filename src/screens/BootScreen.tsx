@@ -44,7 +44,6 @@ const BootScreen = () => {
                 }
 
                 try {
-                    console.log('BootScreen [isAuthenticated]', isAuthenticated);
                     // Any initialization processes will run here
                     if (isAuthenticated) {
                         navigation.navigate('DriverNavigator');

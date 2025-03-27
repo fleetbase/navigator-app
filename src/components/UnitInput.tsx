@@ -3,6 +3,8 @@ import { FlatList, TextInput, Keyboard } from 'react-native';
 import { countries, getEmojiFlag } from 'countries-list';
 import BottomSheet, { BottomSheetView, BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTheme, View, Text, Button, XStack, YStack, Input } from 'tamagui';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { Portal } from '@gorhom/portal';
 import { debounce } from '../utils';
 import unit from '../constants/Units';
@@ -124,8 +126,18 @@ const UnitInput = ({
     }, [selectedUnit, value, onChange]);
 
     return (
-        <YStack space='$4' {...wrapperProps}>
-            <XStack width='100%' paddingHorizontal={0} shadowOpacity={0} shadowRadius={0} borderWidth={1} borderColor='$borderColor' borderRadius='$5' bg={backgroundColor}>
+        <YStack {...wrapperProps}>
+            <XStack
+                width='100%'
+                alignItems='center'
+                paddingHorizontal={0}
+                shadowOpacity={0}
+                shadowRadius={0}
+                borderWidth={1}
+                borderColor='$borderColor'
+                borderRadius='$5'
+                bg={backgroundColor}
+            >
                 <Input
                     ref={valueInputRef}
                     flex={1}
@@ -141,13 +153,26 @@ const UnitInput = ({
                     borderBottomLeftRadius='$3'
                     overflow='hidden'
                 />
-                <Button justifyContent='flex-end' onPress={openBottomSheet} bg={backgroundColor} borderWidth={0} width={130} maxWidth={130}>
-                    <XStack alignItems='center' space='$2'>
-                        <Text fontSize={17} numberOfLines={1}>
+                <YStack padding='$2'>
+                    <Button
+                        alignSelf='flex-start'
+                        justifyContent='flex-end'
+                        flexGrow={0}
+                        onPress={openBottomSheet}
+                        bg='$info'
+                        borderWidth={1}
+                        borderColor='$infoBorder'
+                        borderRadius='$5'
+                        height={30}
+                    >
+                        <Button.Icon>
+                            <FontAwesomeIcon icon={faPenToSquare} color={theme.infoText.val} />
+                        </Button.Icon>
+                        <Button.Text color='$infoText' fontSize={15} numberOfLines={1}>
                             {selectedUnitObject?.name || ''}
-                        </Text>
-                    </XStack>
-                </Button>
+                        </Button.Text>
+                    </Button>
+                </YStack>
             </XStack>
 
             <Portal hostName={portalHost}>

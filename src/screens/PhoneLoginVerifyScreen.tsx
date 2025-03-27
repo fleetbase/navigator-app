@@ -33,7 +33,7 @@ const PhoneLoginVerifyScreen = () => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.navigatorBackground.val }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
             <LinearGradient colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.8)']} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
             <YStack flex={1} space='$3' padding='$5'>
                 <YStack mb='$4'>

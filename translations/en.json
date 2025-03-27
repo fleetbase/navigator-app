@@ -53,7 +53,12 @@
         "signedOut": "Signed Out.",
         "cacheCleared": "Cache Cleared.",
         "schemeChanged": "Now using {{selectedScheme}} mode.",
-        "languageChanged": "Now using {{selectedLanguage}}."
+        "languageChanged": "Now using {{selectedLanguage}}.",
+        "photoChanged": "Profile photo changed.",
+        "photoRemoved": "Profile photo removed."
+    },
+    "ProfileScreen": {
+        "organizationChanged": "Switched to {{selectedOrganization}} organization."
     },
     "AddNewLocationScreen": {
         "addNewAddress": "Add new address",
@@ -67,5 +72,13 @@
         "unconfiguredApp": "Looks like you haven't properly configured your app.",
         "envMissing": "is missing from environment!"
     },
-    "DriverReportScreen": {}
+    "DriverReportScreen": {},
+    "LocationPermissionScreen": {
+        "enableLocationServices": "Enable Location Services",
+        "enableLocationPrompt": "We need your location to provide a better experience.",
+        "shareAndContinue": "Share Location & Continue",
+        "locationPermissionRequired": "Location Permission Required",
+        "locationPermissionPrompt": "To enable location-based features, please allow location access. If you prefer, you can enter your location manually.",
+        "goToSettings": "Go to Settings"
+    }
 }

@@ -1,51 +1,83 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Platform, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform, Linking, SafeAreaView } from 'react-native';
 import { checkMultiple, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { Button, Text, YStack, Image, Stack, XStack, AlertDialog } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import { requestWebGeolocationPermission } from '../utils/location';
+import { useLanguage } from '../contexts/LanguageContext';
+import useDimensions from '../hooks/use-dimensions';
 
 const LocationPermissionScreen = () => {
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const { screenWidth } = useDimensions();
+    const { t } = useLanguage();
     const [isDialogOpen, setDialogOpen] = useState(false);
-
-    const requestLocationPermission = async () => {
-        const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-        const result = await request(permission);
-
-        if (result === RESULTS.GRANTED) {
-            // Reset navigation stack to go back to BootScreen and restart the initialization process
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Boot' }],
-            });
-        } else {
-            setDialogOpen(true);
-        }
-    };
-
-    const handleDeny = () => {
-        navigation.navigate('LocationPicker', { redirectTo: 'Boot' });
-    };
+    const [hasPermission, setHasPermission] = useState(false);
+    const [permissionAttempted, setPermissionAttempted] = useState(false);
 
     const openSettings = () => {
         Linking.openSettings();
         setDialogOpen(false);
     };
 
-    // Function to check if permission has been granted when returning to the screen
-    const checkPermissionStatus = useCallback(async () => {
+    const handleLocationPermissionCheck = async () => {
         const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-        const result = await check(permission);
+        const result = await request(permission);
 
-        if (result === RESULTS.GRANTED) {
-            navigation.reset({
+        return result === RESULTS.GRANTED;
+    };
+
+    const requestLocationPermission = useCallback(async () => {
+        if (Platform.OS === 'web') {
+            // Use the browser Permissions API (and geolocation prompt) on web
+            const granted = await requestWebGeolocationPermission();
+            setPermissionAttempted(true);
+            setHasPermission(granted);
+            if (granted) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Boot' }],
+                });
+            } else {
+                setDialogOpen(true);
+            }
+            return;
+        }
+
+        const granted = await handleLocationPermissionCheck();
+        if (granted) {
+            return navigation.reset({
                 index: 0,
                 routes: [{ name: 'Boot' }],
             });
-        } else {
-            handleDeny();
+        }
+
+        setDialogOpen(true);
+    }, [navigation]);
+
+    // Function to check if permission has been granted when returning to the screen
+    const checkPermissionStatus = useCallback(async () => {
+        if (Platform.OS === 'web') {
+            const granted = await requestWebGeolocationPermission();
+            if (granted) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Boot' }],
+                });
+            }
+            return;
+        }
+
+        const granted = await handleLocationPermissionCheck();
+        if (granted) {
+            return navigation.reset({
+                index: 0,
+                routes: [{ name: 'Boot' }],
+            });
         }
     }, [navigation]);
 
@@ -56,64 +88,49 @@ const LocationPermissionScreen = () => {
         }, [checkPermissionStatus])
     );
 
+    // Automatically trigger the native permission prompt when the screen mounts
+    useEffect(() => {
+        if (!permissionAttempted) {
+            requestLocationPermission();
+        }
+    }, [permissionAttempted]);
+
     return (
-        <YStack flex={1} bg='$background'>
+        <YStack flex={1} bg='$background' pt={insets.top} pb={insets.bottom}>
             <YStack flex={1} alignItems='center' justifyContent='center' padding='$6'>
                 <YStack flex={1} alignItems='center' justifyContent='center'>
                     <Stack alignItems='center' justifyContent='center'>
                         <Image source={require('../../assets/images/isometric-geolocation-1.png')} width={360} height={360} resizeMode='contain' />
                     </Stack>
                     <Text fontSize='$8' fontWeight='bold' color='$textPrimary' mb='$2' textAlign='center'>
-                        Enable Location Services
+                        {t('LocationPermissionScreen.enableLocationServices')}
                     </Text>
                     <Text color='$textSecondary' fontSize='$4' textAlign='center' mb='$6'>
-                        We need your location to provide a better experience. Please enable location access.
+                        {t('LocationPermissionScreen.enableLocationPrompt')}
                     </Text>
+                    <Button size='$5' bg='$primary' color='$white' width='100%' onPress={requestLocationPermission} icon={<FontAwesomeIcon icon={faMapMarkerAlt} color='white' />}>
+                        {t('LocationPermissionScreen.shareAndContinue')}
+                    </Button>
                 </YStack>
-            </YStack>
-            <YStack space='$3' alignItems='center' bg='$surface' borderColor='$borderColor' borderTop='1px solid' justifyContent='center' padding='$6' paddingBottom='$10'>
-                <Button size='$5' bg='$primary' color='$white' width='100%' onPress={requestLocationPermission} icon={<FontAwesomeIcon icon={faMapMarkerAlt} color='white' />}>
-                    Share Location
-                </Button>
             </YStack>
             <AlertDialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                 <AlertDialog.Trigger asChild>
                     <Button display='none'>Show Alert</Button>
                 </AlertDialog.Trigger>
-
                 <AlertDialog.Portal>
-                    <AlertDialog.Overlay key='overlay' animation='quick' opacity={0.5} enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
-                    <AlertDialog.Content
-                        bordered
-                        elevate
-                        key='content'
-                        backgroundColor='white'
-                        width='100%'
-                        animation='quick'
-                        enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
-                        exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-                        x={0}
-                        scale={1}
-                        opacity={1}
-                        y={0}
-                    >
-                        <YStack width='100%' space>
-                            <AlertDialog.Title>Location Permission Required</AlertDialog.Title>
-                            <AlertDialog.Description>To enable location-based features, please allow location access in your settings.</AlertDialog.Description>
-
-                            <XStack gap='$3' justifyContent='flex-end'>
-                                <AlertDialog.Cancel asChild>
-                                    <Button onPress={() => setDialogOpen(false)} backgroundColor='$secondary' color='$textSecondary'>
-                                        Cancel
-                                    </Button>
-                                </AlertDialog.Cancel>
-                                <AlertDialog.Action asChild>
-                                    <Button theme='active' onPress={openSettings} backgroundColor='$primary' color='$textPrimary'>
-                                        Go to Settings
-                                    </Button>
-                                </AlertDialog.Action>
-                            </XStack>
-                        </YStack>
+                    <AlertDialog.Overlay key='overlay' animation='quick' opacity={0.5} />
+                    <AlertDialog.Content bordered elevate key='content' backgroundColor='$background' width={screenWidth * 0.9} padding='$6'>
+                        <AlertDialog.Title color='$textPrimary' fontSize={27}>
+                            {t('LocationPermissionScreen.locationPermissionRequired')}
+                        </AlertDialog.Title>
+                        <AlertDialog.Description color='$textSecondary' mb='$4'>
+                            {t('LocationPermissionScreen.locationPermissionPrompt')}
+                        </AlertDialog.Description>
+                        {Platform.OS !== 'web' && (
+                            <Button onPress={openSettings} backgroundColor='$primary' color='$primaryText' mb='$2'>
+                                {t('LocationPermissionScreen.goToSettings')}
+                            </Button>
+                        )}
                     </AlertDialog.Content>
                 </AlertDialog.Portal>
             </AlertDialog>

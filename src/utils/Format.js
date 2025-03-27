@@ -1,6 +1,7 @@
 import getCurrency from './currencies';
 import countryLocaleMap from 'country-locale-map';
 import { isNone, isArray, isObject, defaults } from './';
+import { isToday, isYesterday, isThisWeek, isThisYear, format, differenceInMinutes, differenceInHours } from 'date-fns';
 
 export const defaultCurrenyOptions = {
     symbol: '$', // default currency symbol is '$'
@@ -154,8 +155,27 @@ export function formatCurrency(amount = 0, currency = 'USD', currencyDisplay = '
     return formatMoney(!currencyData.decimalSeparator ? amount : amount / 100, currencyData.symbol, currencyData.precision, currencyData.thousandSeparator, currencyData.decimalSeparator);
 }
 
-export function km(km) {
-    return `${Math.round(km)}km`;
+export function formatMeters(meters) {
+    if (meters < 1000) {
+        return `${meters} meters`;
+    } else {
+        const km = meters / 1000;
+        // Round to one decimal place
+        const roundedKm = Math.round(km * 10) / 10;
+        return `${roundedKm} km`;
+    }
+}
+
+export function formatMiles(meters) {
+    // 1 mile = 1609.344 meters
+    const miles = meters / 1609.344;
+    if (miles < 1) {
+        // Use two decimals for values under 1 mile
+        return `${miles.toFixed(2)} miles`;
+    } else {
+        // Use one decimal place for values 1 mile or more
+        return `${miles.toFixed(1)} miles`;
+    }
 }
 
 export function truncateString(str, length = 20) {
@@ -238,7 +258,7 @@ export function titleize(str, separator = ' ') {
     return words.join(' ');
 }
 
-export function lowecase(str) {
+export function lowercase(str) {
     return str.toLowerCase();
 }
 
@@ -290,4 +310,138 @@ export function formatDuration(secs) {
     }
 
     return parts.join(' ');
+}
+
+export function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024; // or 1000 for decimal-based conversion
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+export function getColorFromStatus(status) {
+    status = status?.toLowerCase();
+
+    switch (status) {
+        case 'live':
+        case 'success':
+        case 'operational':
+        case 'active':
+        case 'completed':
+        case 'order_completed':
+        case 'pickup_ready':
+            return 'green';
+        case 'dispatched':
+        case 'assigned':
+        case 'duplicate':
+        case 'requires_update':
+            return 'indigo';
+        case 'disabled':
+        case 'canceled':
+        case 'order_canceled':
+        case 'incomplete':
+        case 'unable':
+        case 'failed':
+        case 'critical':
+        case 'escalated':
+            return 'red';
+        case 'created':
+        case 'warning':
+        case 'preparing':
+        case 'pending':
+        case 'pending_review':
+        case 'backlogged':
+        case 'in_review':
+            return 'yellow';
+        case 'enroute':
+        case 'driver_enroute':
+            return 'orange';
+        case 'info':
+        case 'in_progress':
+        case 'low':
+        case 're_opened':
+            return 'blue';
+        default:
+            return 'yellow';
+    }
+}
+
+export function formatWhatsAppTimestamp(date) {
+    const now = new Date();
+    const minutesDiff = differenceInMinutes(now, date);
+    const hoursDiff = differenceInHours(now, date);
+
+    // Less than 1 minute ago
+    if (minutesDiff < 1) {
+        return 'Just now';
+    }
+
+    // Less than 60 minutes ago
+    if (minutesDiff < 60) {
+        return `${minutesDiff} minute${minutesDiff > 1 ? 's' : ''} ago`;
+    }
+
+    // Same day
+    if (isToday(date)) {
+        return format(date, 'p'); // time like 3:45 PM or 15:45
+    }
+
+    // Yesterday
+    if (isYesterday(date)) {
+        return 'Yesterday';
+    }
+
+    // Within the current week (not including today or yesterday)
+    if (isThisWeek(date, { weekStartsOn: 1 })) {
+        return format(date, 'EEEE'); // Day of the week, e.g., "Tuesday"
+    }
+
+    // Within this year
+    if (isThisYear(date)) {
+        return format(date, 'd MMM'); // e.g., "5 Mar"
+    }
+
+    // Older than this year
+    return format(date, 'MM/dd/yy'); // 03/05/24
+}
+
+export function smartHumanize(string) {
+    const uppercaseTokens = [
+        'api',
+        'vat',
+        'id',
+        'uuid',
+        'sku',
+        'ean',
+        'upc',
+        'erp',
+        'tms',
+        'wms',
+        'ltl',
+        'ftl',
+        'lcl',
+        'fcl',
+        'rfid',
+        'jot',
+        'roi',
+        'eta',
+        'pod',
+        'asn',
+        'oem',
+        'ddp',
+        'fob',
+        'gsm',
+        'etd',
+        'eta',
+        'ect',
+    ];
+
+    return lowercase(titleize(string))
+        .split(' ')
+        .map((word) => (uppercaseTokens.includes(word) ? uppercase(word) : titleize(word)))
+        .join(' ');
 }

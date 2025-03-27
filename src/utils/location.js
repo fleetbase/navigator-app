@@ -1,4 +1,5 @@
-import Geolocation from '@react-native-community/geolocation';
+// import Geolocation from '@react-native-community/geolocation';
+import BackgroundGeolocation from 'react-native-background-geolocation';
 import { Platform } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
 import { checkMultiple, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
@@ -11,12 +12,12 @@ import { config, uniqueArray, isObject, isArray, isEmpty, isResource, isSerializ
 import storage from './storage';
 import axios from 'axios';
 
-/** Configure GeoLocation */
-Geolocation.setRNConfiguration({
-    authorizationLevel: 'whenInUse',
-    enableBackgroundLocationUpdates: false,
-    locationProvider: 'auto',
-});
+// /** Configure GeoLocation */
+// Geolocation.setRNConfiguration({
+//     authorizationLevel: 'whenInUse',
+//     enableBackgroundLocationUpdates: false,
+//     locationProvider: 'auto',
+// });
 
 const emit = EventRegister.emit;
 
@@ -269,7 +270,7 @@ export function serializGoogleAddress(googleAddress) {
 
 export async function getLiveLocation() {
     return new Promise((resolve) => {
-        Geolocation.getCurrentPosition(
+        BackgroundGeolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
 
@@ -303,7 +304,7 @@ export async function getCurrentLocation() {
     const lastLocation = restoreFleetbasePlace(storage.getMap('_current_location'));
 
     return new Promise((resolve) => {
-        Geolocation.getCurrentPosition(
+        BackgroundGeolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
 
@@ -1043,4 +1044,31 @@ export function leafletWrapCoordinate(coord) {
     const [lat, lng] = coord;
     const wrappedLng = ((((lng + 180) % 360) + 360) % 360) - 180;
     return [lat, wrappedLng];
+}
+
+export async function requestWebGeolocationPermission() {
+    if (navigator.permissions && navigator.geolocation) {
+        try {
+            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+            if (permissionStatus.state === 'granted') {
+                return true;
+            }
+            if (permissionStatus.state === 'prompt') {
+                // Trigger prompt by calling geolocation. This must be in response to a user gesture.
+                return new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        () => resolve(true),
+                        () => resolve(false)
+                    );
+                });
+            }
+            return false;
+        } catch (error) {
+            // Fallback: assume not granted
+            return false;
+        }
+    } else {
+        // If the Permissions API isn't available, default to true or handle accordingly
+        return true;
+    }
 }

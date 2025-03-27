@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, FlatList, Pressable, ScrollView } from 'react-native';
 import { Spinner, Avatar, Text, YStack, XStack, Separator, Button, useTheme } from 'tamagui';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
@@ -18,7 +19,8 @@ const DriverAccountScreen = () => {
     const navigation = useNavigation();
     const { t, language, languages, setLocale } = useLanguage();
     const { userColorScheme, appTheme, changeScheme, schemes } = useAppTheme();
-    const { driver, logout, isSigningOut } = useAuth();
+    const { driver, logout, isSigningOut, updateDriver } = useAuth();
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
     const handleClearCache = () => {
         storage.clearStore();
@@ -43,16 +45,37 @@ const DriverAccountScreen = () => {
             onSelect: (buttonIndex) => {
                 switch (buttonIndex) {
                     case 0:
-                        console.log('Take Photo selected');
-                        // Trigger Take Photo functionality here
+                        launchCamera(
+                            {
+                                title: t('AccountScreen.changeProfilePhotoOptions.takePhoto'),
+                                includeBase64: true,
+                                storageOptions: {
+                                    skipBackup: true,
+                                    path: 'images',
+                                },
+                            },
+                            (response) => {
+                                handleUpdateProfilePhoto(response);
+                            }
+                        );
                         break;
                     case 1:
-                        console.log('Photo Library selected');
-                        // Trigger Photo Library functionality here
+                        launchImageLibrary(
+                            {
+                                title: t('AccountScreen.changeProfilePhotoOptions.photoLibrary'),
+                                includeBase64: true,
+                                storageOptions: {
+                                    skipBackup: true,
+                                    path: 'images',
+                                },
+                            },
+                            (response) => {
+                                handleUpdateProfilePhoto(response);
+                            }
+                        );
                         break;
                     case 2:
-                        console.log('Delete Profile Photo selected');
-                        // Trigger Delete functionality here
+                        handleRemoveProfilePhoto();
                         break;
                     default:
                         console.log('Action canceled');
@@ -60,6 +83,36 @@ const DriverAccountScreen = () => {
                 }
             },
         });
+    };
+
+    const handleUpdateProfilePhoto = async (response) => {
+        const asset = response.assets[0];
+        const { type, base64 } = asset;
+        const data = `data:${type};base64,${base64}`;
+
+        setIsUploadingPhoto(true);
+
+        try {
+            await updateDriver({ photo: base64 });
+            toast.success(t('AccountScreen.photoChanged'));
+        } catch (err) {
+            console.warn('Error updating driver profile photo', err);
+        } finally {
+            setIsUploadingPhoto(false);
+        }
+    };
+
+    const handleRemoveProfilePhoto = async () => {
+        setIsUploadingPhoto(true);
+
+        try {
+            await updateDriver({ photo: 'REMOVE' });
+            toast.success(t('AccountScreen.photoRemoved'));
+        } catch (err) {
+            console.warn('Error removing driver profile photo', err);
+        } finally {
+            setIsUploadingPhoto(false);
+        }
     };
 
     const handleSelectScheme = () => {
@@ -126,7 +179,9 @@ const DriverAccountScreen = () => {
     const accountMenu = [
         {
             title: t('AccountScreen.profilePhoto'),
-            rightComponent: (
+            rightComponent: isUploadingPhoto ? (
+                <Spinner color='$textPrimary' />
+            ) : (
                 <Avatar circular size='$2'>
                     <Avatar.Image src={driver.getAttribute('photo_url')} />
                     <Avatar.Fallback backgroundColor='$primary'>

@@ -54,6 +54,20 @@ export function get(target, path, defaultValue = null) {
     }
 }
 
+export function first(array = []) {
+    if (!isArray(array) || array.length === 0) {
+        return undefined;
+    }
+    return array[0];
+}
+
+export function last(array = []) {
+    if (!isArray(array) || array.length === 0) {
+        return undefined;
+    }
+    return array[array.length - 1];
+}
+
 export function isArray(target) {
     return Array.isArray(target);
 }

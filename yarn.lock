@@ -1957,12 +1957,12 @@ __metadata:
     "@gorhom/bottom-sheet": ^5
     "@gorhom/portal": ^1.0.14
     "@invertase/react-native-apple-authentication": ^2.4.0
+    "@react-native-camera-roll/camera-roll": ^7.10.0
     "@react-native-community/blur": ^4.4.1
     "@react-native-community/cli": 15.0.1
     "@react-native-community/cli-platform-android": 15.0.1
     "@react-native-community/cli-platform-ios": 15.0.1
     "@react-native-community/datetimepicker": ^8.2.0
-    "@react-native-community/geolocation": ^3.4.0
     "@react-native-google-signin/google-signin": latest
     "@react-native/babel-preset": 0.77.0-rc.6
     "@react-native/eslint-config": 0.77.0-rc.6
@@ -1994,6 +1994,8 @@ __metadata:
     react: 18.3.1
     react-dom: ^18.3.1
     react-native: 0.77.0-rc.6
+    react-native-background-fetch: ^4.2.7
+    react-native-background-geolocation: ^4.18.6
     react-native-bootsplash: ^5.3.0
     react-native-calendar-strip: ^2.2.6
     react-native-collapsible: ^1.6.2
@@ -2002,12 +2004,13 @@ __metadata:
     react-native-event-listeners: ^1.0.7
     react-native-fast-image: ^8.6.3
     react-native-fbsdk-next: ^13.4.0
+    react-native-file-viewer: ^2.1.5
     react-native-fs: ^2.20.0
     react-native-gesture-handler: ^2.20.2
     react-native-get-random-values: ^1.11.0
     react-native-haptic-feedback: ^2.3.3
     react-native-i18n: ^2.0.15
-    react-native-image-picker: ^7.1.2
+    react-native-image-picker: ^8.2.0
     react-native-keychain: ^9.2.2
     react-native-linear-gradient: ^2.8.3
     react-native-localize: ^3.3.0
@@ -2021,9 +2024,12 @@ __metadata:
     react-native-render-html: ^6.3.4
     react-native-safe-area-context: ^5.0.0
     react-native-screens: ^4.3.0
+    react-native-share: ^12.0.9
+    react-native-signature-canvas: ^4.7.2
     react-native-snap-carousel: ^3.9.1
     react-native-super-grid: ^6.0.1
     react-native-svg: ^15.10.1
+    react-native-vision-camera: ^4.6.4
     react-native-web: ^0.19.13
     react-native-webview: ^13.12.3
     react-native-youtube: ^2.0.2
@@ -2884,6 +2890,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-camera-roll/camera-roll@npm:^7.10.0":
+  version: 7.10.0
+  resolution: "@react-native-camera-roll/camera-roll@npm:7.10.0"
+  peerDependencies:
+    react-native: ">=0.59"
+  checksum: b746d652a3a2b7ac0e2f0bf22b8720c6bb61dec07b36569e7328bfb9e043a020b491335711aeb55f26281db930ed7f1ae89a796caf6a12d9db5a78f6a09bda53
+  languageName: node
+  linkType: hard
+
 "@react-native-community/blur@npm:^4.4.1":
   version: 4.4.1
   resolution: "@react-native-community/blur@npm:4.4.1"
@@ -3088,16 +3103,6 @@ __metadata:
     react-native-windows:
       optional: true
   checksum: a25468f54699c2d57c71469e10bcfa0ffcfe9be09cf850783202da8d081d34da38b33088edf5c0fe8e24d0a1320929ce7508d74903213c05c1dc287ac6ecc957
-  languageName: node
-  linkType: hard
-
-"@react-native-community/geolocation@npm:^3.4.0":
-  version: 3.4.0
-  resolution: "@react-native-community/geolocation@npm:3.4.0"
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  checksum: 4a1a334de5b8345ee5ca9af987718a4cdd0b401b6d024268330c98736eccd0bebf45fd1d4cb396558f429a4670e5b29da0b5b7ebd4e51ca12972d4b08b55d4bc
   languageName: node
   linkType: hard
 
@@ -13420,6 +13425,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-background-fetch@npm:^4.2.7, react-native-background-fetch@npm:~4.2.6":
+  version: 4.2.7
+  resolution: "react-native-background-fetch@npm:4.2.7"
+  checksum: c4aa6965a37126a5fc389293e0a8615fb4ee263cefbb3a8249377f22452f72e5ee43d391fac12c3cfa24e912e78f034a7f96507b0f3690077ce3bc6224a872bb
+  languageName: node
+  linkType: hard
+
+"react-native-background-geolocation@npm:^4.18.6":
+  version: 4.18.6
+  resolution: "react-native-background-geolocation@npm:4.18.6"
+  dependencies:
+    react-native-background-fetch: ~4.2.6
+  checksum: 097bd2e777259f43ec93f1d6b14e31c804ce1af04b694ef1cc92008542b2a24de9137e7673a50c8165d4208b82f45ffe8e221cf94c88c445c7d40b0cd159908e
+  languageName: node
+  linkType: hard
+
 "react-native-bootsplash@npm:^5.3.0":
   version: 5.5.3
   resolution: "react-native-bootsplash@npm:5.5.3"
@@ -13518,6 +13539,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-file-viewer@npm:^2.1.5":
+  version: 2.1.5
+  resolution: "react-native-file-viewer@npm:2.1.5"
+  peerDependencies:
+    react-native: ">=0.47"
+  checksum: 390e1e3ce20c3b2fb7d2394d6bedf1c6c5d25f799fb5b344c7ecb72267327403caf2528916a7419e094caecccf41dac8b62dd0d31fa5991725e36dcdd24b725e
+  languageName: node
+  linkType: hard
+
 "react-native-fs@npm:^2.20.0":
   version: 2.20.0
   resolution: "react-native-fs@npm:2.20.0"
@@ -13586,13 +13616,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-image-picker@npm:^7.1.2":
-  version: 7.2.3
-  resolution: "react-native-image-picker@npm:7.2.3"
+"react-native-image-picker@npm:^8.2.0":
+  version: 8.2.0
+  resolution: "react-native-image-picker@npm:8.2.0"
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: 96d67516e8e1c1768c593ca1b0a507d5212d8ac5df2610ad9d6f38c188b8d0720966559867849f74b6c19d2500664ce17c907e5fa37ab72487abd363cf493e7d
+  checksum: d261d4f0571b771c5d2d8a1d5c129743a4993318a454e5bf7850db0fa452d4d5da2215a2f2af3879cd38211b864b3ba77d1d09255ff1f43112b3dcf985d6c233
   languageName: node
   linkType: hard
 
@@ -13778,6 +13808,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-share@npm:^12.0.9":
+  version: 12.0.9
+  resolution: "react-native-share@npm:12.0.9"
+  checksum: 837e7162d3e9b44bb225029d08abebc9b064c4dee54ebad5bbe017fba5c9f1be02451dd87d96f937d79bfe2b2e6424cb638ec469cdafb33b4a7d4ef069bfa60a
+  languageName: node
+  linkType: hard
+
+"react-native-signature-canvas@npm:^4.7.2":
+  version: 4.7.2
+  resolution: "react-native-signature-canvas@npm:4.7.2"
+  peerDependencies:
+    react-native-webview: ">=13"
+  checksum: abc7259ccc7eccd4f140bc2ab8bcb894696b0d5bc0e278bfa8afe7eb0bc69b748abd8b4c81e6ea8e8265069954b8b4b2c81ca1abebd3d1e2801b7e4caa0b2587
+  languageName: node
+  linkType: hard
+
 "react-native-snap-carousel@npm:^3.9.1":
   version: 3.9.1
   resolution: "react-native-snap-carousel@npm:3.9.1"
@@ -13818,6 +13864,26 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: be3194d2f3255b90bb239f045092ea46f677277fbd3e02ed6c79a5bcddae487081c971a1f0ed095625806f688e5b3fd5aed6ac200061057fe2bda0e7f09933f6
+  languageName: node
+  linkType: hard
+
+"react-native-vision-camera@npm:^4.6.4":
+  version: 4.6.4
+  resolution: "react-native-vision-camera@npm:4.6.4"
+  peerDependencies:
+    "@shopify/react-native-skia": "*"
+    react: "*"
+    react-native: "*"
+    react-native-reanimated: "*"
+    react-native-worklets-core: "*"
+  peerDependenciesMeta:
+    "@shopify/react-native-skia":
+      optional: true
+    react-native-reanimated:
+      optional: true
+    react-native-worklets-core:
+      optional: true
+  checksum: abcbb23fbc0488bece5e8c4f1732728f94ca8ab4cf4b77a3f8be5eadd6c27a1bbe3b374bcd2239773e284bd548bd644658e43c1869fdb228410ba4d86aa49e8d
   languageName: node
   linkType: hard
 
