@@ -3,7 +3,7 @@ import { authorize } from 'react-native-app-auth';
 import { config } from '../utils';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
-// import useStorefront, { adapter } from '../hooks/use-storefront';
+import useFleetbase from '../hooks/use-fleetbase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Settings as FacebookSDKSettings, LoginManager as FacebookLoginManager, Profile as FacebookProfile } from 'react-native-fbsdk-next';
@@ -12,7 +12,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 const APP_LINK_PREFIX = config('APP_LINK_PREFIX');
 
 const useOAuth = () => {
-    // const { storefront } = useStorefront();
+    const { adapter } = useFleetbase();
     const { createCustomerSession } = useAuth();
     const [authState, setAuthState] = useState(null);
     const [loading, setLoading] = useState(false);

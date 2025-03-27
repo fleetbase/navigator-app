@@ -39,11 +39,11 @@ const LoginScreen = () => {
             <SafeAreaView style={{ flex: 1 }}>
                 <YStack flex={1} justifyContent='flex-end' alignItems='center' space='$3' px='$5' pb='$6'>
                     <PhoneLoginButton onPress={handlePhoneLogin} />
-                    <XStack gap='$2'>
+                    {/* <XStack gap='$2'>
                         {loginSupported('apple') && <AppleLoginButton flex={1} onPress={() => handleOAuthLogin('apple')} />}
                         {loginSupported('facebook') && <FacebookLoginButton flex={1} onPress={() => handleOAuthLogin('facebook')} />}
                         {loginSupported('google') && <GoogleLoginButton flex={1} onPress={() => handleOAuthLogin('google')} />}
-                    </XStack>
+                    </XStack> */}
                 </YStack>
             </SafeAreaView>
             {loading && (

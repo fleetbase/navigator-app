@@ -60,7 +60,7 @@ const FuelReportForm = ({ value = {}, onSubmit, isSubmitting = false, submitText
                 <YStack py='$3' space='$4'>
                     <YStack px='$3' space='$2'>
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                            Fuel Report Status
+                            Status
                         </Text>
                         <BottomSheetSelect
                             value={fuelReport.status}

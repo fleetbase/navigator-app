@@ -1,52 +1,6 @@
 import React from 'react';
 import { XStack, YStack, Text } from 'tamagui';
-import { titleize } from '../utils/format';
-
-// Map statuses to a base color
-function getColorFromStatus(status) {
-    status = status?.toLowerCase();
-
-    switch (status) {
-        case 'live':
-        case 'success':
-        case 'operational':
-        case 'active':
-        case 'completed':
-        case 'pickup_ready':
-            return 'green';
-        case 'dispatched':
-        case 'assigned':
-        case 'duplicate':
-        case 'requires_update':
-            return 'indigo';
-        case 'disabled':
-        case 'canceled':
-        case 'order_canceled':
-        case 'incomplete':
-        case 'unable':
-        case 'failed':
-        case 'critical':
-        case 'escalated':
-            return 'red';
-        case 'created':
-        case 'warning':
-        case 'preparing':
-        case 'pending':
-        case 'pending_review':
-        case 'enroute':
-        case 'driver_enroute':
-        case 'backlogged':
-        case 'in_review':
-            return 'yellow';
-        case 'info':
-        case 'in_progress':
-        case 'low':
-        case 're_opened':
-            return 'blue';
-        default:
-            return 'yellow';
-    }
-}
+import { titleize, getColorFromStatus } from '../utils/format';
 
 /**
  * Given a base color and whether it's inverted or not,

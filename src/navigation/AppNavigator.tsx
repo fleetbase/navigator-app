@@ -1,7 +1,6 @@
 import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Boot } from './stacks/CoreStack';
-import { LocationPermission } from './stacks/LocationStack';
+import { Boot, LocationPermission } from './stacks/CoreStack';
 import AuthStack from './stacks/AuthStack';
 import DriverNavigator from './DriverNavigator';
 import { useIsNotAuthenticated, useIsAuthenticated } from '../contexts/AuthContext';
