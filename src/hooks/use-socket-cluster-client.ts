@@ -36,7 +36,7 @@ const useSocketClusterClient = () => {
             };
 
             const handleError = (err) => {
-                console.error(`Error consuming data on channel "${channelName}":`, err);
+                console.warn(`Error consuming data on channel "${channelName}":`, err);
             };
 
             // Start consuming the AsyncIterator

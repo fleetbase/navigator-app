@@ -12,17 +12,17 @@ const IssuesScreen = () => {
     const fleetbase = useFleetbase();
     const [issues, setIssueList] = useState([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); 
+    const [isLoading, setIsLoading] = useState(true);
 
     const fetchIssues = async () => {
-        setIsLoading(true); 
+        setIsLoading(true);
         try {
             const adapter = fleetbase.getAdapter();
             const response = await adapter.get('issues');
             setIssueList(response);
         } catch (error) {
-            console.error('Error fetching issue:', error);
-            setIssueList([]); 
+            console.warn('Error fetching issue:', error);
+            setIssueList([]);
         } finally {
             setIsLoading(false);
         }
@@ -44,7 +44,8 @@ const IssuesScreen = () => {
         <View style={tailwind('px-4 py-2')}>
             <TouchableOpacity
                 style={tailwind('bg-gray-900 border border-gray-800 rounded-xl shadow-sm w-full p-4')}
-                onPress={() => navigation.navigate('IssueScreen', { issue: item, isEdit: true })}>
+                onPress={() => navigation.navigate('IssueScreen', { issue: item, isEdit: true })}
+            >
                 <View style={tailwind('flex flex-col mb-3')}>
                     <View style={tailwind('flex-1 mb-1')}>
                         <Text style={tailwind('text-gray-100 font-semibold')}>{translate('Core.IssueScreen.report')}:</Text>
@@ -78,7 +79,7 @@ const IssuesScreen = () => {
     if (isLoading) {
         return (
             <View style={[tailwind('flex flex-1 items-center justify-center bg-gray-800')]}>
-                <ActivityIndicator size="large"  color="#FFFFFF" />
+                <ActivityIndicator size='large' color='#FFFFFF' />
             </View>
         );
     }
@@ -94,7 +95,7 @@ const IssuesScreen = () => {
             <FlatList
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchIssues} tintColor={getColorCode('text-blue-200')} />}
                 data={issues}
-                keyExtractor={item => item.id}
+                keyExtractor={(item) => item.id}
                 renderItem={renderItem}
             />
             <View style={tailwind('p-4')}>
@@ -103,7 +104,8 @@ const IssuesScreen = () => {
                         style={tailwind('flex-1')}
                         onPress={() => {
                             navigation.navigate('IssueScreen');
-                        }}>
+                        }}
+                    >
                         <View style={tailwind('btn bg-gray-900 border border-gray-700')}>
                             <Text style={tailwind('font-semibold text-gray-50 text-base')}>{translate('Core.IssueScreen.createIssue')}</Text>
                         </View>

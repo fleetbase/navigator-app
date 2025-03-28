@@ -56,7 +56,7 @@ export async function geocode(latitude, longitude, options = {}) {
         const result = response.data.results[0];
         return options.asGoogleAddress === true ? new GoogleAddress(result) : result;
     } catch (error) {
-        console.error('Geocoding error:', error);
+        console.warn('Geocoding error:', error);
         return null;
     }
 }
@@ -92,7 +92,7 @@ export async function geocodeAutocomplete(input, coordinates = null) {
 
         return predictions;
     } catch (error) {
-        console.error('Autocomplete error:', error);
+        console.warn('Autocomplete error:', error);
         return [];
     }
 }
@@ -117,7 +117,7 @@ export async function getPlaceDetails(placeId) {
         // Return the full result object from Google
         return response.data.result;
     } catch (error) {
-        console.error('Error fetching place details:', error.message);
+        console.warn('Error fetching place details:', error.message);
         return null;
     }
 }
@@ -271,6 +271,13 @@ export function serializGoogleAddress(googleAddress) {
 export async function getLiveLocation() {
     return new Promise((resolve) => {
         BackgroundGeolocation.getCurrentPosition(
+            {
+                samples: 3,
+                desiredAccuracy: 1,
+                extras: {
+                    event: 'getCurrentPosition',
+                },
+            },
             async (position) => {
                 const { latitude, longitude } = position.coords;
 
@@ -305,6 +312,13 @@ export async function getCurrentLocation() {
 
     return new Promise((resolve) => {
         BackgroundGeolocation.getCurrentPosition(
+            {
+                samples: 3,
+                desiredAccuracy: 1,
+                extras: {
+                    event: 'getCurrentPosition',
+                },
+            },
             async (position) => {
                 const { latitude, longitude } = position.coords;
 

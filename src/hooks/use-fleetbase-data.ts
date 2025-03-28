@@ -27,7 +27,7 @@ const useFleetbaseData = (sdkMethod, onDataLoaded, options = {}) => {
                 }
             } catch (err) {
                 setError(err);
-                console.error('Error loading storefront data:', err);
+                console.warn('Error loading storefront data:', err);
             } finally {
                 setLoading(false);
             }

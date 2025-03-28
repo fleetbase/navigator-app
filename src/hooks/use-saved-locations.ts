@@ -116,7 +116,7 @@ const useSavedLocations = () => {
             setCustomerLocations(places.map((place) => place.serialize()));
             return places;
         } catch (err) {
-            console.error('Error fetching customer locations:', err);
+            console.warn('Error fetching customer locations:', err);
             setError(err);
         } finally {
             setLoading(false);
