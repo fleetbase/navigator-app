@@ -15,7 +15,7 @@ const DriverOnlineToggle = ({ showLabel = false, ...props }) => {
             const { isOnline } = await toggleOnline(checked);
             setChecked(isOnline);
         } catch (err) {
-            console.error('Error attempting to change driver online status:', err);
+            console.warn('Error attempting to change driver online status:', err);
         }
     };
 

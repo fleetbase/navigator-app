@@ -90,7 +90,7 @@ const ChatChannelScreen = ({ route }) => {
             addFeedItem(newMessage);
             await reloadChannel();
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.warn('Error sending message:', error);
         }
     };
 
@@ -99,7 +99,7 @@ const ChatChannelScreen = ({ route }) => {
             const reloadedChannel = await reloadCurrentChannel();
             scrollToBottom(0);
         } catch (error) {
-            console.error('Error reloading channel:', error);
+            console.warn('Error reloading channel:', error);
         }
     };
 

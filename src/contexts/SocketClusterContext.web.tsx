@@ -27,7 +27,7 @@ export const SocketClusterProvider = ({ children }) => {
                     console.log('Socket connected.');
                 }
             } catch (err) {
-                console.error('Error in connect listener:', err);
+                console.warn('Error in connect listener:', err);
             }
         })();
 
@@ -38,7 +38,7 @@ export const SocketClusterProvider = ({ children }) => {
                     console.log('Socket disconnected.');
                 }
             } catch (err) {
-                console.error('Error in disconnect listener:', err);
+                console.warn('Error in disconnect listener:', err);
             }
         })();
 
@@ -46,10 +46,10 @@ export const SocketClusterProvider = ({ children }) => {
             try {
                 for await (let err of scSocket.listener('error')) {
                     setError(err);
-                    console.error('Socket error:', err);
+                    console.warn('Socket error:', err);
                 }
             } catch (err) {
-                console.error('Error in error listener:', err);
+                console.warn('Error in error listener:', err);
             }
         })();
 
@@ -83,7 +83,7 @@ export const SocketClusterProvider = ({ children }) => {
                             break;
                         }
                     } catch (err) {
-                        console.error(`Error in channel "${channelName}" subscribe listener:`, err);
+                        console.warn(`Error in channel "${channelName}" subscribe listener:`, err);
                     }
                 })();
 
@@ -95,13 +95,13 @@ export const SocketClusterProvider = ({ children }) => {
                             // Process the data or dispatch an event here.
                         }
                     } catch (err) {
-                        console.error(`Error in channel "${channelName}" listener:`, err);
+                        console.warn(`Error in channel "${channelName}" listener:`, err);
                     }
                 })();
 
                 return channel;
             } catch (err) {
-                console.error(`Failed to subscribe to channel "${channelName}":`, err);
+                console.warn(`Failed to subscribe to channel "${channelName}":`, err);
                 return null;
             }
         },
@@ -118,7 +118,7 @@ export const SocketClusterProvider = ({ children }) => {
                 await socket.closeChannel(channelName);
                 console.log(`Gracefully closed channel "${channelName}".`);
             } catch (err) {
-                console.error(`Error while closing channel "${channelName}":`, err);
+                console.warn(`Error while closing channel "${channelName}":`, err);
             }
         },
         [socket]
@@ -134,7 +134,7 @@ export const SocketClusterProvider = ({ children }) => {
                 await socket.killChannel(channelName);
                 console.log(`Forcefully killed channel "${channelName}".`);
             } catch (err) {
-                console.error(`Error while killing channel "${channelName}":`, err);
+                console.warn(`Error while killing channel "${channelName}":`, err);
             }
         },
         [socket]
@@ -149,7 +149,7 @@ export const SocketClusterProvider = ({ children }) => {
             await socket.closeAllChannels();
             console.log('Gracefully closed all channels.');
         } catch (err) {
-            console.error('Error while closing all channels:', err);
+            console.warn('Error while closing all channels:', err);
         }
     }, [socket]);
 
@@ -162,7 +162,7 @@ export const SocketClusterProvider = ({ children }) => {
             await socket.killAllChannels();
             console.log('Forcefully killed all channels.');
         } catch (err) {
-            console.error('Error while killing all channels:', err);
+            console.warn('Error while killing all channels:', err);
         }
     }, [socket]);
 

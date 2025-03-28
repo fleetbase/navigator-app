@@ -78,7 +78,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
                 const orders = await fleetbase.orders.query(params);
                 return orders;
             } catch (error) {
-                console.error('Error fetching orders:', error);
+                console.warn('Error fetching orders:', error);
                 throw error;
             } finally {
                 if (setIsFetching) setIsFetching(false);
@@ -107,7 +107,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
                 setAllActiveOrders(serializeCollection(fetchedOrders));
                 hasLoadedActiveRef.current = true;
             } catch (error) {
-                console.error('Unable to load active orders for driver:', error);
+                console.warn('Unable to load active orders for driver:', error);
                 setAllActiveOrders([]);
             } finally {
                 activeOrdersPromiseRef.current = null;
@@ -126,7 +126,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
                 setAllRecentOrders(serializeCollection(fetchedOrders));
                 hasLoadedRecentRef.current = true;
             } catch (error) {
-                console.error('Unable to load recent orders for driver:', error);
+                console.warn('Unable to load recent orders for driver:', error);
                 setAllRecentOrders([]);
             } finally {
                 recentOrdersPromiseRef.current = null;
@@ -146,7 +146,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
                 setCurrentOrders(serializeCollection(fetchedOrders));
                 hasLoadedCurrentRef.current = true;
             } catch (error) {
-                console.error('Unable to load current orders for driver:', error);
+                console.warn('Unable to load current orders for driver:', error);
                 setCurrentOrders([]);
             } finally {
                 currentOrdersPromiseRef.current = null;

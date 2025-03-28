@@ -54,7 +54,7 @@ export const NotificationProvider = ({ children }) => {
 
         // Failed to register for remote notifications
         const registrationFailedListener = Notifications.events().registerRemoteNotificationsRegistrationFailed((error) => {
-            console.error('Failed to register for remote notifications:', error);
+            console.warn('Failed to register for remote notifications:', error);
         });
 
         // Clean up listeners on unmount

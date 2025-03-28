@@ -8,7 +8,7 @@ const ChatParticipantAvatar = ({ participant, size = '$5' }) => {
                 <Avatar.Image accessibilityLabel={participant.name} src={participant.avatar_url} />
                 <Avatar.Fallback delayMs={800} backgroundColor='$primary' textAlign='center' alignItems='center' justifyContent='center'>
                     <Text fontSize='$8' fontWeight='bold' color='$white' textTransform='uppercase' textAlign='center'>
-                        {abbreviateName(participant.name)}
+                        {abbreviateName(participant.name ?? participant.username)}
                     </Text>
                 </Avatar.Fallback>
             </Avatar>

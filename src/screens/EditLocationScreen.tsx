@@ -157,7 +157,7 @@ const EditLocationScreen = ({ route }) => {
 
                 handleRedirect();
             } catch (error) {
-                console.error('Error deleting saved address: ', error);
+                console.warn('Error deleting saved address: ', error);
                 toast.error(error.message, { position: ToastPosition.bottom });
             }
         }

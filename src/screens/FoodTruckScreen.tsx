@@ -106,7 +106,7 @@ const FoodTruckScreen = () => {
                 // Otherwise, load all service areas and use the first available one.
                 const areas = await fleetbase.serviceAreas.findAll();
                 if (!isArray(areas) || areas.length === 0) {
-                    console.error('No service areas found');
+                    console.warn('No service areas found');
                     return null;
                 }
                 areaRecord = areas[0];
@@ -116,7 +116,7 @@ const FoodTruckScreen = () => {
             const loadedServiceArea = areaRecord && typeof areaRecord.serialize === 'function' ? areaRecord.serialize() : null;
 
             if (!loadedServiceArea) {
-                console.error('Service area could not be serialized');
+                console.warn('Service area could not be serialized');
                 return null;
             }
 
@@ -124,7 +124,7 @@ const FoodTruckScreen = () => {
             setServiceArea(loadedServiceArea);
             return loadedServiceArea;
         } catch (error) {
-            console.error('Error loading service area:', error);
+            console.warn('Error loading service area:', error);
             return null;
         }
     }, [fleetbase, setServiceArea]);
@@ -149,7 +149,7 @@ const FoodTruckScreen = () => {
 
                 return serializedZones;
             } catch (error) {
-                console.error('Error loading zones:', error);
+                console.warn('Error loading zones:', error);
                 return [];
             }
         },
@@ -167,7 +167,7 @@ const FoodTruckScreen = () => {
                 setFoodTrucks(serializedFoodTrucks);
                 return serializedFoodTrucks;
             } catch (error) {
-                console.error('Error loading food trucks:', error);
+                console.warn('Error loading food trucks:', error);
                 return [];
             }
         },

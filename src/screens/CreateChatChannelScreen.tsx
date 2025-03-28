@@ -1,12 +1,13 @@
 import { useRef, useEffect, useCallback, useState, useMemo, memo } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { FlatList, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard, Platform } from 'react-native';
+import { FlatList, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard, Platform, Alert } from 'react-native';
 import { Text, Input, YStack, XStack, Button, Avatar, Separator, Spinner, useTheme } from 'tamagui';
 import { PortalHost } from '@gorhom/portal';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus, faTimes, faCheck, faChevronLeft, faSave } from '@fortawesome/free-solid-svg-icons';
 import { last, abbreviateName, later } from '../utils';
 import { formatWhatsAppTimestamp } from '../utils/format';
+import { toast } from '../utils/toast';
 import { useChat } from '../contexts/ChatContext';
 import { useAuth } from '../contexts/AuthContext';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
@@ -33,22 +34,23 @@ const CreateChatChannelScreen = ({ route }) => {
         setSelectedParticipants((prevSelected) => prevSelected.filter((selected) => selected !== participant.id));
     };
 
-    const handleCreateChat = async () => {
+    const handleCreateChat = useCallback(async () => {
         if (!channelName.trim()) {
-            return;
+            return Alert.alert('Chat channel name is required.');
         }
 
         setIsLoading(true);
 
         try {
             await createChannel({ name: channelName, participants: [driver.getAttribute('user'), ...selectedParticipants] });
+            toast.success(`New chat channel created: ${channelName}`);
             navigation.goBack();
         } catch (err) {
             console.warn('Error creating new chat channel:', err);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [channelName, createChannel, navigation]);
 
     const isSelected = useCallback(
         (participant) => {

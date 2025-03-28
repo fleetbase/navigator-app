@@ -24,7 +24,7 @@ const CreateAccountVerifyScreen = ({ route }) => {
         try {
             await verifyAccountCreation(phone, code, { name, phone });
         } catch (error) {
-            console.error('Error verifying account creation code:', error);
+            console.warn('Error verifying account creation code:', error);
             toast.error(error.message);
         }
     };

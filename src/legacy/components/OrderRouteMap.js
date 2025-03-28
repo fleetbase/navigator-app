@@ -12,7 +12,7 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const OrderRouteMap = ({ order }) => {
     const isMultiDropOrder = !isEmpty(order.getAttribute('payload.waypoints', []));
 
-    const getCurrentLeg = order => {
+    const getCurrentLeg = (order) => {
         const payload = order.getAttribute('payload');
         const { waypoints, current_waypoint } = payload;
 
@@ -20,12 +20,12 @@ const OrderRouteMap = ({ order }) => {
             return false;
         }
 
-        return waypoints.find(waypoint => {
+        return waypoints.find((waypoint) => {
             return waypoint.id === current_waypoint;
         });
     };
 
-    const getFirstWaypoint = order => {
+    const getFirstWaypoint = (order) => {
         const payload = order.getAttribute('payload');
 
         if (payload?.pickup) {
@@ -41,7 +41,7 @@ const OrderRouteMap = ({ order }) => {
         return firstWaypoint;
     };
 
-    const getLastWaypoint = order => {
+    const getLastWaypoint = (order) => {
         const payload = order.getAttribute('payload');
 
         if (payload?.dropoff) {
@@ -57,14 +57,14 @@ const OrderRouteMap = ({ order }) => {
         return lastWaypoint;
     };
 
-    const getMiddleWaypoints = order => {
+    const getMiddleWaypoints = (order) => {
         const payload = order.getAttribute('payload');
         const { waypoints, pickup, dropoff } = payload;
 
         if (!pickup && !dropoff && waypoints.length) {
             const middleWaypoints = waypoints.slice(1, waypoints.length - 1);
 
-            middleWaypoints.forEach(waypoint => {
+            middleWaypoints.forEach((waypoint) => {
                 waypoint.completed = waypoint.status_code === 'COMPLETED';
             });
 
@@ -87,7 +87,7 @@ const OrderRouteMap = ({ order }) => {
     const d = [...destination.reverse()];
 
     const handleLaunchNavigator = async () => {
-        LaunchNavigator.isAppAvailable(LaunchNavigator.APP.GOOGLE_MAPS).then(isGoogleMapAvailable => {
+        LaunchNavigator.isAppAvailable(LaunchNavigator.APP.GOOGLE_MAPS).then((isGoogleMapAvailable) => {
             if (isGoogleMapAvailable) {
                 app = LaunchNavigator.APP.GOOGLE_MAPS;
             } else {
@@ -101,7 +101,7 @@ const OrderRouteMap = ({ order }) => {
             })
 
                 .then(() => console.log('Launched navigator'))
-                .catch(err => console.error('Error launching navigator: ' + err));
+                .catch((err) => console.warn('Error launching navigator: ' + err));
         });
     };
 

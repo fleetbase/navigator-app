@@ -37,7 +37,7 @@ export const SocketClusterProvider = ({ children }) => {
 
         const handleError = (err) => {
             setError(err);
-            console.error('Socket encountered error:', err);
+            console.warn('Socket encountered error:', err);
         };
 
         // Attach event listeners using AsyncIterator
@@ -87,7 +87,7 @@ export const SocketClusterProvider = ({ children }) => {
                 console.log(`Subscribed to channel "${channelName}".`);
                 return channel;
             } catch (err) {
-                console.error(`Failed to subscribe to channel "${channelName}":`, err);
+                console.warn(`Failed to subscribe to channel "${channelName}":`, err);
                 return null;
             }
         },
@@ -109,7 +109,7 @@ export const SocketClusterProvider = ({ children }) => {
                 await socket.closeChannel(channelName);
                 console.log(`Gracefully closed channel "${channelName}".`);
             } catch (err) {
-                console.error(`Error while closing channel "${channelName}":`, err);
+                console.warn(`Error while closing channel "${channelName}":`, err);
             }
         },
         [socket]
@@ -130,7 +130,7 @@ export const SocketClusterProvider = ({ children }) => {
                 await socket.killChannel(channelName);
                 console.log(`Forcefully killed channel "${channelName}".`);
             } catch (err) {
-                console.error(`Error while killing channel "${channelName}":`, err);
+                console.warn(`Error while killing channel "${channelName}":`, err);
             }
         },
         [socket]
@@ -149,7 +149,7 @@ export const SocketClusterProvider = ({ children }) => {
             await socket.closeAllChannels();
             console.log('Gracefully closed all channels.');
         } catch (err) {
-            console.error('Error while closing all channels:', err);
+            console.warn('Error while closing all channels:', err);
         }
     }, [socket]);
 
@@ -166,7 +166,7 @@ export const SocketClusterProvider = ({ children }) => {
             await socket.killAllChannels();
             console.log('Forcefully killed all channels.');
         } catch (err) {
-            console.error('Error while killing all channels:', err);
+            console.warn('Error while killing all channels:', err);
         }
     }, [socket]);
 
