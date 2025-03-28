@@ -258,7 +258,7 @@ export async function loadPersistedResource(request, options = {}) {
 
         return restoreSdkInstance(fetchedData, type) || defaultValue;
     } catch (error) {
-        console.error('[loadPersistedResource] Error loading resource:', error);
+        console.warn('[loadPersistedResource] Error loading resource:', error);
         return defaultValue; // Ensure a fallback value
     }
 }
@@ -387,10 +387,11 @@ export function isValidPhoneNumber(phoneNumber) {
 
 export function abbreviateName(name, length = 2) {
     if (typeof name !== 'string' || name.trim() === '') {
-        throw new Error('Invalid name. Please provide a valid non-empty string.');
+        return '-';
     }
+
     if (![2, 3].includes(length)) {
-        throw new Error('Invalid length. Only 2 or 3 are supported.');
+        length = 2;
     }
 
     name = name.trim();
@@ -492,7 +493,7 @@ export function consumeAsyncIterator(asyncIterator, onData, onError) {
             if (onError) {
                 onError(error);
             } else {
-                console.error('Error in consumeAsyncIterator:', error);
+                console.warn('Error in consumeAsyncIterator:', error);
             }
         }
     };

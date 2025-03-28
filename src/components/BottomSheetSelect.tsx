@@ -67,6 +67,7 @@ const BottomSheetSelect = forwardRef(
         }, [searchTerm, options, optionLabel, optionValue]);
 
         const openBottomSheet = () => {
+            Keyboard.dismiss();
             bottomSheetRef.current?.snapToPosition(snapTo);
         };
 
@@ -75,18 +76,21 @@ const BottomSheetSelect = forwardRef(
             bottomSheetRef.current?.close();
         };
 
-        const handleSelect = (option) => {
-            setSelected(option);
-            closeBottomSheet();
+        const handleSelect = useCallback(
+            (option) => {
+                setSelected(option);
+                closeBottomSheet();
 
-            if (typeof onChange === 'function') {
-                onChange(option);
-            }
+                if (typeof onChange === 'function') {
+                    onChange(option);
+                }
 
-            if (typeof onSelect === 'function') {
-                onSelect(option);
-            }
-        };
+                if (typeof onSelect === 'function') {
+                    onSelect(option);
+                }
+            },
+            [setSelected]
+        );
 
         const renderSelected = useCallback(() => {
             if (typeof selected === 'string') {
@@ -201,6 +205,8 @@ const BottomSheetSelect = forwardRef(
                 </BottomSheet>
             );
         };
+
+        console.log('[BottomSheetSelect Rendered!]');
 
         return (
             <YStack>

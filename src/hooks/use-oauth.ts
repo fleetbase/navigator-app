@@ -72,7 +72,7 @@ const useOAuth = () => {
         } catch (err) {
             setError(err.message);
             setLoading(false);
-            console.error('Apple Sign-In error:', err);
+            console.warn('Apple Sign-In error:', err);
         } finally {
             setLoading(false);
         }
@@ -106,7 +106,7 @@ const useOAuth = () => {
         } catch (err) {
             setError(err.message);
             setLoading(false);
-            console.error('Facebook Sign-In error:', err);
+            console.warn('Facebook Sign-In error:', err);
         } finally {
             setLoading(false);
         }
@@ -145,7 +145,7 @@ const useOAuth = () => {
         } catch (err) {
             setError(err.message);
             setLoading(false);
-            console.error('Google Sign-In error:', err);
+            console.warn('Google Sign-In error:', err);
         } finally {
             setLoading(false);
         }

@@ -34,7 +34,7 @@ const SettingsScreen = ({ route }) => {
 
             setEditableFields(editableEntityFields);
         } catch (error) {
-            console.error('Error', error);
+            console.warn('Error', error);
         } finally {
             setIsLoading(false);
         }
@@ -66,17 +66,18 @@ const SettingsScreen = ({ route }) => {
 
                 navigation.goBack();
             })
-            .catch(error => {
+            .catch((error) => {
                 setIsLoading(false);
                 logError(error);
             });
     };
 
     return (
-        <KeyboardAvoidingView style={tailwind('flex-1')} behavior="padding">
+        <KeyboardAvoidingView style={tailwind('flex-1')} behavior='padding'>
             <ScrollView
                 style={[tailwind('w-full bg-gray-800')]}
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchSettings} tintColor={getColorCode('text-blue-200')} />}>
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchSettings} tintColor={getColorCode('text-blue-200')} />}
+            >
                 <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
                     <View style={tailwind('flex flex-row items-center justify-between p-4')}>
                         <Text style={tailwind('text-xl text-gray-50 font-semibold')}>{translate('Core.SettingsScreen.title')}</Text>
@@ -90,14 +91,14 @@ const SettingsScreen = ({ route }) => {
                         {isLoading && <ActivityIndicator color={getColorCode('text-gray-50')} style={tailwind('mr-2')} />}
                         <View style={tailwind('p-4')}>
                             {editableFields !== undefined && editableFields !== null ? (
-                                editableFields.map(field => {
+                                editableFields.map((field) => {
                                     return (
                                         <View style={tailwind('mb-4')} key={field}>
                                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate(`Core.SettingsScreen.${field}`)}</Text>
                                             <TextInput
                                                 value={value && value[field] !== undefined ? value[field]?.toString() : ''}
-                                                onChangeText={value =>
-                                                    setValue(prev => ({
+                                                onChangeText={(value) =>
+                                                    setValue((prev) => ({
                                                         ...prev,
                                                         [field]: value,
                                                     }))

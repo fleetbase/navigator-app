@@ -35,30 +35,30 @@ const ChatsScreen = () => {
             setIsLoading(false);
             return response;
         } catch (error) {
-            console.error('Error fetching channels:', error);
+            console.warn('Error fetching channels:', error);
             setIsLoading(false);
             return [];
         }
     };
 
-    const formatTime = dateTime => {
+    const formatTime = (dateTime) => {
         const date = new Date(dateTime);
         const formattedTime = format(date, 'HH:mm');
         return formattedTime;
     };
 
-    const handleDelete = async itemId => {
+    const handleDelete = async (itemId) => {
         try {
             const adapter = fleetbase.getAdapter();
-            await adapter.delete(`chat-channels/${itemId}`).then(res => {
+            await adapter.delete(`chat-channels/${itemId}`).then((res) => {
                 Toast.show({
                     type: 'success',
                     text1: `Channel deleted`,
                 });
             });
-            setChannels(channels.filter(item => item.id !== itemId));
+            setChannels(channels.filter((item) => item.id !== itemId));
         } catch (error) {
-            console.error('Error deleting channel:', error);
+            console.warn('Error deleting channel:', error);
         }
     };
 
@@ -66,7 +66,8 @@ const ChatsScreen = () => {
         <TouchableHighlight
             style={tailwind('flex flex-row bg-gray-900 mt-2 p-2 mx-4 rounded-lg')}
             onPress={() => navigation.navigate('ChatScreen', { channel: item })}
-            underlayColor={tailwind('bg-gray-900')}>
+            underlayColor={tailwind('bg-gray-900')}
+        >
             <View style={tailwind('flex flex-row')}>
                 <FastImage
                     source={item.participants.avatar_url ? { uri: item.participants.avatar_url } : require('../../../../assets/icon.png')}
@@ -94,7 +95,7 @@ const ChatsScreen = () => {
     if (isLoading) {
         return (
             <View style={[tailwind('flex flex-1 items-center justify-center bg-gray-800')]}>
-                <ActivityIndicator size="large" color="#FFFFFF" />
+                <ActivityIndicator size='large' color='#FFFFFF' />
             </View>
         );
     }

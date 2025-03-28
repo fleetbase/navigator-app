@@ -49,17 +49,10 @@ const useCurrentLocation = () => {
         setLoading(true);
         setError(null);
         try {
-            // if (isAuthenticated) {
-            //     const defaultAddress = getDefaultAddress(driver);
-            //     if (defaultAddress) {
-            //         await updateCurrentLocation(defaultAddress);
-            //         return;
-            //     }
-            // }
             const location = await fetchCurrentLocation();
             await updateCurrentLocation(location);
         } catch (err) {
-            console.error('Error fetching current location:', err);
+            console.warn('Error fetching current location:', err);
             setError(err);
         } finally {
             setLoading(false);
@@ -74,7 +67,7 @@ const useCurrentLocation = () => {
                 setLiveLocation(location.serialize());
             }
         } catch (err) {
-            console.error('Error fetching live location:', err);
+            console.warn('Error fetching live location:', err);
             setError(err);
         }
     }, [setLiveLocation]);

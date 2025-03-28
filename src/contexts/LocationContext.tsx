@@ -90,7 +90,7 @@ export const LocationProvider = ({ children }) => {
 
     // Callback to handle location errors.
     const onLocationError = useCallback((error) => {
-        console.error('[BackgroundGeolocation] onLocationError:', error);
+        console.warn('[BackgroundGeolocation] onLocationError:', error);
     }, []);
 
     // Function to start tracking.

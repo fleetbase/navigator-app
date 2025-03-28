@@ -204,7 +204,7 @@ export const AuthProvider = ({ children }) => {
                 await fleetbase.drivers.requestCreationCode(phone, method);
                 dispatch({ type: 'CREATING_ACCOUNT', phone, isSendingCode: false });
             } catch (error) {
-                console.error('[AuthContext] Account creation verification failed:', error);
+                console.warn('[AuthContext] Account creation verification failed:', error);
                 throw error;
             } finally {
                 dispatch({ type: 'CREATING_ACCOUNT', phone, isSendingCode: false });
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }) => {
                 createDriverSession(driver);
                 dispatch({ type: 'VERIFY', driver });
             } catch (error) {
-                console.error('[AuthContext] Account creation verification failed:', error);
+                console.warn('[AuthContext] Account creation verification failed:', error);
                 throw error;
             } finally {
                 dispatch({ type: 'VERIFY', isVerifyingCode: false });
@@ -239,7 +239,7 @@ export const AuthProvider = ({ children }) => {
                 await fleetbase.drivers.login(phone);
                 dispatch({ type: 'LOGIN', phone, isSendingCode: false });
             } catch (error) {
-                console.error('[AuthContext] Login failed:', error);
+                console.warn('[AuthContext] Login failed:', error);
                 throw error;
             } finally {
                 dispatch({ type: 'LOGIN', phone, isSendingCode: false });
@@ -267,7 +267,7 @@ export const AuthProvider = ({ children }) => {
                 createDriverSession(driver);
                 dispatch({ type: 'VERIFY', driver });
             } catch (error) {
-                console.error('[AuthContext] Code verification failed:', error);
+                console.warn('[AuthContext] Code verification failed:', error);
                 throw error;
             } finally {
                 dispatch({ type: 'VERIFY', isVerifyingCode: false });

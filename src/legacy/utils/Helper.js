@@ -41,7 +41,7 @@ export default class HelperUtil {
 
         if (_country !== null) {
             // eslint-disable-next-line radix
-            return _list.find(c => c.iso2 === _country || parseInt(c.phone) === parseInt(_country));
+            return _list.find((c) => c.iso2 === _country || parseInt(c.phone) === parseInt(_country));
         }
 
         return _list;
@@ -63,7 +63,7 @@ export default class HelperUtil {
             return;
         }
 
-        const index = places.findIndex(p => p.id === place.id);
+        const index = places.findIndex((p) => p.id === place.id);
 
         if (place.isDeleted) {
             places = places.removeAt(index);
@@ -372,7 +372,7 @@ export default class HelperUtil {
      * @param {*} mixed
      * @memberof HelperUtil
      */
-    static isFalsy = mixed => {
+    static isFalsy = (mixed) => {
         return !mixed === true || mixed === '0';
     };
 
@@ -432,7 +432,7 @@ export default class HelperUtil {
             return defaultColorCode;
         }
 
-        const rgba2rgb = rgbaString => {
+        const rgba2rgb = (rgbaString) => {
             const decimals = rgbaString.replace('rgba', 'rgb').split(',');
             decimals.pop();
 
@@ -510,10 +510,10 @@ export default class HelperUtil {
                 try {
                     const { value, done } = await errorIterator.next();
                     if (done) return;
-                    console.error('[Socket Error]', value);
+                    console.warn('[Socket Error]', value);
                     return processError();
                 } catch (error) {
-                    console.error('Error during error iteration:', error);
+                    console.warn('Error during error iteration:', error);
                 }
             };
             processError();
@@ -530,7 +530,7 @@ export default class HelperUtil {
                     console.log('[Socket Connected]', value);
                     return processConnect();
                 } catch (error) {
-                    console.error('Error during connect iteration:', error);
+                    console.warn('Error during connect iteration:', error);
                 }
             };
             processConnect();
@@ -550,7 +550,7 @@ export default class HelperUtil {
 
             console.log('Listening to channel for events now');
 
-            const handleAsyncIteration = async asyncIterable => {
+            const handleAsyncIteration = async (asyncIterable) => {
                 console.log('[handleAsyncIteration]');
                 const iterator = asyncIterable[Symbol.asyncIterator]();
                 console.log('[iterator]', iterator);
@@ -575,7 +575,7 @@ export default class HelperUtil {
                         // Recursively process the next item
                         return processNext();
                     } catch (error) {
-                        console.error('Error during async iteration:', error);
+                        console.warn('Error during async iteration:', error);
                         // Optionally, handle the error or re-throw it
                         // throw error;
                     }
@@ -590,11 +590,11 @@ export default class HelperUtil {
                 try {
                     await handleAsyncIteration(channel);
                 } catch (error) {
-                    console.error('Error during async iteration:', error);
+                    console.warn('Error during async iteration:', error);
                 }
             })();
         } catch (error) {
-            console.error('Error during channel subscription or handling:', error);
+            console.warn('Error during channel subscription or handling:', error);
         }
     }
 
@@ -603,7 +603,7 @@ export default class HelperUtil {
 
         return HelperUtil.createSocketAndListen(channelId, ({ event, data }) => {
             if (typeof data.id === 'string' && data.id.startsWith('order')) {
-                return fleetbase.orders.findRecord(data.id).then(order => {
+                return fleetbase.orders.findRecord(data.id).then((order) => {
                     const serializedOrder = order.serialize();
 
                     if (typeof callback === 'function') {
@@ -682,7 +682,10 @@ export {
     isApple,
     isArray,
     isEmpty,
-    isFalsy, isLastIndex, isObject, isVoid,
+    isFalsy,
+    isLastIndex,
+    isObject,
+    isVoid,
     listCountries,
     listenForOrdersFromSocket,
     logError,
@@ -690,6 +693,5 @@ export {
     stripHtml,
     stripIframeTags,
     sum,
-    toBoolean
+    toBoolean,
 };
-

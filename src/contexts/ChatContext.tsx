@@ -12,7 +12,7 @@ const ChatContext = createContext(null);
 export const ChatProvider: React.FC = ({ children }) => {
     const theme = useTheme();
     const { driver } = useAuth();
-    const { adapter } = useFleetbase();
+    const { adapter, fleetbase } = useFleetbase();
     const [channels, setChannels] = useStorage(`${driver?.id ?? 'anon'}_chat_channels`, []);
     const [currentChannel, setCurrentChannel] = useStorage(`${driver?.id ?? 'anon'}_current_channel`);
     const [isLoading, setIsLoading] = useState(false);
@@ -225,6 +225,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             if (!adapter) return;
 
             setIsLoading(true);
+
             try {
                 const availableParticipants = await adapter.get('chat-channels/available-participants', { channel: channel?.id });
                 return availableParticipants;

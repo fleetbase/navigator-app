@@ -24,7 +24,7 @@ const OrganizationSearchScreen = ({ navigation }) => {
             setOrganizations(response);
             return response;
         } catch (error) {
-            console.error('Error fetching organizations:', error);
+            console.warn('Error fetching organizations:', error);
             return [];
         }
     };
@@ -33,28 +33,28 @@ const OrganizationSearchScreen = ({ navigation }) => {
         fetchOrganizations();
     }, []);
 
-    const handleSearch = text => {
+    const handleSearch = (text) => {
         setSearch(text);
         if (text === '') {
             setResults([]);
         } else {
-            const filteredOrganizations = organizations.filter(org => org.name.toLowerCase().includes(text.toLowerCase()));
+            const filteredOrganizations = organizations.filter((org) => org.name.toLowerCase().includes(text.toLowerCase()));
             setResults(filteredOrganizations);
         }
     };
 
-    const fetchSettings = async organizationId => {
+    const fetchSettings = async (organizationId) => {
         try {
             const adapter = fleetbase.getAdapter();
             const response = await adapter.get(`onboard/driver-onboard-settings/${organizationId}`);
             return response.driverOnboardSettings;
         } catch (error) {
-            console.error('Error fetching settings:', error);
+            console.warn('Error fetching settings:', error);
             return null;
         }
     };
 
-    const handleOrganizationSelection = async item => {
+    const handleOrganizationSelection = async (item) => {
         setIsLoading(true);
         const settings = await fetchSettings(item.id);
 

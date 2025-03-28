@@ -75,7 +75,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
                 setPhotos((prev) => [...prev, { uri: node.image.uri }]);
             }
         } catch (error) {
-            console.error('Error selecting from camera roll:', error);
+            console.warn('Error selecting from camera roll:', error);
         }
     }, []);
 

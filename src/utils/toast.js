@@ -91,7 +91,7 @@ export function info(message, options = {}) {
 }
 
 export function warning(message, options = {}) {
-    reactNativeToast.warning(message, {
+    reactNativeToast(message, {
         ...options,
         position: ToastPosition.BOTTOM,
         styles: getWarningStyle(),

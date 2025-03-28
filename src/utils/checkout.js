@@ -9,7 +9,7 @@ export async function getServiceQuote(storeLocation, customerLocation, cart) {
         const serviceQuote = await quote.fetchServiceQuotesFromCart(storeLocation, customerLocation, cart);
         return serviceQuote;
     } catch (error) {
-        console.error('Error fetching service quote:', error);
+        console.warn('Error fetching service quote:', error);
         throw error;
     }
 }
@@ -19,7 +19,7 @@ export async function loadPaymentGateways(store) {
         const gateways = await store.getPaymentGateways();
         return gateways;
     } catch (error) {
-        console.error('Error loading payment gateways:', error);
+        console.warn('Error loading payment gateways:', error);
         throw error;
     }
 }
@@ -32,7 +32,7 @@ export async function getPaymentGateway(store, code = null) {
         const paymentGateway = gateways.find((gateway) => gateway.getAttribute('code') === code);
         return paymentGateway;
     } catch (error) {
-        console.error('Error loading and finding payment gateway:', error);
+        console.warn('Error loading and finding payment gateway:', error);
         throw error;
     }
 }

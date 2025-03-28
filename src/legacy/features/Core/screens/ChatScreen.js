@@ -45,7 +45,7 @@ const ChatScreen = ({ route }) => {
         if (!channel) return;
 
         console.log(`[Connecting to socket on channel chat.${channel.id}]`);
-        createSocketAndListen(`chat.${channel.id}`, socketEvent => {
+        createSocketAndListen(`chat.${channel.id}`, (socketEvent) => {
             console.log('Socket event: ', socketEvent, typeof socketEvent);
             const { event, data } = socketEvent;
             console.log('Socket event: ', event, data);
@@ -64,7 +64,7 @@ const ChatScreen = ({ route }) => {
         });
     }, [isMounted]);
 
-    const parseMessages = messages => {
+    const parseMessages = (messages) => {
         return messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).flatMap((message, index) => parseMessage(message, index));
     };
 
@@ -115,11 +115,11 @@ const ChatScreen = ({ route }) => {
         }
     };
 
-    const currentParticipant = channel?.participants.find(chatParticipant => {
+    const currentParticipant = channel?.participants.find((chatParticipant) => {
         return chatParticipant.user === driverUser;
     });
 
-    const uploadFile = async url => {
+    const uploadFile = async (url) => {
         try {
             const resBase64 = await adapter.post('files/base64', {
                 data: url.base64,
@@ -135,9 +135,9 @@ const ChatScreen = ({ route }) => {
                 file: resBase64.id,
             });
 
-            setMessages(previousMessages => GiftedChat.append(previousMessages, parseMessage({ data: messageRes }, messageRes.id)));
+            setMessages((previousMessages) => GiftedChat.append(previousMessages, parseMessage({ data: messageRes }, messageRes.id)));
         } catch (error) {
-            console.error('Error uploading file:', error);
+            console.warn('Error uploading file:', error);
         }
     };
 
@@ -154,7 +154,7 @@ const ChatScreen = ({ route }) => {
             includeBase64: true,
         };
 
-        launchImageLibrary(options, response => {
+        launchImageLibrary(options, (response) => {
             if (response.didCancel) {
                 if (!response) return;
             } else if (response.error) {
@@ -165,7 +165,7 @@ const ChatScreen = ({ route }) => {
         });
     };
 
-    const openMedia = async url => {
+    const openMedia = async (url) => {
         const fileNameParts = url?.split('/')?.pop()?.split('?');
         const fileName = fileNameParts.length > 0 ? fileNameParts[0] : '';
 
@@ -186,26 +186,26 @@ const ChatScreen = ({ route }) => {
         setShowUserList(!showUserList);
     };
 
-    const fetchUsers = async id => {
+    const fetchUsers = async (id) => {
         try {
             const response = await adapter.get(`chat-channels/${id}/available-participants`);
             setUsers(response);
         } catch (error) {
-            console.error('Error fetching users:', error);
+            console.warn('Error fetching users:', error);
         }
     };
 
-    const reloadChannel = async id => {
+    const reloadChannel = async (id) => {
         try {
             const res = await adapter.get(`chat-channels/${id}`);
             setChannel(res);
         } catch (error) {
-            console.error('Error: ', error);
+            console.warn('Error: ', error);
         }
     };
 
     const addParticipant = async (channelId, participantId, participantName) => {
-        const isParticipantAdded = channel.participants.some(participant => participant.user === participantId);
+        const isParticipantAdded = channel.participants.some((participant) => participant.user === participantId);
 
         if (isParticipantAdded) {
             Alert.alert('Alert', `${participantName} is already a part of this channel.`, [{ text: 'OK' }]);
@@ -219,14 +219,14 @@ const ChatScreen = ({ route }) => {
 
             setShowUserList(false);
         } catch (error) {
-            console.error('Add participant:', error);
+            console.warn('Add participant:', error);
         }
     };
 
     const renderPartificants = ({ participants }) => {
         return (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={isAndroid ? tailwind('p-0') : tailwind('p-2')}>
-                {participants.map(participant => (
+                {participants.map((participant) => (
                     <View key={participant.id} style={isAndroid ? tailwind('flex flex-col items-center mt-2') : tailwind('flex flex-col items-center mr-2')}>
                         <View style={tailwind('relative')}>
                             <View style={tailwind('flex flex-row items-center')}>
@@ -256,8 +256,9 @@ const ChatScreen = ({ route }) => {
                                         zIndex: 2,
                                     },
                                 ]}
-                                onPress={() => confirmRemove(participant.id)}>
-                                <FontAwesomeIcon icon={faTrash} size={14} color="#FF0000" />
+                                onPress={() => confirmRemove(participant.id)}
+                            >
+                                <FontAwesomeIcon icon={faTrash} size={14} color='#FF0000' />
                             </TouchableOpacity>
                         </View>
                         <Text style={tailwind('text-sm text-gray-300')}>{participant.name.length > 7 ? participant.name.substring(0, 7) + '..' : participant.name}</Text>
@@ -267,7 +268,7 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const confirmRemove = participantId => {
+    const confirmRemove = (participantId) => {
         Alert.alert(
             'Confirmation',
             'Are you sure you wish to remove this participant from the chat?',
@@ -285,40 +286,40 @@ const ChatScreen = ({ route }) => {
         );
     };
 
-    const removeParticipant = async participantId => {
+    const removeParticipant = async (participantId) => {
         try {
             await adapter.delete(`chat-channels/remove-participant/${participantId}`);
             await reloadChannel(channel.id);
         } catch (error) {
-            console.error('Remove participant:', error);
+            console.warn('Remove participant:', error);
         }
     };
 
-    const onSend = async newMessage => {
+    const onSend = async (newMessage) => {
         try {
             const message = await adapter.post(`chat-channels/${channel?.id}/send-message`, { sender: currentParticipant.id, content: newMessage[0].text });
             setShowUserList(false);
-            setMessages(previousMessages => GiftedChat.append(previousMessages, parseMessage({ data: message })));
+            setMessages((previousMessages) => GiftedChat.append(previousMessages, parseMessage({ data: message })));
         } catch (error) {
-            console.error('Send error:', error);
+            console.warn('Send error:', error);
         }
     };
 
-    const renderSend = props => {
+    const renderSend = (props) => {
         return (
             <Send {...props}>
-                <FontAwesomeIcon icon={faPaperPlane} size={20} color="#919498" style={tailwind('mr-2')} />
+                <FontAwesomeIcon icon={faPaperPlane} size={20} color='#919498' style={tailwind('mr-2')} />
             </Send>
         );
     };
 
-    const checkIsImage = url => {
+    const checkIsImage = (url) => {
         const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
         const urlExtension = url.split('.').pop().split('?')[0].toLowerCase();
         return imageExtensions.includes(urlExtension);
     };
 
-    const renderBubble = props => {
+    const renderBubble = (props) => {
         if (props.currentMessage.image) {
             return (
                 <TouchableOpacity onPress={() => openMedia(props.currentMessage.image)}>
@@ -346,7 +347,7 @@ const ChatScreen = ({ route }) => {
         }
     };
 
-    const renderActions = () => <Actions onPressActionButton={() => chooseFile()} optionTintColor="#222B45" />;
+    const renderActions = () => <Actions onPressActionButton={() => chooseFile()} optionTintColor='#222B45' />;
 
     return (
         <View style={tailwind('w-full h-full bg-gray-800')}>
@@ -376,23 +377,25 @@ const ChatScreen = ({ route }) => {
                     style={tailwind('justify-end m-0')}
                     backdropOpacity={0.5}
                     useNativeDriver
-                    animationIn="slideInUp"
-                    animationOut="slideOutDown">
+                    animationIn='slideInUp'
+                    animationOut='slideOutDown'
+                >
                     <View style={tailwind('bg-gray-800 w-full h-72 rounded-lg p-4')}>
                         <Text style={tailwind('text-lg mb-2 text-gray-300')}>{translate('Core.ChatScreen.title')}:</Text>
 
                         {isLoading ? (
                             <View style={tailwind('flex items-center justify-center h-full')}>
-                                <ActivityIndicator size="large" color="#FFFFFF" />
+                                <ActivityIndicator size='large' color='#FFFFFF' />
                             </View>
                         ) : (
                             <FlatList
                                 data={users}
-                                keyExtractor={item => item.id.toString()}
+                                keyExtractor={(item) => item.id.toString()}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
                                         onPress={() => addParticipant(channel.id, item.id, item.name, item.avatar_url)}
-                                        style={tailwind('flex flex-row items-center py-2  bg-gray-900 rounded-lg mb-2')}>
+                                        style={tailwind('flex flex-row items-center py-2  bg-gray-900 rounded-lg mb-2')}
+                                    >
                                         <View style={tailwind('flex flex-row items-center ml-2')}>
                                             <View
                                                 style={[
@@ -427,13 +430,13 @@ const ChatScreen = ({ route }) => {
             <View style={tailwind('flex-1 p-4')}>
                 <GiftedChat
                     messages={messages}
-                    onSend={messages => onSend(messages)}
+                    onSend={(messages) => onSend(messages)}
                     user={{
                         _id: currentParticipant?.id,
                     }}
                     renderBubble={renderBubble}
                     alwaysShowSend
-                    renderInputToolbar={props => <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />}
+                    renderInputToolbar={(props) => <InputToolbar {...props} containerStyle={tailwind('bg-white items-center justify-center mx-2 rounded-lg mb-0')} />}
                     renderSend={renderSend}
                     renderActions={renderActions}
                 />

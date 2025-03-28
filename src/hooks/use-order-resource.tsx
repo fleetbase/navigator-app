@@ -24,7 +24,7 @@ export function useOrderResource(order, options = {}) {
                 setData(data);
                 return data;
             } catch (err) {
-                console.error(`Error fetching data from ${endpoint}:`, err);
+                console.warn(`Error fetching data from ${endpoint}:`, err);
                 setError(err as Error);
             } finally {
                 setIsFetching(false);
