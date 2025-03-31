@@ -1,57 +1,50 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import Fleetbase from '@fleetbase/sdk';
-import Config from 'react-native-config';
-import useStorage, { getString } from './use-storage';
-
-const getFleetbaseAuthKey = () => {
-    const driverAuthToken = getString('_driver_token');
-    if (driverAuthToken) {
-        return driverAuthToken;
-    }
-
-    return FLEETBASE_KEY;
-};
-
-const { FLEETBASE_KEY, FLEETBASE_HOST } = Config;
-
-// Global default instance used if no token-based instance is created
-export let instance = new Fleetbase(getFleetbaseAuthKey(), { host: FLEETBASE_HOST });
-export let adapter = instance.getAdapter();
-
-export const hasFleetbaseConfig = () => {
-    return 'FLEETBASE_KEY' in Config;
-};
+import { useConfig } from '../contexts/ConfigContext';
+import useStorage from './use-storage';
 
 const useFleetbase = () => {
+    const { resolveConnectionConfig } = useConfig();
     const [fleetbase, setFleetbase] = useState<Fleetbase | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [authToken] = useStorage('_driver_token');
 
+    const hasFleetbaseConfig = useCallback(() => {
+        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+        const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
+
+        return typeof FLEETBASE_KEY === 'string' && typeof FLEETBASE_HOST === 'string';
+    }, [resolveConnectionConfig]);
+
     useEffect(() => {
+        const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
+        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+
         try {
             // If authToken is present, initialize a new Fleetbase instance with it,
             // otherwise fall back to the default configuration.
-            const newFleetbase = authToken ? new Fleetbase(authToken, { host: FLEETBASE_HOST }) : new Fleetbase(FLEETBASE_KEY, { host: FLEETBASE_HOST });
-            setFleetbase(newFleetbase);
+            const fleetbase = authToken ? new Fleetbase(authToken, { host: FLEETBASE_HOST }) : new Fleetbase(FLEETBASE_KEY, { host: FLEETBASE_HOST });
+            setFleetbase(fleetbase);
         } catch (initializationError) {
             setError(initializationError as Error);
         }
-    }, [authToken]);
+    }, [authToken, resolveConnectionConfig]);
 
     // Memoize the adapter so that its reference only changes when the fleetbase instance updates.
-    const fleetbaseAdapter = useMemo(() => {
-        return fleetbase ? fleetbase.getAdapter() : adapter;
+    const adapter = useMemo(() => {
+        if (!fleetbase) return null;
+        return fleetbase.getAdapter();
     }, [fleetbase, authToken]);
 
     // Memoize the returned object to prevent unnecessary re-renders.
     const api = useMemo(
         () => ({
             fleetbase,
-            adapter: fleetbaseAdapter,
+            adapter,
             error,
             hasFleetbaseConfig,
         }),
-        [fleetbase, fleetbaseAdapter, error, authToken]
+        [fleetbase, adapter, error, authToken, hasFleetbaseConfig]
     );
 
     return api;

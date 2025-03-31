@@ -140,7 +140,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
                         </Button>
                     </XStack>
 
-                    <ScrollView>
+                    <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
                         <XStack fw='wrap' jc='flex-start'>
                             {photos.map((photo, index) => (
                                 <YStack key={index} mx='$3' my='$2'>

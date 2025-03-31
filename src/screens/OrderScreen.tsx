@@ -7,7 +7,6 @@ import { faPaperPlane, faPenToSquare, faFlagCheckered } from '@fortawesome/free-
 import { BlurView } from '@react-native-community/blur';
 import FastImage from 'react-native-fast-image';
 import { Order, Place } from '@fleetbase/sdk';
-import { adapter } from '../hooks/use-fleetbase';
 import { format as formatDate, formatDistance, add } from 'date-fns';
 import { titleize } from 'inflected';
 import { formatCurrency, formatMeters, formatDuration, smartHumanize } from '../utils/format';
@@ -21,6 +20,7 @@ import useStorage from '../hooks/use-storage';
 import useAppTheme from '../hooks/use-app-theme';
 import useOrderResource from '../hooks/use-order-resource';
 import usePromiseWithLoading from '../hooks/use-promise-with-loading';
+import useFleetbase from '../hooks/use-fleetbase';
 import LiveOrderRoute from '../components/LiveOrderRoute';
 import PlaceCard from '../components/PlaceCard';
 import OrderItems from '../components/OrderItems';
@@ -43,6 +43,7 @@ const OrderScreen = ({ route }) => {
     const params = route.params || {};
     const theme = useTheme();
     const navigation = useNavigation();
+    const { adapter } = useFleetbase();
     const { isDarkMode } = useAppTheme();
     const { customer } = useAuth();
     const { listen } = useSocketClusterClient();
@@ -109,8 +110,8 @@ const OrderScreen = ({ route }) => {
         const statusesToSkip = ['completed', 'canceled'];
 
         if (waypoints.length === 0) {
-            const pickup = restoreFleetbasePlace(order.getAttribute('payload.pickup'));
-            const dropoff = restoreFleetbasePlace(order.getAttribute('payload.dropoff'));
+            const pickup = restoreFleetbasePlace(order.getAttribute('payload.pickup'), adapter);
+            const dropoff = restoreFleetbasePlace(order.getAttribute('payload.dropoff'), adapter);
 
             return [pickup, dropoff];
         }
@@ -120,8 +121,8 @@ const OrderScreen = ({ route }) => {
                 // Ensure waypoint.tracking exists and isn't one of the skipped statuses.
                 return waypoint?.tracking && !statusesToSkip.includes(waypoint.tracking.toLowerCase());
             })
-            .map((waypoint) => restoreFleetbasePlace(waypoint));
-    }, [order]);
+            .map((waypoint) => restoreFleetbasePlace(waypoint, adapter));
+    }, [order, adapter]);
 
     const updateOrder = useCallback(
         (order) => {

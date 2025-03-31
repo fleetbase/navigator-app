@@ -1,23 +1,13 @@
-// import Geolocation from '@react-native-community/geolocation';
 import BackgroundGeolocation from 'react-native-background-geolocation';
 import { Platform } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
 import { checkMultiple, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { GoogleAddress, Place, Point } from '@fleetbase/sdk';
 import { StoreLocation } from '@fleetbase/storefront';
-// import { adapter as storefrontAdapter } from '../hooks/use-storefront';
-import { adapter } from '../hooks/use-fleetbase';
 import { haversine } from './math';
 import { config, uniqueArray, isObject, isArray, isEmpty, isResource, isSerializedResource, isPojoResource } from './';
 import storage from './storage';
 import axios from 'axios';
-
-// /** Configure GeoLocation */
-// Geolocation.setRNConfiguration({
-//     authorizationLevel: 'whenInUse',
-//     enableBackgroundLocationUpdates: false,
-//     locationProvider: 'auto',
-// });
 
 const emit = EventRegister.emit;
 
@@ -122,7 +112,7 @@ export async function getPlaceDetails(placeId) {
     }
 }
 
-export function createFleetbasePlaceFromDetails(details, meta = {}) {
+export function createFleetbasePlaceFromDetails(details, meta = {}, adapter) {
     const addressObject = parseAutocompleteAddress(details.formatted_address);
     const placeObject = parsePlaceDetails(details);
 
@@ -148,7 +138,7 @@ export function createFleetbasePlaceFromDetails(details, meta = {}) {
     return new Place(attributes, adapter);
 }
 
-export function restoreFleetbasePlace(data) {
+export function restoreFleetbasePlace(data, adapter) {
     // If is a resource already
     if (isResource(data)) {
         return data;
@@ -166,55 +156,11 @@ export function restoreFleetbasePlace(data) {
 
     // If array of resources
     if (isArray(data) && data.length) {
-        return data.map(restoreFleetbasePlace);
+        return data.map((datum) => restoreFleetbasePlace(datum, adapter));
     }
 
     if (isObject(data)) {
         return new Place(data, adapter);
-    }
-
-    return data;
-}
-
-export function restoreFleetbaseStoreLocation(data) {
-    // If is a resource already
-    if (isResource(data)) {
-        if (data.place) {
-            data.place = restoreFleetbasePlace(data.place);
-        }
-
-        return data;
-    }
-
-    // If serialized resource object
-    if (isSerializedResource(data)) {
-        if (data.place) {
-            data.place = restoreFleetbasePlace(data.place);
-        }
-
-        return new StoreLocation(data, storefrontAdapter);
-    }
-
-    // If POJO resource object
-    if (isPojoResource(data)) {
-        if (data.attributes && data.attributes.place) {
-            data.attributes.place = restoreFleetbasePlace(data.attributes / place);
-        }
-
-        return new StoreLocation(data.attributes, storefrontAdapter);
-    }
-
-    // If array of resources
-    if (isArray(data) && data.length) {
-        return data.map(restoreFleetbasePlace);
-    }
-
-    if (isObject(data)) {
-        if (data.place) {
-            data.place = restoreFleetbasePlace(data.place);
-        }
-
-        return new StoreLocation(data, storefrontAdapter);
     }
 
     return data;
@@ -268,7 +214,7 @@ export function serializGoogleAddress(googleAddress) {
     return attributes;
 }
 
-export async function getLiveLocation() {
+export async function getLiveLocation(adapter) {
     return new Promise((resolve) => {
         BackgroundGeolocation.getCurrentPosition(
             {
@@ -286,7 +232,7 @@ export async function getLiveLocation() {
 
                 try {
                     const details = await geocode(latitude, longitude);
-                    const place = createFleetbasePlaceFromDetails(details, { position });
+                    const place = createFleetbasePlaceFromDetails(details, { position }, adapter);
 
                     // Save the last known location
                     storage.setMap('_last_known_location', place.serialize());
@@ -307,8 +253,8 @@ export async function getLiveLocation() {
     });
 }
 
-export async function getCurrentLocation() {
-    const lastLocation = restoreFleetbasePlace(storage.getMap('_current_location'));
+export async function getCurrentLocation(adapter) {
+    const lastLocation = restoreFleetbasePlace(storage.getMap('_current_location'), adapter);
 
     return new Promise((resolve) => {
         BackgroundGeolocation.getCurrentPosition(
@@ -332,7 +278,7 @@ export async function getCurrentLocation() {
 
                 try {
                     const details = await geocode(latitude, longitude);
-                    const place = createFleetbasePlaceFromDetails(details, { position });
+                    const place = createFleetbasePlaceFromDetails(details, { position }, adapter);
 
                     storage.setMap('_current_location', place.serialize());
                     resolve(place);
@@ -432,29 +378,6 @@ export function getLocationName(place) {
     }
 
     return 'Uknown Location';
-}
-
-export function getLocationFromRouteOrStorage(key, routeParams = {}) {
-    let location;
-    const locationFromParams = routeParams[key];
-    const lastKnownLocation = storage.getMap('_last_known_location');
-    const currentLocation = storage.getMap('_current_location');
-    const localLocations = storage.getArray('_local_locations');
-    const customerLocations = storage.getArray('_customer_locations');
-
-    if (locationFromParams) {
-        location = locationFromParams;
-    } else if (lastKnownLocation) {
-        location = lastKnownLocation;
-    } else if (currentLocation) {
-        location = currentLocation;
-    } else if (isArray(customerLocations) && customerLocations.length) {
-        location = customerLocations[0];
-    } else if (isArray(localLocations) && localLocations.length) {
-        location = localLocations[0];
-    }
-
-    return restoreFleetbasePlace(location);
 }
 
 export function parsePlaceDetails(details) {

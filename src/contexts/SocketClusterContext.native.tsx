@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import socketClusterClient from 'socketcluster-client';
-import { config, toBoolean, consumeAsyncIterator } from '../utils';
+import { consumeAsyncIterator } from '../utils';
+import { useConfig } from './ConfigContext';
 
 const SocketClusterContext = createContext(null);
 
@@ -9,6 +10,7 @@ const SocketClusterContext = createContext(null);
  * and provides socket-related functionalities to its children.
  */
 export const SocketClusterProvider = ({ children }) => {
+    const { resolveConnectionConfig } = useConfig();
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState(null);
@@ -16,10 +18,10 @@ export const SocketClusterProvider = ({ children }) => {
     useEffect(() => {
         // Initialize the socket connection
         const options = {
-            hostname: config('SOCKETCLUSTER_HOST', 'socket.fleetbase.io'),
-            port: parseInt(config('SOCKETCLUSTER_PORT', '8000')),
-            path: config('SOCKETCLUSTER_PATH', '/socketcluster/'),
-            secure: toBoolean(config('SOCKETCLUSTER_SECURE', true)),
+            hostname: resolveConnectionConfig('SOCKETCLUSTER_HOST'),
+            port: resolveConnectionConfig('SOCKETCLUSTER_PORT'),
+            path: resolveConnectionConfig('SOCKETCLUSTER_PATH'),
+            secure: resolveConnectionConfig('SOCKETCLUSTER_SECURE'),
         };
 
         const scSocket = socketClusterClient.create(options);

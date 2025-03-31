@@ -7,17 +7,17 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'react-native-linear-gradient';
 import { setI18nConfig } from '../utils/localize';
 import { config, toArray, isArray, later } from '../utils';
-import { hasFleetbaseConfig } from '../hooks/use-fleetbase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import useFleetbase from '../hooks/use-fleetbase';
 import BootSplash from 'react-native-bootsplash';
-import useStorefront from '../hooks/use-storefront';
 import SetupWarningScreen from './SetupWarningScreen';
 
 const APP_NAME = config('APP_NAME');
 const BootScreen = () => {
     const theme = useTheme();
     const navigation = useNavigation();
+    const { hasFleetbaseConfig } = useFleetbase();
     const { isAuthenticated } = useAuth();
     const { t } = useLanguage();
     const [error, setError] = useState<Error | null>(null);

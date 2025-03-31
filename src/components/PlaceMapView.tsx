@@ -4,6 +4,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
 import { restoreFleetbasePlace, getCoordinates } from '../utils/location';
 import LocationMarker from './LocationMarker';
+import useFleetbase from '../hooks/use-fleetbase';
 
 // Utility to calculate deltas from zoom
 const calculateDeltas = (zoom) => {
@@ -12,7 +13,8 @@ const calculateDeltas = (zoom) => {
 };
 
 const PlaceMapView = ({ place: _place, width = '100%', height = 200, markerSize = 'md', zoom = 1, onPress, mapViewProps = {}, ...props }) => {
-    const place = restoreFleetbasePlace(_place);
+    const { adapter } = useFleetbase();
+    const place = restoreFleetbasePlace(_place, adapter);
     const [latitude, longitude] = getCoordinates(place);
     const initialDeltas = calculateDeltas(zoom);
     const [mapRegion, setMapRegion] = useState({

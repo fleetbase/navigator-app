@@ -2,10 +2,12 @@ import { Pressable } from 'react-native';
 import { Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { formattedAddressFromPlace, formatAddressSecondaryIdentifier, restoreFleetbasePlace } from '../utils/location';
 import PlaceMapView from './PlaceMapView';
+import useFleetbase from '../hooks/use-fleetbase';
 
 const PlaceCard = ({ place, name, headerComponent, footerComponent, ...props }) => {
     const theme = useTheme();
-    place = restoreFleetbasePlace(place);
+    const { adapter } = useFleetbase();
+    place = restoreFleetbasePlace(place, adapter);
 
     return (
         <YStack>
