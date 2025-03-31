@@ -12,6 +12,7 @@ import { isEmpty, toBoolean } from '../utils';
 import usePromiseWithLoading from '../hooks/use-promise-with-loading';
 import useCurrentLocation from '../hooks/use-current-location';
 import useSavedLocations from '../hooks/use-saved-locations';
+import useFleetbase from '../hooks/use-fleetbase';
 import { useAppTheme } from '../hooks/use-app-theme';
 import ExpandableSelect from '../components/ExpandableSelect';
 import PlaceMapView from '../components/PlaceMapView';
@@ -41,10 +42,11 @@ const EditLocationScreen = ({ route }) => {
     const params = route.params || { redirectTo: 'AddressBook' };
     const navigation = useNavigation();
     const theme = useTheme();
+    const { adapter } = useFleetbase();
     const { customer, isAuthenticated } = useAuth();
     const { runWithLoading, isLoading, isAnyLoading } = usePromiseWithLoading();
     const { currentLocation, updateDefaultLocationPromise } = useCurrentLocation();
-    const { savedLocations, addLocation, deleteLocation } = useSavedLocations();
+    // const { savedLocations, addLocation, deleteLocation } = useSavedLocations();
     const [place, setPlace] = useState({ ...params.place });
     const [name, setName] = useState(place.name);
     const [street1, setStreet1] = useState(place.street1);
@@ -127,7 +129,7 @@ const EditLocationScreen = ({ route }) => {
     };
 
     const handleMakeDefaultLocation = async () => {
-        const restoredInstance = restoreFleetbasePlace(place);
+        const restoredInstance = restoreFleetbasePlace(place, adapter);
         if (restoredInstance && restoredInstance.isSaved) {
             try {
                 await runWithLoading(updateDefaultLocationPromise(restoredInstance), 'defaulting');
@@ -143,7 +145,7 @@ const EditLocationScreen = ({ route }) => {
     const handleDelete = async () => {
         const isCurrentLocation = currentLocation?.id === place.id;
         const nextPlace = savedLocations.find((loc) => loc.id !== place.id);
-        const restoredInstance = restoreFleetbasePlace(place);
+        const restoredInstance = restoreFleetbasePlace(place, adapter);
 
         if (restoredInstance && restoredInstance.isSaved) {
             try {

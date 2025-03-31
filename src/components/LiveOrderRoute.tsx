@@ -13,6 +13,7 @@ import MapView, { Marker } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import LocationMarker from './LocationMarker';
 import DriverMarker from './DriverMarker';
+import useFleetbase from '../hooks/use-fleetbase';
 
 // Utility functions
 const calculateDeltas = (zoom) => {
@@ -72,6 +73,7 @@ const LiveOrderRoute = ({
     const theme = useTheme();
     const mapRef = useRef(null);
     const { getDriverLocationAsPlace } = useLocation();
+    const { adapter } = useFleetbase();
 
     // Retrieve attributes from the order
     const pickup = order.getAttribute('payload.pickup');
@@ -88,11 +90,11 @@ const LiveOrderRoute = ({
 
     // Determine the start waypoint
     const startWaypoint = !pickup && waypoints.length > 0 ? waypoints[0] : pickup;
-    let start = focusCurrentDestination ? getDriverLocationAsPlace() : restoreFleetbasePlace(startWaypoint);
+    let start = focusCurrentDestination ? getDriverLocationAsPlace() : restoreFleetbasePlace(startWaypoint, adapter);
 
     // Determine the end waypoint.
     const endWaypoint = !dropoff && waypoints.length > 0 && last(waypoints) !== first(waypoints) ? last(waypoints) : dropoff;
-    let end = focusCurrentDestination ? currentDestination : restoreFleetbasePlace(endWaypoint);
+    let end = focusCurrentDestination ? currentDestination : restoreFleetbasePlace(endWaypoint, adapter);
 
     // Get the coordinates for start and end places
     const origin = getPlaceCoords(start);

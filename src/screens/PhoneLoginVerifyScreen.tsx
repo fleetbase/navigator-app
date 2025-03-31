@@ -29,7 +29,7 @@ const PhoneLoginVerifyScreen = () => {
 
     const handleRetry = () => {
         setCode('');
-        navigation.navigate('PhoneLogin', { phone });
+        navigation.goBack();
     };
 
     return (

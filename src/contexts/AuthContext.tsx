@@ -348,8 +348,10 @@ export const AuthProvider = ({ children }) => {
 
     // Logout: Clear session
     const logout = useCallback(() => {
-        setDriver(null);
         dispatch({ type: 'LOGOUT', isSigningOut: true });
+
+        // Remove driver session
+        setDriver(null);
 
         // Clear storage/ cache
         clearSessionData();

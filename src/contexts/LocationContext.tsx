@@ -43,15 +43,18 @@ export const LocationProvider = ({ children }) => {
         (attributes = {}) => {
             const { coords } = location;
 
-            return new Place({
-                id: 'driver',
-                name: 'Driver Location',
-                street1: 'Driver Location',
-                location: new Point(coords.latitude, coords.longitude),
-                ...attributes,
-            });
+            return new Place(
+                {
+                    id: 'driver',
+                    name: 'Driver Location',
+                    street1: 'Driver Location',
+                    location: new Point(coords.latitude, coords.longitude),
+                    ...attributes,
+                },
+                adapter
+            );
         },
-        [location]
+        [location, adapter]
     );
 
     // Get the HTTP configuration for background geolocation tracking

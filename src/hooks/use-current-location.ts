@@ -4,9 +4,11 @@ import { getCurrentLocation as fetchCurrentLocation, getLiveLocation, restoreFle
 import { isResource, isArray } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import useStorage from './use-storage';
+import useFleetbase from './use-fleetbase';
 
 const useCurrentLocation = () => {
     const { isAuthenticated, driver } = useAuth();
+    const { adapter } = useFleetbase();
     const [currentLocation, setCurrentLocation] = useStorage('_current_location');
     const [liveLocation, setLiveLocation] = useStorage('_live_location');
     const [loading, setLoading] = useState(false);
@@ -15,7 +17,7 @@ const useCurrentLocation = () => {
     // Memoized function to update the current location
     const updateCurrentLocation = useCallback(
         async (location) => {
-            const place = typeof location.serialize === 'function' ? location : restoreFleetbasePlace(location);
+            const place = typeof location.serialize === 'function' ? location : restoreFleetbasePlace(location, adapter);
             const serializedPlace = place.serialize();
             // Only update if the new location is different
             setCurrentLocation((prevLocation) => {
@@ -49,7 +51,7 @@ const useCurrentLocation = () => {
         setLoading(true);
         setError(null);
         try {
-            const location = await fetchCurrentLocation();
+            const location = await fetchCurrentLocation(adapter);
             await updateCurrentLocation(location);
         } catch (err) {
             console.warn('Error fetching current location:', err);
@@ -62,7 +64,7 @@ const useCurrentLocation = () => {
     // Memoized function to initialize live location updates
     const initializeLiveLocation = useCallback(async () => {
         try {
-            const location = await getLiveLocation();
+            const location = await getLiveLocation(adapter);
             if (location) {
                 setLiveLocation(location.serialize());
             }
@@ -119,8 +121,8 @@ const useCurrentLocation = () => {
     // Memoize the hook's return value to avoid unnecessary re-renders in consumers
     const value = useMemo(
         () => ({
-            currentLocation: currentLocation ? restoreFleetbasePlace(currentLocation) : null,
-            liveLocation: liveLocation ? restoreFleetbasePlace(liveLocation) : null,
+            currentLocation: currentLocation ? restoreFleetbasePlace(currentLocation, adapter) : null,
+            liveLocation: liveLocation ? restoreFleetbasePlace(liveLocation, adapter) : null,
             updateCurrentLocation,
             setCurrentLocation,
             updateDefaultLocationPromise,

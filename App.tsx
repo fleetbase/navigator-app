@@ -15,6 +15,7 @@ import { ThemeProvider, useThemeContext } from './src/contexts/ThemeContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ChatProvider } from './src/contexts/ChatContext';
 import { LocationProvider } from './src/contexts/LocationContext';
+import { ConfigProvider } from './src/contexts/ConfigContext';
 import config from './tamagui.config';
 import { clear } from './src/utils/storage';
 
@@ -28,27 +29,29 @@ function AppContent(): React.JSX.Element {
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <SafeAreaProvider>
                         <BottomSheetModalProvider>
-                            <NotificationProvider>
-                                <LanguageProvider>
-                                    <AuthProvider>
-                                        <SocketClusterProvider>
-                                            <LocationProvider>
-                                                <TempStoreProvider>
-                                                    <ChatProvider>
-                                                        <OrderManagerProvider>
-                                                            <AppNavigator />
-                                                            <Toasts extraInsets={{ bottom: 80 }} />
-                                                            <PortalHost name='MainPortal' />
-                                                            <PortalHost name='BottomSheetPanelPortal' />
-                                                            <PortalHost name='LocationPickerPortal' />
-                                                        </OrderManagerProvider>
-                                                    </ChatProvider>
-                                                </TempStoreProvider>
-                                            </LocationProvider>
-                                        </SocketClusterProvider>
-                                    </AuthProvider>
-                                </LanguageProvider>
-                            </NotificationProvider>
+                            <ConfigProvider>
+                                <NotificationProvider>
+                                    <LanguageProvider>
+                                        <AuthProvider>
+                                            <SocketClusterProvider>
+                                                <LocationProvider>
+                                                    <TempStoreProvider>
+                                                        <ChatProvider>
+                                                            <OrderManagerProvider>
+                                                                <AppNavigator />
+                                                                <Toasts extraInsets={{ bottom: 80 }} />
+                                                                <PortalHost name='MainPortal' />
+                                                                <PortalHost name='BottomSheetPanelPortal' />
+                                                                <PortalHost name='LocationPickerPortal' />
+                                                            </OrderManagerProvider>
+                                                        </ChatProvider>
+                                                    </TempStoreProvider>
+                                                </LocationProvider>
+                                            </SocketClusterProvider>
+                                        </AuthProvider>
+                                    </LanguageProvider>
+                                </NotificationProvider>
+                            </ConfigProvider>
                         </BottomSheetModalProvider>
                     </SafeAreaProvider>
                 </GestureHandlerRootView>
