@@ -3,7 +3,6 @@ import { Platform, ActionSheetIOS, Alert } from 'react-native';
 import { Collection, lookup } from '@fleetbase/sdk';
 import storage, { getString } from './storage';
 import { capitalize } from './format';
-// import { adapter, instance as storefrontInstance } from '../hooks/use-storefront';
 import { themes } from '../../tamagui.config';
 import { APP_THEME_KEY } from '../hooks/use-app-theme';
 import { pluralize } from 'inflected';

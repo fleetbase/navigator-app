@@ -8,6 +8,7 @@ import { restoreFleetbasePlace, getCoordinates } from '../utils/location';
 import LocationMarker from '../components/LocationMarker';
 import useSavedLocations from '../hooks/use-saved-locations';
 import usePromiseWithLoading from '../hooks/use-promise-with-loading';
+import useFleetbase from '../hooks/use-fleetbase';
 
 const LOCATION_MARKER_SIZE = { height: 70, width: 40 };
 const styles = StyleSheet.create({
@@ -24,7 +25,8 @@ const EditLocationCoordScreen = ({ route }) => {
     const params = route.params || {};
     const navigation = useNavigation();
     const theme = useTheme();
-    const place = restoreFleetbasePlace({ ...params.place });
+    const { adapter } = useFleetbase();
+    const place = restoreFleetbasePlace({ ...params.place }, adapter);
     const { updateLocationState } = useSavedLocations();
     const { runWithLoading, isLoading } = usePromiseWithLoading();
     const [latitude, longitude] = getCoordinates(place);

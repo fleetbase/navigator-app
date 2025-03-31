@@ -33,7 +33,7 @@ const PhoneLoginScreen = () => {
         }
     };
 
-    const handleUseAnotherMethod = () => {
+    const handleGoBackHome = () => {
         navigation.goBack();
     };
 
@@ -63,21 +63,13 @@ const PhoneLoginScreen = () => {
                 </YStack>
 
                 <YStack space='$4' width='100%' padding='$5'>
-                    <Button size='$5' onPress={handleUseAnotherMethod} bg='$secondary' width='100%' rounded>
+                    <Button size='$5' onPress={handleGoBackHome} bg='$secondary' width='100%' rounded>
                         <Button.Icon>
                             <FontAwesomeIcon icon={faArrowLeft} color={theme['textPrimary'].val} />
                         </Button.Icon>
                         <Button.Text color='$textPrimary' fontWeight='bold'>
-                            Login using Another Method
+                            Home
                         </Button.Text>
-                    </Button>
-                    <Button size='$5' onPress={handleCreateAccount} bg='$indigo-600' width='100%' rounded>
-                        <Button.Text color='$white' fontWeight='bold'>
-                            Create a new Account
-                        </Button.Text>
-                        <Button.Icon>
-                            <FontAwesomeIcon icon={faArrowRight} color={'#fff'} />
-                        </Button.Icon>
                     </Button>
                 </YStack>
             </YStack>
