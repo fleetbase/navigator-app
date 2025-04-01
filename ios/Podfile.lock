@@ -88,9 +88,6 @@ PODS:
     - FBLazyVector (= 0.77.0-rc.6)
     - RCTRequired (= 0.77.0-rc.6)
     - React-Core (= 0.77.0-rc.6)
-  - RCTYouTube (2.0.2):
-    - React
-    - YoutubePlayer-in-WKWebView (~> 0.3.1)
   - React (0.77.0-rc.6):
     - React-Core (= 0.77.0-rc.6)
     - React-Core/DevSupport (= 0.77.0-rc.6)
@@ -1885,6 +1882,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNLaunchNavigator (1.0.9):
+    - React
   - RNLocalize (3.4.1):
     - DoubleConversion
     - glog
@@ -2151,42 +2150,6 @@ PODS:
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.10)
   - SocketRocket (0.7.1)
-  - Stripe (24.2.0):
-    - StripeApplePay (= 24.2.0)
-    - StripeCore (= 24.2.0)
-    - StripePayments (= 24.2.0)
-    - StripePaymentsUI (= 24.2.0)
-    - StripeUICore (= 24.2.0)
-  - stripe-react-native (0.41.0):
-    - React-Core
-    - Stripe (~> 24.2.0)
-    - StripeApplePay (~> 24.2.0)
-    - StripeFinancialConnections (~> 24.2.0)
-    - StripePayments (~> 24.2.0)
-    - StripePaymentSheet (~> 24.2.0)
-    - StripePaymentsUI (~> 24.2.0)
-  - StripeApplePay (24.2.0):
-    - StripeCore (= 24.2.0)
-  - StripeCore (24.2.0)
-  - StripeFinancialConnections (24.2.0):
-    - StripeCore (= 24.2.0)
-    - StripeUICore (= 24.2.0)
-  - StripePayments (24.2.0):
-    - StripeCore (= 24.2.0)
-    - StripePayments/Stripe3DS2 (= 24.2.0)
-  - StripePayments/Stripe3DS2 (24.2.0):
-    - StripeCore (= 24.2.0)
-  - StripePaymentSheet (24.2.0):
-    - StripeApplePay (= 24.2.0)
-    - StripeCore (= 24.2.0)
-    - StripePayments (= 24.2.0)
-    - StripePaymentsUI (= 24.2.0)
-  - StripePaymentsUI (24.2.0):
-    - StripeCore (= 24.2.0)
-    - StripePayments (= 24.2.0)
-    - StripeUICore (= 24.2.0)
-  - StripeUICore (24.2.0):
-    - StripeCore (= 24.2.0)
   - VisionCamera (4.6.4):
     - VisionCamera/Core (= 4.6.4)
     - VisionCamera/React (= 4.6.4)
@@ -2194,7 +2157,6 @@ PODS:
   - VisionCamera/React (4.6.4):
     - React-Core
   - Yoga (0.0.0)
-  - YoutubePlayer-in-WKWebView (0.3.11)
 
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
@@ -2210,7 +2172,6 @@ DEPENDENCIES:
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../node_modules/react-native/Libraries/Required`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
-  - RCTYouTube (from `../node_modules/react-native-youtube`)
   - React (from `../node_modules/react-native/`)
   - React-callinvoker (from `../node_modules/react-native/ReactCommon/callinvoker`)
   - React-Core (from `../node_modules/react-native/`)
@@ -2292,6 +2253,7 @@ DEPENDENCIES:
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNI18n (from `../node_modules/react-native-i18n`)
   - RNKeychain (from `../node_modules/react-native-keychain`)
+  - RNLaunchNavigator (from `../node_modules/react-native-launch-navigator`)
   - RNLocalize (from `../node_modules/react-native-localize`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
@@ -2299,7 +2261,6 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNShare (from `../node_modules/react-native-share`)
   - RNSVG (from `../node_modules/react-native-svg`)
-  - "stripe-react-native (from `../node_modules/@stripe/stripe-react-native`)"
   - VisionCamera (from `../node_modules/react-native-vision-camera`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -2324,15 +2285,6 @@ SPEC REPOS:
     - SDWebImage
     - SDWebImageWebPCoder
     - SocketRocket
-    - Stripe
-    - StripeApplePay
-    - StripeCore
-    - StripeFinancialConnections
-    - StripePayments
-    - StripePaymentSheet
-    - StripePaymentsUI
-    - StripeUICore
-    - YoutubePlayer-in-WKWebView
 
 EXTERNAL SOURCES:
   boost:
@@ -2360,8 +2312,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/Libraries/Required"
   RCTTypeSafety:
     :path: "../node_modules/react-native/Libraries/TypeSafety"
-  RCTYouTube:
-    :path: "../node_modules/react-native-youtube"
   React:
     :path: "../node_modules/react-native/"
   React-callinvoker:
@@ -2522,6 +2472,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-i18n"
   RNKeychain:
     :path: "../node_modules/react-native-keychain"
+  RNLaunchNavigator:
+    :path: "../node_modules/react-native-launch-navigator"
   RNLocalize:
     :path: "../node_modules/react-native-localize"
   RNPermissions:
@@ -2536,8 +2488,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-share"
   RNSVG:
     :path: "../node_modules/react-native-svg"
-  stripe-react-native:
-    :path: "../node_modules/@stripe/stripe-react-native"
   VisionCamera:
     :path: "../node_modules/react-native-vision-camera"
   Yoga:
@@ -2572,7 +2522,6 @@ SPEC CHECKSUMS:
   RCTDeprecation: 897876d002199e7a9cbbb9aa77542dd2eb2452ef
   RCTRequired: b7f9ef02940c891073f2b9b63165f524bd3d1847
   RCTTypeSafety: c00136d479c43702c0a58b6667ad2d7b8389deba
-  RCTYouTube: a8bb45705622a6fc9decf64be04128d3658ed411
   React: 73c6c3d8d478df2505b82de03b3aa3085a12f099
   React-callinvoker: 7bccda05aeced2bf72cd47144195738a9aea5af2
   React-Core: d225356818946f0531777ea3b9ed6f45d3192a54
@@ -2653,6 +2602,7 @@ SPEC CHECKSUMS:
   RNGoogleSignin: 6ea46104d70ad75ab0361f36cfcec7c3bc1b8b9f
   RNI18n: e2f7e76389fcc6e84f2c8733ea89b92502351fd8
   RNKeychain: 3536c754b0b75920ff243d794ede14b0c8529d57
+  RNLaunchNavigator: d855643e1f842f13c6cc65575e0755975667032c
   RNLocalize: 3d7ad7ba552f88675462007d61571a0f6632ee6f
   RNPermissions: d18ed28be98a955dedaeba2b88a4bf3655bde11c
   RNReactNativeHapticFeedback: 5fdbbaedabc1698dc3bb2a72105fadf63136a451
@@ -2663,18 +2613,8 @@ SPEC CHECKSUMS:
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  Stripe: be805dc0e80a7299de7b10ecbe01ce81412654c8
-  stripe-react-native: 01b57a63afbe42b57f24cebdde78eff3d602148b
-  StripeApplePay: 5233ecff535bb0772785d2d18d02b39ec24ecb71
-  StripeCore: e2f70fcaa82e5a9d44d18fe4534358384cdf4821
-  StripeFinancialConnections: 8c8e2273552d4567ec381ee2b0ff1745b8e11ab6
-  StripePayments: beb97f8061066532744ceaa03e59009c9716332e
-  StripePaymentSheet: 0d8ed5270037b1da3eb107c9876cec67b8b1fe43
-  StripePaymentsUI: 6486d8b86bf49b8932506807a8692ce16e9f109d
-  StripeUICore: b59aa9c9e202b6a03a556c3519eff578274f7598
   VisionCamera: b5c2b3c45e641102902a5194af11dc532805221e
   Yoga: 0c8754b0ea9edb13b6ce6b60f0f69eb5f164f16a
-  YoutubePlayer-in-WKWebView: 2c3aa1d5ad8dded9f95ef12033af5dd8e55864b7
 
 PODFILE CHECKSUM: 6bbc1630814437e718b80e32328c8a7e6be3d72e
 

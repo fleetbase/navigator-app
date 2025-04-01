@@ -29,12 +29,17 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
     // Local storage for caching orders
     const [allRecentOrders, setAllRecentOrders] = useStorage(`${driver?.id}_all_recent_orders`, []);
     const [allActiveOrders, setAllActiveOrders] = useStorage(`${driver?.id}_all_active_orders`, []);
+    // These are adhoc orders available
+    const [nearbyOrders, setNearbyOrders] = useStorage(`${driver?.id}_nearby_orders`, []);
     // Use currentDate state to build the storage key for current orders.
     const [currentOrders, setCurrentOrders] = useStorage(`${driver?.id}_${currentDate.replaceAll('-', '')}_orders`, []);
     const [ordersToday, setOrdersToday] = useStorage(`${driver?.id}_${today.replaceAll('-', '')}_orders`, []);
+    // Dismissed adhoc orders
+    const [dismissedOrders, setDimissedOrders] = useState([]);
 
     const [isFetchingActiveOrders, setIsFetchingActiveOrders] = useState(false);
     const [isFetchingRecentOrders, setIsFetchingRecentOrders] = useState(false);
+    const [isFetchingNearbyOrders, setIsFetchingNearbyOrders] = useState(false);
     const [isFetchingCurrentOrders, setIsFetchingCurrentOrders] = useState(false);
 
     // Define statuses to exclude from active orders
@@ -90,11 +95,13 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
     // Refs to ensure orders are loaded only once per driver session
     const hasLoadedActiveRef = useRef(false);
     const hasLoadedRecentRef = useRef(false);
+    const hasLoadedNearbyRef = useRef(false);
     const hasLoadedCurrentRef = useRef(false);
 
     // Refs to hold in-flight promises to guard against duplicate requests
     const activeOrdersPromiseRef = useRef<Promise<any> | null>(null);
     const recentOrdersPromiseRef = useRef<Promise<any> | null>(null);
+    const nearbyOrdersPromiseRef = useRef<Promise<any> | null>(null);
     const currentOrdersPromiseRef = useRef<Promise<any> | null>(null);
 
     // Fetch active orders
@@ -133,6 +140,25 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             }
         },
         [fleetbase, driver, queryOrders, setAllRecentOrders]
+    );
+
+    // Fetch recent orders
+    const fetchNearbyOrders = useCallback(
+        async (params = {}) => {
+            if (!driver || !fleetbase || hasLoadedNearbyRef.current || nearbyOrdersPromiseRef.current) return;
+            try {
+                nearbyOrdersPromiseRef.current = queryOrders({ nearby: driver.id, adhoc: 1, unassigned: 1, dispatched: 1, limit: -1, ...params }, setIsFetchingNearbyOrders);
+                const fetchedOrders = await nearbyOrdersPromiseRef.current;
+                setNearbyOrders(serializeCollection(fetchedOrders));
+                hasLoadedNearbyRef.current = true;
+            } catch (error) {
+                console.warn('Unable to load nearby orders for driver:', error);
+                setNearbyOrders([]);
+            } finally {
+                nearbyOrdersPromiseRef.current = null;
+            }
+        },
+        [fleetbase, driver, queryOrders, setNearbyOrders]
     );
 
     // Fetch current orders for the currentDate.
@@ -179,7 +205,14 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
         if (driver && fleetbase) {
             fetchActiveOrders();
         }
-    }, [driver, fleetbase, fetchActiveOrders, fetchRecentOrders]);
+    }, [driver, fleetbase, fetchActiveOrders]);
+
+    // Trigger to load nearby available orders.
+    useEffect(() => {
+        if (driver && fleetbase) {
+            fetchNearbyOrders();
+        }
+    }, [driver, fleetbase, fetchNearbyOrders]);
 
     // Whenever the currentDate state changes, reset and fetch current orders.
     useEffect(() => {
@@ -193,10 +226,13 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
         (params = {}) => {
             hasLoadedActiveRef.current = false;
             hasLoadedRecentRef.current = false;
+            hasLoadedNearbyRef.current = false;
             activeOrdersPromiseRef.current = null;
             recentOrdersPromiseRef.current = null;
+            nearbyOrdersPromiseRef.current = null;
             fetchActiveOrders(params);
             fetchRecentOrders(params);
+            fetchNearbyOrders(params);
         },
         [fetchActiveOrders, fetchRecentOrders]
     );
@@ -228,6 +264,15 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
         [fetchCurrentOrders]
     );
 
+    const reloadNearbyOrders = useCallback(
+        (params = {}) => {
+            hasLoadedNearbyRef.current = false;
+            nearbyOrdersPromiseRef.current = null;
+            fetchNearbyOrders(params);
+        },
+        [fetchNearbyOrders]
+    );
+
     const value = useMemo(
         () => ({
             queryOrders,
@@ -238,6 +283,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             allActiveOrders: restoreCollection(allActiveOrders, adapter),
             ordersToday: restoreCollection(ordersToday, adapter),
             currentOrders: restoreCollection(currentOrders, adapter),
+            nearbyOrders: restoreCollection(nearbyOrders, adapter),
             reloadOrders,
             reloadRecentOrders,
             reloadActiveOrders,
@@ -247,6 +293,10 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             isFetchingCurrentOrders,
             activeOrderMarkedDates,
             updateStorageOrder,
+            fetchNearbyOrders,
+            reloadNearbyOrders,
+            dismissedOrders,
+            setDimissedOrders,
         }),
         [
             queryOrders,
@@ -256,12 +306,17 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             allActiveOrders,
             ordersToday,
             currentOrders,
+            nearbyOrders,
             adapter,
             reloadOrders,
             isFetchingActiveOrders,
             isFetchingRecentOrders,
             isFetchingCurrentOrders,
             activeOrderMarkedDates,
+            fetchNearbyOrders,
+            reloadNearbyOrders,
+            dismissedOrders,
+            setDimissedOrders,
         ]
     );
 

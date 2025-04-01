@@ -10,6 +10,7 @@ const OrderCommentThread = ({ order }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     const loadOrderComments = useCallback(async () => {
+        if (!adapter) return;
         setIsLoading(true);
 
         try {
