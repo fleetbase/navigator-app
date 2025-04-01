@@ -226,6 +226,26 @@ const DriverTaskTab = createNativeStackNavigator({
                 };
             },
         },
+        OrderModal: {
+            screen: OrderScreen,
+            options: ({ route, navigation }) => {
+                const order = route.params.order;
+                return {
+                    presentation: 'modal',
+                    headerTitle: '',
+                    headerLeft: (props) => (
+                        <Text color='$textPrimary' fontSize={20} fontWeight='bold' numberOfLines={1}>
+                            {order.id}
+                        </Text>
+                    ),
+                    headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
+                    headerStyle: {
+                        backgroundColor: getTheme('background'),
+                        headerTintColor: getTheme('borderColor'),
+                    },
+                };
+            },
+        },
         Entity: {
             screen: EntityScreen,
             options: ({ route, navigation }) => {

@@ -5,9 +5,12 @@ import useStorage from './use-storage';
 
 const useFleetbase = () => {
     const { resolveConnectionConfig } = useConfig();
-    const [fleetbase, setFleetbase] = useState<Fleetbase | null>(null);
+    const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+    const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
+
     const [error, setError] = useState<Error | null>(null);
     const [authToken] = useStorage('_driver_token');
+    const [fleetbase, setFleetbase] = useState<Fleetbase | null>(new Fleetbase(authToken ?? FLEETBASE_KEY, { host: FLEETBASE_HOST }));
 
     const hasFleetbaseConfig = useCallback(() => {
         const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');

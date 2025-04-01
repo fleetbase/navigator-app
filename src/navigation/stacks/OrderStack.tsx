@@ -68,6 +68,7 @@ export const OrderHistory = {
 
 const OrderStack = {
     Order,
+    OrderModal,
     OrderHistory,
 };
 
