@@ -1,30 +1,145 @@
-import { useState, useRef } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FlatList, RefreshControl } from 'react-native';
 import { Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { endOfYear, format, startOfYear, subDays } from 'date-fns';
 import { useOrderManager } from '../contexts/OrderManagerContext';
+import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
+import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import CalendarStrip from 'react-native-calendar-strip';
 import OrderCard from '../components/OrderCard';
 import PastOrderCard from '../components/PastOrderCard';
+import AdhocOrderCard from '../components/AdhocOrderCard';
 import Spacer from '../components/Spacer';
 import useStorage from '../hooks/use-storage';
 
+const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
+const REFRESH_ORDERS_MS = 6000 * 10; // 10 mins
 const DriverOrderManagementScreen = () => {
     const theme = useTheme();
     const navigation = useNavigation();
     const calendar = useRef();
-    const { allActiveOrders, currentOrders, setCurrentDate, currentDate, reloadCurrentOrders, isFetchingCurrentOrders, activeOrderMarkedDates } = useOrderManager();
+    const listenerRef = useRef();
+    const { driver } = useAuth();
+    const {
+        allActiveOrders,
+        currentOrders,
+        setCurrentDate,
+        currentDate,
+        reloadCurrentOrders,
+        isFetchingCurrentOrders,
+        activeOrderMarkedDates,
+        nearbyOrders,
+        isFetchingNearbyOrders,
+        reloadNearbyOrders,
+        dismissedOrders,
+        setDimissedOrders,
+    } = useOrderManager();
+    const { listen } = useSocketClusterClient();
+    const { addNotificationListener, removeNotificationListener } = useNotification();
     const startingDate = subDays(new Date(currentDate), 2);
     const datesWhitelist = [new Date(), { start: startOfYear(new Date()), end: endOfYear(new Date()) }];
 
-    const renderOrder = ({ item: order }) => (
-        <YStack px='$2' py='$5'>
-            <OrderCard order={order} onPress={() => navigation.navigate('Order', { order: order.serialize() })} />
-        </YStack>
+    useEffect(() => {
+        const handlePushNotification = async (notification, action) => {
+            const { payload } = notification;
+            const id = payload.id;
+            const type = payload.type;
+
+            // If any order related push notification comes just reload current orders
+            if (typeof id === 'string' && id.startsWith('order_')) {
+                reloadCurrentOrders();
+            }
+        };
+
+        addNotificationListener(handlePushNotification);
+
+        return () => {
+            removeNotificationListener(handlePushNotification);
+        };
+    }, [addNotificationListener, removeNotificationListener]);
+
+    useFocusEffect(
+        useCallback(() => {
+            reloadNearbyOrders();
+
+            const interval = setInterval(reloadNearbyOrders, REFRESH_NEARBY_ORDERS_MS);
+            return () => clearInterval(interval);
+        }, [])
     );
+
+    useFocusEffect(
+        useCallback(() => {
+            reloadCurrentOrders();
+
+            const interval = setInterval(reloadCurrentOrders, REFRESH_ORDERS_MS);
+            return () => clearInterval(interval);
+        }, [currentDate])
+    );
+
+    useFocusEffect(
+        useCallback(() => {
+            const listenForOrderUpdates = async () => {
+                const listener = await listen(`driver.${driver.id}`, ({ event }) => {
+                    if (typeof event === 'string' && event === 'order.ready') {
+                        reloadCurrentOrders();
+                    }
+                    if (typeof event === 'string' && event === 'order.ping') {
+                        reloadNearbyOrders();
+                    }
+                });
+                if (listener) {
+                    listenerRef.current = listener;
+                }
+            };
+
+            listenForOrderUpdates();
+
+            return () => {
+                if (listenerRef.current) {
+                    listenerRef.current.stop();
+                }
+            };
+        }, [listen, driver.id])
+    );
+
+    const handleAdhocDismissal = useCallback(
+        (order) => {
+            setDimissedOrders((prevDismissedOrders) => [...prevDismissedOrders, order.id]);
+        },
+        [setDimissedOrders]
+    );
+
+    const handleAdhocAccept = useCallback(() => {
+        reloadNearbyOrders();
+        reloadCurrentOrders();
+    }, [reloadNearbyOrders, reloadCurrentOrders]);
+
+    const renderOrder = ({ item: order }) => {
+        const isAdhocOrder = order.getAttribute('adhoc') === true && order.getAttribute('driver_assigned') === null;
+        if (isAdhocOrder) {
+            if (dismissedOrders.includes(order.id)) return;
+            return (
+                <YStack px='$2' py='$4'>
+                    <AdhocOrderCard
+                        order={order}
+                        onPress={() => navigation.navigate('OrderModal', { order: order.serialize() })}
+                        onDismiss={handleAdhocDismissal}
+                        onAccept={handleAdhocAccept}
+                    />
+                </YStack>
+            );
+        }
+
+        return (
+            <YStack px='$2' py='$4'>
+                <OrderCard order={order} onPress={() => navigation.navigate('Order', { order: order.serialize() })} />
+            </YStack>
+        );
+    };
 
     const ActiveOrders = () => {
         if (!allActiveOrders.length) return;
@@ -97,8 +212,8 @@ const DriverOrderManagementScreen = () => {
                 />
             </YStack>
             <FlatList
-                data={currentOrders}
-                keyExtractor={(order) => order.id.toString()}
+                data={[...nearbyOrders, ...currentOrders]}
+                keyExtractor={(order, index) => order.id.toString() + '_' + index}
                 renderItem={renderOrder}
                 refreshControl={<RefreshControl refreshing={isFetchingCurrentOrders} onRefresh={reloadCurrentOrders} tintColor={theme.borderColor.val} />}
                 showsVerticalScrollIndicator={false}

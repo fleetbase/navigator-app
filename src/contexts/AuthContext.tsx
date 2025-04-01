@@ -281,7 +281,7 @@ export const AuthProvider = ({ children }) => {
         clearSessionData();
         // setDriverDefaultLocation(driver);
         setDriver(driver);
-        setAuthToken('_driver_token', driver.token);
+        setAuthToken(driver.token);
 
         // run a callback with the driver instance
         const instance = new Driver(driver, adapter);
@@ -412,6 +412,7 @@ export const AuthProvider = ({ children }) => {
             trackDriverLocation,
             organizations,
             storedDriver,
+            authToken,
         ]
     );
 

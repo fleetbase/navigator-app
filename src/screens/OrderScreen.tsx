@@ -1,18 +1,22 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { ScrollView, RefreshControl, SafeAreaView, StyleSheet, Alert } from 'react-native';
+import { ScrollView, RefreshControl, SafeAreaView, StyleSheet, Alert, Platform } from 'react-native';
 import { Separator, Button, Image, Stack, Text, YStack, XStack, Spinner, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPaperPlane, faPenToSquare, faFlagCheckered } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faPenToSquare, faFlagCheckered, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
 import { BlurView } from '@react-native-community/blur';
+import LaunchNavigator from 'react-native-launch-navigator';
 import FastImage from 'react-native-fast-image';
 import { Order, Place } from '@fleetbase/sdk';
 import { format as formatDate, formatDistance, add } from 'date-fns';
 import { titleize } from 'inflected';
 import { formatCurrency, formatMeters, formatDuration, smartHumanize } from '../utils/format';
-import { restoreFleetbasePlace } from '../utils/location';
+import { restoreFleetbasePlace, getCoordinates } from '../utils/location';
 import { toast } from '../utils/toast';
+import { config, showActionSheet } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from '../contexts/LocationContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useOrderManager } from '../contexts/OrderManagerContext';
 import { useTempStore } from '../contexts/TempStoreContext';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
@@ -43,27 +47,31 @@ const OrderScreen = ({ route }) => {
     const params = route.params || {};
     const theme = useTheme();
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const { adapter } = useFleetbase();
     const { isDarkMode } = useAppTheme();
-    const { customer } = useAuth();
+    const { driver } = useAuth();
+    const { location } = useLocation();
     const { listen } = useSocketClusterClient();
     const { runWithLoading, isLoading } = usePromiseWithLoading();
-    const { updateStorageOrder } = useOrderManager();
+    const { updateStorageOrder, setDimissedOrders } = useOrderManager();
     const { store, removeValue } = useTempStore();
     const [order, setOrder] = useState(new Order(params.order, adapter));
     const [activityLoading, setActivityLoading] = useState();
     const [distanceMatrix, setDistanceMatrix] = useState();
     const [nextActivity, setNextActivity] = useState([]);
     const [loadingOverlayMessage, setLoadingOverlayMessage] = useState();
+    const [isAccepting, setIsAccepting] = useState(false);
     const { trackerData } = useOrderResource(order);
     const distanceLoadedRef = useRef(false);
     const listenerRef = useRef();
     const activitySheetRef = useRef();
     const isAdhoc = order.getAttribute('adhoc') === true;
+    const isIncomingAdhoc = isAdhoc && order.getAttribute('driver_assigned') === null;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
     const isOrderPing = isDriverAssigned === false && isAdhoc === true && !['completed', 'canceled'].includes(order.getAttribute('status'));
     const isNotStarted = order.isNotStarted && !order.isCanceled && !isOrderPing && order.getAttribute('status') !== 'completed';
-    const isNavigatable = (order.isDispatched || order.isInProgress) && !['completed', 'canceled'].includes(order.getAttribute('status'));
+    const isNavigatable = (order.isDispatched || order.isInProgress) && !['completed', 'canceled'].includes(order.getAttribute('status')) && !isIncomingAdhoc;
     const isMultipleWaypointOrder = (order.getAttribute('payload.waypoints', []) ?? []).length > 0;
     const customFieldKeys = order.getAttribute('custom_fields', []) ?? [];
     const showLoadingOverlay = isLoading('activityUpdate');
@@ -124,6 +132,36 @@ const OrderScreen = ({ route }) => {
             .map((waypoint) => restoreFleetbasePlace(waypoint, adapter));
     }, [order, adapter]);
 
+    const startNavigation = useCallback(async () => {
+        if (Platform.OS === 'android') {
+            LaunchNavigator.setGoogleApiKey(config('GOOGLE_MAPS_API_KEY'));
+        }
+
+        const apps = await LaunchNavigator.getAvailableApps();
+        const availableApps = Object.keys(apps).filter((appName) => apps[appName] === true);
+
+        showActionSheet({
+            options: [...availableApps.map((appName) => LaunchNavigator.APP_NAMES[appName]), t('common.cancel')],
+            cancelButtonIndex: availableApps.length,
+            onSelect: async (buttonIndex) => {
+                if (buttonIndex === availableApps.length) return;
+
+                const app = availableApps[buttonIndex];
+                const destinationCoordinates = getCoordinates(destination);
+
+                try {
+                    await LaunchNavigator.navigate(destinationCoordinates, {
+                        app,
+                        launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
+                        destinationName: destination.getAttribute('name') ?? destination.getAttribute('street1'),
+                    });
+                } catch (err) {
+                    console.warn('Error launching navigation:', err);
+                }
+            },
+        });
+    }, [destination]);
+
     const updateOrder = useCallback(
         (order) => {
             setOrder(order);
@@ -175,7 +213,7 @@ const OrderScreen = ({ route }) => {
                 const updatedOrder = await runWithLoading(order.start(params), 'startOrder');
                 updateOrder(updatedOrder);
             } catch (err) {
-                console.warn('Error starting order:', err);
+                console.warn('Error starting order:', err, err.message);
                 const errorMessage = err.message ?? '';
                 if (errorMessage.startsWith('Order has not been dispatched')) {
                     return Alert.alert('Order Not Dispatched Yet', 'This order is not yet dispatched, are you sure you want to continue?', [
@@ -195,7 +233,7 @@ const OrderScreen = ({ route }) => {
                 }
             }
         },
-        [order]
+        [order, adapter]
     );
 
     const updateOrderActivity = useCallback(async () => {
@@ -276,9 +314,53 @@ const OrderScreen = ({ route }) => {
         [order]
     );
 
-    const declineOrder = useCallback(() => {
-        return navigation.goBack();
-    }, [navigation]);
+    const handleAdhocAccept = useCallback(async () => {
+        Alert.alert('Accept Ad-Hoc order?', 'By accepting this ad-hoc order it will become assigned to you and the order will start immediatley.', [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'Accept',
+                onPress: async () => {
+                    setIsAccepting(true);
+
+                    try {
+                        const startedOrder = await order.start({ assign: driver.id });
+                        setOrder(startedOrder);
+                    } catch (err) {
+                        console.warn('Error assigning driver to ad-hoc order:', err);
+                    } finally {
+                        setIsAccepting(false);
+                    }
+                },
+            },
+        ]);
+    }, [order, driver, setIsAccepting]);
+
+    const handleAdhocDismissal = useCallback(() => {
+        Alert.alert('Dismiss Ad-Hoc order?', 'By dimissing this ad-hoc order it will no longer display as an available order.', [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'OK',
+                onPress: () => {
+                    setDimissedOrders((prevDismissedOrders) => [...prevDismissedOrders, order.id]);
+                    navigation.goBack();
+                },
+            },
+        ]);
+    }, [order, setDimissedOrders]);
+
+    useEffect(() => {
+        if (!order) return;
+        // If order has no adapter set - this is not good
+        if (!order.adapter) {
+            setOrder(order.setAdapter(adapter));
+        }
+    }, [adapter]);
 
     useEffect(() => {
         if (order && !distanceLoadedRef.current) {
@@ -380,6 +462,20 @@ const OrderScreen = ({ route }) => {
                 </YStack>
                 <ActionContainer space='$3'>
                     <XStack space='$2' ml={-5}>
+                        {isIncomingAdhoc && (
+                            <XStack flex={1} space='$2' ml={5}>
+                                <Button onPress={handleAdhocAccept} flex={1} bg='$success' borderWidth={1} borderColor='$successBorder' disabled={isAccepting}>
+                                    <Button.Icon>{isAccepting ? <Spinner color='$successText' /> : <FontAwesomeIcon icon={faCheck} color={theme.successText.val} />}</Button.Icon>
+                                    <Button.Text color='$successText'>Accept Order</Button.Text>
+                                </Button>
+                                <Button onPress={handleAdhocDismissal} flex={1} bg='$error' borderWidth={1} borderColor='$errorBorder' disabled={isAccepting}>
+                                    <Button.Icon>
+                                        <FontAwesomeIcon icon={faBan} color={theme.errorText.val} />
+                                    </Button.Icon>
+                                    <Button.Text color='$errorText'>Dismiss Order</Button.Text>
+                                </Button>
+                            </XStack>
+                        )}
                         {isNotStarted && (
                             <Button onPress={() => startOrder()} bg='$success' borderWidth={1} borderColor='$successBorder'>
                                 <Button.Icon>
@@ -397,21 +493,23 @@ const OrderScreen = ({ route }) => {
                             </Button>
                         )}
                         {isNavigatable && (
-                            <Button bg='$info' borderWidth={1} borderColor='$infoBorder'>
+                            <Button onPress={startNavigation} bg='$info' borderWidth={1} borderColor='$infoBorder'>
                                 <Button.Icon>{isLoading('startNavigation') ? <Spinner color='$infoText' /> : <FontAwesomeIcon icon={faPaperPlane} color={theme.infoText.val} />}</Button.Icon>
                                 <Button.Text color='$infoText'>Start Navigation</Button.Text>
                             </Button>
                         )}
                     </XStack>
-                    <YStack>
-                        <CurrentDestinationSelect
-                            destination={destination}
-                            waypoints={waypointsInProgress}
-                            onChange={setOrderDestination}
-                            isLoading={isLoading('setOrderDestination')}
-                            snapTo='80%'
-                        />
-                    </YStack>
+                    {!isIncomingAdhoc && (
+                        <YStack>
+                            <CurrentDestinationSelect
+                                destination={destination}
+                                waypoints={waypointsInProgress}
+                                onChange={setOrderDestination}
+                                isLoading={isLoading('setOrderDestination')}
+                                snapTo='80%'
+                            />
+                        </YStack>
+                    )}
                 </ActionContainer>
                 <SectionHeader title='Order Information' />
                 <YStack py='$4'>

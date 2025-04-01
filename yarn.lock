@@ -1972,7 +1972,6 @@ __metadata:
     "@react-navigation/elements": ^2.0.0
     "@react-navigation/native": ^7.0.0
     "@react-navigation/native-stack": ^7.0.0
-    "@stripe/stripe-react-native": 0.41.0
     "@tamagui/babel-plugin": ^1.121.5
     "@tamagui/config": ^1.116.14
     "@types/jest": ^29.5.13
@@ -2012,6 +2011,7 @@ __metadata:
     react-native-i18n: ^2.0.15
     react-native-image-picker: ^8.2.0
     react-native-keychain: ^9.2.2
+    react-native-launch-navigator: ^1.0.9
     react-native-linear-gradient: ^2.8.3
     react-native-localize: ^3.3.0
     react-native-maps: ^1.20.0
@@ -2032,7 +2032,6 @@ __metadata:
     react-native-vision-camera: ^4.6.4
     react-native-web: ^0.19.13
     react-native-webview: ^13.12.3
-    react-native-youtube: ^2.0.2
     react-redux: ^9.0.4
     react-test-renderer: 18.3.1
     recyclerlistview: ^4.2.1
@@ -3520,20 +3519,6 @@ __metadata:
   dependencies:
     "@sinonjs/commons": ^3.0.0
   checksum: 614d30cb4d5201550c940945d44c9e0b6d64a888ff2cd5b357f95ad6721070d6b8839cd10e15b76bf5e14af0bcc1d8f9ec00d49a46318f1f669a4bec1d7f3148
-  languageName: node
-  linkType: hard
-
-"@stripe/stripe-react-native@npm:0.41.0":
-  version: 0.41.0
-  resolution: "@stripe/stripe-react-native@npm:0.41.0"
-  peerDependencies:
-    expo: ">=46.0.9"
-    react: "*"
-    react-native: "*"
-  peerDependenciesMeta:
-    expo:
-      optional: true
-  checksum: ce3f054a178ae529056e1196e226b5a2f81c643e8496706566c092356e5c294474162ed6f8607ec4f0ecbc5a2d52f772484c4bebd23104f0995b144a9f78a039
   languageName: node
   linkType: hard
 
@@ -13216,7 +13201,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:15.8.1, prop-types@npm:^15.5.0, prop-types@npm:^15.5.7, prop-types@npm:^15.6.0, prop-types@npm:^15.6.1, prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
+"prop-types@npm:15.8.1, prop-types@npm:^15.5.7, prop-types@npm:^15.6.0, prop-types@npm:^15.6.1, prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -13633,6 +13618,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-launch-navigator@npm:1.0.9":
+  version: 1.0.9
+  resolution: "react-native-launch-navigator@npm:1.0.9"
+  peerDependencies:
+    react-native: ">=0.60.0"
+  checksum: 2592afc421a5aa9f11c24ced4cf6fb9d95759ec3e5537427705ff8c959a40e2319e506b5e14572712229a2b14697fae386ec47dbe4b5bb61f2ca25b2a3aea65e
+  languageName: node
+  linkType: hard
+
+"react-native-launch-navigator@patch:react-native-launch-navigator@npm%3A1.0.9#./.yarn/patches/react-native-launch-navigator-npm-1.0.9-f069a6b5fd.patch::locator=%40fleetbase%2Fnavigator-app%40workspace%3A.":
+  version: 1.0.9
+  resolution: "react-native-launch-navigator@patch:react-native-launch-navigator@npm%3A1.0.9#./.yarn/patches/react-native-launch-navigator-npm-1.0.9-f069a6b5fd.patch::version=1.0.9&hash=9a0cf3&locator=%40fleetbase%2Fnavigator-app%40workspace%3A."
+  peerDependencies:
+    react-native: ">=0.60.0"
+  checksum: 4356919e15efb0403e3c37fde4b3f34e4d6262041ee7bd5ef309a6f71df3da3037c0443c5fe9a67716d6229e96b65c5c5f7513026cb8f0422d1ad970dba7020e
+  languageName: node
+  linkType: hard
+
 "react-native-linear-gradient@npm:^2.8.3":
   version: 2.8.3
   resolution: "react-native-linear-gradient@npm:2.8.3"
@@ -13916,17 +13919,6 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 034b1ac22b32f3c9c66c1be96ec71078657b569ddd0970639a90ddf2f3849fa31bc010cff19e5b9b315ce836b9061926b196a156a72b9438f5cee24512ebc33a
-  languageName: node
-  linkType: hard
-
-"react-native-youtube@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "react-native-youtube@npm:2.0.2"
-  dependencies:
-    prop-types: ^15.5.0
-  peerDependencies:
-    react-native: ">=0.60"
-  checksum: 569969ce87c5752ad6e1d03b9ea019df3c3d45561ef522fa1964abbd3bc970f164de97fb421c9d1edf04b495e2f145bf2f8c5b1974ef72817e87d12418353d87
   languageName: node
   linkType: hard
 

@@ -44,7 +44,6 @@
         "@react-navigation/elements": "^2.0.0",
         "@react-navigation/native": "^7.0.0",
         "@react-navigation/native-stack": "^7.0.0",
-        "@stripe/stripe-react-native": "0.41.0",
         "@tamagui/babel-plugin": "^1.121.5",
         "@tamagui/config": "^1.116.14",
         "add": "^2.0.6",
@@ -75,6 +74,7 @@
         "react-native-i18n": "^2.0.15",
         "react-native-image-picker": "^8.2.0",
         "react-native-keychain": "^9.2.2",
+        "react-native-launch-navigator": "^1.0.9",
         "react-native-linear-gradient": "^2.8.3",
         "react-native-localize": "^3.3.0",
         "react-native-maps": "^1.20.0",
@@ -95,7 +95,6 @@
         "react-native-vision-camera": "^4.6.4",
         "react-native-web": "^0.19.13",
         "react-native-webview": "^13.12.3",
-        "react-native-youtube": "^2.0.2",
         "react-redux": "^9.0.4",
         "recyclerlistview": "^4.2.1",
         "socketcluster-client": "^19.2.3",
@@ -134,6 +133,7 @@
     },
     "resolutions": {
         "react-native-i18n@^2.0.15": "patch:react-native-i18n@npm%3A2.0.15#./.yarn/patches/react-native-i18n-npm-2.0.15-7f3cf7cee6.patch",
-        "react-native-notifications@^5.1.0": "patch:react-native-notifications@npm%3A5.1.0#./.yarn/patches/react-native-notifications-npm-5.1.0-3e3b2ea3f8.patch"
+        "react-native-notifications@^5.1.0": "patch:react-native-notifications@npm%3A5.1.0#./.yarn/patches/react-native-notifications-npm-5.1.0-3e3b2ea3f8.patch",
+        "react-native-launch-navigator@^1.0.9": "patch:react-native-launch-navigator@npm%3A1.0.9#./.yarn/patches/react-native-launch-navigator-npm-1.0.9-f069a6b5fd.patch"
     }
 }
