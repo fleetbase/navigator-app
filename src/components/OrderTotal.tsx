@@ -75,6 +75,8 @@ const OrderTotal = ({ order }) => {
             <FlatList
                 data={lineItems}
                 scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
                 keyExtractor={(item, index) => index}
                 renderItem={({ item }) => {
                     return (
