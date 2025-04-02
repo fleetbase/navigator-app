@@ -549,7 +549,7 @@ const DriverNavigator = createBottomTabNavigator({
             tabBarActiveTintColor: theme.primary.val,
             tabBarStyle: {
                 backgroundColor: theme.background.val,
-                borderTopWidth: 0,
+                borderTopWidth: Platform.OS === 'android' ? 0 : 1,
                 borderTopColor: isDarkMode ? theme['$gray-800'].val : theme['$gray-600'].val,
                 position: 'relative',
                 elevation: 0,
@@ -557,12 +557,12 @@ const DriverNavigator = createBottomTabNavigator({
             tabBarIcon: ({ focused }) => {
                 const icon = getDefaultTabIcon(route.name);
 
-                return <FontAwesomeIcon icon={icon} size={20} color={focused ? theme.primary.val : theme.secondary.val} />;
+                return <FontAwesomeIcon icon={icon} size={Platform.OS === 'android' ? 18 : 20} color={focused ? theme.primary.val : theme.secondary.val} />;
             },
             tabBarLabelStyle: ({ focused }) => {
                 return {
-                    marginTop: 15,
-                    fontSize: 15,
+                    marginTop: Platform.OS === 'android' ? 5 : 15,
+                    fontSize: Platform.OS === 'android' ? 13 : 15,
                     fontWeight: focued ? 600 : 300,
                 };
             },
