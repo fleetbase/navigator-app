@@ -8,9 +8,10 @@ buildscript {
         buildToolsVersion = "35.0.0"
         minSdkVersion = 24
         compileSdkVersion = 35
-        targetSdkVersion = 34
+        targetSdkVersion = 35
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
+        appCompatVersion = "1.4.2"
     }
     repositories {
         google()
@@ -26,6 +27,16 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0")
         classpath('com.google.gms:google-services:4.3.15')
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+    }
+}
+
+allprojects { 
+    repositories {
+        // Required for react-native-background-geolocation
+        maven { url("${project(':react-native-background-geolocation').projectDir}/libs") }
+        maven { url 'https://developer.huawei.com/repo/' }
+        // Required for react-native-background-fetch
+        maven { url("${project(':react-native-background-fetch').projectDir}/libs") }
     }
 }
 
