@@ -3,6 +3,10 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
+// background-geolocation
+Project background_geolocation = project(':react-native-background-geolocation')
+apply from: "${background_geolocation.projectDir}/app.gradle"
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -94,6 +98,7 @@ android {
         resValue "string", "facebook_client_token", project.hasProperty('FACEBOOK_CLIENT_TOKEN') ? FACEBOOK_CLIENT_TOKEN : '_FACEBOOK_CLIENT_TOKEN_'
         resValue "string", "facebook_app_id", project.hasProperty('FACEBOOK_APP_ID') ? FACEBOOK_APP_ID : '_FACEBOOK_APP_ID_'
         resValue "string", "google_maps_api_key", project.hasProperty('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '_GOOGLE_MAPS_API_KEY_'
+        resValue "string", "transistorsoft_license_key", project.hasProperty('TRANSISTORSOFT_LICENCE_KEY') ? TRANSISTORSOFT_LICENSE_KEY : '_TRANSISTORSOFT_LICENCE_KEY_'
     }
     configurations.all {
         resolutionStrategy {
@@ -128,6 +133,7 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            shrinkResources false
         }
     }
 }

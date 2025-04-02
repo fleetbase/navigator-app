@@ -48,7 +48,7 @@ const LoginScreen = () => {
                 </YStack>
             </SafeAreaView>
             <YStack position='absolute' top={0} right={0} pt={insets.top}>
-                <Button onPress={handleOpenInstanceLink}>
+                <Button onPress={handleOpenInstanceLink} bg='transparent'>
                     <Button.Icon>
                         <FontAwesomeIcon icon={faPlug} color={theme['$textSecondary'].val} />
                     </Button.Icon>

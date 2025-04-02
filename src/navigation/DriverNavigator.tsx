@@ -530,9 +530,10 @@ const DriverNavigator = createBottomTabNavigator({
             tabBarActiveTintColor: theme.primary.val,
             tabBarStyle: {
                 backgroundColor: theme.background.val,
-                borderTopWidth: 1,
-                borderTopColor: isDarkMode ? theme.borderColor.val : theme['$gray-600'].val,
+                borderTopWidth: 0,
+                borderTopColor: isDarkMode ? theme['$gray-800'].val : theme['$gray-600'].val,
                 position: 'relative',
+                elevation: 0,
             },
             tabBarIcon: ({ focused }) => {
                 const icon = getDefaultTabIcon(route.name);

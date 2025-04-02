@@ -17,11 +17,9 @@ import { ChatProvider } from './src/contexts/ChatContext';
 import { LocationProvider } from './src/contexts/LocationContext';
 import { ConfigProvider } from './src/contexts/ConfigContext';
 import config from './tamagui.config';
-import { clear } from './src/utils/storage';
 
 function AppContent(): React.JSX.Element {
     const { appTheme } = useThemeContext();
-    // clear();
 
     return (
         <TamaguiProvider config={config} theme={appTheme}>
