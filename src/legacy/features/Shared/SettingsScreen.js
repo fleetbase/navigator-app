@@ -77,6 +77,8 @@ const SettingsScreen = ({ route }) => {
             <ScrollView
                 style={[tailwind('w-full bg-gray-800')]}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchSettings} tintColor={getColorCode('text-blue-200')} />}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
             >
                 <Pressable onPress={Keyboard.dismiss} style={tailwind('w-full h-full relative')}>
                     <View style={tailwind('flex flex-row items-center justify-between p-4')}>

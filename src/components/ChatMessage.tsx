@@ -1,4 +1,5 @@
 import { Button, Avatar, YStack, XStack, Text, useTheme } from 'tamagui';
+import { Platfrom } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { abbreviateName } from '../utils';
@@ -21,7 +22,9 @@ const ChatMessage = ({ record, participant }) => {
                             </Text>
                         </Avatar.Fallback>
                     </Avatar>
-                    {record.sender.is_online === true && <YStack position='absolute' top={0} right={0} bg='$successBorder' width={12} height={12} borderRadius='100%' />}
+                    {record.sender.is_online === true && (
+                        <YStack position='absolute' top={0} right={0} bg='$successBorder' width={12} height={12} borderRadius={Platform.OS === 'android' ? 12 : '100%'} />
+                    )}
                 </YStack>
             </YStack>
             <YStack flex={1}>

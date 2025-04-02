@@ -271,7 +271,7 @@ const DriverAccountScreen = () => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
                 <YStack flex={1} bg='$background' space='$8' pt='$8'>
                     <YStack space='$2'>
                         <XStack px='$3' justifyContent='space-between'>
@@ -292,6 +292,8 @@ const DriverAccountScreen = () => {
                             renderItem={renderMenuItem}
                             ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
                             scrollEnabled={false}
+                            showsVerticalScrollIndicator={false}
+                            showsHorizontalScrollIndicator={false}
                         />
                     </YStack>
                     <YStack space='$2'>
@@ -306,6 +308,8 @@ const DriverAccountScreen = () => {
                             renderItem={renderMenuItem}
                             ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
                             scrollEnabled={false}
+                            showsVerticalScrollIndicator={false}
+                            showsHorizontalScrollIndicator={false}
                         />
                     </YStack>
                     <YStack padding='$4' mb='$5'>

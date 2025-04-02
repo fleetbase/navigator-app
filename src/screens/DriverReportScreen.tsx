@@ -251,6 +251,8 @@ const DriverReportScreen = () => {
                         </Text>
                     </YStack>
                 }
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
             />
             <YStack bg='$background' position='absolute' bottom={0} left={0} right={0} borderTopWidth={1} borderColor='$borderColor'>
                 <YStack px='$2' py='$4'>

@@ -1,4 +1,5 @@
 import { Text, YStack, Avatar } from 'tamagui';
+import { Platform } from 'react-native';
 import { abbreviateName } from '../utils';
 
 const ChatParticipantAvatar = ({ participant, size = '$5' }) => {
@@ -12,7 +13,9 @@ const ChatParticipantAvatar = ({ participant, size = '$5' }) => {
                     </Text>
                 </Avatar.Fallback>
             </Avatar>
-            {participant.is_online === true && <YStack position='absolute' top={0} right={0} bg='$successBorder' width={12} height={12} borderRadius='100%' />}
+            {participant.is_online === true && (
+                <YStack position='absolute' top={0} right={0} bg='$successBorder' width={12} height={12} borderRadius={Platform.OS === 'android' ? 12 : '100%'} />
+            )}
         </YStack>
     );
 };
