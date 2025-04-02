@@ -126,6 +126,8 @@ const DriverProfileScreen = () => {
                         renderItem={renderMenuItem}
                         ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
                         scrollEnabled={false}
+                        showsVerticalScrollIndicator={false}
+                        showsHorizontalScrollIndicator={false}
                     />
                 </YStack>
             </YStack>

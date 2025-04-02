@@ -17,6 +17,8 @@ const OrderItems = ({ order }) => {
             <FlatList
                 data={contents}
                 scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item: entity }) => {
                     return (

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { FlatList, RefreshControl, Pressable } from 'react-native';
+import { FlatList, RefreshControl, Pressable, Platform } from 'react-native';
 import { Text, YStack, XStack, Button, Avatar, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
@@ -59,7 +59,16 @@ const ChatHomeScreen = () => {
                             {formatWhatsAppTimestamp(new Date(lastMessageReceived))}
                         </Text>
                         {channel.unread_count > 0 && (
-                            <YStack mt='$2' bg='$successBorder' width={20} height={20} borderRadius='100%' alignItems='center' justifyContent='center' textAlign='center'>
+                            <YStack
+                                mt='$2'
+                                bg='$successBorder'
+                                width={20}
+                                height={20}
+                                borderRadius={Platform.OS === 'android' ? 20 : '100%'}
+                                alignItems='center'
+                                justifyContent='center'
+                                textAlign='center'
+                            >
                                 <Text color='$successText'>{channel.unread_count}</Text>
                             </YStack>
                         )}

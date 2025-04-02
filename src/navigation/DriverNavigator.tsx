@@ -521,11 +521,30 @@ const DriverNavigator = createBottomTabNavigator({
                 borderBottomWidth: 0,
             },
             headerShadowVisible: false,
-            tabBarBackground: () => (
-                <View style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-                    <BlurView tint={isDarkMode ? 'dark' : 'light'} intensity={100} style={StyleSheet.absoluteFill} />
-                </View>
-            ),
+            tabBarBackground: () => {
+                if (Platform.OS === 'android') {
+                    return (
+                        <View
+                            style={[
+                                StyleSheet.absoluteFill,
+                                {
+                                    width: '100%',
+                                    height: '100%',
+                                    backgroundColor: theme.background.val,
+                                    borderColor: theme.borderColor.val,
+                                    borderTopWidth: Platform.OS === 'android' ? 0 : 1,
+                                    borderWidth: 0,
+                                },
+                            ]}
+                        />
+                    );
+                }
+                return (
+                    <View style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+                        <BlurView tint={isDarkMode ? 'dark' : 'light'} intensity={100} style={StyleSheet.absoluteFill} />
+                    </View>
+                );
+            },
             tabBarInactiveTintColor: theme.secondary.val,
             tabBarActiveTintColor: theme.primary.val,
             tabBarStyle: {

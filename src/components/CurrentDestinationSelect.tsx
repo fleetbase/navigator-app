@@ -131,14 +131,30 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                 <XStack>
                                                     {isCompleted && (
                                                         <YStack mr='$2'>
-                                                            <YStack mt='$1' borderRadius='100%' width={24} height={24} bg='$successBorder' alignItems='center' justifyContent='center'>
+                                                            <YStack
+                                                                mt='$1'
+                                                                borderRadius={Platform.OS === 'android' ? 24 : '100%'}
+                                                                width={24}
+                                                                height={24}
+                                                                bg='$successBorder'
+                                                                alignItems='center'
+                                                                justifyContent='center'
+                                                            >
                                                                 <FontAwesomeIcon icon={faCheck} color={theme['$success'].val} />
                                                             </YStack>
                                                         </YStack>
                                                     )}
                                                     {isDestination && (
                                                         <YStack mr='$2'>
-                                                            <YStack mt='$1' borderRadius='100%' width={24} height={24} bg='$infoBorder' alignItems='center' justifyContent='center'>
+                                                            <YStack
+                                                                mt='$1'
+                                                                borderRadius={Platform.OS === 'android' ? 24 : '100%'}
+                                                                width={24}
+                                                                height={24}
+                                                                bg='$infoBorder'
+                                                                alignItems='center'
+                                                                justifyContent='center'
+                                                            >
                                                                 <FontAwesomeIcon icon={faLocationDot} color={theme['$info'].val} />
                                                             </YStack>
                                                         </YStack>
@@ -152,7 +168,9 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                                     </Text>
                                                                     {isDestination && <Text color='$infoText'>(Destination)</Text>}
                                                                 </YStack>
-                                                                <Badge status={waypoint.getAttribute('status')} fontSize='$1' px='$2' py='$1' />
+                                                                {typeof waypoint.getAttribute('status') === 'string' && (
+                                                                    <Badge status={waypoint.getAttribute('status')} fontSize='$1' px='$2' py='$1' />
+                                                                )}
                                                             </XStack>
                                                             <Text color='$textSecondary' numberOfLines={1}>
                                                                 {formattedAddressFromPlace(waypoint)}

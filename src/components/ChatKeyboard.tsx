@@ -57,8 +57,10 @@ const ChatKeyboard = ({ onSend, onAttach, onCamera, onFocus, onBlur }) => {
                             value={message}
                             onChangeText={setMessage}
                             onContentSizeChange={(e) => {
-                                const newHeight = e.nativeEvent.contentSize.height;
-                                setInputHeight(Math.min(Math.max(INPUT_MIN_HEIGHT, newHeight), INPUT_MAX_HEIGHT)); // clamp between min and max
+                                const newHeight = Math.min(Math.max(INPUT_MIN_HEIGHT, e.nativeEvent.contentSize.height), INPUT_MAX_HEIGHT);
+                                if (newHeight !== inputHeight) {
+                                    setInputHeight(newHeight);
+                                }
                             }}
                             height={inputHeight}
                             minHeight={INPUT_MIN_HEIGHT}

@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import { XStack, YStack, styled, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTruck } from '@fortawesome/free-solid-svg-icons';
@@ -31,7 +31,7 @@ export const OrderProgressBar: FC<OrderProgressBarProps> = ({ progress, firstWay
             borderColor={completed ? '$successBorder' : '$gray-600'}
             width={24}
             height={24}
-            borderRadius='100%'
+            borderRadius={Platform.OS === 'android' ? 24 : '100%'}
             alignItems='center'
             justifyContent='center'
             {...shadowProps}
@@ -43,7 +43,7 @@ export const OrderProgressBar: FC<OrderProgressBarProps> = ({ progress, firstWay
                 bg={completed ? '$successBorder' : '$gray-600'}
                 width={14}
                 height={14}
-                borderRadius='100%'
+                borderRadius={Platform.OS === 'android' ? 14 : '100%'}
                 circular
             ></YStack>
         </YStack>

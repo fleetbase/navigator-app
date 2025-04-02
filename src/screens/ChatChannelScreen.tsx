@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { FlatList, RefreshControl, Pressable } from 'react-native';
+import { FlatList, RefreshControl, Pressable, Keyboard } from 'react-native';
 import { Text, YStack, XStack, Button, Avatar, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
@@ -103,6 +103,21 @@ const ChatChannelScreen = ({ route }) => {
         }
     };
 
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            // Adjust the delay as needed
+            later(() => {
+                if (chatFeedRef.current) {
+                    chatFeedRef.current.scrollToEnd();
+                }
+            }, 150);
+        });
+
+        return () => {
+            keyboardDidShowListener.remove();
+        };
+    }, []);
+
     useFocusEffect(
         useCallback(() => {
             const listenForEvents = async () => {
@@ -165,7 +180,7 @@ const ChatChannelScreen = ({ route }) => {
                 </YStack>
             </XStack>
             <ChatFeed ref={chatFeedRef} channel={channel} />
-            <ChatKeyboard channel={channel} onSend={handleSendMessage} onFocus={scrollToBottom} />
+            <ChatKeyboard channel={channel} onSend={handleSendMessage} />
         </YStack>
     );
 };

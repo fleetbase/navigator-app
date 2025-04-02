@@ -161,6 +161,7 @@ const DriverOrderManagementScreen = () => {
                             </YStack>
                         )}
                         showsVerticalScrollIndicator={false}
+                        showsHorizontalScrollIndicator={false}
                         ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
                     />
                 </YStack>
@@ -217,6 +218,7 @@ const DriverOrderManagementScreen = () => {
                 renderItem={renderOrder}
                 refreshControl={<RefreshControl refreshing={isFetchingCurrentOrders} onRefresh={reloadCurrentOrders} tintColor={theme.borderColor.val} />}
                 showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
                 ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
                 ListFooterComponent={<Spacer height={200} />}
                 ListEmptyComponent={<NoOrders />}
