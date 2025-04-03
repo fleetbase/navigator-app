@@ -113,6 +113,8 @@ export const LocationProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
+        if (!driver) return;
+
         BackgroundGeolocation.ready(
             {
                 desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
@@ -141,7 +143,7 @@ export const LocationProvider = ({ children }) => {
         return () => {
             BackgroundGeolocation.removeListeners();
         };
-    }, [onLocation, onLocationError, onMotionChange, isOnline, getHttpConfig]);
+    }, [driver, onLocation, onLocationError, onMotionChange, isOnline, getHttpConfig]);
 
     // Configure BackgroundFetch for periodic tasks.
     useEffect(() => {
@@ -163,6 +165,7 @@ export const LocationProvider = ({ children }) => {
 
     // Toggle tracking based on the driver's online status.
     useEffect(() => {
+        if (!driver) return;
         if (isOnline) {
             startTracking();
         } else {
@@ -172,7 +175,7 @@ export const LocationProvider = ({ children }) => {
         if (isEmpty(location) && driver) {
             trackLocation();
         }
-    }, [isOnline, startTracking, stopTracking]);
+    }, [driver, isOnline, startTracking, stopTracking]);
 
     // Memoize the context value to prevent unnecessary re-renders.
     const value = useMemo(
