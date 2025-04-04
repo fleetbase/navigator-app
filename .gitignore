@@ -32,6 +32,8 @@ local.properties
 android/*.hprof
 android/app/build
 android/.kotlin
+*.aab
+*.apk
 
 # node.js
 #
@@ -84,6 +86,7 @@ android/app/google-services.json
 
 # Navigator assets/configurations
 #
-storefront.config.js
+navigator.config.js
 .tamagui
 vendor
+*.pxd
