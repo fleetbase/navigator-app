@@ -1,124 +1,171 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>CFBundleDevelopmentRegion</key>
-		<string>en</string>
-		<key>CFBundleDisplayName</key>
-		<string>$(APP_NAME)</string>
-		<key>CFBundleExecutable</key>
-		<string>$(EXECUTABLE_NAME)</string>
-		<key>CFBundleIconName</key>
-		<string>AppIcon</string>
-		<key>CFBundleIdentifier</key>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-		<key>CFBundleInfoDictionaryVersion</key>
-		<string>6.0</string>
-		<key>CFBundleName</key>
-		<string>$(PRODUCT_NAME)</string>
-		<key>CFBundlePackageType</key>
-		<string>APPL</string>
-		<key>CFBundleShortVersionString</key>
-		<string>$(MARKETING_VERSION)</string>
-		<key>CFBundleSignature</key>
-		<string>????</string>
-		<key>CFBundleVersion</key>
-		<string>$(CURRENT_PROJECT_VERSION)</string>
-		<key>LSRequiresIPhoneOS</key>
-		<true />
-		<key>NSAppTransportSecurity</key>
+<dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.transistorsoft.fetch</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(APP_NAME)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
 		<dict>
-			<key>NSExceptionDomains</key>
+			<key>CFBundleURLName</key>
+			<string>$(APP_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(APP_LINK_PREFIX)</string>
+				<string>fb$(FACEBOOK_APP_ID)</string>
+				<string>$(APP_IDENTIFIER)</string>
+				<string>com.googleusercontent.apps.$(GOOGLE_IOS_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>FacebookAppID</key>
+	<string>$(FACEBOOK_APP_ID)</string>
+	<key>FacebookClientToken</key>
+	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
+	<key>FacebookDisplayName</key>
+	<string>$(APP_NAME)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>GIDClientID</key>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>qpaywallet</string>
+		<string>khanbank</string>
+		<string>statebankmongolia</string>
+		<string>xacbank</string>
+		<string>tdbbank</string>
+		<string>socialpay-payment</string>
+		<string>most</string>
+		<string>nibank</string>
+		<string>ckbank</string>
+		<string>capitronbank</string>
+		<string>bogdbank</string>
+		<string>transbank</string>
+		<string>mbank</string>
+		<string>ard</string>
+		<string>arig</string>
+		<string>Monpay</string>
+		<string>fbapi</string>
+		<string>fbauth2</string>
+		<string>fb-messenger-share-api</string>
+		<string>comgooglemaps</string>
+		<string>citymapper</string>
+		<string>uber</string>
+		<string>lyft</string>
+		<string>transit</string>
+		<string>truckmap</string>
+		<string>waze</string>
+		<string>yandexnavi</string>
+		<string>moovit</string>
+		<string>yandextaxi</string>
+		<string>yandexmaps</string>
+		<string>kakaomap</string>
+		<string>tmap</string>
+		<string>szn-mapy</string>
+		<string>mapsme</string>
+		<string>osmandmaps</string>
+		<string>gett</string>
+		<string>nmap</string>
+		<string>dgis</string>
+		<string>lftgpas</string>
+		<string>sygic</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>fleetbase.engineering</key>
 			<dict>
-				<key>fleetbase.engineering</key>
-				<dict>
-					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<false />
-					<key>NSIncludesSubdomains</key>
-					<true />
-				</dict>
-				<key>fleetbase.io</key>
-				<dict>
-					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<false />
-					<key>NSIncludesSubdomains</key>
-					<true />
-				</dict>
-				<key>localhost</key>
-				<dict>
-					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<true />
-				</dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>fleetbase.io</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
 			</dict>
 		</dict>
-		<key>NSLocalNetworkUsageDescription</key>
-		<string>Atlantis would use Bonjour Service to discover Proxyman app from your local network.</string>
-		<key>NSBonjourServices</key>
-		<array>
-			<string>_Proxyman._tcp</string>
-		</array>
-		<key>NSCameraUsageDescription</key>
-		<string>This app may need to use your camera for your profile picture</string>
-		<key>NSContactsUsageDescription</key>
-		<string>This app may need to access your contacts for sharing</string>
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>This app will track your location to update operations</string>
-		<key>NSLocationAlwaysUsageDescription</key>
-		<string>&gt;This app will track your location to update operations</string>
-		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>&gt;This app will track your location to update operations</string>
-		<key>NSMicrophoneUsageDescription</key>
-		<string>This app may require microphone access if camera is used</string>
-		<key>NSPhotoLibraryUsageDescription</key>
-		<string>This app allows you to upload photos from your photo library</string>
-		<key>UIBackgroundModes</key>
-		<array>
-			<string>remote-notification</string>
-			<string>audio</string>
-			<string>location</string>
-		</array>
-		<key>UILaunchStoryboardName</key>
-		<string>BootSplash</string>
-		<key>UIRequiredDeviceCapabilities</key>
-		<array>
-			<string>armv7</string>
-		</array>
-		<key>CFBundleURLTypes</key>
-		<array>
-			<dict>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>flbnavigator</string>
-				</array>
-			</dict>
-		</array>
-		<key>UISupportedInterfaceOrientations</key>
-		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
-		</array>
-		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false />
-		<key>LSApplicationQueriesSchemes</key>
-		<array>
-			<string>citymapper</string>
-			<string>comgooglemaps</string>
-			<string>navigon</string>
-			<string>transit</string>
-			<string>waze</string>
-			<string>yandexnavi</string>
-			<string>uber</string>
-			<string>tomtomhome</string>
-			<string>com.sygic.aura</string>
-			<string>here-route</string>
-			<string>moovit</string>
-			<string>lyft</string>
-			<string>mapsme</string>
-			<string>cabify</string>
-			<string>baidumap</string>
-			<string>taxis99</string>
-			<string>iosamap</string>
-		</array>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>This app may need to use your camera for your profile picture</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app may need to access your contacts for sharing</string>
+	<key>NSLocalUsageDescription</key>
+	<string>This app requires access to send you notifications about order status updates and other important information.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Navigator uses your location even when the app is in the background to keep your navigation and task data up-to-date.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Navigator requires access to your location at all times to track your position in the background for accurate navigation and task updates.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Navigator needs your location to provide navigation and task management features while you are using the app.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Navigator uses motion data to enhance navigation and track physical activity for improved task management.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app allows you to download photos to your photo library</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app allows you to upload photos from your photo library</string>
+	<key>NSUserAuthenticationUsageDescription</key>
+	<string>Sign in with Apple is used to authenticate your account.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>processing</string>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>BootSplash</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+</dict>
 </plist>
