@@ -11,6 +11,7 @@ import { navigatorConfig } from '../utils';
 import { PhoneLoginButton, AppleLoginButton, FacebookLoginButton, GoogleLoginButton } from '../components/Buttons';
 import useOAuth from '../hooks/use-oauth';
 import LinearGradient from 'react-native-linear-gradient';
+import DeviceInfo from 'react-native-device-info';
 
 const LoginScreen = () => {
     const navigation = useNavigation();
@@ -45,6 +46,9 @@ const LoginScreen = () => {
             <SafeAreaView style={{ flex: 1 }}>
                 <YStack flex={1} justifyContent='flex-end' alignItems='center' space='$3' px='$5' pb='$6'>
                     <PhoneLoginButton onPress={handlePhoneLogin} />
+                    <Text color='$textSecondary' fontSize='$2'>
+                        v{DeviceInfo.getVersion()} #{DeviceInfo.getBuildNumber()}
+                    </Text>
                 </YStack>
             </SafeAreaView>
             <YStack position='absolute' top={0} right={0} pt={insets.top}>
