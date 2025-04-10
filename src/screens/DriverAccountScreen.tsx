@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView, FlatList, Pressable, ScrollView } from 'react-native';
+import { SafeAreaView, FlatList, Pressable, ScrollView, Platform } from 'react-native';
 import { Spinner, Avatar, Text, YStack, XStack, Separator, Button, useTheme } from 'tamagui';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
@@ -30,6 +30,14 @@ const DriverAccountScreen = () => {
     const handleSignout = () => {
         logout();
         toast.success(t('AccountScreen.signedOut'));
+    };
+
+    const handleOpenTermsOfService = () => {
+        Linking.openURL('https://www.fleetbase.io/terms');
+    };
+
+    const handleOpenPrivacyPolicy = () => {
+        Linking.openURL('https://www.fleetbase.io/privacy-policy');
     };
 
     const handleChangeProfilePhoto = () => {
@@ -239,14 +247,9 @@ const DriverAccountScreen = () => {
             onPress: handleSelectScheme,
         },
         {
-            title: t('AccountScreen.deleteAccount'),
-            rightComponent: null,
-            onPress: () => navigation.navigate('DeleteAccount'),
-        },
-        {
             title: t('AccountScreen.termsOfService'),
             rightComponent: null,
-            onPress: () => navigation.navigate('TermsOfService'),
+            onPress: () => handleOpenTermsOfService,
         },
     ];
 
@@ -255,24 +258,24 @@ const DriverAccountScreen = () => {
         {
             title: t('AccountScreen.privacyPolicy'),
             rightComponent: null,
-            onPress: () => navigation.navigate('PrivacyPolicy'),
+            onPress: () => handleOpenPrivacyPolicy,
         },
         {
             title: t('AccountScreen.clearCache'),
             rightComponent: null,
             onPress: handleClearCache,
         },
-        {
-            title: t('AccountScreen.tracking'),
-            rightComponent: <Text color='$textSecondary'>Enabled</Text>, // Replace with dynamic value if available
-            onPress: () => navigation.navigate('TrackingSettings'),
-        },
+        // {
+        //     title: t('AccountScreen.tracking'),
+        //     rightComponent: <Text color='$textSecondary'>Enabled</Text>, // Replace with dynamic value if available
+        //     onPress: () => navigation.navigate('TrackingSettings'),
+        // },
     ];
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
             <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
-                <YStack flex={1} bg='$background' space='$8' pt='$8'>
+                <YStack flex={1} bg='$background' space='$8' pt={Platform.OS === 'android' ? '$10' : '$8'}>
                     <YStack space='$2'>
                         <XStack px='$3' justifyContent='space-between'>
                             <YStack>
@@ -282,7 +285,7 @@ const DriverAccountScreen = () => {
                             </YStack>
                             <YStack>
                                 <Text fontSize='$3' color='$textSecondary' numberOfLines={1}>
-                                    v{DeviceInfo.getVersion()}
+                                    v{DeviceInfo.getVersion()} #{DeviceInfo.getBuildNumber()}
                                 </Text>
                             </YStack>
                         </XStack>
