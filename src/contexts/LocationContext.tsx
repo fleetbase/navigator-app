@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useCallback, useContext, use
 import BackgroundGeolocation from 'react-native-background-geolocation';
 import BackgroundFetch from 'react-native-background-fetch';
 import { Place, Point } from '@fleetbase/sdk';
-import { isEmpty } from '../utils';
+import { isEmpty, config } from '../utils';
 import { useAuth } from './AuthContext';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
@@ -117,6 +117,12 @@ export const LocationProvider = ({ children }) => {
 
         BackgroundGeolocation.ready(
             {
+                backgroundPermissionRationale: {
+                    title: `Allow ${config('APP_NAME')} to access your location`,
+                    message: `${config('APP_NAME')} collects location data to update your position in real-time, even when the app is closed or running in the background. This allows dispatchers and ops teams to track your progress and provide better support while you drive.`,
+                    positiveAction: 'Allow',
+                    negativeAction: 'Deny',
+                },
                 desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
                 distanceFilter: 10,
                 stopOnTerminate: false,
