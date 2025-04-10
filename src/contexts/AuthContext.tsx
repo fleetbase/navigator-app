@@ -265,12 +265,11 @@ export const AuthProvider = ({ children }) => {
             try {
                 const driver = await fleetbase.drivers.verifyCode(state.phone, code);
                 createDriverSession(driver);
-                dispatch({ type: 'VERIFY', driver });
+                dispatch({ type: 'VERIFY', driver, isVerifyingCode: false });
             } catch (error) {
                 console.warn('[AuthContext] Code verification failed:', error);
-                throw error;
-            } finally {
                 dispatch({ type: 'VERIFY', isVerifyingCode: false });
+                throw error;
             }
         },
         [fleetbase, state.phone, setDriver]

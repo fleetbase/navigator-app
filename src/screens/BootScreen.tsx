@@ -44,12 +44,18 @@ const BootScreen = () => {
                 }
 
                 try {
-                    // Any initialization processes will run here
-                    if (isAuthenticated) {
-                        navigation.navigate('DriverNavigator');
-                    } else {
-                        navigation.navigate('Login');
-                    }
+                    later(() => {
+                        try {
+                            // Any initialization processes will run here
+                            if (isAuthenticated) {
+                                navigation.navigate('DriverNavigator');
+                            } else {
+                                navigation.navigate('Login');
+                            }
+                        } catch (err) {
+                            console.warn('Failed to navigate to screen:', err);
+                        }
+                    }, 0);
                 } catch (initializationError) {
                     setError(initializationError);
                 } finally {
