@@ -33,6 +33,13 @@
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="${appLinkScheme}" />
+    </intent-filter>
     </activity>
     <meta-data android:name="com.transistorsoft.locationmanager.license" android:value="@string/TRANSISTORSOFT_LICENSE_KEY" />
     <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/FACEBOOK_APP_ID"/>
