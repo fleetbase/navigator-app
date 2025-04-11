@@ -289,7 +289,7 @@ const DriverAccountScreen = () => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
             <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
-                <YStack flex={1} bg='$background' space='$8' pt={Platform.OS === 'android' ? '$10' : '$8'}>
+                <YStack flex={1} bg='$background' space='$8' pt={Platform.OS === 'android' ? '$10' : '$5'}>
                     <YStack space='$2'>
                         <XStack px='$3' justifyContent='space-between'>
                             <YStack>
