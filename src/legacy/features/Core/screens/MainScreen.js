@@ -36,7 +36,7 @@ const MainScreen = ({ navigation, route }) => {
 
     // Listen for push notifications for new orders
     const listenForNotifications = useCallback(() => {
-        const notifications = addEventListener('onNotification', notification => {
+        const notifications = addEventListener('onNotification', (notification) => {
             const { data, id } = notification;
             const { action } = data;
 
@@ -45,7 +45,7 @@ const MainScreen = ({ navigation, route }) => {
             console.log('[onNotification() #action]', action);
 
             if (typeof id === 'string' && id.startsWith('order')) {
-                return fleetbase.orders.findRecord(id).then(order => {
+                return fleetbase.orders.findRecord(id).then((order) => {
                     const data = order.serialize();
 
                     if (navigationRoute.name === 'MainScreen') {
@@ -82,13 +82,13 @@ const MainScreen = ({ navigation, route }) => {
         // Start tracking the driver location
         if (isOnline) {
             trackDriver(driver)
-                .then(unsubscribeFn => {
+                .then((unsubscribeFn) => {
                     setTrackingSubscriptions([...trackingSubscriptions, unsubscribeFn]);
                 })
                 .catch(logError);
         } else {
             // Unsubscribe to all tracking subscriptions in state
-            trackingSubscriptions.forEach(unsubscribeFn => {
+            trackingSubscriptions.forEach((unsubscribeFn) => {
                 unsubscribeFn();
             });
         }
@@ -158,14 +158,15 @@ const MainScreen = ({ navigation, route }) => {
                     header: ({ navigation, route, options }) => {
                         return <Header navigation={navigation} route={route} options={options} />;
                     },
-                })}>
-                <Tab.Screen key="orders" name="Orders" component={OrdersStack} />
+                })}
+            >
+                <Tab.Screen key='orders' name='Orders' component={OrdersStack} />
                 {/* <Tab.Screen key="routes" name="Routes" component={RoutesScreen} /> */}
                 {/* <Tab.Screen key="schedule" name="Schedule" component={ScheduleStack} /> */}
                 {/* <Tab.Screen key="wallet" name="Wallet" component={WalletScreen} /> */}
-                <Tab.Screen key="issue" name="Issue" component={IssuesScreen} />
-                <Tab.Screen key="chat" name="Chat" component={ChatsScreen} />
-                <Tab.Screen key="account" name="Account" component={AccountStack} />
+                <Tab.Screen key='issue' name='Issue' component={IssuesScreen} />
+                <Tab.Screen key='chat' name='Chat' component={ChatsScreen} />
+                <Tab.Screen key='account' name='Account' component={AccountStack} />
             </Tab.Navigator>
         </>
     );
