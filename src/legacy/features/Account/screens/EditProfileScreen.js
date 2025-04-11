@@ -29,7 +29,7 @@ const EditProfileScreen = ({ navigation }) => {
                 email,
                 phone,
             })
-            .then(driver => {
+            .then((driver) => {
                 setDriver(driver);
                 setIsLoading(false);
                 navigation.goBack();

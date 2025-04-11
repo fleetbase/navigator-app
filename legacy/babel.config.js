@@ -19,7 +19,7 @@ module.exports = {
                     ui: './src/interface',
                     components: './src/components',
                     assets: './assets',
-                    app: './app'
+                    app: './app',
                 },
             },
         ],

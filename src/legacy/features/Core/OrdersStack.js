@@ -33,7 +33,7 @@ const OrdersStack = ({ route }) => {
             <RootStack.Navigator>
                 <RootStack.Group>
                     <RootStack.Screen
-                        name="OrdersScreen"
+                        name='OrdersScreen'
                         component={OrdersScreen}
                         options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }}
                         initialParams={route.params ?? {}}
@@ -48,9 +48,9 @@ const OrderScreenStack = ({ route }) => {
     return (
         <SafeAreaProvider>
             <OrderStack.Navigator options={{ presentation: 'modal' }} screenOptions={{ presentation: 'modal', headerShown: false, animationEnabled: false, gestureEnabled: false }}>
-                <OrderStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                <OrderStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                <OrderStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <OrderStack.Screen name='OrderScreen' component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <OrderStack.Screen name='EntityScreen' component={EntityScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                <OrderStack.Screen name='ProofScreen' component={ProofScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
             </OrderStack.Navigator>
         </SafeAreaProvider>
     );
