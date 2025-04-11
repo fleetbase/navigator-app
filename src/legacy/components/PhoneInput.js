@@ -15,7 +15,7 @@ function isValidCountryCode(code) {
 }
 
 function findDialCodeFromCountryCode(code) {
-    const countryData = countryCodes.find(country => country.code === code);
+    const countryData = countryCodes.find((country) => country.code === code);
 
     if (countryData) {
         return countryData.dial_code;
@@ -47,7 +47,7 @@ const PhoneInput = ({
         setCountryCode(dialCode);
     }, []);
 
-    const findDialCodeByTimezone = timezone => {
+    const findDialCodeByTimezone = (timezone) => {
         for (const country of countries) {
             if (country.timeZones.includes(timezone)) {
                 return country.dialCode;
@@ -84,7 +84,7 @@ const PhoneInput = ({
                 <TextInput
                     style={[tailwind('h-12 px-2 w-full rounded-md')]}
                     value={value}
-                    onChangeText={text => {
+                    onChangeText={(text) => {
                         if (typeof onChangePhone === 'function') {
                             onChangePhone(text);
                         }
@@ -106,7 +106,7 @@ const PhoneInput = ({
                 onBackdropPress={() => setShow(false)}
                 popularCountries={['US', 'UK', 'SG', 'IN', 'NG']}
                 inputPlaceholder={'Search your country'}
-                pickerButtonOnPress={item => {
+                pickerButtonOnPress={(item) => {
                     setCountryCode(item.dial_code);
                     setShow(false);
                     if (typeof onCountryCodeSelected === 'function') {

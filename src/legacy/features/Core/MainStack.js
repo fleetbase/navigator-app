@@ -22,22 +22,22 @@ const MainStack = ({ route }) => {
             <RootStack.Navigator>
                 <RootStack.Group>
                     <RootStack.Screen
-                        name="MainScreen"
+                        name='MainScreen'
                         component={MainScreen}
                         options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }}
                         initialParams={route.params ?? {}}
                     />
                 </RootStack.Group>
                 <RootStack.Group screenOptions={{ presentation: 'modal' }}>
-                    <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="ProofScreen" component={ProofScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="IssueScreen" component={IssueScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="ChatsScreen" component={ChatsScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="ChannelScreen" component={ChannelScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="SettingsScreen" component={SettingsScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='OrderScreen' component={OrderScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='EntityScreen' component={EntityScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='ProofScreen' component={ProofScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='SearchScreen' component={SearchScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='IssueScreen' component={IssueScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='ChatScreen' component={ChatScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='ChatsScreen' component={ChatsScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='ChannelScreen' component={ChannelScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='SettingsScreen' component={SettingsScreen} options={{ headerShown: false }} initialParams={route.params ?? {}} />
                 </RootStack.Group>
             </RootStack.Navigator>
         </SafeAreaProvider>

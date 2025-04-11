@@ -23,7 +23,7 @@ const NavigationScreen = ({ navigation, route }) => {
     const [origin, setOrigin] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const extractOriginCoordinates = useCallback(_origin => {
+    const extractOriginCoordinates = useCallback((_origin) => {
         if (_origin?.coordinates && isArray(_origin?.coordinates)) {
             return _origin?.coordinates?.reverse();
         }
@@ -40,7 +40,7 @@ const NavigationScreen = ({ navigation, route }) => {
 
     const isReady = isArray(coords?.origin) && isArray(coords?.destination);
 
-    const trackDriverLocation = useCallback(event => {
+    const trackDriverLocation = useCallback((event) => {
         // const { distanceTraveled, durationRemaining, fractionTraveled, distanceRemaining } = event.nativeEvent;
         const { latitude, longitude } = event.nativeEvent;
 

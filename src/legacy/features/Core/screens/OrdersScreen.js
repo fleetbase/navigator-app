@@ -51,7 +51,7 @@ const OrdersScreen = ({ navigation }) => {
             setDateValue(value);
             updatedValue = format(value, 'dd-MM-yyyy');
         }
-        setParams(prevParams => ({ ...prevParams, [key]: updatedValue }));
+        setParams((prevParams) => ({ ...prevParams, [key]: updatedValue }));
     }, []);
 
     const loadOrders = useCallback((options = {}) => {
@@ -98,8 +98,8 @@ const OrdersScreen = ({ navigation }) => {
     });
 
     const insertNewOrder = useCallback(
-        newOrder => {
-            const orderExists = orders.isAny(order => order.id === newOrder.id);
+        (newOrder) => {
+            const orderExists = orders.isAny((order) => order.id === newOrder.id);
 
             if (orderExists) {
                 return;
@@ -110,7 +110,7 @@ const OrdersScreen = ({ navigation }) => {
         [orders, setOrders]
     );
 
-    const onOrderPress = useCallback(order => {
+    const onOrderPress = useCallback((order) => {
         navigation.push('OrderScreen', { data: order.serialize() });
     });
 
@@ -203,7 +203,7 @@ const OrdersScreen = ({ navigation }) => {
                         numDaysInWeek={5}
                         startingDate={startingDate}
                         selectedDate={date}
-                        onDateSelected={selectedDate => setParam('on', new Date(selectedDate))}
+                        onDateSelected={(selectedDate) => setParam('on', new Date(selectedDate))}
                         iconLeft={require('assets/nv-arrow-left.png')}
                         iconRight={require('assets/nv-arrow-right.png')}
                     />
@@ -215,7 +215,8 @@ const OrdersScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadOrders({ isRefreshing: true })} tintColor={getColorCode('text-blue-200')} />}
                 stickyHeaderIndices={[1]}
-                style={tailwind('w-full h-full')}>
+                style={tailwind('w-full h-full')}
+            >
                 {isQuerying && (
                     <View style={tailwind('flex items-center justify-center p-5')}>
                         <ActivityIndicator />
@@ -243,7 +244,8 @@ const OrdersScreen = ({ navigation }) => {
                                                     shadowColor: 'rgba(252, 211, 77, 1)',
                                                     marginBottom: nearbyOrders.length > 1 ? 12 : 8,
                                                 },
-                                            ]}>
+                                            ]}
+                                        >
                                             <OrderCard
                                                 headerTop={
                                                     <View style={tailwind('pt-3 pb-2 px-3')}>

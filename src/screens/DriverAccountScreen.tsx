@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView, FlatList, Pressable, ScrollView, Platform } from 'react-native';
+import { SafeAreaView, FlatList, Pressable, ScrollView, Platform, Linking } from 'react-native';
 import { Spinner, Avatar, Text, YStack, XStack, Separator, Button, useTheme } from 'tamagui';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
@@ -32,12 +32,26 @@ const DriverAccountScreen = () => {
         toast.success(t('AccountScreen.signedOut'));
     };
 
-    const handleOpenTermsOfService = () => {
-        Linking.openURL('https://www.fleetbase.io/terms');
+    const handleOpenTermsOfService = async () => {
+        const url = 'https://www.fleetbase.io/terms';
+        const supported = await Linking.canOpenURL(url);
+
+        if (supported) {
+            await Linking.openURL(url);
+        } else {
+            console.warn(`Can't open URL: ${url}`);
+        }
     };
 
-    const handleOpenPrivacyPolicy = () => {
-        Linking.openURL('https://www.fleetbase.io/privacy-policy');
+    const handleOpenPrivacyPolicy = async () => {
+        const url = 'https://www.fleetbase.io/privacy-policy';
+        const supported = await Linking.canOpenURL(url);
+
+        if (supported) {
+            await Linking.openURL(url);
+        } else {
+            console.warn(`Can't open URL: ${url}`);
+        }
     };
 
     const handleChangeProfilePhoto = () => {
@@ -249,7 +263,7 @@ const DriverAccountScreen = () => {
         {
             title: t('AccountScreen.termsOfService'),
             rightComponent: null,
-            onPress: () => handleOpenTermsOfService,
+            onPress: handleOpenTermsOfService,
         },
     ];
 
@@ -258,7 +272,7 @@ const DriverAccountScreen = () => {
         {
             title: t('AccountScreen.privacyPolicy'),
             rightComponent: null,
-            onPress: () => handleOpenPrivacyPolicy,
+            onPress: handleOpenPrivacyPolicy,
         },
         {
             title: t('AccountScreen.clearCache'),
@@ -275,7 +289,7 @@ const DriverAccountScreen = () => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
             <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
-                <YStack flex={1} bg='$background' space='$8' pt={Platform.OS === 'android' ? '$10' : '$8'}>
+                <YStack flex={1} bg='$background' space='$8' pt={Platform.OS === 'android' ? '$10' : '$5'}>
                     <YStack space='$2'>
                         <XStack px='$3' justifyContent='space-between'>
                             <YStack>
