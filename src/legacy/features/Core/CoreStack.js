@@ -13,10 +13,10 @@ const CoreStack = ({ route }) => {
         <SafeAreaProvider>
             <RootStack.Navigator screenOptions={{ headerShown: false, animationEnabled: false, gestureEnabled: false }}>
                 <RootStack.Group>
-                    <RootStack.Screen name="BootScreen" component={BootScreen} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="MainStack" component={MainStack} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="LoginScreen" component={AuthStack} initialParams={route.params ?? {}} />
-                    <RootStack.Screen name="OrdersScreen" component={OrderScreenStack} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='BootScreen' component={BootScreen} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='MainStack' component={MainStack} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='LoginScreen' component={AuthStack} initialParams={route.params ?? {}} />
+                    <RootStack.Screen name='OrdersScreen' component={OrderScreenStack} initialParams={route.params ?? {}} />
                 </RootStack.Group>
             </RootStack.Navigator>
         </SafeAreaProvider>
