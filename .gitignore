@@ -34,6 +34,7 @@ android/app/build
 android/.kotlin
 *.aab
 *.apk
+android/app/src/main/assets/index.android.bundle
 
 # node.js
 #

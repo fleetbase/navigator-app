@@ -65,9 +65,9 @@ const OrdersFilterBar = ({ onSelectSort, onSelectFilter, onSelectDate, onSelectT
             themeVariant: 'dark',
             onChange: (event, selectedDate) => setValue(selectedDate, 'date'),
             textColor: getColorCode('text-gray-50'),
-            style: tailwind('w-20')
+            style: tailwind('w-20'),
         });
-    }
+    };
 
     const setValue = (value, key = null) => {
         key = key ?? currentAction;

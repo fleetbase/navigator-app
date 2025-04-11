@@ -1,14 +1,25 @@
+import { useEffect } from 'react';
 import { Button, Avatar, YStack, XStack, Text, useTheme } from 'tamagui';
 import { Platfrom } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { abbreviateName } from '../utils';
 import { formatWhatsAppTimestamp } from '../utils/format';
+import { useChat } from '../contexts/ChatContext';
 import ChatAttachment from './ChatAttachment';
 
 const ChatMessage = ({ record, participant }) => {
     const theme = useTheme();
+    const { createReadReceipt } = useChat();
     const isSender = participant.id === record.sender.id;
+
+    // Create read recipt if participant doesn't have
+    useEffect(() => {
+        const hasReadReceipt = record.receipts.find((chatReceipt) => chatReceipt.participant === participant.id);
+        if (!hasReadReceipt) {
+            createReadReceipt(record, participant);
+        }
+    }, []);
 
     return (
         <XStack>
@@ -35,8 +46,8 @@ const ChatMessage = ({ record, participant }) => {
                         </Text>
                         <Text color='$textPrimary'>{record.content}</Text>
                         <XStack gap='$1' flexWrap='wrap'>
-                            {record.attachments.map((attachment) => (
-                                <ChatAttachment record={attachment} />
+                            {record.attachments.map((attachment, index) => (
+                                <ChatAttachment key={index} record={attachment} />
                             ))}
                         </XStack>
                     </YStack>
@@ -48,8 +59,8 @@ const ChatMessage = ({ record, participant }) => {
                         </Text>
                     </YStack>
                     <XStack flex={1} justifyContent='flex-end' space='$1'>
-                        {record.receipts.map((receipt) => (
-                            <XStack space='$1' alignItems='center'>
+                        {record.receipts.map((receipt, index) => (
+                            <XStack key={index} space='$1' alignItems='center'>
                                 <FontAwesomeIcon icon={faCheck} color={theme['$green-500'].val} size={10} />
                                 <Text color='$textSecondary' fontSize={10}>
                                     {receipt.participant_name}

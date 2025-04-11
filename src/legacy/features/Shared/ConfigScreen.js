@@ -29,7 +29,7 @@ const ConfigScreen = ({ navigation }) => {
     const [socketHost, setSocketHost] = useState(SOCKETCLUSTER_HOST);
     const [socketPort, setSocketPort] = useState(SOCKETCLUSTER_PORT);
 
-    const removeInstanceLinkValue = key => {
+    const removeInstanceLinkValue = (key) => {
         remove(key);
         switch (key) {
             case '_FLEETBASE_HOST':

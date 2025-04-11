@@ -32,7 +32,7 @@ const Organization = ({ navigation, route }) => {
         fetchData();
     }, []);
 
-    const switchOrganization = organizationId => {
+    const switchOrganization = (organizationId) => {
         if (currentOrganization.getAttribute('id') === organizationId) {
             return Alert.alert('Warning', 'This organization already selected');
         }
@@ -53,12 +53,12 @@ const Organization = ({ navigation, route }) => {
                     navigation.goBack();
                 }, 1500);
             })
-            .catch(error => {
+            .catch((error) => {
                 logError(error);
             });
     };
 
-    const confirmSwitchOrganization = organizationId => {
+    const confirmSwitchOrganization = (organizationId) => {
         Alert.alert(
             'Confirmation',
             'Are you sure you want to switch organizations?',
@@ -92,7 +92,7 @@ const Organization = ({ navigation, route }) => {
     return (
         <View style={tailwind('w-full h-full bg-gray-800 flex-grow')}>
             {isLoading ? (
-                <ActivityIndicator size="small" color={getColorCode('bg-gray-800')} style={tailwind('mr-2')} />
+                <ActivityIndicator size='small' color={getColorCode('bg-gray-800')} style={tailwind('mr-2')} />
             ) : (
                 <View style={tailwind('flex flex-row items-center justify-between p-4 ')}>
                     <View>
@@ -109,7 +109,7 @@ const Organization = ({ navigation, route }) => {
                 <FlatList
                     refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchData} tintColor={getColorCode('text-blue-200')} />}
                     data={organizations}
-                    keyExtractor={item => item.id}
+                    keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                 />
             )}

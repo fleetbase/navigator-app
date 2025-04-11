@@ -41,7 +41,7 @@ const SignUpScreen = ({ route }) => {
                 setIsLoading(false);
                 navigation.goBack();
             })
-            .catch(error => {
+            .catch((error) => {
                 setIsLoading(false);
                 Toast.show({
                     type: 'error',

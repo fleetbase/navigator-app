@@ -78,8 +78,8 @@ const ScheduleScreen = ({ navigation }) => {
             <Agenda
                 items={items}
                 selected={format(date, DATE_FORMAT)}
-                onDayPress={day => setDateValue(new Date(day.dateString))}
-                renderItem={item => <OrderCard order={item} onPress={() => navigation.push('OrderScreen', { data: item?.serialize() })} />}
+                onDayPress={(day) => setDateValue(new Date(day.dateString))}
+                renderItem={(item) => <OrderCard order={item} onPress={() => navigation.push('OrderScreen', { data: item?.serialize() })} />}
                 renderEmptyDate={() => (
                     <View style={[tailwind('w-full flex py-12'), { height: height - 330 }]}>
                         <Text style={tailwind('text-gray-400 pl-8')}>No orders scheduled for this day</Text>

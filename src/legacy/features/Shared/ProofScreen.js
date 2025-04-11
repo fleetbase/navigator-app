@@ -49,7 +49,7 @@ const ProofScreen = ({ navigation, route }) => {
         Alert.alert('Error', error?.message ?? 'An error occured', alertOptions);
     };
 
-    const captureSignature = signature => {
+    const captureSignature = (signature) => {
         let subject = null;
 
         if (isEntity) {
@@ -66,7 +66,7 @@ const ProofScreen = ({ navigation, route }) => {
             .captureSignature(subject, {
                 signature,
             })
-            .then(proof => {
+            .then((proof) => {
                 if (activity) {
                     return sendOrderActivityUpdate(proof);
                 }
@@ -81,7 +81,7 @@ const ProofScreen = ({ navigation, route }) => {
 
     const codeScanner = useCodeScanner({
         codeTypes: ['qr', 'ean-13'],
-        onCodeScanned: event => {
+        onCodeScanned: (event) => {
             if (isCapturingCode) {
                 return;
             }
@@ -126,14 +126,14 @@ const ProofScreen = ({ navigation, route }) => {
         }
     };
 
-    const fetchImage = async uri => {
+    const fetchImage = async (uri) => {
         const imageResponse = await fetch(uri);
         const imageBlob = await imageResponse.blob();
         const base64Data = await blobToBase64(imageBlob);
         return base64Data;
     };
 
-    const blobToBase64 = blob => {
+    const blobToBase64 = (blob) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onerror = reject;
@@ -144,7 +144,7 @@ const ProofScreen = ({ navigation, route }) => {
         });
     };
 
-    const captureScan = data => {
+    const captureScan = (data) => {
         let subject = null;
 
         if (isEntity) {
@@ -163,7 +163,7 @@ const ProofScreen = ({ navigation, route }) => {
                 code: data.value,
                 data,
             })
-            .then(proof => {
+            .then((proof) => {
                 if (activity) {
                     return sendOrderActivityUpdate(proof);
                 }
@@ -179,7 +179,7 @@ const ProofScreen = ({ navigation, route }) => {
             });
     };
 
-    const sendOrderActivityUpdate = proof => {
+    const sendOrderActivityUpdate = (proof) => {
         setIsLoading(true);
 
         return order
@@ -232,7 +232,8 @@ const ProofScreen = ({ navigation, route }) => {
                                                 style={tailwind('pr-1')}
                                                 onPress={() => {
                                                     signatureScreenRef.current?.undo();
-                                                }}>
+                                                }}
+                                            >
                                                 <View style={tailwind('btn bg-gray-800 border border-gray-700 bg-opacity-75')}>
                                                     <Text style={tailwind('font-semibold text-gray-50 text-base')}>Reset</Text>
                                                 </View>
@@ -243,7 +244,8 @@ const ProofScreen = ({ navigation, route }) => {
                                                 style={tailwind('pl-1')}
                                                 onPress={() => {
                                                     signatureScreenRef.current.readSignature(captureSignature);
-                                                }}>
+                                                }}
+                                            >
                                                 <View style={tailwind('btn bg-green-900 border border-green-700')}>
                                                     {isLoading && <ActivityIndicator color={getColorCode('text-green-50')} style={tailwind('mr-2')} />}
                                                     <Text style={tailwind('font-semibold text-green-50 text-base')}>Capture</Text>

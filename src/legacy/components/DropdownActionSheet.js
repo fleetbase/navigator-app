@@ -14,13 +14,13 @@ const DropdownActionSheet = ({ items, onChange, title, value }) => {
     const [selectedItem, setSelectedItem] = useState(null);
 
     useEffect(() => {
-        const selected = items.find(item => item.value === value);
+        const selected = items.find((item) => item.value === value);
         if (selected) {
             setSelectedItem(selected);
         }
     }, [value]);
 
-    const handleItemSelection = item => {
+    const handleItemSelection = (item) => {
         setSelectedItem(item);
         onChange(item.value);
         actionSheetRef.current?.hide();
@@ -43,7 +43,8 @@ const DropdownActionSheet = ({ items, onChange, title, value }) => {
                 onMomentumScrollEnd={() => actionSheetRef.current?.handleChildScrollEnd()}
                 ref={actionSheetRef}
                 containerStyle={tailwind('bg-gray-800')}
-                indicatorColor={getColorCode('text-gray-900')}>
+                indicatorColor={getColorCode('text-gray-900')}
+            >
                 <View>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between mb-2')}>
                         <View style={tailwind('flex flex-row items-center')}>
@@ -58,7 +59,7 @@ const DropdownActionSheet = ({ items, onChange, title, value }) => {
                         </View>
                     </View>
                     <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
-                        {items?.map(item => (
+                        {items?.map((item) => (
                             <TouchableOpacity key={item.value} onPress={() => handleItemSelection(item)}>
                                 <View style={tailwind('flex flex-row items-center px-5 py-4 border-b border-gray-900')}>
                                     <Text style={tailwind('font-semibold text-lg text-gray-100')}>{item.label}</Text>

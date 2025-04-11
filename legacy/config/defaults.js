@@ -117,7 +117,7 @@ const DefaultConfig = {
 };
 
 const configure = (target, ...sources) => {
-    const isObject = (item) => item && typeof item === 'object' && !Array.isArray(item);
+    const isObject = item => item && typeof item === 'object' && !Array.isArray(item);
 
     if (typeof target === 'string') {
         target = DefaultConfig[target];

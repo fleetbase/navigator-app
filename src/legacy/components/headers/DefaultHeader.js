@@ -11,7 +11,7 @@ import packageJson from '../../../package.json';
 import tailwind from 'tailwind';
 import { config, logError, toBoolean, translate } from 'utils';
 
-const DefaultHeader = props => {
+const DefaultHeader = (props) => {
     let {
         onBack,
         backButtonIcon,
@@ -60,7 +60,8 @@ const DefaultHeader = props => {
         <ImageBackground
             source={backgroundImage ?? config('ui.headerComponent.backgroundImage')}
             resizeMode={backgroundImageResizeMode ?? config('ui.headerComponent.backgroundImageResizeMode')}
-            style={[tailwind('z-50 bg-gray-800'), { paddingTop: insets.top }, props.style, backgroundImageStyle ?? config('ui.headerComponent.backgroundImageStyle')]}>
+            style={[tailwind('z-50 bg-gray-800'), { paddingTop: insets.top }, props.style, backgroundImageStyle ?? config('ui.headerComponent.backgroundImageStyle')]}
+        >
             <View style={[tailwind(''), props.wrapperStyle, config('ui.headerComponent.containerStyle')]}>
                 <View style={[tailwind('flex flex-row items-center justify-between px-4 py-1 overflow-hidden'), props.innerStyle]}>
                     <View style={tailwind('flex flex-row items-center')}>
@@ -82,7 +83,7 @@ const DefaultHeader = props => {
                         <Switch
                             trackColor={{ false: 'rgba(209, 213, 219, 1)', true: 'rgba(52, 211, 153, 1)' }}
                             thumbColor={isOnline ? 'rgba(243, 244, 246, 1)' : 'rgba(243, 244, 246, 1)'}
-                            ios_backgroundColor="rgba(209, 213, 219, 1)"
+                            ios_backgroundColor='rgba(209, 213, 219, 1)'
                             onValueChange={toggleOnline}
                             value={isOnline}
                             disabled={isLoading}

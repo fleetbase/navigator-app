@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tailwind from 'tailwind';
 import { formatCurrency, formatMetaValue, getColorCode, isEmpty, logError, titleize, translate } from 'utils';
 
-const isObjectEmpty = obj => isEmpty(obj) || Object.values(obj).length === 0;
+const isObjectEmpty = (obj) => isEmpty(obj) || Object.values(obj).length === 0;
 
 const EntityScreen = ({ navigation, route }) => {
     const { _entity, _order } = route.params;
@@ -53,7 +53,7 @@ const EntityScreen = ({ navigation, route }) => {
 
     useEffect(() => {
         const adapter = internalInstance.getAdapter();
-        adapter.get('fleet-ops/settings/entity-editing-settings').then(res => {
+        adapter.get('fleet-ops/settings/entity-editing-settings').then((res) => {
             const editableEntityFields = res.isEntityFieldsEditable;
             setEntityFieldsEditable(editableEntityFields);
         });
@@ -79,7 +79,8 @@ const EntityScreen = ({ navigation, route }) => {
             <ScrollView
                 showsHorizontalScrollIndicator={false}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={getColorCode('text-blue-200')} />}>
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={getColorCode('text-blue-200')} />}
+            >
                 <View style={tailwind('flex w-full h-full pb-60')}>
                     <View style={tailwind('bg-gray-800')}>
                         <View>
@@ -93,7 +94,8 @@ const EntityScreen = ({ navigation, route }) => {
                                     <View style={tailwind('flex flex-row')}>
                                         <TouchableOpacity
                                             onPress={() => navigation.push('ProofScreen', { _entity: entity.serialize(), _order: order.serialize() })}
-                                            style={tailwind('flex-1 px-3 py-2 flex items-center justify-center')}>
+                                            style={tailwind('flex-1 px-3 py-2 flex items-center justify-center')}
+                                        >
                                             <FontAwesomeIcon icon={faBarcode} style={tailwind('text-blue-50 mb-1')} />
                                             <Text style={tailwind('text-blue-50')}>Add Proof of Delivery</Text>
                                         </TouchableOpacity>
@@ -317,7 +319,8 @@ const EntityScreen = ({ navigation, route }) => {
                                     navigation.navigate('SettingsScreen', { data: entity.getAttributes() });
                                 }}
                                 disabled={isLoading}
-                                style={tailwind('flex py-2 px-2')}>
+                                style={tailwind('flex py-2 px-2')}
+                            >
                                 <View style={tailwind('btn bg-gray-900 border border-gray-700 mt-6 ')}>
                                     <Text style={tailwind('font-semibold text-lg text-gray-50 text-center')}>{translate('Core.SettingsScreen.update')}</Text>
                                 </View>

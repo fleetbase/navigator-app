@@ -21,7 +21,7 @@ const SearchScreen = ({ navigation }) => {
     const [results, setResults] = useState([]);
     const [query, setQuery] = useState(null);
 
-    const onOrderPress = useCallback(order => {
+    const onOrderPress = useCallback((order) => {
         navigation.push('OrderScreen', { data: order.serialize() });
     });
 
