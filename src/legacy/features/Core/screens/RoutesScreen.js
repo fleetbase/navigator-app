@@ -87,7 +87,7 @@ const RoutesScreen = ({ navigation }) => {
         return stops;
     };
 
-    const focusStop = stop => {
+    const focusStop = (stop) => {
         if (!stop) {
             return;
         }
@@ -116,7 +116,7 @@ const RoutesScreen = ({ navigation }) => {
 
         fleetbase.orders
             .query(params)
-            .then(orders => {
+            .then((orders) => {
                 const stops = getAllOrderStops(orders);
 
                 setStops(stops);
@@ -146,9 +146,9 @@ const RoutesScreen = ({ navigation }) => {
         <View style={[tailwind('bg-gray-800 h-full')]}>
             <DefaultHeader>
                 <OrdersFilterBar
-                    onSelectSort={sort => setParam('sort', sort)}
-                    onSelectFilter={filters => setParam('filter', filter)}
-                    onSelectDate={date => setParam('on', date)}
+                    onSelectSort={(sort) => setParam('sort', sort)}
+                    onSelectFilter={(filters) => setParam('filter', filter)}
+                    onSelectDate={(date) => setParam('on', date)}
                     isLoading={isQuerying}
                     containerStyle={tailwind('px-0 pb-0')}
                 />
@@ -165,18 +165,20 @@ const RoutesScreen = ({ navigation }) => {
                     showsPointsOfInterest={true}
                     showsTraffic={true}
                     initialRegion={{
-                        latitude: firstStop ? firstStop?.location?.coordinates[1] : userLocation?.position?.coords?.latitude ?? userLocation?.coords?.latitude,
-                        longitude: firstStop ? firstStop?.location?.coordinates[0] : userLocation?.position?.coords?.longitude ?? userLocation?.coords?.longitude,
+                        latitude: firstStop ? firstStop?.location?.coordinates[1] : (userLocation?.position?.coords?.latitude ?? userLocation?.coords?.latitude),
+                        longitude: firstStop ? firstStop?.location?.coordinates[0] : (userLocation?.position?.coords?.longitude ?? userLocation?.coords?.longitude),
                         latitudeDelta: 1.0922,
                         longitudeDelta: 0.0421,
-                    }}>
+                    }}
+                >
                     {stops.map((waypoint, i) => (
                         <Marker
                             key={i}
                             coordinate={{
                                 latitude: waypoint.location.coordinates[1],
                                 longitude: waypoint.location.coordinates[0],
-                            }}>
+                            }}
+                        >
                             <View style={tailwind('bg-green-500 shadow-sm rounded-full w-8 h-8 flex items-center justify-center')}>
                                 <Text style={tailwind('font-bold text-white')}>{i + 1}</Text>
                             </View>

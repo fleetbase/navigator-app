@@ -13,7 +13,7 @@ const COLLAPSE_POINT = 2;
 const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyle }) => {
     const [isWaypointsCollapsed, setIsWaypointsCollapsed] = useState(true);
 
-    const getCurrentLeg = order => {
+    const getCurrentLeg = (order) => {
         const payload = order.getAttribute('payload');
 
         if (!payload) {
@@ -27,12 +27,12 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
             return false;
         }
 
-        return waypoints.find(waypoint => {
+        return waypoints.find((waypoint) => {
             return waypoint.id === current_waypoint;
         });
     };
 
-    const getFirstWaypoint = order => {
+    const getFirstWaypoint = (order) => {
         const payload = order.getAttribute('payload');
 
         if (!payload) {
@@ -52,7 +52,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
         return firstWaypoint;
     };
 
-    const getLastWaypoint = order => {
+    const getLastWaypoint = (order) => {
         const payload = order.getAttribute('payload');
 
         if (!payload) {
@@ -72,7 +72,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
         return lastWaypoint;
     };
 
-    const getMiddleWaypoints = order => {
+    const getMiddleWaypoints = (order) => {
         const payload = order.getAttribute('payload');
 
         if (!payload) {
@@ -83,7 +83,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
         if (!pickup && !dropoff && waypoints.length) {
             const middleWaypoints = waypoints.slice(1, waypoints.length - 1);
 
-            middleWaypoints.forEach(waypoint => {
+            middleWaypoints.forEach((waypoint) => {
                 waypoint.completed = waypoint.status_code === 'COMPLETED';
             });
 
@@ -93,7 +93,7 @@ const OrderWaypoints = ({ order, onPress, wrapperStyle, containerStyle, textStyl
         return waypoints || [];
     };
 
-    const startCall = phone => {
+    const startCall = (phone) => {
         if (phone) {
             Linking.openURL(`tel:${phone}`);
         }

@@ -30,7 +30,7 @@ export const NotificationProvider = ({ children }) => {
             setNotifications((prev) => [...prev, notification]);
 
             // Notify all listeners
-            notificationListeners.current.forEach((listener) => listener(notification));
+            notificationListeners.current.forEach((listener) => listener(notification, 'received'));
 
             completion({ alert: true, sound: true, badge: false });
         });
@@ -41,7 +41,7 @@ export const NotificationProvider = ({ children }) => {
             setLastNotification(notification);
 
             // Notify all listeners (optional, based on use case)
-            notificationListeners.current.forEach((listener) => listener(notification, action));
+            notificationListeners.current.forEach((listener) => listener(notification, 'opened'));
 
             completion();
         });

@@ -22,7 +22,7 @@ function getOrderDestination(order) {
     }
 
     if (orderHasWaypoints) {
-        destination = waypoints.find(waypoint => {
+        destination = waypoints.find((waypoint) => {
             return typeof waypoint.id === 'string' && waypoint.id === order.getAttribute('payload.current_waypoint');
         });
 
@@ -46,7 +46,7 @@ const OrderMapPicker = ({ title = 'Select Navigator', wrapperStyle, order, butto
         LaunchNavigator.getAvailableApps().then(setMapProviders);
     }, []);
 
-    const handleNavigate = async app => {
+    const handleNavigate = async (app) => {
         LaunchNavigator.navigate(destination, {
             launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
             app,
@@ -77,7 +77,8 @@ const OrderMapPicker = ({ title = 'Select Navigator', wrapperStyle, order, butto
                 onMomentumScrollEnd={() => actionSheetRef.current?.handleChildScrollEnd()}
                 ref={actionSheetRef}
                 containerStyle={tailwind('bg-gray-800')}
-                indicatorColor={getColorCode('text-gray-900')}>
+                indicatorColor={getColorCode('text-gray-900')}
+            >
                 <View>
                     <View style={tailwind('px-5 py-2 flex flex-row items-center justify-between mb-2')}>
                         <View style={tailwind('flex flex-row items-center')}>
@@ -92,13 +93,14 @@ const OrderMapPicker = ({ title = 'Select Navigator', wrapperStyle, order, butto
                         </View>
                     </View>
                     <ScrollView showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
-                        {Object.keys(mapProviders).map(provider =>
+                        {Object.keys(mapProviders).map((provider) =>
                             mapProviders[provider] ? (
                                 <TouchableOpacity
                                     key={provider}
                                     onPress={() => {
                                         handleNavigate(provider);
-                                    }}>
+                                    }}
+                                >
                                     <View style={tailwind('flex flex-row items-center px-5 py-4 border-b border-gray-900')}>
                                         <Text style={tailwind('font-semibold text-lg text-gray-100')}>{LaunchNavigator.getAppDisplayName(provider)}</Text>
                                     </View>

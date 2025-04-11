@@ -121,9 +121,14 @@ const ChatChannelScreen = ({ route }) => {
     useFocusEffect(
         useCallback(() => {
             const listenForEvents = async () => {
-                if (listenerRef.current) return;
+                // Stop previous listener if it exists
+                if (listenerRef.current) {
+                    listenerRef.current.stop();
+                    listenerRef.current = null;
+                }
 
                 const listener = await listen(`chat.${channel.id}`, (socketEvent) => {
+                    console.log('[ChatChannelScreen #socketEvent]', socketEvent);
                     switch (socketEvent.event) {
                         case 'chat_message.created':
                         case 'chat.added_participant':
@@ -153,9 +158,10 @@ const ChatChannelScreen = ({ route }) => {
             return () => {
                 if (listenerRef.current) {
                     listenerRef.current.stop();
+                    listenerRef.current = null;
                 }
             };
-        }, [listen, channel])
+        }, [channel.id])
     );
 
     return (

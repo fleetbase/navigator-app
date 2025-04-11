@@ -45,12 +45,12 @@ const LoginScreen = ({ navigation, route }) => {
         try {
             return fleetbase.drivers
                 .login(phone)
-                .then(response => {
+                .then((response) => {
                     setIsAwaitingVerification(true);
                     setError(null);
                     setIsLoading(false);
                 })
-                .catch(error => {
+                .catch((error) => {
                     logError(error);
                     setIsLoading(false);
                     Toast.show({
@@ -75,7 +75,7 @@ const LoginScreen = ({ navigation, route }) => {
 
         return fleetbase.drivers
             .verifyCode(phone, code)
-            .then(driver => {
+            .then((driver) => {
                 setDriver(driver);
                 syncDevice(driver);
                 setIsLoading(false);
@@ -86,7 +86,7 @@ const LoginScreen = ({ navigation, route }) => {
                     navigation.goBack();
                 }
             })
-            .catch(error => {
+            .catch((error) => {
                 logError(error);
                 Toast.show({
                     type: 'error',
@@ -107,7 +107,8 @@ const LoginScreen = ({ navigation, route }) => {
         <ImageBackground
             source={config('ui.loginScreen.containerBackgroundImage')}
             resizeMode={config('ui.loginScreen.containerBackgroundResizeMode') ?? 'cover'}
-            style={[tailwind('flex-1'), config('ui.loginScreen.containerBackgroundImageStyle')]}>
+            style={[tailwind('flex-1'), config('ui.loginScreen.containerBackgroundImageStyle')]}
+        >
             <View style={[tailwind('bg-gray-800 flex-row flex-1 items-center justify-center'), config('ui.loginScreen.containerStyle'), { paddingTop: insets.top }]}>
                 <View style={tailwind('flex-grow')}>
                     <Pressable onPress={Keyboard.dismiss} style={[tailwind('px-5 -mt-28'), config('ui.loginScreen.contentContainerStyle')]}>
@@ -158,7 +159,8 @@ const LoginScreen = ({ navigation, route }) => {
                                         style={tailwind('rounded-lg mb-3 bg-gray-900 w-10 h-10 border border-gray-700 flex items-center justify-center')}
                                         onPress={() => {
                                             navigation.navigate('ConfigScreen');
-                                        }}>
+                                        }}
+                                    >
                                         <FontAwesomeIcon icon={faLink} style={tailwind('text-gray-400')} />
                                     </TouchableOpacity>
                                 </View>

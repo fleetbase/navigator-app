@@ -30,7 +30,7 @@ const ChannelScreen = ({ route }) => {
         if (channelId) {
             return adapter
                 .put(`chat-channels/${channelId}`, data)
-                .then(res => {
+                .then((res) => {
                     navigation.navigate('ChatScreen', { channel: res });
                 })
                 .catch(logError)
@@ -38,7 +38,7 @@ const ChannelScreen = ({ route }) => {
         } else {
             return adapter
                 .post('chat-channels', { name })
-                .then(res => {
+                .then((res) => {
                     navigation.navigate('ChatScreen', { channel: res });
                     Toast.show({
                         type: 'success',

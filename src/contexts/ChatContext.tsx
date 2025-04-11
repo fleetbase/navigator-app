@@ -100,6 +100,20 @@ export const ChatProvider: React.FC = ({ children }) => {
         [adapter]
     );
 
+    const getChannel = useCallback(
+        async (id) => {
+            if (!adapter) return;
+
+            try {
+                const chatChannel = await adapter.get(`chat-channels/${id}`);
+                return chatChannel;
+            } catch (err) {
+                console.warn('Error loading chat channel:', err);
+            }
+        },
+        [adapter]
+    );
+
     const createChannelWithCustomer = useCallback(
         async (customer) => {
             if (!adapter) return;
@@ -188,6 +202,20 @@ export const ChatProvider: React.FC = ({ children }) => {
         [adapter]
     );
 
+    const createReadReceipt = useCallback(
+        async (message, participant) => {
+            if (!adapter) return;
+
+            try {
+                const readReceipt = await adapter.post(`chat-channels/read-message/${message.id}`, { participant: participant.id });
+                return readReceipt;
+            } catch (err) {
+                console.warn('Error creating a read receipt:', err);
+            }
+        },
+        [adapter]
+    );
+
     const removeParticipant = useCallback(
         async (channel, participant) => {
             if (!adapter) return;
@@ -253,6 +281,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             channels,
             unreadCount,
             sendMessage,
+            getChannel,
             createChannel,
             updateChannel,
             deleteChannel,
@@ -266,10 +295,12 @@ export const ChatProvider: React.FC = ({ children }) => {
             getAvailableParticipants,
             isLoading,
             getChannelCurrentParticipant,
+            createReadReceipt,
         }),
         [
             getChannels,
             sendMessage,
+            getChannel,
             reloadChannel,
             createChannel,
             updateChannel,
@@ -283,6 +314,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             getAvailableParticipants,
             channels,
             isLoading,
+            createReadReceipt,
         ]
     );
 

@@ -58,7 +58,7 @@ const BootScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={tailwind('bg-gray-900')}>
             <View style={tailwind('flex items-center justify-center w-full h-full bg-gray-900')}>
-                <ActivityIndicator size="large" color={getColorCode('text-blue-500')} />
+                <ActivityIndicator size='large' color={getColorCode('text-blue-500')} />
             </View>
         </SafeAreaView>
     );

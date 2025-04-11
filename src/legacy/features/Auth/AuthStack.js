@@ -13,11 +13,11 @@ const AuthStack = ({ route }) => {
     return (
         <SafeAreaProvider>
             <RootStack.Navigator screenOptions={{ presentation: 'modal' }}>
-                <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="CreateAccount" component={CreateAccountScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="OrganizationSearchScreen" component={OrganizationSearchScreen} options={{ headerShown: false }} />
-                <RootStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name='Login' component={LoginScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name='CreateAccount' component={CreateAccountScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name='SignUp' component={SignUpScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name='OrganizationSearchScreen' component={OrganizationSearchScreen} options={{ headerShown: false }} />
+                <RootStack.Screen name='ConfigScreen' component={ConfigScreen} options={{ headerShown: false }} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );

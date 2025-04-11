@@ -29,9 +29,9 @@ const ScheduleStack = ({ route }) => {
     return (
         <SafeAreaProvider>
             <RootStack.Navigator screenOptions={{ headerShown: false, animationEnabled: false, gestureEnabled: false }}>
-                <RootStack.Screen name="ScheduleScreen" component={ScheduleScreen} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
-                <RootStack.Screen name="OrderScreen" component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} />
-                <RootStack.Screen name="EntityScreen" component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <RootStack.Screen name='ScheduleScreen' component={ScheduleScreen} options={{ headerShown: false, animationEnabled: false, gestureEnabled: false }} />
+                <RootStack.Screen name='OrderScreen' component={OrderScreen} options={{ headerShown: false, ...verticalAnimation }} />
+                <RootStack.Screen name='EntityScreen' component={EntityScreen} options={{ headerShown: false, ...verticalAnimation }} />
             </RootStack.Navigator>
         </SafeAreaProvider>
     );

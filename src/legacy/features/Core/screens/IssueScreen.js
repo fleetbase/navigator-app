@@ -68,7 +68,7 @@ const IssueScreen = ({ navigation, route }) => {
                     setIsLoading(false);
                     navigation.goBack();
                 })
-                .catch(error => {
+                .catch((error) => {
                     setIsLoading(false);
                     logError(error);
                 });
@@ -91,7 +91,7 @@ const IssueScreen = ({ navigation, route }) => {
                     setIsLoading(false);
                     navigation.goBack();
                 })
-                .catch(error => {
+                .catch((error) => {
                     setIsLoading(false);
                     logError(error);
                 });
@@ -123,14 +123,14 @@ const IssueScreen = ({ navigation, route }) => {
                 setIsLoading(false);
                 navigation.goBack();
             })
-            .catch(error => {
+            .catch((error) => {
                 setIsLoading(false);
                 logError(error);
             });
     };
 
     const validateInputs = () => {
-        if (!type || !category || !priority || !status ||!report?.trim()) {
+        if (!type || !category || !priority || !status || !report?.trim()) {
             setError('Please enter a required value.');
             return false;
         } else if (report.trim().length === 0) {
@@ -165,7 +165,7 @@ const IssueScreen = ({ navigation, route }) => {
                             ) : (
                                 <DropdownActionSheet
                                     value={type}
-                                    items={Object.keys(IssueType).map(type => {
+                                    items={Object.keys(IssueType).map((type) => {
                                         return { label: IssueType[type], value: type };
                                     })}
                                     onChange={setType}
@@ -183,7 +183,7 @@ const IssueScreen = ({ navigation, route }) => {
                             ) : (
                                 <DropdownActionSheet
                                     value={category}
-                                    items={categories?.map(category => {
+                                    items={categories?.map((category) => {
                                         return { label: category, value: category };
                                     })}
                                     onChange={setCategory}
@@ -209,7 +209,7 @@ const IssueScreen = ({ navigation, route }) => {
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.priority')}</Text>
                             <DropdownActionSheet
                                 value={priority}
-                                items={Object.keys(IssuePriority).map(priority => {
+                                items={Object.keys(IssuePriority).map((priority) => {
                                     return { label: IssuePriority[priority], value: priority };
                                 })}
                                 onChange={setPriority}
@@ -222,7 +222,7 @@ const IssueScreen = ({ navigation, route }) => {
                             <Text style={tailwind('font-semibold text-base text-gray-50 mb-2')}>{translate('Core.IssueScreen.status')}</Text>
                             <DropdownActionSheet
                                 value={status}
-                                items={Object.keys(Status).map(status => {
+                                items={Object.keys(Status).map((status) => {
                                     return { label: Status[status], value: status };
                                 })}
                                 onChange={setStatus}
