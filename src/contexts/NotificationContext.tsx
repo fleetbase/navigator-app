@@ -1,6 +1,17 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { Notifications } from 'react-native-notifications';
 import useStorage from '../hooks/use-storage';
+
+const requestAndroidNotificationPermission = async () => {
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+
+        return result === PermissionsAndroid.RESULTS.GRANTED;
+    }
+
+    return true;
+};
 
 export const NotificationContext = createContext();
 
@@ -21,7 +32,12 @@ export const NotificationProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        Notifications.registerRemoteNotifications();
+        const registerRemoteNotifications = async () => {
+            await requestAndroidNotificationPermission();
+            Notifications.registerRemoteNotifications();
+        };
+
+        registerRemoteNotifications();
 
         // Foreground notification handler
         const notificationDisplayedListener = Notifications.events().registerNotificationReceivedForeground((notification, completion) => {

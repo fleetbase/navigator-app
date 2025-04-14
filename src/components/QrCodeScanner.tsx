@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 
@@ -7,31 +7,44 @@ type QrCodeScannerProps = {
     width?: number | string;
     height?: number | string;
     overlayStyle?: object;
+    scanCooldown?: number; // ms before allowing next scan
 };
 
-export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '100%', height = '100%', overlayStyle = {} }) => {
-    // Get available camera devices and select the front camera
+export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '100%', height = '100%', overlayStyle = {}, scanCooldown = 3000 }) => {
     const device = useCameraDevice('back');
+    const [isScanning, setIsScanning] = useState(true);
+    const cooldownRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         (async () => {
             const status = await Camera.requestCameraPermission();
-            cnsole.log('status', status);
             if (status !== 'authorized') {
                 console.warn('Camera permission not granted');
             }
         })();
+
+        return () => {
+            if (cooldownRef.current) {
+                clearTimeout(cooldownRef.current);
+            }
+        };
     }, []);
 
     const codeScanner = useCodeScanner({
         codeTypes: ['qr'],
         onCodeScanned: (codes) => {
-            if (codes.length > 0) {
-                const scanned = codes[0];
-                if (typeof onScan === 'function') {
-                    onScan(scanned, codes);
-                }
+            if (!isScanning || codes.length === 0) return;
+
+            const scanned = codes[0];
+            setIsScanning(false);
+
+            if (typeof onScan === 'function') {
+                onScan(scanned, codes);
             }
+
+            cooldownRef.current = setTimeout(() => {
+                setIsScanning(true);
+            }, scanCooldown);
         },
     });
 

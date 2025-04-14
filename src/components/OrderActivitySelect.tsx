@@ -15,7 +15,7 @@ import PlaceMapView from './PlaceMapView';
 import Spacer from './Spacer';
 import Badge from './Badge';
 
-const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], snapTo = '100%', isLoading = false, activityLoading, ...props }, ref) => {
+const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], snapTo = '100%', isLoading = false, activityLoading, portalHost = 'MainPortal', ...props }, ref) => {
     const theme = useTheme();
     const navigation = useNavigation();
     const { isDarkMode } = useAppTheme();
@@ -97,7 +97,7 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
 
     return (
         <YStack>
-            <Portal hostName='MainPortal'>
+            <Portal hostName={portalHost}>
                 <BottomSheet
                     ref={bottomSheetRef}
                     index={-1}

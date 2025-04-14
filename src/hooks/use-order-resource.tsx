@@ -6,9 +6,14 @@ export function useOrderResource(order, options = {}) {
     const { fetchOnMount = true } = options;
     const { adapter } = useFleetbase();
 
+    // Get current order status
+    const status = order.getAttribute('status');
+    // Get order ID
+    const id = order.id;
+
     // Initialize storage with the order's attributes as defaults
-    const [trackerData, setTrackerData] = useStorage(`${order?.id}_tracker_data`, order.getAttribute('tracker_data') ?? {});
-    const [etaData, setEtaData] = useStorage(`${order?.id}_eta_data`, order.getAttribute('eta') ?? {});
+    const [trackerData, setTrackerData] = useStorage(`${id}_tracker_data`, order.getAttribute('tracker_data') ?? {});
+    const [etaData, setEtaData] = useStorage(`${id}_eta_data`, order.getAttribute('eta') ?? {});
     const [error, setError] = useState(null);
     const [isFetchingTracker, setIsFetchingTracker] = useState(false);
     const [isFetchingEta, setIsFetchingEta] = useState(false);
@@ -16,7 +21,7 @@ export function useOrderResource(order, options = {}) {
     // Generic fetch function for reusability
     const fetchData = useCallback(
         async (endpoint: string, setData: (data: any) => void, setIsFetching: (loading: boolean) => void) => {
-            if (!adapter || !order?.id) return;
+            if (!adapter || !id) return;
             setIsFetching(true);
             setError(null);
             try {
@@ -30,33 +35,35 @@ export function useOrderResource(order, options = {}) {
                 setIsFetching(false);
             }
         },
-        [adapter, order?.id]
+        [adapter, id]
     );
 
     const fetchTrackerData = useCallback(() => {
         return fetchData(`orders/${order.id}/tracker`, setTrackerData, setIsFetchingTracker);
-    }, [order?.id, fetchData, setTrackerData, setIsFetchingTracker]);
+    }, [id, fetchData, setTrackerData, setIsFetchingTracker]);
 
     const fetchEtaData = useCallback(() => {
         return fetchData(`orders/${order.id}/eta`, setEtaData, setIsFetchingEta);
-    }, [order?.id, fetchData, setEtaData, setIsFetchingEta]);
+    }, [id, fetchData, setEtaData, setIsFetchingEta]);
 
     // Use a ref to ensure we fetch data only once per order
     const hasFetchedRef = useRef(false);
-    const prevOrderIdRef = useRef(order?.id);
+    const prevOrderIdRef = useRef(id);
+    const prevOrderStatusRef = useRef(status);
 
     useEffect(() => {
-        // If the order id changes, reset the flag so new data can be fetched
-        if (prevOrderIdRef.current !== order?.id) {
+        // If the order id changes OR status, reset the flag so new data can be fetched
+        if (prevOrderIdRef.current !== id || prevOrderStatusRef.current !== status) {
             hasFetchedRef.current = false;
-            prevOrderIdRef.current = order?.id;
+            prevOrderIdRef.current = id;
+            prevOrderStatusRef.current = status;
         }
-        if (fetchOnMount && order?.id && !hasFetchedRef.current) {
+        if (fetchOnMount && id && !hasFetchedRef.current) {
             hasFetchedRef.current = true;
             void fetchTrackerData();
             void fetchEtaData();
         }
-    }, [fetchOnMount, order?.id, fetchTrackerData, fetchEtaData]);
+    }, [fetchOnMount, id, status, fetchTrackerData, fetchEtaData]);
 
     // Memoize the returned object so that its reference only changes when its values change
     const orderResource = useMemo(
