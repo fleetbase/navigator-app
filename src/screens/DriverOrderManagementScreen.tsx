@@ -5,9 +5,11 @@ import { Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { endOfYear, format, startOfYear, subDays } from 'date-fns';
+import { formatDuration, formatMeters } from '../utils/format';
 import { useOrderManager } from '../contexts/OrderManagerContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
+import InsetShadow from 'react-native-inset-shadow';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import CalendarStrip from 'react-native-calendar-strip';
 import OrderCard from '../components/OrderCard';
@@ -15,6 +17,23 @@ import PastOrderCard from '../components/PastOrderCard';
 import AdhocOrderCard from '../components/AdhocOrderCard';
 import Spacer from '../components/Spacer';
 import useStorage from '../hooks/use-storage';
+
+const countStops = (orders = []) =>
+    orders.reduce((total, order) => {
+        const { pickup, dropoff, waypoints = [] } = order.getAttribute('payload') || {};
+        const stops = [pickup, dropoff, ...waypoints].filter(Boolean);
+        return total + stops.length;
+    }, 0);
+
+const sumDuration = (orders = []) =>
+    orders.reduce((total, order) => {
+        return total + order.getAttribute('time');
+    }, 0);
+
+const sumDistance = (orders = []) =>
+    orders.reduce((total, order) => {
+        return total + order.getAttribute('distance');
+    }, 0);
 
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
 const REFRESH_ORDERS_MS = 6000 * 10; // 10 mins
@@ -30,6 +49,7 @@ const DriverOrderManagementScreen = () => {
         setCurrentDate,
         currentDate,
         reloadCurrentOrders,
+        reloadActiveOrders,
         isFetchingCurrentOrders,
         activeOrderMarkedDates,
         nearbyOrders,
@@ -42,6 +62,11 @@ const DriverOrderManagementScreen = () => {
     const { addNotificationListener, removeNotificationListener } = useNotification();
     const startingDate = subDays(new Date(currentDate), 2);
     const datesWhitelist = [new Date(), { start: startOfYear(new Date()), end: endOfYear(new Date()) }];
+    const todayString = format(new Date(currentDate), 'EEEE');
+    const activeCurrentOrders = currentOrders.filter((order) => !['completed', 'created', 'canceled'].includes(order.getAttribute('status')));
+    const stops = countStops(activeCurrentOrders);
+    const distance = sumDistance(activeCurrentOrders);
+    const duration = sumDuration(activeCurrentOrders);
 
     useEffect(() => {
         const handlePushNotification = async (notification, action) => {
@@ -74,6 +99,7 @@ const DriverOrderManagementScreen = () => {
     useFocusEffect(
         useCallback(() => {
             reloadCurrentOrders();
+            reloadActiveOrders();
 
             const interval = setInterval(reloadCurrentOrders, REFRESH_ORDERS_MS);
             return () => clearInterval(interval);
@@ -187,7 +213,17 @@ const DriverOrderManagementScreen = () => {
 
     return (
         <YStack flex={1} bg='$surface'>
-            <YStack bg='$background' pb='$2'>
+            <YStack
+                bg='$background'
+                pb='$2'
+                elevation={10}
+                style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 12,
+                }}
+            >
                 <CalendarStrip
                     scrollable
                     ref={calendar}
@@ -212,11 +248,39 @@ const DriverOrderManagementScreen = () => {
                     iconRight={require('../../assets/nv-arrow-right.png')}
                 />
             </YStack>
+            <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor='$borderColor'>
+                <Text color='$textPrimary' fontSize='$8' fontWeight='bold' mb='$1'>
+                    {todayString} orders
+                </Text>
+                <XStack space='$2' alignItems='center'>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        {currentOrders.length} {currentOrders.length > 1 ? 'orders' : 'order'}
+                    </Text>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        •
+                    </Text>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        {stops} {stops > 1 ? 'stops' : 'stop'} left
+                    </Text>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        •
+                    </Text>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        {formatDuration(duration)}
+                    </Text>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        •
+                    </Text>
+                    <Text color='$textSecondary' fontSize='$5'>
+                        {formatMeters(distance)}
+                    </Text>
+                </XStack>
+            </YStack>
             <FlatList
                 data={[...nearbyOrders, ...currentOrders]}
                 keyExtractor={(order, index) => order.id.toString() + '_' + index}
                 renderItem={renderOrder}
-                refreshControl={<RefreshControl refreshing={isFetchingCurrentOrders} onRefresh={reloadCurrentOrders} tintColor={theme.borderColor.val} />}
+                refreshControl={<RefreshControl refreshing={isFetchingCurrentOrders} onRefresh={reloadCurrentOrders} tintColor={theme['$blue-500'].val} />}
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
                 ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
