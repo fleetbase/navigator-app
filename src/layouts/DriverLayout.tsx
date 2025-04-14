@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { later } from '../utils';
 import { useNotification } from '../contexts/NotificationContext';
 import { useChat } from '../contexts/ChatContext';
+import { useOrderManager } from '../contexts/OrderManagerContext';
 import useFleetbase from '../hooks/use-fleetbase';
 
 const getCurrentScreen = (tabNavigation) => {
@@ -24,6 +25,7 @@ const DriverLayout = ({ children, state, descriptors, navigation: tabNavigation 
     const { fleetbase } = useFleetbase();
     const { getChannel } = useChat();
     const { addNotificationListener, removeNotificationListener } = useNotification();
+    const { reloadActiveOrders } = useOrderManager();
 
     useEffect(() => {
         if (!fleetbase) {
@@ -66,6 +68,9 @@ const DriverLayout = ({ children, state, descriptors, navigation: tabNavigation 
             }
 
             if (typeof id === 'string' && id.startsWith('order_')) {
+                // Reload active orders
+                reloadActiveOrders();
+
                 try {
                     const order = await fleetbase.orders.findRecord(id);
                     const orderId = order.id;
