@@ -13713,11 +13713,11 @@ __metadata:
 
 "react-native-notifications@patch:react-native-notifications@npm%3A5.1.0#./.yarn/patches/react-native-notifications-npm-5.1.0-3e3b2ea3f8.patch::locator=%40fleetbase%2Fnavigator-app%40workspace%3A.":
   version: 5.1.0
-  resolution: "react-native-notifications@patch:react-native-notifications@npm%3A5.1.0#./.yarn/patches/react-native-notifications-npm-5.1.0-3e3b2ea3f8.patch::version=5.1.0&hash=6ef0ef&locator=%40fleetbase%2Fnavigator-app%40workspace%3A."
+  resolution: "react-native-notifications@patch:react-native-notifications@npm%3A5.1.0#./.yarn/patches/react-native-notifications-npm-5.1.0-3e3b2ea3f8.patch::version=5.1.0&hash=e60e17&locator=%40fleetbase%2Fnavigator-app%40workspace%3A."
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: 1d5fff20a0f29a332d9cfba314c3309bea8b94a490abaf9770a39578d5b1f20b0fa8a555381b56575b775c9e96403298d7a350c50a31689dcb798436ab99c3af
+  checksum: 142a66a42e8588fb52b3a402178b885950fc8fce3a92bcf1254acae5df5b0f9ef80a7056a7fbf4edd4eff2460b961bcbcb02a064b8ea2cb2c0a403659f5c7be1
   languageName: node
   linkType: hard
 

@@ -363,6 +363,14 @@ export const AuthProvider = ({ children }) => {
         });
     }, [setDriver]);
 
+    // // Sync device token if it changes
+    // // Test on IOS before adding
+    // useEffect(() => {
+    //     if (deviceToken && state.driver) {
+    //         syncDevice(state.driver, deviceToken);
+    //     }
+    // }, [deviceToken, state.driver]);
+
     // Memoize useful props and methods
     const value = useMemo(
         () => ({
