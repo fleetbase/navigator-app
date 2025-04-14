@@ -5,6 +5,7 @@ import { Separator, Button, Image, Stack, Text, YStack, XStack, Spinner, useThem
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPenToSquare, faFlagCheckered, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
 import { BlurView } from '@react-native-community/blur';
+import { PortalHost } from '@gorhom/portal';
 import LaunchNavigator from 'react-native-launch-navigator';
 import FastImage from 'react-native-fast-image';
 import { Order, Place } from '@fleetbase/sdk';
@@ -35,6 +36,7 @@ import OrderDocumentFiles from '../components/OrderDocumentFiles';
 import OrderCustomerCard from '../components/OrderCustomerCard';
 import OrderProgressBar from '../components/OrderProgressBar';
 import OrderCommentThread from '../components/OrderCommentThread';
+import OrderProofOfDelivery from '../components/OrderProofOfDelivery';
 import CurrentDestinationSelect from '../components/CurrentDestinationSelect';
 import OrderActivitySelect from '../components/OrderActivitySelect';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -62,7 +64,8 @@ const OrderScreen = ({ route }) => {
     const [nextActivity, setNextActivity] = useState([]);
     const [loadingOverlayMessage, setLoadingOverlayMessage] = useState();
     const [isAccepting, setIsAccepting] = useState(false);
-    const { trackerData } = useOrderResource(order);
+    const memoizedOrder = useMemo(() => order, [order?.id]);
+    const { trackerData } = useOrderResource(memoizedOrder);
     const distanceLoadedRef = useRef(false);
     const listenerRef = useRef();
     const activitySheetRef = useRef();
@@ -567,6 +570,10 @@ const OrderScreen = ({ route }) => {
                 <YStack px='$3' py='$4'>
                     <Text color='$textPrimary'>{order.getAttribute('notes', 'N/A') ?? 'N/A'}</Text>
                 </YStack>
+                <SectionHeader title='Order Proof' />
+                <YStack>
+                    <OrderProofOfDelivery order={order} />
+                </YStack>
                 <SectionHeader title='Order Payload' />
                 <YStack>
                     <OrderPayloadEntities order={order} onPress={({ entity, waypoint }) => navigation.navigate('Entity', { entity, waypoint })} />
@@ -597,7 +604,9 @@ const OrderScreen = ({ route }) => {
                 activityLoading={activityLoading}
                 isLoading={isLoading('nextOrderActivity')}
                 snapTo='80%'
+                portalHost='OrderScreenPortal'
             />
+            <PortalHost name='OrderScreenPortal' />
         </YStack>
     );
 };
