@@ -248,7 +248,7 @@ const DriverOrderManagementScreen = () => {
                     iconRight={require('../../assets/nv-arrow-right.png')}
                 />
             </YStack>
-            <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor='$borderColorWithShadow'>
+            <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor='$borderColor'>
                 <Text color='$textPrimary' fontSize='$8' fontWeight='bold' mb='$1'>
                     {todayString} orders
                 </Text>
