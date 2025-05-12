@@ -5,6 +5,16 @@ import { useOrderManager } from '../contexts/OrderManagerContext';
 import { humanize } from 'inflected';
 import { get } from '../utils';
 import OdometerNumber from '../components/OdometerNumber';
+import useAppTheme from '../hooks/use-app-theme';
+
+const WidgetContainer = ({ px = '$4', py = '$4', children, ...props }) => {
+    const { isDarkMode } = useAppTheme();
+    return (
+        <YStack borderRadius='$6' bg='$surface' px={px} py={py} borderWidth={1} borderColor={isDarkMode ? '$transparent' : '$gray-300'} {...props}>
+            {children}
+        </YStack>
+    );
+};
 
 const DriverDashboardScreen = () => {
     const theme = useTheme();
@@ -16,15 +26,17 @@ const DriverDashboardScreen = () => {
         <YStack flex={1} bg='$background'>
             <YStack flex={1} padding='$4' gap='$4'>
                 <YStack space='$4'>
-                    <XStack borderRadius='$6' bg='$surface' padding='$4'>
-                        <YStack flex={1}>
-                            <Text color='$textPrimary'>Tracking:</Text>
-                        </YStack>
-                        <YStack flex={1} alignItems='flex-end'>
-                            <Text color={isTracking ? '$successBorder' : '$textSecondary'}>{isTracking ? 'Yes' : 'No'}</Text>
-                        </YStack>
-                    </XStack>
-                    <YStack borderRadius='$6' bg='$surface' padding='$4'>
+                    <WidgetContainer>
+                        <XStack>
+                            <YStack flex={1}>
+                                <Text color='$textPrimary'>Tracking:</Text>
+                            </YStack>
+                            <YStack flex={1} alignItems='flex-end'>
+                                <Text color={isTracking ? '$successBorder' : '$textSecondary'}>{isTracking ? 'Yes' : 'No'}</Text>
+                            </YStack>
+                        </XStack>
+                    </WidgetContainer>
+                    <WidgetContainer>
                         <Text color='$textPrimary' fontWeight='bold' mb='$3'>
                             Location:
                         </Text>
@@ -40,10 +52,10 @@ const DriverDashboardScreen = () => {
                                 );
                             })}
                         </XStack>
-                    </YStack>
+                    </WidgetContainer>
                 </YStack>
                 <XStack gap='$4'>
-                    <YStack flex={1} borderRadius='$6' bg='$surface' py='$2' px='$4' alignItems='center' justifyContent='center'>
+                    <WidgetContainer flex={1} alignItems='center' justifyContent='center'>
                         <YStack>
                             <Text color='$textPrimary' fontWeight='bold' mb='$2'>
                                 Active Orders
@@ -52,8 +64,8 @@ const DriverDashboardScreen = () => {
                         <YStack>
                             <OdometerNumber value={allActiveOrders.length} digitStyle={{ color: theme['$textSecondary'].val }} digitHeight={36} />
                         </YStack>
-                    </YStack>
-                    <YStack flex={1} borderRadius='$6' bg='$surface' py='$2' px='$4' alignItems='center' justifyContent='center'>
+                    </WidgetContainer>
+                    <WidgetContainer flex={1} alignItems='center' justifyContent='center'>
                         <YStack>
                             <Text color='$textPrimary' fontWeight='bold' mb='$2'>
                                 Speed
@@ -62,7 +74,7 @@ const DriverDashboardScreen = () => {
                         <YStack>
                             <OdometerNumber value={get(location, 'coords.speed', 0)} digitStyle={{ color: theme['$textSecondary'].val }} digitHeight={36} />
                         </YStack>
-                    </YStack>
+                    </WidgetContainer>
                 </XStack>
             </YStack>
         </YStack>

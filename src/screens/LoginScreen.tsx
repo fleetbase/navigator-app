@@ -38,7 +38,7 @@ const LoginScreen = () => {
     };
 
     return (
-        <YStack flex={1} height='100%' width='100%' bg='#111827' position='relative'>
+        <YStack flex={1} height='100%' width='100%' bg={navigatorConfig('colors.loginBackground')} position='relative'>
             <LinearGradient colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.8)']} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
             <YStack justifyContent='center' alignItems='center' paddingTop={insets.top} marginTop={windowHeight / 3}>
                 <Image source={require('../../assets/navigator-icon-transparent.png')} style={{ width: 60, height: 60 }} />

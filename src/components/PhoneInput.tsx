@@ -41,7 +41,7 @@ const PhoneInput = ({ value, onChange, bg, width = '100%', defaultCountryCode = 
     const phoneInputRef = useRef(null);
     const searchInputRef = useRef(null);
     const snapPoints = useMemo(() => ['50%', '75%'], []);
-    const backgroundColor = bg ? bg : isDarkMode ? '$surface' : '$white';
+    const backgroundColor = bg ? bg : isDarkMode ? '$surface' : '$gray-200';
 
     const filteredCountries = useMemo(() => {
         return countryList.filter(({ name, code, phone }) => {
@@ -102,6 +102,7 @@ const PhoneInput = ({ value, onChange, bg, width = '100%', defaultCountryCode = 
                     borderTopRightRadius='$3'
                     borderBottomRightRadius='$3'
                     overflow='hidden'
+                    placeholderTextColor={isDarkMode ? '$gray-700' : '$gray-400'}
                 />
             </XStack>
 
