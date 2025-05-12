@@ -1,13 +1,16 @@
 import { Text, YStack, XStack } from 'tamagui';
+import useAppTheme from '../hooks/use-app-theme';
 
 export const SectionHeader = ({ title, children }) => {
+    const { isDarkMode } = useAppTheme();
+
     return (
         <YStack>
             <XStack
                 px='$3'
                 py='$3'
                 justifyContent='space-between'
-                bg='$info'
+                bg={isDarkMode ? '$info' : '$blue-700'}
                 borderBottomWidth={1}
                 borderTopWidth={1}
                 borderColor='$infoBorder'
@@ -28,6 +31,8 @@ export const SectionHeader = ({ title, children }) => {
 };
 
 export const SectionInfoLine = ({ title, value }) => {
+    const { isDarkMode } = useAppTheme();
+
     return (
         <YStack>
             <XStack px='$3' py='$2' justifyContent='space-between'>
@@ -51,6 +56,8 @@ export const SectionInfoLine = ({ title, value }) => {
 };
 
 export const ActionContainer = ({ children, ...props }) => {
+    const { isDarkMode } = useAppTheme();
+
     return (
         <YStack>
             <YStack
@@ -60,7 +67,7 @@ export const ActionContainer = ({ children, ...props }) => {
                 bg='$background'
                 borderBottomWidth={0}
                 borderTopWidth={1}
-                borderColor='$infoBorder'
+                borderColor={isDarkMode ? '$infoBorder' : '$borderColorWithShadow'}
                 shadowColor='$shadowColor'
                 shadowOffset={{ width: 0, height: 2 }}
                 shadowOpacity={0.2}

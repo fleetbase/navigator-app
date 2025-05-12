@@ -33,9 +33,9 @@ const DriverOnlineToggle = ({ showLabel = false, ...props }) => {
                 opacity={isUpdating ? 0.75 : 1}
                 bg={checked ? '$green-600' : '$gray-500'}
                 borderWidth={1}
-                borderColor={isDarkMode ? '$gray-700' : '$gray-200'}
+                borderColor={isDarkMode ? '$gray-700' : '$white'}
             >
-                <Switch.Thumb animation='quick' />
+                <Switch.Thumb animation='quick' bg={isDarkMode ? '$gray-200' : '$white'} borderColor={isDarkMode ? '$gray-700' : '$gray-500'} borderWidth={1} />
             </Switch>
             {showLabel === true && (
                 <Label htmlFor='driverOnline' color='$gray-500' size='$2' lineHeight='$4'>

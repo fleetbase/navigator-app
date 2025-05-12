@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCheck, faArrowRotateRight } from '@fortawesome/free-solid-svg-icons';
 import { OtpInput } from 'react-native-otp-entry';
 import { useAuth } from '../contexts/AuthContext';
+import { navigatorConfig } from '../utils';
 import LinearGradient from 'react-native-linear-gradient';
 
 const PhoneLoginVerifyScreen = () => {
@@ -33,11 +34,11 @@ const PhoneLoginVerifyScreen = () => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: navigatorConfig('colors.loginBackground') }}>
             <LinearGradient colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.8)']} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
             <YStack flex={1} space='$3' padding='$5'>
                 <YStack mb='$4'>
-                    <Text fontSize={20} fontWeight='bold'>
+                    <Text color='$gray-300' fontSize={20} fontWeight='bold'>
                         Code sent to {phone}
                     </Text>
                 </YStack>
@@ -50,7 +51,7 @@ const PhoneLoginVerifyScreen = () => {
                 />
                 <Button size='$5' onPress={() => handleVerifyCode(code)} bg='$primary' width='100%' opacity={isVerifyingCode ? 0.75 : 1} disabled={isVerifyingCode} rounded>
                     <Button.Icon>{isVerifyingCode ? <Spinner color='$white' /> : <FontAwesomeIcon icon={faCheck} color={theme.white.val} />}</Button.Icon>
-                    <Button.Text color='$white' fontWeight='bold'>
+                    <Button.Text color='$gray-200' fontWeight='bold'>
                         Verify Code
                     </Button.Text>
                 </Button>

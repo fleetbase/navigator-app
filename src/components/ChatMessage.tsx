@@ -6,12 +6,17 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { abbreviateName } from '../utils';
 import { formatWhatsAppTimestamp } from '../utils/format';
 import { useChat } from '../contexts/ChatContext';
+import useAppTheme from '../hooks/use-app-theme';
 import ChatAttachment from './ChatAttachment';
 
 const ChatMessage = ({ record, participant }) => {
     const theme = useTheme();
+    const { isDarkMode } = useAppTheme();
     const { createReadReceipt } = useChat();
     const isSender = participant.id === record.sender.id;
+    const background = isDarkMode ? (isSender ? '$green-900' : '$gray-900') : isSender ? '$green-800' : '$gray-300';
+    const messageTextColor = isDarkMode ? '$textPrimary' : isSender ? '$green-100' : '$gray-900';
+    const senderTextColor = isDarkMode ? (isSender ? '$green-200' : '$blue-600') : isSender ? '$green-100' : '$gray-900';
 
     // Create read recipt if participant doesn't have
     useEffect(() => {
@@ -39,12 +44,12 @@ const ChatMessage = ({ record, participant }) => {
                 </YStack>
             </YStack>
             <YStack flex={1}>
-                <XStack bg={isSender ? '$green-900' : '$gray-900'} borderRadius='$4' px='$2' py='$2' space='$3'>
+                <XStack bg={background} borderRadius='$4' px='$2' py='$2' space='$3'>
                     <YStack flex={1}>
-                        <Text color={isSender ? '$green-200' : '$blue-600'} mb='$2'>
+                        <Text color={senderTextColor} fontWeight='bold' mb='$2'>
                             {record.sender.name}
                         </Text>
-                        <Text color='$textPrimary'>{record.content}</Text>
+                        <Text color={messageTextColor}>{record.content}</Text>
                         <XStack gap='$1' flexWrap='wrap'>
                             {record.attachments.map((attachment, index) => (
                                 <ChatAttachment key={index} record={attachment} />

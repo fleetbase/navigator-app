@@ -51,6 +51,7 @@ import BackButton from '../components/BackButton';
 import HeaderButton from '../components/HeaderButton';
 import Badge from '../components/Badge';
 
+const isAndroid = Platform.OS === 'android';
 const importedIconsMap = {
     faHome,
     faGaugeHigh,
@@ -499,6 +500,8 @@ const DriverNavigator = createBottomTabNavigator({
     screenOptions: ({ route, navigation }) => {
         const theme = useTheme();
         const { isDarkMode } = useAppTheme();
+        const focusedColor = theme.primary.val;
+        const blurredColor = theme.tabIconBlur.val;
 
         return {
             headerTitle: '',
@@ -515,14 +518,15 @@ const DriverNavigator = createBottomTabNavigator({
                 </View>
             ),
             headerStyle: {
-                backgroundColor: theme.background.val,
+                backgroundColor: isDarkMode ? theme.background.val : theme.background.val,
                 elevation: 0,
                 shadowOpacity: 0,
                 borderBottomWidth: 0,
+                borderColor: isDarkMode ? 'transparent' : theme['$gray-300'].val,
             },
             headerShadowVisible: false,
             tabBarBackground: () => {
-                if (Platform.OS === 'android') {
+                if (isAndroid) {
                     return (
                         <View
                             style={[
@@ -530,9 +534,9 @@ const DriverNavigator = createBottomTabNavigator({
                                 {
                                     width: '100%',
                                     height: '100%',
-                                    backgroundColor: theme.background.val,
+                                    backgroundColor: isDarkMode ? theme.background.val : theme['$gray-100'].val,
                                     borderColor: theme.borderColor.val,
-                                    borderTopWidth: Platform.OS === 'android' ? 0 : 1,
+                                    borderTopWidth: 1,
                                     borderWidth: 0,
                                 },
                             ]}
@@ -545,11 +549,11 @@ const DriverNavigator = createBottomTabNavigator({
                     </View>
                 );
             },
-            tabBarInactiveTintColor: theme.secondary.val,
+            tabBarInactiveTintColor: blurredColor,
             tabBarActiveTintColor: theme.primary.val,
             tabBarStyle: {
                 backgroundColor: theme.background.val,
-                borderTopWidth: Platform.OS === 'android' ? 0 : 1,
+                borderTopWidth: isAndroid ? 0 : 1,
                 borderTopColor: isDarkMode ? theme['$gray-800'].val : theme['$gray-600'].val,
                 position: 'relative',
                 elevation: 0,
@@ -557,12 +561,12 @@ const DriverNavigator = createBottomTabNavigator({
             tabBarIcon: ({ focused }) => {
                 const icon = getDefaultTabIcon(route.name);
 
-                return <FontAwesomeIcon icon={icon} size={Platform.OS === 'android' ? 18 : 20} color={focused ? theme.primary.val : theme.secondary.val} />;
+                return <FontAwesomeIcon icon={icon} size={isAndroid ? 18 : 20} color={focused ? focusedColor : blurredColor} />;
             },
             tabBarLabelStyle: ({ focused }) => {
                 return {
-                    marginTop: Platform.OS === 'android' ? 5 : 15,
-                    fontSize: Platform.OS === 'android' ? 13 : 15,
+                    marginTop: isAndroid ? 4 : 15,
+                    fontSize: isAndroid ? 13 : 15,
                     fontWeight: focued ? 600 : 300,
                 };
             },

@@ -3,9 +3,11 @@ import { Alert } from 'react-native';
 import { YStack, XStack, Text, Button, Spinner, TextArea, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faRotate } from '@fortawesome/free-solid-svg-icons';
+import useAppTheme from '../hooks/use-app-theme';
 import Comment from './Comment';
 
 const CommentThread = ({ comments: initialComments = [], subject, onReloadComments, isReloading }) => {
+    const { isDarkMode } = useAppTheme();
     const theme = useTheme();
     const [comments, setComments] = useState(initialComments);
     const [input, setInput] = useState('');
@@ -48,7 +50,17 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
     return (
         <YStack space='$4'>
             <YStack>
-                <TextArea value={input} placeholder='Write a comment...' onChangeText={setInput} width='100%' borderWidth={1} borderColor='$borderColor' minHeight={100} />
+                <TextArea
+                    value={input}
+                    placeholder='Write a comment...'
+                    onChangeText={setInput}
+                    width='100%'
+                    bg={isDarkMode ? '$secondary' : '$white'}
+                    borderWidth={1}
+                    borderColor={isDarkMode ? '$gray-600' : '$borderColorWithShadow'}
+                    minHeight={100}
+                    placeholderTextColor={isDarkMode ? '$gray-500' : '$gray-400'}
+                />
                 <XStack justifyContent='flex-end' alignItems='center' marginTop='$2' space='$2'>
                     {isReloading ? (
                         <YStack alignItems='center' justifyContent='center' pr='$2'>
