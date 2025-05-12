@@ -1,8 +1,11 @@
 import React from 'react';
 import { Pressable } from 'react-native';
 import { Avatar, XStack, YStack, Text, useTheme } from 'tamagui';
+import useAppTheme from '../hooks/use-app-theme';
 
 export const ChatParticipants = ({ participants = [], size = 30, onPress }) => {
+    const { isDarkMode } = useAppTheme();
+
     // Display a friendly message when no participants exist
     if (participants.length === 0) {
         return (
@@ -31,7 +34,7 @@ export const ChatParticipants = ({ participants = [], size = 30, onPress }) => {
             <XStack alignItems='center'>
                 {displayParticipants.map((participant, index) => (
                     <YStack key={participant.id} ml={index === 0 ? 0 : -overlapMargin} width={size}>
-                        <Avatar circular size={size} borderWidth={1} borderColor='$gray-900' style={shadowStyle}>
+                        <Avatar circular size={size} borderWidth={1} borderColor={isDarkMode ? '$gray-900' : '$borderColorWithShadow'} style={shadowStyle}>
                             <Avatar.Image accessibilityLabel={participant.name} src={participant.avatar_url} />
                             <Avatar.Fallback backgroundColor='$blue-500' />
                         </Avatar>
@@ -40,9 +43,9 @@ export const ChatParticipants = ({ participants = [], size = 30, onPress }) => {
                             opacity={0.75}
                             textAlign='center'
                             mt='$1'
-                            bg='$black'
+                            bg={isDarkMode ? '$black' : '$gray-200'}
                             borderWidth={1}
-                            borderColor='$borderColor'
+                            borderColor={isDarkMode ? '$borderColor' : '$borderColorWithShadow'}
                             borderRadius='$6'
                             px='$2'
                             py='$1'
