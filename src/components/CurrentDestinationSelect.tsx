@@ -11,8 +11,10 @@ import { formattedAddressFromPlace, formatAddressSecondaryIdentifier } from '../
 import PlaceMapView from './PlaceMapView';
 import Badge from './Badge';
 import Spacer from './Spacer';
+import useAppTheme from '../hooks/use-app-theme';
 
 const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapTo = '100%', isLoading = false, ...props }) => {
+    const { isDarkMode } = useAppTheme();
     const theme = useTheme();
     const navigation = useNavigation();
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -38,7 +40,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
     return (
         <YStack>
             <Pressable onPress={openBottomSheet}>
-                <YStack bg='$default' borderWidth={1} borderColor='$defaultBorder' borderRadius='$4' px='$3' py='$3' {...props}>
+                <YStack bg={isDarkMode ? '$default' : '$gray-200'} borderWidth={1} borderColor={isDarkMode ? '$defaultBorder' : '$gray-300'} borderRadius='$4' px='$3' py='$3' {...props}>
                     <XStack>
                         <YStack width={100} height={90}>
                             <PlaceMapView place={destination} zoom={2} markerSize='xs' width={100} height={90} borderWidth={1} borderColor='$borderColor' />
@@ -50,10 +52,10 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                 </YStack>
                             ) : (
                                 <YStack>
-                                    <Text size={15} color='$infoText' fontWeight='bold' textTransform='uppercase' mb={2}>
+                                    <Text size={15} color={isDarkMode ? '$infoText' : '$gray-700'} fontWeight='bold' textTransform='uppercase' mb={2}>
                                         {destination.getAttribute('name') ?? 'Current Destination'}
                                     </Text>
-                                    <Text color='$textSecondary' textTransform='uppercase' mb='$1'>
+                                    <Text color={isDarkMode ? '$textSecondary' : '$gray-500'} textTransform='uppercase' mb='$1'>
                                         {formattedAddressFromPlace(destination)}
                                     </Text>
                                     <YStack alignSelf='flex-start'>
@@ -71,7 +73,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                             )}
                         </YStack>
                         <YStack justifyContent='center'>
-                            <FontAwesomeIcon icon={faChevronRight} color={theme.infoText.val} />
+                            <FontAwesomeIcon icon={faChevronRight} color={isDarkMode ? theme.infoText.val : theme['gray-500'].val} />
                         </YStack>
                     </XStack>
                 </YStack>
@@ -109,7 +111,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                         <YStack px='$4'>
                                             <Button
                                                 onPress={() => handleDestinationSelect(waypoint)}
-                                                size='$8'
+                                                size={isDestination ? '$9' : '$8'}
                                                 bg={isCompleted ? '$success' : isDestination ? '$info' : '$secondary'}
                                                 borderWidth={1}
                                                 borderColor={isCompleted ? '$successBorder' : isDestination ? '$infoBorder' : '$borderColorWithShadow'}
@@ -155,7 +157,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                                 alignItems='center'
                                                                 justifyContent='center'
                                                             >
-                                                                <FontAwesomeIcon icon={faLocationDot} color={theme['$info'].val} />
+                                                                <FontAwesomeIcon icon={faLocationDot} color={isDestination ? theme['white'].val : theme['$info'].val} />
                                                             </YStack>
                                                         </YStack>
                                                     )}
@@ -163,7 +165,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                         <YStack flex={1}>
                                                             <XStack alignItems='flex-start' justifyContent='space-between' mb='$1'>
                                                                 <YStack flex={1} space='$1'>
-                                                                    <Text color='$textPrimary' fontWeight='bold' numberOfLines={1}>
+                                                                    <Text color={isDestination ? '$white' : '$textPrimary'} fontWeight='bold' numberOfLines={1}>
                                                                         {waypoint.getAttribute('name') ?? waypoint.getAttribute('street1')}
                                                                     </Text>
                                                                     {isDestination && <Text color='$infoText'>(Destination)</Text>}
@@ -172,10 +174,10 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                                     <Badge status={waypoint.getAttribute('status')} fontSize='$1' px='$2' py='$1' />
                                                                 )}
                                                             </XStack>
-                                                            <Text color='$textSecondary' numberOfLines={1}>
+                                                            <Text color={isDestination ? '$gray-200' : '$textSecondary'} numberOfLines={1}>
                                                                 {formattedAddressFromPlace(waypoint)}
                                                             </Text>
-                                                            <Text color='$textSecondary'>{formatAddressSecondaryIdentifier(waypoint)}</Text>
+                                                            <Text color={isDestination ? '$gray-200' : '$textSecondary'}>{formatAddressSecondaryIdentifier(waypoint)}</Text>
                                                         </YStack>
                                                     </XStack>
                                                 </XStack>

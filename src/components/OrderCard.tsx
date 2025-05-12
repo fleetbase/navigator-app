@@ -35,8 +35,8 @@ export const OrderCard = ({ order, onPress }) => {
             <YStack bg='$background' borderRadius='$4' borderWidth={1} borderColor='$borderColor' gap='$3'>
                 <XStack justifyContent='space-between' px='$3' py='$3' bg='$background' borderTopLeftRadius='$4' borderTopRightRadius='$4' borderBottomWidth={1} borderColor='$borderColor'>
                     <XStack flex={1} gap='$2'>
-                        <XStack borderRadius='$4' width={32} height={32} bg='$info' alignItems='center' justifyContent='center'>
-                            <FontAwesomeIcon icon={faBox} color={theme.textPrimary.val} size={14} />
+                        <XStack borderRadius='$4' width={32} height={32} bg={isDarkMode ? '$info' : '$blue-600'} alignItems='center' justifyContent='center'>
+                            <FontAwesomeIcon icon={faBox} color={isDarkMode ? theme.textPrimary.val : theme.surface.val} size={14} />
                         </XStack>
                         <YStack flex={1}>
                             <Text color='$textPrimary' fontSize={16} fontWeight='bold'>

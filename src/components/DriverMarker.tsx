@@ -67,7 +67,7 @@ const DriverMarker = ({ driver, onPositionChange, onHeadingChange, onMovement, .
         <TrackingMarker
             ref={markerRef}
             coordinate={{ latitude: driver.latitude, longitude: driver.longitude }}
-            imageSource={{ uri: driver.getAttribute('avatar_url') }}
+            imageSource={{ uri: driver.getAttribute('vehicle_avatar') }}
             size={{ width: 50, height: 50 }}
             {...props}
         />
