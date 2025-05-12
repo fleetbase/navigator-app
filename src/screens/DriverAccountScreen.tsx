@@ -18,7 +18,7 @@ const DriverAccountScreen = () => {
     const theme = useTheme();
     const navigation = useNavigation();
     const { t, language, languages, setLocale } = useLanguage();
-    const { userColorScheme, appTheme, changeScheme, schemes } = useAppTheme();
+    const { userColorScheme, appTheme, changeScheme, schemes, isDarkMode } = useAppTheme();
     const { driver, logout, isSigningOut, updateDriver } = useAuth();
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
@@ -330,9 +330,9 @@ const DriverAccountScreen = () => {
                         />
                     </YStack>
                     <YStack padding='$4' mb='$5'>
-                        <Button marginTop='$4' bg='$red-900' borderWidth={1} borderColor='$red-600' size='$5' onPress={handleSignout} rounded width='100%'>
-                            <Button.Icon>{isSigningOut ? <Spinner color='$red-100' /> : <YStack />}</Button.Icon>
-                            <Button.Text color='$red-100' fontWeight='bold'>
+                        <Button marginTop='$4' bg='$error' borderWidth={1} borderColor='$errorBorder' size='$5' onPress={handleSignout} rounded width='100%'>
+                            <Button.Icon>{isSigningOut ? <Spinner color={theme['$errorText'].val} /> : <YStack />}</Button.Icon>
+                            <Button.Text color='$errorText' fontWeight='bold'>
                                 {t('AccountScreen.signOut')}
                             </Button.Text>
                         </Button>

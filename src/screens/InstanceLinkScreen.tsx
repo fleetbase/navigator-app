@@ -58,6 +58,7 @@ const InstanceLinkScreen = () => {
                             autoCapitalize={false}
                             autoComplete='off'
                             autoCorrect={false}
+                            placeholderTextColor={isDarkMode ? '$gray-700' : '$gray-400'}
                         />
                     </YStack>
                     <YStack space='$2'>
@@ -76,6 +77,7 @@ const InstanceLinkScreen = () => {
                             autoCapitalize={false}
                             autoComplete='off'
                             autoCorrect={false}
+                            placeholderTextColor={isDarkMode ? '$gray-700' : '$gray-400'}
                         />
                     </YStack>
                     <YStack space='$2'>
@@ -94,6 +96,7 @@ const InstanceLinkScreen = () => {
                             autoCapitalize={false}
                             autoComplete='off'
                             autoCorrect={false}
+                            placeholderTextColor={isDarkMode ? '$gray-700' : '$gray-400'}
                         />
                     </YStack>
                     <YStack space='$2'>
@@ -113,6 +116,7 @@ const InstanceLinkScreen = () => {
                             autoCapitalize={false}
                             autoComplete='off'
                             autoCorrect={false}
+                            placeholderTextColor={isDarkMode ? '$gray-700' : '$gray-400'}
                         />
                     </YStack>
                     <YStack space='$2'>
@@ -126,6 +130,7 @@ const InstanceLinkScreen = () => {
                             bg={socketClusterSecure ? '$green-600' : '$gray-500'}
                             borderWidth={1}
                             borderColor={isDarkMode ? '$gray-700' : '$gray-200'}
+                            placeholderTextColor={isDarkMode ? '$gray-700' : '$gray-400'}
                         >
                             <Switch.Thumb animation='quick' />
                         </Switch>

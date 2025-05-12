@@ -4,11 +4,13 @@ import { YStack, XStack, Button, TextArea, useTheme } from 'tamagui';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCamera, faPlus, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import useAppTheme from '../hooks/use-app-theme';
 import CameraCapture from './CameraCapture';
 
 const INPUT_MIN_HEIGHT = 40;
 const INPUT_MAX_HEIGHT = 120;
 const ChatKeyboard = ({ onSend, onAttach, onCamera, onFocus, onBlur }) => {
+    const { isDarkMode } = useAppTheme();
     const theme = useTheme();
     const headerHeight = useHeaderHeight();
     const [message, setMessage] = useState('');
@@ -78,6 +80,7 @@ const ChatKeyboard = ({ onSend, onAttach, onCamera, onFocus, onBlur }) => {
                             fontSize={14}
                             onFocus={onFocus}
                             onBlur={onBlur}
+                            placeholderTextColor={isDarkMode ? '$gray-500' : '$gray-400'}
                         />
                     </YStack>
                     <XStack px='$2' gap='$1'>

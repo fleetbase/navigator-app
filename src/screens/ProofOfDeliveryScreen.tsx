@@ -8,6 +8,7 @@ import { isNone } from '../utils';
 import { useTempStore } from '../contexts/TempStoreContext';
 import useDimensions from '../hooks/use-dimensions';
 import useFleetbase from '../hooks/use-fleetbase';
+import useAppTheme from '../hooks/use-app-theme';
 import QrCodeScanner from '../components/QrCodeScanner';
 import CameraCapture from '../components/CameraCapture';
 import BackButton from '../components/BackButton';
@@ -18,6 +19,7 @@ import SignatureCanvas from 'react-native-signature-canvas';
 const ProofOfDeliveryScreen = ({ route }) => {
     const theme = useTheme();
     const navigation = useNavigation();
+    const { isDarkMode } = useAppTheme();
     const { adapter } = useFleetbase();
     const { setValue } = useTempStore();
     const { screenWidth, screenHeight } = useDimensions();
@@ -94,7 +96,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
     if (method === 'scan') {
         return (
             <YStack bg='transparent' flex={1}>
-                <LoadingOverlay visible={isLoading} text={loadingOverlayMessage} />
+                <LoadingOverlay visible={isLoading} text={loadingOverlayMessage} textColor={isDarkMode ? '$textPrimary' : '$white'} />
                 <CustomHeader headerTransparent={true} headerShadowVisible={false} headerLeft={<BackButton />} headerLeftStyle={{ paddingLeft: 10 }} />
                 <QrCodeScanner onScan={handleQrCodeScan} />
             </YStack>
@@ -104,7 +106,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
     if (method === 'photo') {
         return (
             <YStack bg='transparent' flex={1} position='relative'>
-                <LoadingOverlay visible={isLoading} text={loadingOverlayMessage} />
+                <LoadingOverlay visible={isLoading} text={loadingOverlayMessage} textColor={isDarkMode ? '$textPrimary' : '$white'} />
                 <CustomHeader
                     headerTransparent={true}
                     headerShadowVisible={false}
@@ -120,7 +122,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
     if (method === 'signature') {
         return (
             <YStack bg='$white' flex={1}>
-                <LoadingOverlay visible={isLoading} text={loadingOverlayMessage} />
+                <LoadingOverlay visible={isLoading} text={loadingOverlayMessage} textColor={isDarkMode ? '$textPrimary' : '$white'} />
                 <CustomHeader headerTransparent={true} headerShadowVisible={false} headerLeft={<BackButton />} headerLeftStyle={{ paddingLeft: 10 }} />
                 <SignatureCanvas
                     ref={signatureScreenRef}
