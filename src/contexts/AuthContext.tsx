@@ -16,7 +16,7 @@ const authReducer = (state, action) => {
         case 'RESTORE_SESSION':
             return { ...state, driver: action.driver };
         case 'LOGIN':
-            return { ...state, phone: action.phone, isSendingCode: action.isSendingCode ?? false };
+            return { ...state, phone: action.phone, isSendingCode: action.isSendingCode ?? false, loginMethod: action.loginMethod ?? 'sms' };
         case 'CREATING_ACCOUNT':
             return { ...state, phone: action.phone, isSendingCode: action.isSendingCode ?? false };
         case 'VERIFY':
@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }) => {
         isVerifyingCode: false,
         isSigningOut: false,
         isUpdating: false,
+        loginMethod: 'sms',
         driver: storedDriver ? new Driver(storedDriver, adapter) : null,
         phone: null,
     });
@@ -236,13 +237,12 @@ export const AuthProvider = ({ children }) => {
         async (phone) => {
             dispatch({ type: 'LOGIN', phone, isSendingCode: true });
             try {
-                await fleetbase.drivers.login(phone);
-                dispatch({ type: 'LOGIN', phone, isSendingCode: false });
+                const { method } = await fleetbase.drivers.login(phone);
+                dispatch({ type: 'LOGIN', phone, isSendingCode: false, loginMethod: method ?? 'sms' });
             } catch (error) {
+                dispatch({ type: 'LOGIN', phone, isSendingCode: false });
                 console.warn('[AuthContext] Login failed:', error);
                 throw error;
-            } finally {
-                dispatch({ type: 'LOGIN', phone, isSendingCode: false });
             }
         },
         [fleetbase]
@@ -383,6 +383,7 @@ export const AuthProvider = ({ children }) => {
             isOnline: state.driver?.isOnline,
             isOffline: state.driver?.isOnline === false,
             isUpdating: state.isUpdating,
+            loginMethod: state.loginMethod,
             updateDriverMeta,
             updateDriver,
             organizations,

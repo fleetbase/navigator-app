@@ -16,7 +16,8 @@
         "confirm": "Confirm",
         "confirmation": "Confirmation",
         "ok": "OK",
-        "done": "Done"
+        "done": "Done",
+        "tryAgain": "Try Again"
     },
     "orderStatuses": {
         "created": "Created",
@@ -75,10 +76,13 @@
     "DriverReportScreen": {},
     "LocationPermissionScreen": {
         "enableLocationServices": "Enable Location Services",
-        "enableLocationPrompt": "We need your location to provide a better experience.",
-        "shareAndContinue": "Share Location & Continue",
-        "locationPermissionRequired": "Location Permission Required",
-        "locationPermissionPrompt": "To enable location-based features, please allow location access. If you prefer, you can enter your location manually.",
-        "goToSettings": "Go to Settings"
+        "enableLocationPrompt": "We need your location to provide real-time tracking and updates. Please allow access to continue.",
+        "shareAndContinue": "Share and Continue",
+        "permissionNeededTitle": "Location Permission Needed",
+        "enableInSettingsTitle": "Enable Location in Settings",
+        "permissionDeniedPrompt": "Without location access some features won’t work. Would you like to allow access now?",
+        "locationBlockedPrompt": "Location access has been blocked. Please open Settings and enable it to continue.",
+        "goToSettings": "Go to Settings",
+        "skipForNow": "Skip for now"
     }
 }

@@ -102,6 +102,7 @@ PODS:
     - React-RCTText (= 0.77.0-rc.6)
     - React-RCTVibration (= 0.77.0-rc.6)
   - React-callinvoker (0.77.0-rc.6)
+  - React-Codegen (0.1.0)
   - React-Core (0.77.0-rc.6):
     - glog
     - hermes-engine
@@ -1353,6 +1354,28 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-image-resizer (3.0.11):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Codegen
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-maps (1.20.1):
     - React-Core
   - react-native-mmkv-storage (0.11.2):
@@ -2205,6 +2228,7 @@ DEPENDENCIES:
   - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
   - react-native-google-maps (from `../node_modules/react-native-maps`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
+  - "react-native-image-resizer (from `../node_modules/@bam.tech/react-native-image-resizer`)"
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-mmkv-storage (from `../node_modules/react-native-mmkv-storage`)
   - react-native-notifications (from `../node_modules/react-native-notifications`)
@@ -2282,6 +2306,7 @@ SPEC REPOS:
     - libwebp
     - MMKV
     - MMKVCore
+    - React-Codegen
     - SDWebImage
     - SDWebImageWebPCoder
     - SocketRocket
@@ -2376,6 +2401,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-maps"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
+  react-native-image-resizer:
+    :path: "../node_modules/@bam.tech/react-native-image-resizer"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
   react-native-mmkv-storage:
@@ -2524,6 +2551,7 @@ SPEC CHECKSUMS:
   RCTTypeSafety: c00136d479c43702c0a58b6667ad2d7b8389deba
   React: 73c6c3d8d478df2505b82de03b3aa3085a12f099
   React-callinvoker: 7bccda05aeced2bf72cd47144195738a9aea5af2
+  React-Codegen: 4b8b4817cea7a54b83851d4c1f91f79aa73de30a
   React-Core: d225356818946f0531777ea3b9ed6f45d3192a54
   React-CoreModules: abae5f8445763c124510ff4adf63f3000a634b0f
   React-cxxreact: 6c87493d1b464271f65347bb31ca90377304e7ae
@@ -2554,6 +2582,7 @@ SPEC CHECKSUMS:
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-google-maps: 7cc1184afe41fbd15a3dffd53c924819f6587b69
   react-native-image-picker: 0452fc9efc21101946746663bf34e0db5741f00c
+  react-native-image-resizer: 28f08fb5fb9b0b2d0bc24f57228ac2eb80b1d0ad
   react-native-maps: ee1e65647460c3d41e778071be5eda10e3da6225
   react-native-mmkv-storage: 337a2b668cefb1bc66442eee589e72f15b3cba5c
   react-native-notifications: 4601a5a8db4ced6ae7cfc43b44d35fe437ac50c4

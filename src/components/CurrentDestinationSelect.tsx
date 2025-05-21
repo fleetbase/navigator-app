@@ -105,13 +105,14 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                 showsVerticalScrollIndicator={false}
                                 showsHorizontalScrollIndicator={false}
                                 renderItem={({ item: waypoint }) => {
-                                    const isCompleted = waypoint.getAttribute('status_code') === 'COMPLETED';
+                                    const isCompleted = waypoint.getAttribute('complete');
                                     const isDestination = destination && destination.id === waypoint.id;
                                     return (
                                         <YStack px='$4'>
                                             <Button
                                                 onPress={() => handleDestinationSelect(waypoint)}
-                                                size={isDestination ? '$9' : '$8'}
+                                                minHeight='auto'
+                                                height='auto'
                                                 bg={isCompleted ? '$success' : isDestination ? '$info' : '$secondary'}
                                                 borderWidth={1}
                                                 borderColor={isCompleted ? '$successBorder' : isDestination ? '$infoBorder' : '$borderColorWithShadow'}
@@ -163,7 +164,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                     )}
                                                     <XStack flex={1} alignItems='flex-start'>
                                                         <YStack flex={1}>
-                                                            <XStack alignItems='flex-start' justifyContent='space-between' mb='$1'>
+                                                            <XStack alignItems='flex-start' justifyContent='space-between' mb='$2'>
                                                                 <YStack flex={1} space='$1'>
                                                                     <Text color={isDestination ? '$white' : '$textPrimary'} fontWeight='bold' numberOfLines={1}>
                                                                         {waypoint.getAttribute('name') ?? waypoint.getAttribute('street1')}
@@ -174,10 +175,14 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                                                                     <Badge status={waypoint.getAttribute('status')} fontSize='$1' px='$2' py='$1' />
                                                                 )}
                                                             </XStack>
-                                                            <Text color={isDestination ? '$gray-200' : '$textSecondary'} numberOfLines={1}>
-                                                                {formattedAddressFromPlace(waypoint)}
-                                                            </Text>
-                                                            <Text color={isDestination ? '$gray-200' : '$textSecondary'}>{formatAddressSecondaryIdentifier(waypoint)}</Text>
+                                                            <YStack flexWrap='wrap'>
+                                                                <Text color={isDestination ? '$gray-200' : '$textSecondary'} flexShrink={1} maxWidth='100%'>
+                                                                    {formattedAddressFromPlace(waypoint)}
+                                                                </Text>
+                                                                <Text color={isDestination ? '$gray-200' : '$textSecondary'} flexShrink={1} maxWidth='100%'>
+                                                                    {formatAddressSecondaryIdentifier(waypoint)}
+                                                                </Text>
+                                                            </YStack>
                                                         </YStack>
                                                     </XStack>
                                                 </XStack>
