@@ -15,7 +15,7 @@ const PhoneLoginScreen = () => {
     const navigation = useNavigation();
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
-    const { login, isSendingCode, phone: phoneState } = useAuth();
+    const { login, isSendingCode, phone: phoneState, loginMethod } = useAuth();
     const [phone, setPhone] = useState(phoneState);
 
     const handleSendVerificationCode = async () => {

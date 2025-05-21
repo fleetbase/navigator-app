@@ -69,40 +69,40 @@ export function getWarningStyle() {
 
 export function createToast(message, options = {}) {
     reactNativeToast(message, {
-        ...options,
         position: ToastPosition.BOTTOM,
+        ...options,
     });
 }
 
 export function success(message, options = {}) {
     reactNativeToast.success(message, {
-        ...options,
         position: ToastPosition.BOTTOM,
         styles: getSuccessStyle(),
+        ...options,
     });
 }
 
 export function info(message, options = {}) {
-    reactNativeToast.info(message, {
-        ...options,
+    reactNativeToast(message, {
         position: ToastPosition.BOTTOM,
         styles: getInfoStyle(),
+        ...options,
     });
 }
 
 export function warning(message, options = {}) {
     reactNativeToast(message, {
-        ...options,
         position: ToastPosition.BOTTOM,
         styles: getWarningStyle(),
+        ...options,
     });
 }
 
 export function error(message, options = {}) {
     reactNativeToast.error(message, {
-        ...options,
         position: ToastPosition.BOTTOM,
         styles: getErrorStyle(),
+        ...options,
     });
 }
 

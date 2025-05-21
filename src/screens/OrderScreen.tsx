@@ -40,10 +40,22 @@ import OrderProofOfDelivery from '../components/OrderProofOfDelivery';
 import CurrentDestinationSelect from '../components/CurrentDestinationSelect';
 import OrderActivitySelect from '../components/OrderActivitySelect';
 import LoadingOverlay from '../components/LoadingOverlay';
+import DestinationChangedAlert from '../components/DestinationChangedAlert';
 import Badge from '../components/Badge';
 import Spacer from '../components/Spacer';
 import BackButton from '../components/BackButton';
 import { SectionHeader, SectionInfoLine, ActionContainer } from '../components/Content';
+
+const getOrderDestination = (order, adapter) => {
+    const pickup = order.getAttribute('payload.pickup');
+    const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
+    const dropoff = order.getAttribute('payload.dropoff');
+    const currentWaypoint = order.getAttribute('payload.current_waypoint');
+    const locations = [pickup, ...waypoints, dropoff].filter(Boolean);
+    const destination = locations.find((place) => place?.id === currentWaypoint) ?? locations[0];
+
+    return new Place(destination, adapter);
+};
 
 const isOldAndroid = Platform.OS === 'android' && Platform.Version <= 31;
 const OrderScreen = ({ route }) => {
@@ -64,9 +76,10 @@ const OrderScreen = ({ route }) => {
     const [distanceMatrix, setDistanceMatrix] = useState();
     const [nextActivity, setNextActivity] = useState([]);
     const [loadingOverlayMessage, setLoadingOverlayMessage] = useState();
+    const [currentDestination, setCurrentDestination] = useState();
     const [isAccepting, setIsAccepting] = useState(false);
     const memoizedOrder = useMemo(() => order, [order?.id]);
-    const { trackerData } = useOrderResource(memoizedOrder);
+    const { trackerData } = useOrderResource(memoizedOrder, { loadEta: false });
     const distanceLoadedRef = useRef(false);
     const isUpdatingActivity = useRef(false);
     const listenerRef = useRef();
@@ -80,6 +93,10 @@ const OrderScreen = ({ route }) => {
     const isMultipleWaypointOrder = (order.getAttribute('payload.waypoints', []) ?? []).length > 0;
     const customFieldKeys = order.getAttribute('custom_fields', []) ?? [];
     const showLoadingOverlay = isLoading('activityUpdate');
+    // Alert destination changed state
+    const [showDestAlert, setShowDestAlert] = useState(false);
+    const [prevDest, setPrevDest] = useState<any>(null);
+    const [currDest, setCurrDest] = useState<any>(null);
 
     const destination = useMemo(() => {
         const pickup = order.getAttribute('payload.pickup');
@@ -166,6 +183,22 @@ const OrderScreen = ({ route }) => {
             },
         });
     }, [destination]);
+
+    const alertDestinationChanged = (previousDestination, currentDestination, order) => {
+        return Alert.alert(
+            'Waypoint Completed',
+            `Waypoint activity completed for destination ${previousDestination.getAttribute('address')}. Your current destination is now ${currentDestination.getAttribute('address')}. You can change the destination at anytime by pressing the "Current Destination" button.`,
+            [
+                {
+                    text: 'Continue',
+                    isPreferred: true,
+                    onPress: () => {
+                        return startOrder({ skipDispatch: true });
+                    },
+                },
+            ]
+        );
+    };
 
     const updateOrder = useCallback(
         (order) => {
@@ -287,6 +320,9 @@ const OrderScreen = ({ route }) => {
                 return navigation.navigate('ProofOfDelivery', { activity, order: order.serialize(), waypoint: destination.serialize() });
             }
 
+            // Track current destination
+            const previousDestination = getOrderDestination(order, adapter);
+
             isUpdatingActivity.current = true;
             setLoadingOverlayMessage(`Updating Activity: ${activity.status}`);
 
@@ -296,6 +332,14 @@ const OrderScreen = ({ route }) => {
                 setNextActivity([]);
                 setLoadingOverlayMessage(null);
                 toast.success(`Order status updated to: ${activity.status}`);
+
+                const currentDestination = getOrderDestination(updatedOrder, adapter);
+                const shouldNotifyUserDestinationChanged = activity.complete && updatedOrder.status !== 'completed' && previousDestination?.id !== currentDestination?.id;
+                if (shouldNotifyUserDestinationChanged) {
+                    setPrevDest(previousDestination);
+                    setCurrDest(currentDestination);
+                    setShowDestAlert(true);
+                }
             } catch (err) {
                 console.warn('Error updating order activity:', err);
             } finally {
@@ -432,6 +476,14 @@ const OrderScreen = ({ route }) => {
 
     return (
         <YStack flex={1} bg='$background'>
+            <DestinationChangedAlert
+                visible={showDestAlert}
+                previousDestination={prevDest}
+                currentDestination={currDest}
+                onClose={() => {
+                    setShowDestAlert(false);
+                }}
+            />
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
