@@ -359,6 +359,7 @@ export function getColorFromStatus(status) {
             return 'yellow';
         case 'enroute':
         case 'driver_enroute':
+        case 'started':
             return 'orange';
         case 'info':
         case 'in_progress':
