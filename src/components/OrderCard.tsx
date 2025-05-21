@@ -19,7 +19,7 @@ const INFO_FIELD_VALUE_MIN_HEIGHT = 30;
 export const OrderCard = ({ order, onPress }) => {
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
-    const { trackerData } = useOrderResource(order);
+    const { trackerData } = useOrderResource(order, { loadEta: false });
     const waypointCustomers = useMemo(() => {
         const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
         return waypoints

@@ -6,6 +6,7 @@ import type { Camera as CameraRef } from 'react-native-vision-camera';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
 import useDimensions from '../hooks/use-dimensions';
+import { toast, ToastPosition } from '../utils/toast';
 
 const MENU_BAR_HEIGHT = 160;
 
@@ -45,6 +46,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
                 flash: 'off',
                 qualityPrioritization: 'balanced',
             });
+            toast.info('Photo captured.', { position: ToastPosition.TOP });
 
             const filePath = (Platform.OS === 'ios' ? '' : 'file://') + photo.path;
             const base64Data = await RNFS.readFile(filePath, 'base64');
@@ -72,6 +74,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
             // For simplicity, let's just take the first photo (in a real scenario you'd present a UI).
             if (photosFromGallery.edges.length > 0) {
                 const { node } = photosFromGallery.edges[0];
+                toast.info('Photo added from gallery.', { position: ToastPosition.TOP });
                 setPhotos((prev) => [...prev, { uri: node.image.uri }]);
             }
         } catch (error) {

@@ -168,20 +168,20 @@ export function restoreFleetbasePlace(data, adapter) {
 
 export function formattedAddressFromPlace(place) {
     const segments = [
-        place.getAttribute('street1'),
-        place.getAttribute('street2'),
-        place.getAttribute('neighborhood'),
-        place.getAttribute('city'),
-        place.getAttribute('state'),
-        place.getAttribute('postal_code'),
-        place.getAttribute('country'),
+        place?.getAttribute('street1'),
+        place?.getAttribute('street2'),
+        place?.getAttribute('neighborhood'),
+        place?.getAttribute('city'),
+        place?.getAttribute('state'),
+        place?.getAttribute('postal_code'),
+        place?.getAttribute('country'),
     ];
 
     return segments.filter(Boolean).join(', ');
 }
 
 export function formattedAddressFromSerializedPlace(place) {
-    const segments = [place.street1, place.street2, place.neighborhood, place.city, place.state, place.postal_code, place.country];
+    const segments = [place?.street1, place?.street2, place?.neighborhood, place?.city, place?.state, place?.postal_code, place?.country];
 
     return segments.filter(Boolean).join(', ');
 }

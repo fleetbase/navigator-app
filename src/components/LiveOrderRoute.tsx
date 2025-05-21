@@ -144,10 +144,6 @@ const LiveOrderRoute = ({
         );
     };
 
-    const handleDirectionsError = (errorMessage) => {
-        toast.error(errorMessage, { duration: 1000 });
-    };
-
     return (
         <YStack flex={1} position='relative' overflow='hidden' width={width} height={height} {...props}>
             <MapView
@@ -159,9 +155,9 @@ const LiveOrderRoute = ({
                 {...mapViewProps}
             >
                 {driverAssigned && <DriverMarker driver={driverAssigned} onMovement={focusDriver} />}
-                {start.id !== 'driver' && (
+                {start && start?.id !== 'driver' && (
                     <Marker coordinate={origin} centerOffset={markerOffset}>
-                        <MarkerLabel icon={start.id === 'driver' ? faTruck : null} label={formattedAddressFromPlace(start)} markerOffset={markerOffset} theme={theme} />
+                        <MarkerLabel icon={start?.id === 'driver' ? faTruck : null} label={formattedAddressFromPlace(start)} markerOffset={markerOffset} theme={theme} />
                         <LocationMarker size={markerSize} />
                     </Marker>
                 )}
@@ -176,16 +172,17 @@ const LiveOrderRoute = ({
                     <LocationMarker size={markerSize} />
                 </Marker>
 
-                <MapViewDirections
-                    origin={origin}
-                    destination={destination}
-                    waypoints={middleWaypoints.map(({ coordinate }) => coordinate)}
-                    apikey={config('GOOGLE_MAPS_API_KEY')}
-                    strokeWidth={4}
-                    strokeColor={theme['$blue-500'].val}
-                    onReady={fitToRoute}
-                    onError={handleDirectionsError}
-                />
+                {origin && destination && (
+                    <MapViewDirections
+                        origin={origin}
+                        destination={destination}
+                        waypoints={middleWaypoints.map(({ coordinate }) => coordinate)}
+                        apikey={config('GOOGLE_MAPS_API_KEY')}
+                        strokeWidth={4}
+                        strokeColor={theme['$blue-500'].val}
+                        onReady={fitToRoute}
+                    />
+                )}
             </MapView>
 
             <YStack position='absolute' style={{ ...StyleSheet.absoluteFillObject }}>
