@@ -20,7 +20,7 @@ const INFO_FIELD_VALUE_MIN_HEIGHT = 30;
 export const PastOrderCard = ({ order, onPress }) => {
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
-    const { trackerData } = useOrderResource(order);
+    const { trackerData } = useOrderResource(order, { loadEta: false });
 
     const destination = useMemo(() => {
         const pickup = order.getAttribute('payload.pickup');
