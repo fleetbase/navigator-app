@@ -8,20 +8,30 @@ import Badge from './Badge';
 import { isArray, isEmpty } from '../utils';
 import { lowercase } from '../utils/format';
 
-const COLLAPSE_POINT = 2;
-const CIRCLE_SIZE = 32;
+export const COLLAPSE_POINT = 2;
+export const CIRCLE_SIZE = 32;
 
 interface WaypointCircleProps {
     number: number;
     backgroundColor: string;
 }
-export const WaypointCircle: React.FC<WaypointCircleProps> = ({ icon, iconColor, iconSize, number, backgroundColor, circleSize = CIRCLE_SIZE, mr = '$3', ...props }) => (
+export const WaypointCircle: React.FC<WaypointCircleProps> = ({
+    icon,
+    iconColor,
+    iconSize,
+    number,
+    backgroundColor,
+    fontColor = '$successText',
+    circleSize = CIRCLE_SIZE,
+    mr = '$3',
+    ...props
+}) => (
     <YStack mr={mr}>
         <YStack borderRadius={circleSize} backgroundColor={backgroundColor} width={circleSize} height={circleSize} alignItems='center' justifyContent='center' {...props}>
             {icon ? (
                 <FontAwesomeIcon icon={icon} color={iconColor} size={iconSize} />
             ) : (
-                <Text fontWeight='bold' color='$successText'>
+                <Text fontWeight='bold' color={fontColor}>
                     {number}
                 </Text>
             )}
@@ -36,16 +46,40 @@ interface WaypointItemProps {
     onCall: (phone: string) => void;
     isLast?: boolean;
 }
-export const WaypointItem: React.FC<WaypointItemProps> = ({ index, waypoint, title, textStyle, titleStyle, onCall, icon, iconColor, iconSize, isLast = false, children }) => (
+export const WaypointItem: React.FC<WaypointItemProps> = ({
+    index,
+    waypoint,
+    title,
+    textStyle,
+    titleStyle,
+    onCall,
+    icon,
+    iconColor,
+    iconSize,
+    isLast = false,
+    circleBackgroundColor = '$success',
+    circleBorderColor = '$successBorder',
+    circleFontColor = '$successText',
+    children,
+}) => (
     <XStack alignItems='center' mb={isLast ? 0 : '$4'} width='100%'>
-        <WaypointCircle number={index} icon={icon} iconSize={iconSize} iconColor={iconColor} backgroundColor='$success' borderWidth={1} borderColor='$successBorder' />
+        <WaypointCircle
+            number={index}
+            icon={icon}
+            iconSize={iconSize}
+            iconColor={iconColor}
+            backgroundColor={circleBackgroundColor}
+            borderWidth={1}
+            borderColor={circleBorderColor}
+            fontColor={circleFontColor}
+        />
         <YStack flex={1}>
             {title && (
                 <Text fontSize='$2' color='$textPrimary' {...titleStyle}>
                     {title}
                 </Text>
             )}
-            <Text fontSize='$2' color={title ? '$textSecondary' : '$textPrimary'} textDecorationLine={waypoint.status_code === 'COMPLETED' ? 'line-through' : 'none'} {...textStyle}>
+            <Text fontSize='$2' color={title ? '$textSecondary' : '$textPrimary'} textDecorationLine={waypoint.complete ? 'line-through' : 'none'} {...textStyle}>
                 {waypoint.address}
             </Text>
             {waypoint.phone && (

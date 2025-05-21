@@ -91,7 +91,7 @@ const OrderProofOfDelivery = ({ order, subject }) => {
                         {proof.id}
                     </Text>
                     <Text color='$textSecondary' fontSize='$2' textAlign='center'>
-                        {format(proof.created_at, 'MMM d, Y HH:mm')}
+                        {format(proof.created_at, 'MMM d, y HH:mm')}
                     </Text>
                 </YStack>
             </YStack>
