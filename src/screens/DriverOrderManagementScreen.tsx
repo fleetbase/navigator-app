@@ -208,10 +208,10 @@ const DriverOrderManagementScreen = () => {
         return (
             <YStack py='$5' px='$3' space='$6' flex={1} height='100%'>
                 <YStack alignItems='center'>
-                    <XStack alignItems='center' bg='$info' borderWidth={1} borderColor='$infoBorder' space='$2' px='$4' py='$2' borderRadius='$5' width='100%'>
+                    <XStack alignItems='center' bg='$info' borderWidth={1} borderColor='$infoBorder' space='$2' px='$3' py='$2' borderRadius='$5' width='100%' flexWrap='wrap'>
                         <FontAwesomeIcon icon={faInfoCircle} color={theme['$infoText'].val} />
                         <Text color='$infoText' fontSize={16}>
-                            No current orders for {currentDate}
+                            No current orders for {format(new Date(currentDate), 'yyyy-MM-dd')}
                         </Text>
                     </XStack>
                 </YStack>
@@ -254,7 +254,7 @@ const DriverOrderManagementScreen = () => {
                     markedDates={activeOrderMarkedDates}
                     startingDate={startingDate}
                     selectedDate={new Date(currentDate)}
-                    onDateSelected={(selectedDate) => setCurrentDate(format(new Date(selectedDate), 'yyyy-MM-dd'))}
+                    onDateSelected={(selectedDate) => setCurrentDate(format(new Date(selectedDate), 'yyyy-MM-dd HH:mm:ss'))}
                     iconLeft={require('../../assets/nv-arrow-left.png')}
                     iconRight={require('../../assets/nv-arrow-right.png')}
                 />
