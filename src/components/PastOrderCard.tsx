@@ -20,7 +20,7 @@ const INFO_FIELD_VALUE_MIN_HEIGHT = 30;
 export const PastOrderCard = ({ order, onPress }) => {
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
-    const { trackerData } = useOrderResource(order);
+    const { trackerData } = useOrderResource(order, { loadEta: false });
 
     const destination = useMemo(() => {
         const pickup = order.getAttribute('payload.pickup');
@@ -35,8 +35,8 @@ export const PastOrderCard = ({ order, onPress }) => {
 
     return (
         <Pressable onPress={onPress}>
-            <YStack bg='$background' borderRadius='$4' borderWidth={1} borderColor='$borderColor'>
-                <YStack height={150} mb='$3'>
+            <YStack bg='$background' borderRadius='$4' borderWidth={1} borderColor={isDarkMode ? '$borderColor' : '$borderColorWithShadow'}>
+                <YStack height={150} mb='$3' borderBottomWidth={1} borderColor={isDarkMode ? '$background' : '$borderColorWithShadow'}>
                     <LiveOrderRoute
                         order={order}
                         focusCurrentDestination={true}
@@ -56,8 +56,8 @@ export const PastOrderCard = ({ order, onPress }) => {
                 <YStack flex={1} borderRadius='$4'>
                     <XStack bg='$background' alignItems='center' justifyContent='space-between' px='$2' mb='$3'>
                         <XStack flex={1} gap='$2'>
-                            <XStack borderRadius='$4' width={34} height={34} bg='$info' alignItems='center' justifyContent='center'>
-                                <FontAwesomeIcon icon={faBox} color={theme.textPrimary.val} size={14} />
+                            <XStack borderRadius='$4' width={34} height={34} bg={isDarkMode ? '$info' : '$blue-600'} alignItems='center' justifyContent='center'>
+                                <FontAwesomeIcon icon={faBox} color={isDarkMode ? theme.textPrimary.val : theme.surface.val} size={14} />
                             </XStack>
                             <YStack flex={1}>
                                 <Text color='$textPrimary' fontSize={16} fontWeight='bold'>

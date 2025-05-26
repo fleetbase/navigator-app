@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlatList, RefreshControl, Platform } from 'react-native';
 import { Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
@@ -11,12 +11,15 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import InsetShadow from 'react-native-inset-shadow';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
+import useAppTheme from '../hooks/use-app-theme';
 import CalendarStrip from 'react-native-calendar-strip';
 import OrderCard from '../components/OrderCard';
 import PastOrderCard from '../components/PastOrderCard';
 import AdhocOrderCard from '../components/AdhocOrderCard';
 import Spacer from '../components/Spacer';
 import useStorage from '../hooks/use-storage';
+
+const isAndroid = Platform.OS === 'android';
 
 const countStops = (orders = []) =>
     orders.reduce((total, order) => {
@@ -36,12 +39,13 @@ const sumDistance = (orders = []) =>
     }, 0);
 
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
-const REFRESH_ORDERS_MS = 6000 * 10; // 10 mins
+const REFRESH_ORDERS_MS = 6000 * 15; // 15 mins
 const DriverOrderManagementScreen = () => {
     const theme = useTheme();
     const navigation = useNavigation();
     const calendar = useRef();
     const listenerRef = useRef();
+    const { isDarkMode } = useAppTheme();
     const { driver } = useAuth();
     const {
         allActiveOrders,
@@ -89,19 +93,24 @@ const DriverOrderManagementScreen = () => {
 
     useFocusEffect(
         useCallback(() => {
-            reloadNearbyOrders();
+            const handleReloadNearbyOrders = () => {
+                reloadNearbyOrders({}, { setLoadingFlag: false });
+            };
 
-            const interval = setInterval(reloadNearbyOrders, REFRESH_NEARBY_ORDERS_MS);
+            const interval = setInterval(handleReloadNearbyOrders, REFRESH_NEARBY_ORDERS_MS);
             return () => clearInterval(interval);
         }, [])
     );
 
     useFocusEffect(
         useCallback(() => {
-            reloadCurrentOrders();
+            const handleReloadCurrentOrders = () => {
+                reloadCurrentOrders({}, { setLoadingFlag: false });
+            };
             reloadActiveOrders();
+            handleReloadCurrentOrders();
 
-            const interval = setInterval(reloadCurrentOrders, REFRESH_ORDERS_MS);
+            const interval = setInterval(handleReloadCurrentOrders, REFRESH_ORDERS_MS);
             return () => clearInterval(interval);
         }, [currentDate])
     );
@@ -199,10 +208,10 @@ const DriverOrderManagementScreen = () => {
         return (
             <YStack py='$5' px='$3' space='$6' flex={1} height='100%'>
                 <YStack alignItems='center'>
-                    <XStack alignItems='center' bg='$info' borderWidth={1} borderColor='$infoBorder' space='$2' px='$4' py='$2' borderRadius='$5' width='100%'>
+                    <XStack alignItems='center' bg='$info' borderWidth={1} borderColor='$infoBorder' space='$2' px='$3' py='$2' borderRadius='$5' width='100%' flexWrap='wrap'>
                         <FontAwesomeIcon icon={faInfoCircle} color={theme['$infoText'].val} />
                         <Text color='$infoText' fontSize={16}>
-                            No current orders for {currentDate}
+                            No current orders for {format(new Date(currentDate), 'yyyy-MM-dd')}
                         </Text>
                     </XStack>
                 </YStack>
@@ -223,6 +232,8 @@ const DriverOrderManagementScreen = () => {
                     shadowOpacity: 0.4,
                     shadowRadius: 12,
                 }}
+                borderBottomWidth={1}
+                borderColor={isDarkMode ? 'transparent' : '$borderColorWithShadow'}
             >
                 <CalendarStrip
                     scrollable
@@ -230,11 +241,11 @@ const DriverOrderManagementScreen = () => {
                     datesWhitelist={datesWhitelist}
                     style={{ height: 100, paddingTop: 10, paddingBottom: 15 }}
                     calendarColor={'transparent'}
-                    calendarHeaderStyle={{ color: theme['$gray-300'].val, fontSize: 14 }}
+                    calendarHeaderStyle={{ color: isDarkMode ? theme['$gray-300'].val : theme['$gray-600'].val, fontSize: 14 }}
                     calendarHeaderContainerStyle={{ marginBottom: 20 }}
                     dateNumberStyle={{ color: theme['$gray-500'].val, fontSize: 12 }}
                     dateNameStyle={{ color: theme['$gray-500'].val, fontSize: 12 }}
-                    dayContainerStyle={{ padding: 0, height: 60 }}
+                    dayContainerStyle={{ padding: 0, height: isAndroid ? 55 : 60 }}
                     highlightDateNameStyle={{ color: theme['$gray-100'].val, fontSize: 12 }}
                     highlightDateNumberStyle={{ color: theme['$gray-100'].val, fontSize: 12 }}
                     highlightDateContainerStyle={{ backgroundColor: theme['$blue-500'].val, borderRadius: 6 }}
@@ -243,12 +254,12 @@ const DriverOrderManagementScreen = () => {
                     markedDates={activeOrderMarkedDates}
                     startingDate={startingDate}
                     selectedDate={new Date(currentDate)}
-                    onDateSelected={(selectedDate) => setCurrentDate(format(new Date(selectedDate), 'yyyy-MM-dd'))}
+                    onDateSelected={(selectedDate) => setCurrentDate(format(new Date(selectedDate), 'yyyy-MM-dd HH:mm:ss'))}
                     iconLeft={require('../../assets/nv-arrow-left.png')}
                     iconRight={require('../../assets/nv-arrow-right.png')}
                 />
             </YStack>
-            <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor='$borderColor'>
+            <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor={isDarkMode ? '$borderColor' : '$borderColorWithShadow'}>
                 <Text color='$textPrimary' fontSize='$8' fontWeight='bold' mb='$1'>
                     {todayString} orders
                 </Text>

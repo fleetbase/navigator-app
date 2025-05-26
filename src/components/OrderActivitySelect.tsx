@@ -108,10 +108,10 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                     enablePanDownToClose={true}
                     enableOverDrag={false}
                     style={{ flex: 1, width: '100%' }}
-                    backgroundStyle={{ backgroundColor: theme.surface.val, borderWidth: 1, borderColor: theme.borderColorWithShadow.val }}
+                    backgroundStyle={{ backgroundColor: isDarkMode ? theme.surface.val : theme.background.val, borderWidth: 1, borderColor: theme.borderColorWithShadow.val }}
                     handleIndicatorStyle={{ backgroundColor: theme.secondary.val }}
                 >
-                    <BottomSheetView style={{ flex: 1, backgroundColor: theme.surface.val }}>
+                    <BottomSheetView style={{ flex: 1, backgroundColor: isDarkMode ? theme.surface.val : theme.background.val }}>
                         <YStack>
                             <XStack alignItems='center' justifyContent='space-between' px='$5' mb='$4'>
                                 <Text fontSize='$6' color='$textPrimary' fontWeight='bold'>
@@ -143,6 +143,7 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                                     showsHorizontalScrollIndicator={false}
                                     contentContainerStyle={{ paddingLeft: 18, paddingRight: 18 }}
                                     renderItem={renderActivity}
+                                    ListFooterComponent={<Spacer height={200} />}
                                 />
                             )}
                             <Spacer height={200} />

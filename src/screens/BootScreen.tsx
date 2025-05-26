@@ -14,7 +14,8 @@ import BootSplash from 'react-native-bootsplash';
 import SetupWarningScreen from './SetupWarningScreen';
 
 const APP_NAME = config('APP_NAME');
-const BootScreen = () => {
+const BootScreen = ({ route }) => {
+    const params = route.params ?? {};
     const theme = useTheme();
     const navigation = useNavigation();
     const { hasFleetbaseConfig } = useFleetbase();
@@ -23,6 +24,7 @@ const BootScreen = () => {
     const [error, setError] = useState<Error | null>(null);
     const backgroundColor = toArray(config('BOOTSCREEN_BACKGROUND_COLOR', '$background'));
     const isGradientBackground = isArray(backgroundColor) && backgroundColor.length > 1;
+    const locationEnabled = params.locationEnabled;
 
     useFocusEffect(
         useCallback(() => {
@@ -34,7 +36,12 @@ const BootScreen = () => {
                     initializeNavigator();
                 } else {
                     later(() => BootSplash.hide(), 300);
-                    navigation.navigate('LocationPermission');
+                    // If the locationEnabled flag is set meaning not null or undefined then initialize navigator
+                    if (locationEnabled !== undefined && locationEnabled !== null) {
+                        initializeNavigator();
+                    } else {
+                        navigation.navigate('LocationPermission');
+                    }
                 }
             };
 

@@ -1,5 +1,5 @@
 import Config from 'react-native-config';
-import { Platform, ActionSheetIOS, Alert } from 'react-native';
+import { Platform, ActionSheetIOS, Alert, Dimensions } from 'react-native';
 import { Collection, lookup } from '@fleetbase/sdk';
 import storage, { getString } from './storage';
 import { capitalize } from './format';
@@ -9,6 +9,32 @@ import { pluralize } from 'inflected';
 import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
 import NavigatorConfig from '../../navigator.config';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
+
+export async function resizePhoto(uri: string, maxSize = 1024): Promise<string> {
+    const MAX_DIMENSION = maxSize;
+
+    const { width, height } = Dimensions.get('window');
+    // preserve aspect ratio
+    const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height, 1);
+
+    const targetWidth = Math.floor(width * ratio);
+    const targetHeight = Math.floor(height * ratio);
+
+    const resized = await ImageResizer.createResizedImage(
+        uri,
+        targetWidth,
+        targetHeight,
+        'JPEG',
+        80, // quality 0–100
+        0, // rotation
+        undefined, // let it pick a temp path
+        false,
+        { mode: 'contain' }
+    );
+
+    return resized.uri;
+}
 
 export function navigatorConfig(key, defaultValue = null) {
     return get(NavigatorConfig, key, defaultValue);

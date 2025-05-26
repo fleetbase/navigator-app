@@ -10,7 +10,7 @@ export const PhoneLoginButton = ({ onPress, ...props }) => {
     const theme = useTheme();
 
     return (
-        <Button onPress={onPress} bg='$secondary' width='100%' {...props} rounded>
+        <Button onPress={onPress} bg='$subsurface' borderWidth={1} borderColor='$borderColor' width='100%' {...props} rounded>
             <Button.Icon>
                 <FontAwesomeIcon icon={faPhone} color={theme['$textPrimary'].val} />
             </Button.Icon>

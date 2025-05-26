@@ -33,7 +33,7 @@ export const MultipleCustomerAvatars: React.FC<MultipleCustomerAvatarsProps> = (
     return (
         <XStack alignItems='center'>
             {displayCustomers.map((customer, index) => (
-                <Avatar key={customer.id} circular size={size} borderWidth={1} borderColor='$gray-900' ml={index === 0 ? 0 : -overlapMargin} style={shadowStyle}>
+                <Avatar key={index} circular size={size} borderWidth={1} borderColor='$gray-900' ml={index === 0 ? 0 : -overlapMargin} style={shadowStyle}>
                     <Avatar.Image accessibilityLabel={customer.name} src={customer.photo_url} />
                     <Avatar.Fallback backgroundColor='$blue-500' />
                 </Avatar>

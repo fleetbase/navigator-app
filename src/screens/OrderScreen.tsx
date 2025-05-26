@@ -40,11 +40,24 @@ import OrderProofOfDelivery from '../components/OrderProofOfDelivery';
 import CurrentDestinationSelect from '../components/CurrentDestinationSelect';
 import OrderActivitySelect from '../components/OrderActivitySelect';
 import LoadingOverlay from '../components/LoadingOverlay';
+import DestinationChangedAlert from '../components/DestinationChangedAlert';
 import Badge from '../components/Badge';
 import Spacer from '../components/Spacer';
 import BackButton from '../components/BackButton';
 import { SectionHeader, SectionInfoLine, ActionContainer } from '../components/Content';
 
+const getOrderDestination = (order, adapter) => {
+    const pickup = order.getAttribute('payload.pickup');
+    const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
+    const dropoff = order.getAttribute('payload.dropoff');
+    const currentWaypoint = order.getAttribute('payload.current_waypoint');
+    const locations = [pickup, ...waypoints, dropoff].filter(Boolean);
+    const destination = locations.find((place) => place?.id === currentWaypoint) ?? locations[0];
+
+    return new Place(destination, adapter);
+};
+
+const isOldAndroid = Platform.OS === 'android' && Platform.Version <= 31;
 const OrderScreen = ({ route }) => {
     const params = route.params || {};
     const theme = useTheme();
@@ -63,10 +76,12 @@ const OrderScreen = ({ route }) => {
     const [distanceMatrix, setDistanceMatrix] = useState();
     const [nextActivity, setNextActivity] = useState([]);
     const [loadingOverlayMessage, setLoadingOverlayMessage] = useState();
+    const [currentDestination, setCurrentDestination] = useState();
     const [isAccepting, setIsAccepting] = useState(false);
     const memoizedOrder = useMemo(() => order, [order?.id]);
-    const { trackerData } = useOrderResource(memoizedOrder);
+    const { trackerData } = useOrderResource(memoizedOrder, { loadEta: false });
     const distanceLoadedRef = useRef(false);
+    const isUpdatingActivity = useRef(false);
     const listenerRef = useRef();
     const activitySheetRef = useRef();
     const isAdhoc = order.getAttribute('adhoc') === true;
@@ -78,6 +93,10 @@ const OrderScreen = ({ route }) => {
     const isMultipleWaypointOrder = (order.getAttribute('payload.waypoints', []) ?? []).length > 0;
     const customFieldKeys = order.getAttribute('custom_fields', []) ?? [];
     const showLoadingOverlay = isLoading('activityUpdate');
+    // Alert destination changed state
+    const [showDestAlert, setShowDestAlert] = useState(false);
+    const [prevDest, setPrevDest] = useState<any>(null);
+    const [currDest, setCurrDest] = useState<any>(null);
 
     const destination = useMemo(() => {
         const pickup = order.getAttribute('payload.pickup');
@@ -165,6 +184,22 @@ const OrderScreen = ({ route }) => {
         });
     }, [destination]);
 
+    const alertDestinationChanged = (previousDestination, currentDestination, order) => {
+        return Alert.alert(
+            'Waypoint Completed',
+            `Waypoint activity completed for destination ${previousDestination.getAttribute('address')}. Your current destination is now ${currentDestination.getAttribute('address')}. You can change the destination at anytime by pressing the "Current Destination" button.`,
+            [
+                {
+                    text: 'Continue',
+                    isPreferred: true,
+                    onPress: () => {
+                        return startOrder({ skipDispatch: true });
+                    },
+                },
+            ]
+        );
+    };
+
     const updateOrder = useCallback(
         (order) => {
             setOrder(order);
@@ -212,6 +247,8 @@ const OrderScreen = ({ route }) => {
 
     const startOrder = useCallback(
         async (params = {}) => {
+            isUpdatingActivity.current = true;
+
             try {
                 const updatedOrder = await runWithLoading(order.start(params), 'startOrder');
                 updateOrder(updatedOrder);
@@ -234,6 +271,8 @@ const OrderScreen = ({ route }) => {
                         },
                     ]);
                 }
+            } finally {
+                isUpdatingActivity.current = false;
             }
         },
         [order, adapter]
@@ -281,6 +320,10 @@ const OrderScreen = ({ route }) => {
                 return navigation.navigate('ProofOfDelivery', { activity, order: order.serialize(), waypoint: destination.serialize() });
             }
 
+            // Track current destination
+            const previousDestination = getOrderDestination(order, adapter);
+
+            isUpdatingActivity.current = true;
             setLoadingOverlayMessage(`Updating Activity: ${activity.status}`);
 
             try {
@@ -289,9 +332,18 @@ const OrderScreen = ({ route }) => {
                 setNextActivity([]);
                 setLoadingOverlayMessage(null);
                 toast.success(`Order status updated to: ${activity.status}`);
+
+                const currentDestination = getOrderDestination(updatedOrder, adapter);
+                const shouldNotifyUserDestinationChanged = activity.complete && updatedOrder.status !== 'completed' && previousDestination?.id !== currentDestination?.id;
+                if (shouldNotifyUserDestinationChanged) {
+                    setPrevDest(previousDestination);
+                    setCurrDest(currentDestination);
+                    setShowDestAlert(true);
+                }
             } catch (err) {
                 console.warn('Error updating order activity:', err);
             } finally {
+                isUpdatingActivity.current = false;
                 setActivityLoading(null);
                 setLoadingOverlayMessage(null);
                 activitySheetRef.current?.closeBottomSheet();
@@ -303,6 +355,7 @@ const OrderScreen = ({ route }) => {
     const completeOrder = useCallback(
         async (activity) => {
             setActivityLoading(activity.code);
+            isUpdatingActivity.current = true;
 
             try {
                 const updatedOrder = await runWithLoading(order.complete(), 'completeOrder');
@@ -311,6 +364,7 @@ const OrderScreen = ({ route }) => {
             } catch (err) {
                 console.warn('Error updating order activity:', err);
             } finally {
+                isUpdatingActivity.current = false;
                 setActivityLoading(null);
             }
         },
@@ -379,6 +433,10 @@ const OrderScreen = ({ route }) => {
         const listenForUpdates = async () => {
             const listener = await listen(`order.${order.id}`, (event) => {
                 // only reload order if status changed
+                // need to prevent duplicate reload if order is reloaded from updating activity
+                if (isUpdatingActivity && isUpdatingActivity.current === true) {
+                    return;
+                }
                 if (order.getAttribute('status') !== event.data.status) {
                     reloadOrder();
                 }
@@ -418,13 +476,20 @@ const OrderScreen = ({ route }) => {
 
     return (
         <YStack flex={1} bg='$background'>
-            <LoadingOverlay text={loadingOverlayMessage} visible={showLoadingOverlay} />
+            <DestinationChangedAlert
+                visible={showDestAlert}
+                previousDestination={prevDest}
+                currentDestination={currDest}
+                onClose={() => {
+                    setShowDestAlert(false);
+                }}
+            />
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isLoading('isReloading')} onRefresh={reloadOrder} tintColor={theme['$blue-500'].val} />}
             >
-                <YStack position='relative' width='100%' height={350} borderBottomWidth={1} borderColor='$borderColorWithShadow'>
+                <YStack position='relative' width='100%' height={350} borderBottomWidth={0} borderColor='$borderColorWithShadow'>
                     <YStack position='absolute' top={0} left={0} right={0} zIndex={1}>
                         <XStack bg='$info' borderBottomWidth={1} borderColor='$infoBorder' padding='$3' space='$2'>
                             <YStack>
@@ -439,10 +504,10 @@ const OrderScreen = ({ route }) => {
                             </YStack>
                             <XStack flex={1} justifyContent='space-between'>
                                 <YStack flex={1}>
-                                    <Text color='$textPrimary' fontSize={19} fontWeight='bold'>
+                                    <Text color={isDarkMode ? '$textPrimary' : '$gray-100'} fontSize={19} fontWeight='bold'>
                                         {order.getAttribute('tracking_number.tracking_number')}
                                     </Text>
-                                    <Text color='$textPrimary' fontSize={15}>
+                                    <Text color={isDarkMode ? '$textPrimary' : '$gray-200'} fontSize={15}>
                                         {formatDate(new Date(order.getAttribute('created_at')), 'PP HH:mm')}
                                     </Text>
                                 </YStack>
@@ -464,6 +529,16 @@ const OrderScreen = ({ route }) => {
                     />
                 </YStack>
                 <ActionContainer space='$3'>
+                    {isOldAndroid && showLoadingOverlay && (
+                        <YStack>
+                            <XStack alignItems='center' gap='$2' borderWidth={1} borderColor='$infoBorder' bg='$info' py='$2' px='$3' borderRadius='$5'>
+                                <Spinner color='$infoText' />
+                                <Text color='$infoText' fontSize='$4'>
+                                    {loadingOverlayMessage}
+                                </Text>
+                            </XStack>
+                        </YStack>
+                    )}
                     <XStack space='$2' ml={-5}>
                         {isIncomingAdhoc && (
                             <XStack flex={1} space='$2' ml={5}>
@@ -596,6 +671,16 @@ const OrderScreen = ({ route }) => {
                 </YStack>
                 <Spacer height={200} />
             </ScrollView>
+            {isOldAndroid ? (
+                <YStack />
+            ) : (
+                <LoadingOverlay
+                    text={loadingOverlayMessage}
+                    visible={showLoadingOverlay}
+                    spinnerColor={isDarkMode ? '$textPrimary' : '$white'}
+                    textColor={isDarkMode ? '$textPrimary' : '$white'}
+                />
+            )}
             <OrderActivitySelect
                 ref={activitySheetRef}
                 onChange={sendOrderActivityUpdate}

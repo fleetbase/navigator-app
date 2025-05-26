@@ -21,7 +21,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
     const theme = useTheme();
     const { driver } = useAuth();
     const { fleetbase, adapter } = useFleetbase();
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const today = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
 
     // Current date is stored in provider state with default value of today.
     const [currentDate, setCurrentDate] = useState(today);
@@ -106,10 +106,11 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
 
     // Fetch active orders
     const fetchActiveOrders = useCallback(
-        async (params = {}) => {
+        async (params = {}, options = {}) => {
             if (!driver || !fleetbase || hasLoadedActiveRef.current || activeOrdersPromiseRef.current) return;
+            const setLoadingFlag = options.setLoadingFlag ?? true;
             try {
-                activeOrdersPromiseRef.current = queryOrders({ driver_assigned: driver.id, active: true, limit: -1, ...params }, setIsFetchingActiveOrders);
+                activeOrdersPromiseRef.current = queryOrders({ driver_assigned: driver.id, active: true, limit: -1, ...params }, setLoadingFlag ? setIsFetchingActiveOrders : null);
                 const fetchedOrders = await activeOrdersPromiseRef.current;
                 setAllActiveOrders(serializeCollection(fetchedOrders));
                 hasLoadedActiveRef.current = true;
@@ -125,10 +126,11 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
 
     // Fetch recent orders
     const fetchRecentOrders = useCallback(
-        async (params = {}) => {
+        async (params = {}, options = {}) => {
             if (!driver || !fleetbase || hasLoadedRecentRef.current || recentOrdersPromiseRef.current) return;
+            const setLoadingFlag = options.setLoadingFlag ?? true;
             try {
-                recentOrdersPromiseRef.current = queryOrders({ driver_assigned: driver.id, limit: 30, ...params }, setIsFetchingRecentOrders);
+                recentOrdersPromiseRef.current = queryOrders({ driver_assigned: driver.id, limit: 30, ...params }, setLoadingFlag ? setIsFetchingRecentOrders : null);
                 const fetchedOrders = await recentOrdersPromiseRef.current;
                 setAllRecentOrders(serializeCollection(fetchedOrders));
                 hasLoadedRecentRef.current = true;
@@ -144,10 +146,14 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
 
     // Fetch recent orders
     const fetchNearbyOrders = useCallback(
-        async (params = {}) => {
+        async (params = {}, options = {}) => {
             if (!driver || !fleetbase || hasLoadedNearbyRef.current || nearbyOrdersPromiseRef.current) return;
+            const setLoadingFlag = options.setLoadingFlag ?? true;
             try {
-                nearbyOrdersPromiseRef.current = queryOrders({ nearby: driver.id, adhoc: 1, unassigned: 1, dispatched: 1, limit: -1, ...params }, setIsFetchingNearbyOrders);
+                nearbyOrdersPromiseRef.current = queryOrders(
+                    { nearby: driver.id, adhoc: 1, unassigned: 1, dispatched: 1, limit: -1, ...params },
+                    setLoadingFlag ? setIsFetchingNearbyOrders : null
+                );
                 const fetchedOrders = await nearbyOrdersPromiseRef.current;
                 setNearbyOrders(serializeCollection(fetchedOrders));
                 hasLoadedNearbyRef.current = true;
@@ -163,11 +169,12 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
 
     // Fetch current orders for the currentDate.
     const fetchCurrentOrders = useCallback(
-        async (params = {}) => {
+        async (params = {}, options = {}) => {
             if (!driver || !fleetbase || !currentDate || hasLoadedCurrentRef.current || currentOrdersPromiseRef.current) return;
+            const setLoadingFlag = options.setLoadingFlag ?? true;
             try {
                 // We assume the API accepts a `date` parameter.
-                currentOrdersPromiseRef.current = queryOrders({ driver_assigned: driver.id, on: currentDate, limit: -1, ...params }, setIsFetchingCurrentOrders);
+                currentOrdersPromiseRef.current = queryOrders({ driver_assigned: driver.id, on: currentDate, limit: -1, ...params }, setLoadingFlag ? setIsFetchingCurrentOrders : null);
                 const fetchedOrders = await currentOrdersPromiseRef.current;
                 setCurrentOrders(serializeCollection(fetchedOrders));
                 hasLoadedCurrentRef.current = true;
@@ -223,49 +230,49 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
 
     // Manual reload functions.
     const reloadOrders = useCallback(
-        (params = {}) => {
+        (params = {}, options = {}) => {
             hasLoadedActiveRef.current = false;
             hasLoadedRecentRef.current = false;
             hasLoadedNearbyRef.current = false;
             activeOrdersPromiseRef.current = null;
             recentOrdersPromiseRef.current = null;
             nearbyOrdersPromiseRef.current = null;
-            fetchActiveOrders(params);
-            fetchRecentOrders(params);
-            fetchNearbyOrders(params);
+            fetchActiveOrders(params, options);
+            fetchRecentOrders(params, options);
+            fetchNearbyOrders(params, options);
         },
         [fetchActiveOrders, fetchRecentOrders]
     );
 
     const reloadRecentOrders = useCallback(
-        (params = {}) => {
+        (params = {}, options = {}) => {
             hasLoadedRecentRef.current = false;
             recentOrdersPromiseRef.current = null;
-            fetchRecentOrders(params);
+            fetchRecentOrders(params, options);
         },
         [fetchRecentOrders]
     );
 
     const reloadActiveOrders = useCallback(
-        (params = {}) => {
+        (params = {}, options = {}) => {
             hasLoadedActiveRef.current = false;
             activeOrdersPromiseRef.current = null;
-            fetchActiveOrders(params);
+            fetchActiveOrders(params, options);
         },
         [fetchActiveOrders]
     );
 
     const reloadCurrentOrders = useCallback(
-        (params = {}) => {
+        (params = {}, options = {}) => {
             hasLoadedCurrentRef.current = false;
             currentOrdersPromiseRef.current = null;
-            fetchCurrentOrders(params);
+            fetchCurrentOrders(params, options);
         },
         [fetchCurrentOrders]
     );
 
     const reloadNearbyOrders = useCallback(
-        (params = {}) => {
+        (params = {}, options = {}) => {
             hasLoadedNearbyRef.current = false;
             nearbyOrdersPromiseRef.current = null;
             fetchNearbyOrders(params);
