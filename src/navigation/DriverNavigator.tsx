@@ -17,7 +17,7 @@ import {
     faFlag,
     faTimes,
 } from '@fortawesome/free-solid-svg-icons';
-import { useTheme, Text, View, XStack } from 'tamagui';
+import { useTheme, Text, View, XStack, Image } from 'tamagui';
 import { navigatorConfig, get, config, toArray, getTheme } from '../utils';
 import { configCase } from '../utils/format';
 import { format } from 'date-fns';
@@ -50,6 +50,7 @@ import DriverOnlineToggle from '../components/DriverOnlineToggle';
 import BackButton from '../components/BackButton';
 import HeaderButton from '../components/HeaderButton';
 import Badge from '../components/Badge';
+import DeviceInfo from 'react-native-device-info';
 
 const isAndroid = Platform.OS === 'android';
 const importedIconsMap = {
@@ -507,8 +508,14 @@ const DriverNavigator = createBottomTabNavigator({
             headerTitle: '',
             headerLeft: (props) => (
                 <View pl='$3'>
-                    <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                        Navigator
+                    <XStack alignItems='center'>
+                        <Image source={require('../../assets/navigator-icon-transparent.png')} style={{ width: 18, height: 18, marginRight: 5 }} />
+                        <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
+                            Navigator
+                        </Text>
+                    </XStack>
+                    <Text color='$textSecondary' fontSize={8} ml={25}>
+                        v{DeviceInfo.getVersion()} #{DeviceInfo.getBuildNumber()}
                     </Text>
                 </View>
             ),
