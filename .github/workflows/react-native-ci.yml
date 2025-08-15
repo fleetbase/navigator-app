@@ -101,7 +101,7 @@ jobs:
 
             - name: Generate google-services.json
               env:
-                  GOOGLE_SERVICES_JSON: ${{ secrets.STOREFRONT_GOOGLE_SERVICES_JSON }}
+                  GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
               run: |
                   echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
 
@@ -271,7 +271,7 @@ jobs:
 
             - name: Generate google-services.json
               env:
-                  GOOGLE_SERVICES_JSON: ${{ secrets.STOREFRONT_GOOGLE_SERVICES_JSON }}
+                  GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
               run: |
                   echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
 
