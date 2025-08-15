@@ -142,7 +142,7 @@ dependencies {
     // Splash screen
     implementation 'androidx.core:core-splashscreen:1.0.0-alpha02' 
 
-    if (hermesEnabled.toBoolean()) {
+    if (project.hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor

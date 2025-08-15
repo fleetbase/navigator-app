@@ -129,16 +129,9 @@ jobs:
             - name: Make Gradlew Executable
               run: cd android && chmod +x ./gradlew
 
-            # Fix: Remove the outdated MaxPermSize JVM option and use proper Gradle settings
             - name: Build Android Debug APK
               run: |
                   cd android
-                  # Create gradle.properties to override any problematic JVM settings
-                  echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" > gradle.properties
-                  echo "org.gradle.daemon=false" >> gradle.properties
-                  echo "org.gradle.parallel=false" >> gradle.properties
-
-                  # Clean and build
                   ./gradlew clean assembleDebug --no-daemon --stacktrace --info
 
             - name: Upload Android APK
@@ -279,11 +272,6 @@ jobs:
             - name: Build Android Release APK
               run: |
                   cd android
-                  # Create gradle.properties to override any problematic JVM settings
-                  echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" > gradle.properties
-                  echo "org.gradle.daemon=false" >> gradle.properties
-                  echo "org.gradle.parallel=false" >> gradle.properties
-
                   ./gradlew clean assembleRelease --no-daemon --stacktrace
 
             - name: Upload Android Release APK
