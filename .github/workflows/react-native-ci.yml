@@ -9,7 +9,8 @@ on:
 
 env:
     FLEETBASE_KEY: ${{ secrets.FLEETBASE_KEY }}
-    GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
+    GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+    TRANSISTORSOFT_LICENSE_KEY: ${{ secrets.TRANSISTORSOFT_LICENSE_KEY }}
     ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
 
 jobs:
@@ -51,8 +52,14 @@ jobs:
 
             - name: Create .env file
               run: |
+                  echo "APP_LINK_PREFIX=${{ secrets.APP_LINK_PREFIX }}" > .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" > .env
-                  echo "GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_KEY }}" >> .env
+                  echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
+                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
+                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
+                  echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+                  echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
+                  echo "TRANSISTORSOFT_LICENSE_KEY=${{ secrets.TRANSISTORSOFT_LICENSE_KEY }}" >> .env
 
             - name: Generate cache key
               id: cache-key
@@ -96,8 +103,14 @@ jobs:
 
             - name: Create .env file
               run: |
+                  echo "APP_LINK_PREFIX=${{ secrets.APP_LINK_PREFIX }}" > .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" > .env
-                  echo "GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_KEY }}" >> .env
+                  echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
+                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
+                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
+                  echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+                  echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
+                  echo "TRANSISTORSOFT_LICENSE_KEY=${{ secrets.TRANSISTORSOFT_LICENSE_KEY }}" >> .env
 
             - name: Generate google-services.json
               env:
@@ -180,8 +193,14 @@ jobs:
 
             - name: Create .env file
               run: |
+                  echo "APP_LINK_PREFIX=${{ secrets.APP_LINK_PREFIX }}" > .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" > .env
-                  echo "GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_KEY }}" >> .env
+                  echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
+                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
+                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
+                  echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+                  echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
+                  echo "TRANSISTORSOFT_LICENSE_KEY=${{ secrets.TRANSISTORSOFT_LICENSE_KEY }}" >> .env
 
             - name: Cache CocoaPods
               uses: actions/cache@v4
@@ -266,8 +285,14 @@ jobs:
 
             - name: Create .env file
               run: |
+                  echo "APP_LINK_PREFIX=${{ secrets.APP_LINK_PREFIX }}" > .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" > .env
-                  echo "GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_KEY }}" >> .env
+                  echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
+                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
+                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
+                  echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+                  echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
+                  echo "TRANSISTORSOFT_LICENSE_KEY=${{ secrets.TRANSISTORSOFT_LICENSE_KEY }}" >> .env
 
             - name: Generate google-services.json
               env:
@@ -329,8 +354,14 @@ jobs:
 
             - name: Create .env file
               run: |
+                  echo "APP_LINK_PREFIX=${{ secrets.APP_LINK_PREFIX }}" > .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" > .env
-                  echo "GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_KEY }}" >> .env
+                  echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
+                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
+                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
+                  echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+                  echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
+                  echo "TRANSISTORSOFT_LICENSE_KEY=${{ secrets.TRANSISTORSOFT_LICENSE_KEY }}" >> .env
 
             - name: Cache CocoaPods
               uses: actions/cache@v4
