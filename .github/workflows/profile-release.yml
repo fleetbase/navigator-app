@@ -615,6 +615,6 @@ jobs:
 
                       **Triggered by:** ${{ github.event_name == 'workflow_dispatch' && 'Manual dispatch' || 'Branch push' }}
                       **Branch:** `${{ github.ref_name }}`
-                      **Commit:** [`${{ github.sha[0:7] }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+                      **Commit:** [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
 
                       [View Workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
