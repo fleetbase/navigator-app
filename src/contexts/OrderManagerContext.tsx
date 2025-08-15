@@ -21,7 +21,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
     const theme = useTheme();
     const { driver } = useAuth();
     const { fleetbase, adapter } = useFleetbase();
-    const today = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+    const today = format(new Date(), 'yyyy-MM-dd HH:mm:ssXXX');
 
     // Current date is stored in provider state with default value of today.
     const [currentDate, setCurrentDate] = useState(today);
