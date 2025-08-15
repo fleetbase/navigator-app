@@ -254,7 +254,7 @@ const DriverOrderManagementScreen = () => {
                     markedDates={activeOrderMarkedDates}
                     startingDate={startingDate}
                     selectedDate={new Date(currentDate)}
-                    onDateSelected={(selectedDate) => setCurrentDate(format(new Date(selectedDate), 'yyyy-MM-dd HH:mm:ss'))}
+                    onDateSelected={(selectedDate) => setCurrentDate(format(new Date(selectedDate), 'yyyy-MM-dd HH:mm:ssXXX'))}
                     iconLeft={require('../../assets/nv-arrow-left.png')}
                     iconRight={require('../../assets/nv-arrow-right.png')}
                 />

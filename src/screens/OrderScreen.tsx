@@ -324,14 +324,14 @@ const OrderScreen = ({ route }) => {
             const previousDestination = getOrderDestination(order, adapter);
 
             isUpdatingActivity.current = true;
-            setLoadingOverlayMessage(`Updating Activity: ${activity.status}`);
+            setLoadingOverlayMessage(`Updating Activity: ${activity._resolved_status ?? activity.status}`);
 
             try {
                 const updatedOrder = await runWithLoading(order.updateActivity({ activity, proof: proof?.id }), 'activityUpdate');
                 updateOrder(updatedOrder);
                 setNextActivity([]);
                 setLoadingOverlayMessage(null);
-                toast.success(`Order status updated to: ${activity.status}`);
+                toast.success(`Order status updated to: ${activity._resolved_status ?? activity.status}`);
 
                 const currentDestination = getOrderDestination(updatedOrder, adapter);
                 const shouldNotifyUserDestinationChanged = activity.complete && updatedOrder.status !== 'completed' && previousDestination?.id !== currentDestination?.id;
