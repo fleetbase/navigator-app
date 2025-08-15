@@ -66,9 +66,9 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                         <YStack flex={1} space='$1'>
                             <YStack space='$1'>
                                 <Text fontSize={16} color={fontColor} fontWeight='bold' numberOfLines={1}>
-                                    {activity.status}
+                                    {activity._resolved_status ?? activity.status}
                                 </Text>
-                                <Text color={fontColor}>{activity.details}</Text>
+                                <Text color={fontColor}>{activity._resolved_details ?? activity.details}</Text>
                             </YStack>
 
                             {activity.require_pod && (
