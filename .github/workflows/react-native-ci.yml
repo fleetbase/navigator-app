@@ -129,13 +129,17 @@ jobs:
             - name: Make Gradlew Executable
               run: cd android && chmod +x ./gradlew
 
-            - name: Clean Gradle
-              run: cd android && ./gradlew clean
-
+            # Fix: Remove the outdated MaxPermSize JVM option and use proper Gradle settings
             - name: Build Android Debug APK
-              run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace
-              env:
-                  GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=512m"'
+              run: |
+                  cd android
+                  # Create gradle.properties to override any problematic JVM settings
+                  echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" > gradle.properties
+                  echo "org.gradle.daemon=false" >> gradle.properties
+                  echo "org.gradle.parallel=false" >> gradle.properties
+
+                  # Clean and build
+                  ./gradlew clean assembleDebug --no-daemon --stacktrace --info
 
             - name: Upload Android APK
               uses: actions/upload-artifact@v4
@@ -203,8 +207,9 @@ jobs:
                   cd ios && pod install --repo-update
 
             - name: List available simulators
-              run: xcrun simctl list devices available
+              run: xcrun simctl list devices available | grep iPhone
 
+            # Fix: Use a generic destination that works in CI
             - name: Build iOS app for simulator
               run: |
                   cd ios
@@ -212,7 +217,7 @@ jobs:
                     -scheme NavigatorApp \
                     -configuration Debug \
                     -sdk iphonesimulator \
-                    -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
+                    -destination "platform=iOS Simulator,name=Any iOS Simulator Device" \
                     -derivedDataPath build \
                     -allowProvisioningUpdates \
                     build
@@ -224,7 +229,7 @@ jobs:
                   path: ios/build/Build/Products/Debug-iphonesimulator/
                   retention-days: 30
 
-    # Optional: Build release versions for deployment
+    # Release builds for tagged versions
     android_release:
         runs-on: ubuntu-latest
         needs: install_and_test
@@ -272,13 +277,82 @@ jobs:
                   key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
             - name: Build Android Release APK
-              run: cd android && ./gradlew assembleRelease --no-daemon
-              env:
-                  GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=512m"'
+              run: |
+                  cd android
+                  # Create gradle.properties to override any problematic JVM settings
+                  echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" > gradle.properties
+                  echo "org.gradle.daemon=false" >> gradle.properties
+                  echo "org.gradle.parallel=false" >> gradle.properties
+
+                  ./gradlew clean assembleRelease --no-daemon --stacktrace
 
             - name: Upload Android Release APK
               uses: actions/upload-artifact@v4
               with:
                   name: android-release-apk
                   path: android/app/build/outputs/apk/release/app-release.apk
+                  retention-days: 90
+
+    ios_release:
+        runs-on: macos-latest
+        needs: install_and_test
+        if: startsWith(github.ref, 'refs/tags/v')
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Xcode
+              uses: maxim-lobanov/setup-xcode@v1
+              with:
+                  xcode-version: latest-stable
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'yarn'
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Activate Yarn 3.6.4
+              run: corepack prepare yarn@3.6.4 --activate
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Create .env file
+              run: |
+                  echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" > .env
+                  echo "GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_KEY }}" >> .env
+
+            - name: Cache CocoaPods
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ios/Pods
+                      ~/Library/Caches/CocoaPods
+                      ~/.cocoapods
+                  key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+
+            - name: Install CocoaPods
+              run: |
+                  sudo gem install cocoapods
+                  cd ios && pod install --repo-update
+
+            - name: Build iOS Release Archive
+              run: |
+                  cd ios
+                  xcodebuild -workspace NavigatorApp.xcworkspace \
+                    -scheme NavigatorApp \
+                    -configuration Release \
+                    -archivePath build/NavigatorApp.xcarchive \
+                    -allowProvisioningUpdates \
+                    archive
+
+            - name: Upload iOS Release Archive
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ios-release-archive
+                  path: ios/build/NavigatorApp.xcarchive
                   retention-days: 90
