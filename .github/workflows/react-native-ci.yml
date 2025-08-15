@@ -202,15 +202,33 @@ jobs:
             - name: List available simulators
               run: xcrun simctl list devices available | grep iPhone
 
-            # Fix: Use a generic destination that works in CI
             - name: Build iOS app for simulator
               run: |
                   cd ios
+
+                  # Try to find an available iPhone simulator
+                  AVAILABLE_SIMULATORS=$(xcrun simctl list devices available | grep "iPhone" | head -5)
+                  echo "Available iPhone simulators:"
+                  echo "$AVAILABLE_SIMULATORS"
+
+                  # Extract the first iPhone simulator ID
+                  SIMULATOR_ID=$(echo "$AVAILABLE_SIMULATORS" | head -1 | grep -o '[A-F0-9-]\{36\}' | head -1)
+
+                  if [ -n "$SIMULATOR_ID" ]; then
+                      echo "Using iPhone simulator ID: $SIMULATOR_ID"
+                      DESTINATION="id=$SIMULATOR_ID"
+                  else
+                      echo "No iPhone simulator found, trying generic iOS Simulator destination"
+                      DESTINATION="generic/platform=iOS Simulator"
+                  fi
+
+                  echo "Building with destination: $DESTINATION"
+
                   xcodebuild -workspace NavigatorApp.xcworkspace \
                     -scheme NavigatorApp \
                     -configuration Debug \
                     -sdk iphonesimulator \
-                    -destination "platform=iOS Simulator,name=Any iOS Simulator Device" \
+                    -destination "$DESTINATION" \
                     -derivedDataPath build \
                     -allowProvisioningUpdates \
                     build
