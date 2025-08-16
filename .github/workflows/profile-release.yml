@@ -189,6 +189,7 @@ jobs:
                     "./profile-config/.env"
                     "./profile-config/google-services.json"
                     "./profile-config/play-store-credentials.json"
+                    "./profile-config/release.keystore"
                     "./profile-config/app-icon.png"
                     "./profile-config/splash-screen.png"
                     "./profile-config/android-Fastfile"
@@ -256,6 +257,7 @@ jobs:
                   cp ./profile-config/.env ./.env
                   cp ./profile-config/google-services.json ./android/app/google-services.json
                   cp ./profile-config/play-store-credentials.json ./android/app/play-store-credentials.json
+                  cp ./profile-config/release.keystore ./android/app/release.keystore
                   cp ./profile-config/app-icon.png ./assets/app-icon.png
                   cp ./profile-config/splash-screen.png ./assets/splash-screen.png
 
