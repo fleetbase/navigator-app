@@ -81,7 +81,7 @@ jobs:
                     COMMIT_MSG=$(git log -1 --pretty=%B)
                     echo "Latest commit message: $COMMIT_MSG"
                     
-                    if [[ "$COMMIT_MSG" == *"🚀 Release v"* ]]; then
+                    if [[ "$COMMIT_MSG" == *"🚀 Release v"* ]] || [[ "$COMMIT_MSG" =~ \[[Vv][0-9]+\.[0-9]+\.[0-9]+([.-]?(alpha|beta|rc)[0-9]*)?\] ]]; then
                       # This is a release merge from tag dispatcher
                       echo "🚀 Release merge detected"
                       
@@ -270,6 +270,11 @@ jobs:
                   echo "📋 Current versions:"
                   grep "ANDROID_VERSION" ./.env || echo "  No version info in .env"
 
+            - name: Install ImageMagick (Ubuntu)
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y imagemagick
+
             - name: Generate app icon and splash screen
               run: |
                   echo "🎨 Generating app icon and splash screen"
@@ -457,6 +462,11 @@ jobs:
                   cp ./profile-config/ios-Appfile ios/fastlane/Appfile
 
                   echo "✅ Profile environment setup completed"
+
+            - name: Install ImageMagick (macOS)
+              run: |
+                  brew update
+                  brew install imagemagick
 
             - name: Generate app icon and splash screen
               run: |
