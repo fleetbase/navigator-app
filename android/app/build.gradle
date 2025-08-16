@@ -124,6 +124,9 @@ android {
             shrinkResources false
         }
     }
+    // lintOptions {
+    //     disable 'ResourceCycle'
+    // }
 }
 
 dependencies {

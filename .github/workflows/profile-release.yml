@@ -25,6 +25,16 @@ on:
                 required: true
                 default: false
                 type: boolean
+            release_track:
+                description: 'Release track for deployment'
+                required: false
+                default: 'internal'
+                type: choice
+                options:
+                    - internal
+                    - alpha
+                    - beta
+                    - production
             version_code:
                 description: 'Android Version Code (optional override)'
                 required: false
@@ -66,9 +76,9 @@ jobs:
                     echo "profile=${{ github.event.inputs.profile }}" >> $GITHUB_OUTPUT
                     echo "build_type=${{ github.event.inputs.build_type }}" >> $GITHUB_OUTPUT
                     echo "deploy=${{ github.event.inputs.deploy }}" >> $GITHUB_OUTPUT
+                    echo "release_track=${{ github.event.inputs.release_track }}" >> $GITHUB_OUTPUT
                     echo "version=manual" >> $GITHUB_OUTPUT
-                    echo "release_track=internal" >> $GITHUB_OUTPUT
-                    echo "is_release=false" >> $GITHUB_OUTPUT
+                    echo "is_release=${{ github.event.inputs.build_type == 'release' }}" >> $GITHUB_OUTPUT
                     echo "version_code=${{ github.event.inputs.version_code }}" >> $GITHUB_OUTPUT
                     echo "build_number=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT
                     
@@ -189,12 +199,17 @@ jobs:
                     "./profile-config/.env"
                     "./profile-config/google-services.json"
                     "./profile-config/play-store-credentials.json"
-                    "./profile-config/release.keystore"
                     "./profile-config/app-icon.png"
                     "./profile-config/splash-screen.png"
                     "./profile-config/android-Fastfile"
                     "./profile-config/android-Appfile"
+                    "./profile-config/appstore-api-key.p8"
                   )
+
+                  # Add release.keystore for release builds
+                  if [ "${{ needs.detect-release.outputs.build_type }}" == "release" ]; then
+                    required_files+=("./profile-config/release.keystore")
+                  fi
 
                   for file in "${required_files[@]}"; do
                     if [ ! -f "$file" ]; then
@@ -257,9 +272,13 @@ jobs:
                   cp ./profile-config/.env ./.env
                   cp ./profile-config/google-services.json ./android/app/google-services.json
                   cp ./profile-config/play-store-credentials.json ./android/app/play-store-credentials.json
-                  cp ./profile-config/release.keystore ./android/app/release.keystore
                   cp ./profile-config/app-icon.png ./assets/app-icon.png
                   cp ./profile-config/splash-screen.png ./assets/splash-screen.png
+
+                  # Copy release keystore for release builds
+                  if [ "${{ needs.detect-release.outputs.build_type }}" == "release" ]; then
+                    cp ./profile-config/release.keystore ./android/app/release.keystore
+                  fi
 
                   # Setup Fastlane files (simplified)
                   mkdir -p android/fastlane
@@ -270,7 +289,7 @@ jobs:
 
                   # Show current versions
                   echo "📋 Current versions:"
-                  grep "ANDROID_VERSION" ./.env || echo "  No version info in .env"
+                  grep "ANDROID_VERSION\|IOS_VERSION" ./.env || echo "  No version info in .env"
 
             - name: Install ImageMagick (Ubuntu)
               run: |
@@ -294,75 +313,68 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-gradle-
 
-            - name: Build Android app
+            - name: Build or Deploy Android app
               run: |
                   cd android
                   chmod +x ./gradlew
 
-                  case "${{ needs.detect-release.outputs.build_type }}" in
-                    "release")
-                      ./gradlew clean assembleRelease --no-daemon --stacktrace
-                      echo "APK_PATH=android/app/build/outputs/apk/release/app-release.apk" >> $GITHUB_ENV
-                      echo "BUILD_OUTPUT=Release APK" >> $GITHUB_ENV
-                      ;;
-                    *)
-                      ./gradlew clean assembleDebug --no-daemon --stacktrace
-                      echo "APK_PATH=android/app/build/outputs/apk/debug/app-debug.apk" >> $GITHUB_ENV
-                      echo "BUILD_OUTPUT=Debug APK" >> $GITHUB_ENV
-                      ;;
-                  esac
-
-            - name: Deploy to Google Play
-              if: needs.detect-release.outputs.deploy == 'true' && needs.detect-release.outputs.build_type == 'release'
-              run: |
-                  echo "🚀 Deploying to Google Play Store"
-                  echo "Profile: ${{ needs.detect-release.outputs.profile }}"
-                  echo "Release Track: ${{ needs.detect-release.outputs.release_track }}"
-
-                  # Install Fastlane
-                  sudo gem install fastlane
-
-                  cd android
-
-                  # Verify Fastlane setup
-                  echo "📋 Available Fastlane lanes:"
-                  fastlane lanes
-
-                  case "${{ needs.detect-release.outputs.release_track }}" in
-                    "production")
-                      echo "📱 Deploying to production track"
-                      if fastlane deploy; then
-                        echo "✅ Successfully deployed to Google Play production"
-                      else
-                        echo "❌ Failed to deploy to Google Play production"
-                        exit 1
-                      fi
-                      ;;
-                    "internal"|"alpha"|"beta")
-                      echo "📱 Deploying to internal testing track"
-                      if fastlane internal 2>/dev/null || fastlane deploy; then
-                        echo "✅ Successfully deployed to Google Play internal testing"
-                      else
-                        echo "❌ Failed to deploy to Google Play internal testing"
-                        exit 1
-                      fi
-                      ;;
-                    *)
-                      echo "📱 Deploying to internal testing track (default)"
-                      if fastlane internal 2>/dev/null || fastlane deploy; then
-                        echo "✅ Successfully deployed to Google Play internal testing"
-                      else
-                        echo "❌ Failed to deploy to Google Play internal testing"
-                        exit 1
-                      fi
-                      ;;
-                  esac
+                  # Install Fastlane for deployment
+                  if [ "${{ needs.detect-release.outputs.deploy }}" == "true" ]; then
+                    echo "🚀 Installing Fastlane for deployment"
+                    sudo gem install fastlane
+                    
+                    echo "📋 Available Fastlane lanes:"
+                    fastlane lanes
+                    
+                    echo "🚀 Deploying to Google Play Store"
+                    echo "Profile: ${{ needs.detect-release.outputs.profile }}"
+                    echo "Release Track: ${{ needs.detect-release.outputs.release_track }}"
+                    
+                    # Use Fastlane to build and deploy (single step)
+                    case "${{ needs.detect-release.outputs.release_track }}" in
+                      "production")
+                        echo "📱 Deploying to production track"
+                        fastlane deploy_production
+                        ;;
+                      "beta")
+                        echo "📱 Deploying to beta track"
+                        fastlane deploy_beta
+                        ;;
+                      "alpha")
+                        echo "📱 Deploying to alpha track"
+                        fastlane deploy_alpha
+                        ;;
+                      "internal"|*)
+                        echo "📱 Deploying to internal testing track"
+                        fastlane deploy_internal
+                        ;;
+                    esac
+                    
+                    echo "✅ Successfully deployed to Google Play"
+                    
+                  else
+                    # Just build for testing/artifacts
+                    echo "🔨 Building Android app (no deployment)"
+                    case "${{ needs.detect-release.outputs.build_type }}" in
+                      "release")
+                        ./gradlew clean bundleRelease --no-daemon --stacktrace
+                        echo "AAB_PATH=android/app/build/outputs/bundle/release/app-release.aab" >> $GITHUB_ENV
+                        echo "BUILD_OUTPUT=Release AAB" >> $GITHUB_ENV
+                        ;;
+                      *)
+                        ./gradlew clean assembleDebug --no-daemon --stacktrace
+                        echo "APK_PATH=android/app/build/outputs/apk/debug/app-debug.apk" >> $GITHUB_ENV
+                        echo "BUILD_OUTPUT=Debug APK" >> $GITHUB_ENV
+                        ;;
+                    esac
+                  fi
 
             - name: Upload build artifacts
+              if: needs.detect-release.outputs.deploy != 'true'
               uses: actions/upload-artifact@v4
               with:
                   name: android-${{ needs.detect-release.outputs.profile }}-${{ needs.detect-release.outputs.build_type }}-${{ needs.detect-release.outputs.version }}
-                  path: ${{ env.APK_PATH }}
+                  path: ${{ env.APK_PATH || env.AAB_PATH }}
                   retention-days: 30
 
     # iOS build and deployment
@@ -409,6 +421,7 @@ jobs:
                     "./profile-config/splash-screen.png"
                     "./profile-config/ios-Fastfile"
                     "./profile-config/ios-Appfile"
+                    "./profile-config/appstore-api-key.p8"
                   )
 
                   for file in "${required_files[@]}"; do
@@ -463,7 +476,54 @@ jobs:
                   cp ./profile-config/ios-Fastfile ios/fastlane/Fastfile
                   cp ./profile-config/ios-Appfile ios/fastlane/Appfile
 
+                  echo "🔄 Loading profile environment variables into CI/CD environment"
+
+                  # Export ALL .env variables to CI/CD environment (now clean, no multi-line issues)
+                  set -a  # Automatically export all variables
+                  source ./.env
+                  set +a  # Stop auto-exporting
+
+                  # Export to GitHub environment for subsequent steps
+                  while IFS='=' read -r key value || [ -n "$key" ]; do
+                    # Skip comments and empty lines
+                    [[ $key =~ ^#.*$ ]] && continue
+                    [[ -z $key ]] && continue
+                    
+                    # Remove quotes if present
+                    value=$(echo "$value" | sed 's/^"//;s/"$//')
+                    
+                    # All values are now single-line, so simple export
+                    echo "$key=$value" >> $GITHUB_ENV
+                    echo "✅ Exported variable: $key"
+                  done < ./.env
+
                   echo "✅ Profile environment setup completed"
+
+            - name: Set up iOS authentication
+              run: |
+                  echo "🔐 Setting up App Store Connect API authentication"
+
+                  # Check if Apple credentials are available from profile .env
+                  if [ -z "$APPSTORE_API_KEY_ID" ] || [ -z "$APPSTORE_API_ISSUER_ID" ]; then
+                    echo "❌ Missing App Store Connect API credentials in profile .env file"
+                    echo "Please add to profile .env: APPSTORE_API_KEY_ID, APPSTORE_API_ISSUER_ID"
+                    exit 1
+                  fi
+
+                  # Check if API key file exists
+                  if [ ! -f "./profile-config/appstore-api-key.p8" ]; then
+                    echo "❌ Missing appstore-api-key.p8 file in profile"
+                    exit 1
+                  fi
+
+                  # Create the API key file for Fastlane
+                  mkdir -p ~/.appstoreconnect/private_keys
+                  cp ./profile-config/appstore-api-key.p8 ~/.appstoreconnect/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8
+
+                  # Set proper permissions
+                  chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8
+
+                  echo "✅ App Store Connect API key configured for profile"
 
             - name: Install ImageMagick (macOS)
               run: |
@@ -493,90 +553,75 @@ jobs:
                   sudo gem install cocoapods
                   cd ios && pod install --repo-update
 
-            - name: Build iOS app
+            - name: Build or Deploy iOS app
               run: |
                   cd ios
 
-                  case "${{ needs.detect-release.outputs.build_type }}" in
-                    "release")
-                      xcodebuild -workspace NavigatorApp.xcworkspace \
-                        -scheme NavigatorApp \
-                        -configuration Release \
-                        -destination "generic/platform=iOS" \
-                        -archivePath build/NavigatorApp.xcarchive \
-                        -allowProvisioningUpdates \
-                        archive
-                      echo "IOS_BUILD_PATH=ios/build/NavigatorApp.xcarchive" >> $GITHUB_ENV
-                      echo "BUILD_OUTPUT=Archive" >> $GITHUB_ENV
-                      ;;
-                    *)
-                      SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}' | head -1)
-                      if [ -n "$SIMULATOR_ID" ]; then
-                        DESTINATION="id=$SIMULATOR_ID"
-                      else
-                        DESTINATION="generic/platform=iOS Simulator"
-                      fi
-                      
-                      xcodebuild -workspace NavigatorApp.xcworkspace \
-                        -scheme NavigatorApp \
-                        -configuration Debug \
-                        -sdk iphonesimulator \
-                        -destination "$DESTINATION" \
-                        -derivedDataPath build \
-                        -allowProvisioningUpdates \
-                        build
-                      echo "IOS_BUILD_PATH=ios/build/Build/Products/Debug-iphonesimulator/" >> $GITHUB_ENV
-                      echo "BUILD_OUTPUT=Debug Build" >> $GITHUB_ENV
-                      ;;
-                  esac
-
-            - name: Deploy to App Store
-              if: needs.detect-release.outputs.deploy == 'true' && needs.detect-release.outputs.build_type == 'release'
-              run: |
-                  echo "🚀 Deploying to App Store Connect"
-                  echo "Profile: ${{ needs.detect-release.outputs.profile }}"
-                  echo "Release Track: ${{ needs.detect-release.outputs.release_track }}"
-
-                  # Install Fastlane
-                  sudo gem install fastlane
-
-                  cd ios
-
-                  # Verify Fastlane setup
-                  echo "📋 Available Fastlane lanes:"
-                  fastlane lanes
-
-                  case "${{ needs.detect-release.outputs.release_track }}" in
-                    "production")
-                      echo "📱 Deploying to App Store for review"
-                      if fastlane release; then
-                        echo "✅ Successfully uploaded to App Store Connect"
-                      else
-                        echo "❌ Failed to upload to App Store Connect"
-                        exit 1
-                      fi
-                      ;;
-                    "internal"|"alpha"|"beta")
-                      echo "📱 Deploying to TestFlight"
-                      if fastlane beta 2>/dev/null || fastlane release; then
-                        echo "✅ Successfully uploaded to TestFlight"
-                      else
-                        echo "❌ Failed to upload to TestFlight"
-                        exit 1
-                      fi
-                      ;;
-                    *)
-                      echo "📱 Deploying to TestFlight (default)"
-                      if fastlane beta 2>/dev/null || fastlane release; then
-                        echo "✅ Successfully uploaded to TestFlight"
-                      else
-                        echo "❌ Failed to upload to TestFlight"
-                        exit 1
-                      fi
-                      ;;
-                  esac
+                  # Install Fastlane for deployment
+                  if [ "${{ needs.detect-release.outputs.deploy }}" == "true" ]; then
+                    echo "🚀 Installing Fastlane for deployment"
+                    sudo gem install fastlane
+                    
+                    echo "📋 Available Fastlane lanes:"
+                    fastlane lanes
+                    
+                    echo "🚀 Deploying to App Store Connect"
+                    echo "Profile: ${{ needs.detect-release.outputs.profile }}"
+                    echo "Release Track: ${{ needs.detect-release.outputs.release_track }}"
+                    
+                    # Use Fastlane to build and deploy (single step)
+                    case "${{ needs.detect-release.outputs.release_track }}" in
+                      "production")
+                        echo "📱 Deploying to App Store for review"
+                        fastlane deploy_appstore
+                        ;;
+                      "internal"|"alpha"|"beta"|*)
+                        echo "📱 Deploying to TestFlight"
+                        fastlane deploy_testflight
+                        ;;
+                    esac
+                    
+                    echo "✅ Successfully deployed to App Store Connect"
+                    
+                  else
+                    # Just build for testing/artifacts
+                    echo "🔨 Building iOS app (no deployment)"
+                    case "${{ needs.detect-release.outputs.build_type }}" in
+                      "release")
+                        xcodebuild -workspace NavigatorApp.xcworkspace \
+                          -scheme NavigatorApp \
+                          -configuration Release \
+                          -destination "generic/platform=iOS" \
+                          -archivePath build/NavigatorApp.xcarchive \
+                          -allowProvisioningUpdates \
+                          archive
+                        echo "IOS_BUILD_PATH=ios/build/NavigatorApp.xcarchive" >> $GITHUB_ENV
+                        echo "BUILD_OUTPUT=Archive" >> $GITHUB_ENV
+                        ;;
+                      *)
+                        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}' | head -1)
+                        if [ -n "$SIMULATOR_ID" ]; then
+                          DESTINATION="id=$SIMULATOR_ID"
+                        else
+                          DESTINATION="generic/platform=iOS Simulator"
+                        fi
+                        
+                        xcodebuild -workspace NavigatorApp.xcworkspace \
+                          -scheme NavigatorApp \
+                          -configuration Debug \
+                          -sdk iphonesimulator \
+                          -destination "$DESTINATION" \
+                          -derivedDataPath build \
+                          -allowProvisioningUpdates \
+                          build
+                        echo "IOS_BUILD_PATH=ios/build/Build/Products/Debug-iphonesimulator/" >> $GITHUB_ENV
+                        echo "BUILD_OUTPUT=Debug Build" >> $GITHUB_ENV
+                        ;;
+                    esac
+                  fi
 
             - name: Upload build artifacts
+              if: needs.detect-release.outputs.deploy != 'true'
               uses: actions/upload-artifact@v4
               with:
                   name: ios-${{ needs.detect-release.outputs.profile }}-${{ needs.detect-release.outputs.build_type }}-${{ needs.detect-release.outputs.version }}
