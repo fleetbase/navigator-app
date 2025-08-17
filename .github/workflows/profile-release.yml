@@ -77,7 +77,16 @@ jobs:
                     echo "build_type=${{ github.event.inputs.build_type }}" >> $GITHUB_OUTPUT
                     echo "deploy=${{ github.event.inputs.deploy }}" >> $GITHUB_OUTPUT
                     echo "release_track=${{ github.event.inputs.release_track }}" >> $GITHUB_OUTPUT
-                    echo "version=manual" >> $GITHUB_OUTPUT
+                    
+                    # For manual dispatch, use current commit or branch for version
+                    if [ "${{ github.event.inputs.build_type }}" == "release" ]; then
+                      # Try to get version from latest tag
+                      LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+                      echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+                    else
+                      echo "version=dev" >> $GITHUB_OUTPUT
+                    fi
+                    
                     echo "is_release=${{ github.event.inputs.build_type == 'release' }}" >> $GITHUB_OUTPUT
                     echo "version_code=${{ github.event.inputs.version_code }}" >> $GITHUB_OUTPUT
                     echo "build_number=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT
@@ -224,7 +233,18 @@ jobs:
               if: needs.detect-release.outputs.is_release == 'true'
               run: |
                   VERSION="${{ needs.detect-release.outputs.version }}"
-                  VERSION_NUMBER=${VERSION#v}  # Remove 'v' prefix
+
+                  # Extract version number (remove 'v' prefix if present)
+                  if [[ "$VERSION" == v* ]]; then
+                    VERSION_NUMBER=${VERSION#v}
+                  else
+                    VERSION_NUMBER="$VERSION"
+                  fi
+
+                  # Handle special cases
+                  if [ "$VERSION_NUMBER" == "dev" ]; then
+                    VERSION_NUMBER="1.0.0-dev"
+                  fi
 
                   echo "📝 Updating versions to: $VERSION_NUMBER"
 
@@ -501,29 +521,29 @@ jobs:
 
             - name: Set up iOS authentication
               run: |
-                  echo "🔐 Setting up App Store Connect API authentication"
+                  echo "🔐 Setting up iOS authentication (required for all iOS builds)"
 
-                  # Check if Apple credentials are available from profile .env
+                  # Check if Apple credentials are available
                   if [ -z "$APPSTORE_API_KEY_ID" ] || [ -z "$APPSTORE_API_ISSUER_ID" ]; then
-                    echo "❌ Missing App Store Connect API credentials in profile .env file"
-                    echo "Please add to profile .env: APPSTORE_API_KEY_ID, APPSTORE_API_ISSUER_ID"
+                    echo "❌ Missing Apple credentials in .env file"
+                    echo "Required: APPSTORE_API_KEY_ID, APPSTORE_API_ISSUER_ID"
                     exit 1
                   fi
 
                   # Check if API key file exists
                   if [ ! -f "./profile-config/appstore-api-key.p8" ]; then
-                    echo "❌ Missing appstore-api-key.p8 file in profile"
+                    echo "❌ Missing appstore-api-key.p8 file"
                     exit 1
                   fi
 
-                  # Create the API key file for Fastlane
+                  # Create the API key file for Fastlane and Xcode
                   mkdir -p ~/.appstoreconnect/private_keys
                   cp ./profile-config/appstore-api-key.p8 ~/.appstoreconnect/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8
 
                   # Set proper permissions
                   chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8
 
-                  echo "✅ App Store Connect API key configured for profile"
+                  echo "✅ App Store Connect API key configured for all iOS builds"
 
             - name: Install ImageMagick (macOS)
               run: |
@@ -588,24 +608,33 @@ jobs:
                     echo "🔨 Building iOS app (no deployment)"
                     case "${{ needs.detect-release.outputs.build_type }}" in
                       "release")
+                        echo "🔨 Building iOS Release Archive"
                         xcodebuild -workspace NavigatorApp.xcworkspace \
                           -scheme NavigatorApp \
                           -configuration Release \
                           -destination "generic/platform=iOS" \
                           -archivePath build/NavigatorApp.xcarchive \
                           -allowProvisioningUpdates \
+                          CODE_SIGN_STYLE=Automatic \
+                          DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
                           archive
                         echo "IOS_BUILD_PATH=ios/build/NavigatorApp.xcarchive" >> $GITHUB_ENV
                         echo "BUILD_OUTPUT=Archive" >> $GITHUB_ENV
                         ;;
                       *)
+                        echo "🔨 Building iOS Debug for Simulator (with automatic signing)"
+                        
+                        # Find available iPhone simulator
                         SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}' | head -1)
                         if [ -n "$SIMULATOR_ID" ]; then
                           DESTINATION="id=$SIMULATOR_ID"
+                          echo "📱 Using iPhone simulator: $SIMULATOR_ID"
                         else
                           DESTINATION="generic/platform=iOS Simulator"
+                          echo "📱 Using generic iOS Simulator"
                         fi
                         
+                        # Build for simulator with automatic signing
                         xcodebuild -workspace NavigatorApp.xcworkspace \
                           -scheme NavigatorApp \
                           -configuration Debug \
@@ -613,9 +642,11 @@ jobs:
                           -destination "$DESTINATION" \
                           -derivedDataPath build \
                           -allowProvisioningUpdates \
+                          CODE_SIGN_STYLE=Automatic \
+                          DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM_ID" \
                           build
                         echo "IOS_BUILD_PATH=ios/build/Build/Products/Debug-iphonesimulator/" >> $GITHUB_ENV
-                        echo "BUILD_OUTPUT=Debug Build" >> $GITHUB_ENV
+                        echo "BUILD_OUTPUT=Debug Build for Simulator" >> $GITHUB_ENV
                         ;;
                     esac
                   fi
