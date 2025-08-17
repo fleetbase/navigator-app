@@ -80,7 +80,7 @@ jobs:
                     
                     # Version detection hierarchy for manual dispatch:
                     # 1. Use latest Git tag for version name
-                    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+                    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v2.0.9")
                     echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
                     
                     # 2. Build number detection hierarchy:
@@ -260,7 +260,7 @@ jobs:
 
                   # Fallback if no proper version
                   if [ "$VERSION_NAME" == "dev" ] || [ -z "$VERSION_NAME" ]; then
-                    VERSION_NAME="1.0.0"
+                    VERSION_NAME="2.0.9"
                   fi
 
                   echo "📝 Version Name (iOS_VERSION = ANDROID_VERSION_NAME): $VERSION_NAME"
