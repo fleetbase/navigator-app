@@ -36,11 +36,11 @@ on:
                     - beta
                     - production
             version_code:
-                description: 'Android Version Code (optional override)'
+                description: 'Version Code (optional override)'
                 required: false
                 type: string
             build_number:
-                description: 'iOS Build Number (optional override)'
+                description: 'Build Number (optional override)'
                 required: false
                 type: string
 
@@ -78,13 +78,35 @@ jobs:
                     echo "deploy=${{ github.event.inputs.deploy }}" >> $GITHUB_OUTPUT
                     echo "release_track=${{ github.event.inputs.release_track }}" >> $GITHUB_OUTPUT
                     
-                    # Always get version from latest Git tag (never use "manual" or "dev")
-                    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+                    # Version detection hierarchy for manual dispatch:
+                    # 1. Use latest Git tag for version name
+                    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v2.0.9")
                     echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
                     
+                    # 2. Build number detection hierarchy:
+                    # Priority 1: Manual input from workflow dispatch
+                    if [ -n "${{ github.event.inputs.version_code }}" ] && [ "${{ github.event.inputs.version_code }}" != "" ]; then
+                      echo "version_code=${{ github.event.inputs.version_code }}" >> $GITHUB_OUTPUT
+                      echo "build_number=${{ github.event.inputs.version_code }}" >> $GITHUB_OUTPUT  # Same for iOS
+                    elif [ -n "${{ github.event.inputs.build_number }}" ] && [ "${{ github.event.inputs.build_number }}" != "" ]; then
+                      echo "version_code=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT  # Same for Android
+                      echo "build_number=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT
+                    else
+                      # Priority 2: Extract from tag commit message "[Build 16]"
+                      TAG_COMMIT_MSG=$(git tag -l --format='%(contents)' "$LATEST_TAG" 2>/dev/null || echo "")
+                      BUILD_FROM_TAG=$(echo "$TAG_COMMIT_MSG" | grep -o '\[Build [0-9]\+\]' | grep -o '[0-9]\+' || echo "")
+                      
+                      if [ -n "$BUILD_FROM_TAG" ]; then
+                        echo "version_code=$BUILD_FROM_TAG" >> $GITHUB_OUTPUT
+                        echo "build_number=$BUILD_FROM_TAG" >> $GITHUB_OUTPUT
+                      else
+                        # Priority 3: Will be determined from .env file during update step
+                        echo "version_code=" >> $GITHUB_OUTPUT
+                        echo "build_number=" >> $GITHUB_OUTPUT
+                      fi
+                    fi
+                    
                     echo "is_release=${{ github.event.inputs.build_type == 'release' }}" >> $GITHUB_OUTPUT
-                    echo "version_code=${{ github.event.inputs.version_code }}" >> $GITHUB_OUTPUT
-                    echo "build_number=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT
                     
                   else
                     # Extract profile from branch name (app/fleetbase -> fleetbase)
@@ -226,56 +248,86 @@ jobs:
 
             - name: Update versions from tag
               run: |
+                  echo "🔧 Starting version management with user's exact specifications"
+
+                  # STEP 1: Get version name from tag (always the same for iOS and Android)
                   VERSION="${{ needs.detect-release.outputs.version }}"
-
-                  # Extract version number (remove 'v' prefix if present)
                   if [[ "$VERSION" == v* ]]; then
-                    VERSION_NUMBER=${VERSION#v}
+                    VERSION_NAME=${VERSION#v}
                   else
-                    VERSION_NUMBER="$VERSION"
+                    VERSION_NAME="$VERSION"
                   fi
 
-                  # Never use "dev" - always use a proper version number
-                  if [ "$VERSION_NUMBER" == "dev" ] || [ -z "$VERSION_NUMBER" ]; then
-                    VERSION_NUMBER="1.0.0"
+                  # Fallback if no proper version
+                  if [ "$VERSION_NAME" == "dev" ] || [ -z "$VERSION_NAME" ]; then
+                    VERSION_NAME="2.0.9"
                   fi
 
-                  echo "📝 Updating versions to: $VERSION_NUMBER"
+                  echo "📝 Version Name (iOS_VERSION = ANDROID_VERSION_NAME): $VERSION_NAME"
 
-                  # Get current build numbers from .env
-                  CURRENT_VERSION_CODE=$(grep "ANDROID_VERSION_CODE=" ./profile-config/.env | cut -d'=' -f2 || echo "0")
-                  CURRENT_BUILD_NUMBER=$(grep "IOS_BUILD_NUMBER=" ./profile-config/.env | cut -d'=' -f2 || echo "0")
+                  # STEP 2: Determine build number using user's hierarchy
+                  BUILD_NUMBER=""
 
-                  # Increment build numbers (or use manual override)
+                  # Priority 1: Manual dispatch inputs (version_code or build_number)
                   if [ -n "${{ needs.detect-release.outputs.version_code }}" ] && [ "${{ needs.detect-release.outputs.version_code }}" != "" ]; then
-                    NEW_VERSION_CODE="${{ needs.detect-release.outputs.version_code }}"
+                    BUILD_NUMBER="${{ needs.detect-release.outputs.version_code }}"
+                    echo "✅ Using build number from manual version_code input: $BUILD_NUMBER"
+                  elif [ -n "${{ needs.detect-release.outputs.build_number }}" ] && [ "${{ needs.detect-release.outputs.build_number }}" != "" ]; then
+                    BUILD_NUMBER="${{ needs.detect-release.outputs.build_number }}"
+                    echo "✅ Using build number from manual build_number input: $BUILD_NUMBER"
                   else
-                    NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+                    # Priority 2: Extract from tag commit message "[Build No 16]"
+                    TAG_COMMIT_MSG=$(git tag -l --format='%(contents)' "$VERSION" 2>/dev/null || echo "")
+                    BUILD_FROM_TAG=$(echo "$TAG_COMMIT_MSG" | grep -o '\[Build No [0-9]\+\]' | grep -o '[0-9]\+' || echo "")
+                    
+                    if [ -n "$BUILD_FROM_TAG" ]; then
+                      BUILD_NUMBER="$BUILD_FROM_TAG"
+                      echo "✅ Using build number from tag commit message: $BUILD_NUMBER"
+                    else
+                      # Priority 3: Get from .env file and increment
+                      CURRENT_BUILD_NUMBER=$(grep "ANDROID_VERSION_CODE=" ./profile-config/.env | cut -d'=' -f2 2>/dev/null || echo "0")
+                      
+                      # Validate it's an integer
+                      if ! [[ "$CURRENT_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+                        echo "⚠️  ANDROID_VERSION_CODE from .env is not an integer: '$CURRENT_BUILD_NUMBER', using 0"
+                        CURRENT_BUILD_NUMBER=0
+                      fi
+                      
+                      BUILD_NUMBER=$((CURRENT_BUILD_NUMBER + 1))
+                      echo "✅ Using incremented build number from .env: $CURRENT_BUILD_NUMBER + 1 = $BUILD_NUMBER"
+                    fi
                   fi
 
-                  if [ -n "${{ needs.detect-release.outputs.build_number }}" ] && [ "${{ needs.detect-release.outputs.build_number }}" != "" ]; then
-                    NEW_BUILD_NUMBER="${{ needs.detect-release.outputs.build_number }}"
-                  else
-                    NEW_BUILD_NUMBER=$((CURRENT_BUILD_NUMBER + 1))
+                  # STEP 3: Final validation
+                  if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+                    echo "❌ ERROR: BUILD_NUMBER is not an integer: '$BUILD_NUMBER'"
+                    exit 1
                   fi
 
-                  # Update .env file with CORRECT assignments
-                  sed -i "s/ANDROID_VERSION_CODE=.*/ANDROID_VERSION_CODE=$NEW_VERSION_CODE/" ./profile-config/.env        # Integer for build.gradle
-                  sed -i "s/ANDROID_VERSION_NAME=.*/ANDROID_VERSION_NAME=$VERSION_NUMBER/" ./profile-config/.env          # String version
-                  sed -i "s/IOS_VERSION=.*/IOS_VERSION=$VERSION_NUMBER/" ./profile-config/.env                            # String version
-                  sed -i "s/IOS_BUILD_NUMBER=.*/IOS_BUILD_NUMBER=$NEW_BUILD_NUMBER/" ./profile-config/.env                # Integer build number
+                  echo "🎯 Final Version Assignment:"
+                  echo "  📱 iOS_VERSION: $VERSION_NAME"
+                  echo "  📱 IOS_BUILD_NUMBER: $BUILD_NUMBER"
+                  echo "  🤖 ANDROID_VERSION_NAME: $VERSION_NAME"
+                  echo "  🤖 ANDROID_VERSION_CODE: $BUILD_NUMBER"
+                  echo "  ✅ iOS and Android version parity maintained!"
 
-                  echo "✅ Updated versions:"
-                  echo "  Android: $VERSION_NUMBER ($NEW_VERSION_CODE)"
-                  echo "  iOS: $VERSION_NUMBER ($NEW_BUILD_NUMBER)"
+                  # STEP 4: Update .env file with IDENTICAL values for iOS and Android
+                  sed -i "s/ANDROID_VERSION_CODE=.*/ANDROID_VERSION_CODE=$BUILD_NUMBER/" ./profile-config/.env
+                  sed -i "s/ANDROID_VERSION_NAME=.*/ANDROID_VERSION_NAME=$VERSION_NAME/" ./profile-config/.env
+                  sed -i "s/IOS_VERSION=.*/IOS_VERSION=$VERSION_NAME/" ./profile-config/.env
+                  sed -i "s/IOS_BUILD_NUMBER=.*/IOS_BUILD_NUMBER=$BUILD_NUMBER/" ./profile-config/.env
 
-                  # Save updated versions for other jobs
-                  echo "ANDROID_VERSION_CODE=$NEW_VERSION_CODE" >> $GITHUB_ENV
-                  echo "ANDROID_VERSION_NAME=$VERSION_NUMBER" >> $GITHUB_ENV
-                  echo "IOS_VERSION=$VERSION_NUMBER" >> $GITHUB_ENV
-                  echo "IOS_BUILD_NUMBER=$NEW_BUILD_NUMBER" >> $GITHUB_ENV
+                  echo "✅ Updated versions with perfect parity:"
+                  echo "  Android: $VERSION_NAME ($BUILD_NUMBER)"
+                  echo "  iOS: $VERSION_NAME ($BUILD_NUMBER)"
 
-                  # Upload updated .env back to S3 for next time
+                  # STEP 5: Save for other jobs
+                  echo "ANDROID_VERSION_CODE=$BUILD_NUMBER" >> $GITHUB_ENV
+                  echo "ANDROID_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+                  echo "IOS_VERSION=$VERSION_NAME" >> $GITHUB_ENV
+                  echo "IOS_BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+
+                  # STEP 6: Upload updated .env back to S3
                   aws s3 cp ./profile-config/.env s3://${{ env.S3_BUCKET }}/${{ needs.detect-release.outputs.profile }}/.env
 
             - name: Setup profile environment
@@ -562,9 +614,9 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-pods-
 
-            - name: Install CocoaPods
+            - name: Install iOS dependencies
               run: |
-                  sudo gem install cocoapods
+                  echo "📦 Installing iOS dependencies"
                   cd ios && pod install --repo-update
 
             - name: Build or Deploy iOS app
@@ -685,6 +737,7 @@ jobs:
 
                       **Profile:** `${{ needs.detect-release.outputs.profile }}`
                       **Version:** `${{ needs.detect-release.outputs.version }}`
+                      **Build Number:** `${{ needs.detect-release.outputs.build_number }}`
                       **Build Type:** `${{ needs.detect-release.outputs.build_type }}`
                       **Deploy:** `${{ needs.detect-release.outputs.deploy }}`
 
