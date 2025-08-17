@@ -78,14 +78,9 @@ jobs:
                     echo "deploy=${{ github.event.inputs.deploy }}" >> $GITHUB_OUTPUT
                     echo "release_track=${{ github.event.inputs.release_track }}" >> $GITHUB_OUTPUT
                     
-                    # For manual dispatch, use current commit or branch for version
-                    if [ "${{ github.event.inputs.build_type }}" == "release" ]; then
-                      # Try to get version from latest tag
-                      LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
-                      echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
-                    else
-                      echo "version=dev" >> $GITHUB_OUTPUT
-                    fi
+                    # Always get version from latest Git tag (never use "manual" or "dev")
+                    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+                    echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
                     
                     echo "is_release=${{ github.event.inputs.build_type == 'release' }}" >> $GITHUB_OUTPUT
                     echo "version_code=${{ github.event.inputs.version_code }}" >> $GITHUB_OUTPUT
@@ -230,7 +225,6 @@ jobs:
                   echo "✅ All required files found for profile: ${{ needs.detect-release.outputs.profile }}"
 
             - name: Update versions from tag
-              if: needs.detect-release.outputs.is_release == 'true'
               run: |
                   VERSION="${{ needs.detect-release.outputs.version }}"
 
@@ -241,9 +235,9 @@ jobs:
                     VERSION_NUMBER="$VERSION"
                   fi
 
-                  # Handle special cases
-                  if [ "$VERSION_NUMBER" == "dev" ]; then
-                    VERSION_NUMBER="1.0.0-dev"
+                  # Never use "dev" - always use a proper version number
+                  if [ "$VERSION_NUMBER" == "dev" ] || [ -z "$VERSION_NUMBER" ]; then
+                    VERSION_NUMBER="1.0.0"
                   fi
 
                   echo "📝 Updating versions to: $VERSION_NUMBER"
@@ -253,23 +247,23 @@ jobs:
                   CURRENT_BUILD_NUMBER=$(grep "IOS_BUILD_NUMBER=" ./profile-config/.env | cut -d'=' -f2 || echo "0")
 
                   # Increment build numbers (or use manual override)
-                  if [ -n "${{ needs.detect-release.outputs.version_code }}" ]; then
+                  if [ -n "${{ needs.detect-release.outputs.version_code }}" ] && [ "${{ needs.detect-release.outputs.version_code }}" != "" ]; then
                     NEW_VERSION_CODE="${{ needs.detect-release.outputs.version_code }}"
                   else
                     NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
                   fi
 
-                  if [ -n "${{ needs.detect-release.outputs.build_number }}" ]; then
+                  if [ -n "${{ needs.detect-release.outputs.build_number }}" ] && [ "${{ needs.detect-release.outputs.build_number }}" != "" ]; then
                     NEW_BUILD_NUMBER="${{ needs.detect-release.outputs.build_number }}"
                   else
                     NEW_BUILD_NUMBER=$((CURRENT_BUILD_NUMBER + 1))
                   fi
 
-                  # Update .env file with new versions
-                  sed -i "s/ANDROID_VERSION_CODE=.*/ANDROID_VERSION_CODE=$NEW_VERSION_CODE/" ./profile-config/.env
-                  sed -i "s/ANDROID_VERSION_NAME=.*/ANDROID_VERSION_NAME=$VERSION_NUMBER/" ./profile-config/.env
-                  sed -i "s/IOS_VERSION=.*/IOS_VERSION=$VERSION_NUMBER/" ./profile-config/.env
-                  sed -i "s/IOS_BUILD_NUMBER=.*/IOS_BUILD_NUMBER=$NEW_BUILD_NUMBER/" ./profile-config/.env
+                  # Update .env file with CORRECT assignments
+                  sed -i "s/ANDROID_VERSION_CODE=.*/ANDROID_VERSION_CODE=$NEW_VERSION_CODE/" ./profile-config/.env        # Integer for build.gradle
+                  sed -i "s/ANDROID_VERSION_NAME=.*/ANDROID_VERSION_NAME=$VERSION_NUMBER/" ./profile-config/.env          # String version
+                  sed -i "s/IOS_VERSION=.*/IOS_VERSION=$VERSION_NUMBER/" ./profile-config/.env                            # String version
+                  sed -i "s/IOS_BUILD_NUMBER=.*/IOS_BUILD_NUMBER=$NEW_BUILD_NUMBER/" ./profile-config/.env                # Integer build number
 
                   echo "✅ Updated versions:"
                   echo "  Android: $VERSION_NUMBER ($NEW_VERSION_CODE)"
