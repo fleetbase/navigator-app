@@ -213,7 +213,7 @@ jobs:
                   test -f ./profile-config/.env || { echo "❌ Missing ./profile-config/.env"; exit 1; }
                   echo "✅ Profile config ready"
 
-            - name: Resolve cross-platform versions (no race)
+            - name: Resolve cross-platform versions
               id: resolve
               run: |
                   echo "🔧 Resolving versions with parity (iOS/Android)"
@@ -233,7 +233,7 @@ jobs:
                   fi
                   # manual override already reflected in detect-release.outputs.version
 
-                  # ---- STEP 2: BUILD_NUMBER (strict int) ----
+                  # ---- STEP 2: BUILD_NUMBER (strict int, NO AUTOINCREMENT) ----
                   if [ -n "${{ needs.detect-release.outputs.build_number }}" ] && [ "${{ needs.detect-release.outputs.build_number }}" != "" ]; then
                     BUILD_NUMBER="${{ needs.detect-release.outputs.build_number }}"
                     echo "✅ Build number override (manual): $BUILD_NUMBER"
@@ -243,20 +243,25 @@ jobs:
                     BUILD_FROM_TAG=$(echo "$TAG_MSG" | grep -o '\[Build\( No\)\? [0-9]\+\]' | grep -o '[0-9]\+' || echo "")
                     if [ -n "$BUILD_FROM_TAG" ]; then
                       BUILD_NUMBER="$BUILD_FROM_TAG"
-                      echo "✅ Build number from tag message: $BUILD_NUMBER"
+                      echo "✅ Build number from tag message: $BUILD_FROM_TAG"
                     else
-                      CUR=$(grep -E '^ANDROID_VERSION_CODE=' ./profile-config/.env | cut -d'=' -f2 2>/dev/null || echo "0")
-                      [[ "$CUR" =~ ^[0-9]+$ ]] || { echo "⚠️ ANDROID_VERSION_CODE in .env not int: '$CUR' → using 0"; CUR=0; }
-                      BUILD_NUMBER=$((CUR + 1))
-                      echo "✅ Build number incremented from .env: $CUR + 1 = $BUILD_NUMBER"
+                      # Use value from profile .env without increment
+                      CUR=$(grep -E '^ANDROID_VERSION_CODE=' ./profile-config/.env | cut -d'=' -f2 2>/dev/null || echo "")
+                      if [[ "$CUR" =~ ^[0-9]+$ ]]; then
+                        BUILD_NUMBER="$CUR"
+                        echo "ℹ️ Using build number from ANDROID_VERSION_CODE in .env: $BUILD_NUMBER"
+                      else
+                        BUILD_NUMBER="${FALLBACK_BUILD_NUMBER:-1}"
+                        echo "⚠️ No valid build number from inputs, tag, or .env; falling back to global: $BUILD_NUMBER"
+                      fi
                     fi
                   fi
-                  # If still empty or non-integer, use global fallback (validate)
+
+                  # Final validation
                   if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
-                    BUILD_NUMBER="${FALLBACK_BUILD_NUMBER}"
-                    echo "⚠️ Build number fell back to global env: $BUILD_NUMBER"
+                    echo "❌ ERROR: BUILD_NUMBER not integer: '$BUILD_NUMBER'"
+                    exit 1
                   fi
-                  [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]] || { echo "❌ ERROR: BUILD_NUMBER not integer: '$BUILD_NUMBER'"; exit 1; }
 
                   echo "🎯 Final parity:"
                   echo "  iOS_VERSION / ANDROID_VERSION_NAME = $VERSION_NAME"
