@@ -49,7 +49,7 @@ env:
     NODE_VERSION: '18'
     JAVA_VERSION: '21'
     FALLBACK_VERSION_NAME: '2.0.9'
-    FALLBACK_BUILD_NUMBER: '16'  
+    FALLBACK_BUILD_NUMBER: '16'
 
 jobs:
     # Detect profile and release configuration
@@ -57,7 +57,6 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             profile: ${{ steps.detect.outputs.profile }}
-            version: ${{ steps.detect.outputs.version }}
             build_type: ${{ steps.detect.outputs.build_type }}
             deploy: ${{ steps.detect.outputs.deploy }}
             release_track: ${{ steps.detect.outputs.release_track }}
@@ -197,7 +196,7 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
               with:
-                  fetch-depth: 0  # need tags
+                  fetch-depth: 0 # need tags
                   fetch-tags: true
 
             - name: Configure AWS credentials
@@ -362,16 +361,16 @@ jobs:
             - name: Download resolved versions
               uses: actions/download-artifact@v4
               with:
-                name: versions
+                  name: versions
 
             - name: Source versions
               run: |
-                set -e
-                source ./versions.env
-                echo "Android building: $ANDROID_VERSION_NAME ($ANDROID_VERSION_CODE)"
-                # (Optionally export to this job's env)
-                echo "ANDROID_VERSION_NAME=$ANDROID_VERSION_NAME" >> $GITHUB_ENV
-                echo "ANDROID_VERSION_CODE=$ANDROID_VERSION_CODE" >> $GITHUB_ENV
+                  set -e
+                  source ./versions.env
+                  echo "Android building: $ANDROID_VERSION_NAME ($ANDROID_VERSION_CODE)"
+                  # (Optionally export to this job's env)
+                  echo "ANDROID_VERSION_NAME=$ANDROID_VERSION_NAME" >> $GITHUB_ENV
+                  echo "ANDROID_VERSION_CODE=$ANDROID_VERSION_CODE" >> $GITHUB_ENV
 
             - name: Setup profile environment
               run: |
@@ -543,16 +542,16 @@ jobs:
             - name: Download resolved versions
               uses: actions/download-artifact@v4
               with:
-                name: versions
+                  name: versions
 
             - name: Source versions & bump Info.plist
               run: |
-                set -e
-                source ./versions.env
-                echo "iOS building: $IOS_VERSION ($IOS_BUILD_NUMBER)"
-                # enforce parity in the app:
-                /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $IOS_VERSION" ios/NavigatorApp/Info.plist
-                /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $IOS_BUILD_NUMBER" ios/NavigatorApp/Info.plist || true
+                  set -e
+                  source ./versions.env
+                  echo "iOS building: $IOS_VERSION ($IOS_BUILD_NUMBER)"
+                  # enforce parity in the app:
+                  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $IOS_VERSION" ios/NavigatorApp/Info.plist
+                  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $IOS_BUILD_NUMBER" ios/NavigatorApp/Info.plist || true
 
             - name: Setup profile environment
               run: |
