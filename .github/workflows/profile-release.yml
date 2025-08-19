@@ -431,10 +431,46 @@ jobs:
                   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
               run: |
                   set -e
-                  SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-                  yes | "$SDKMGR" --licenses > /dev/null
-                  "$SDKMGR" "platforms;android-35" "build-tools;35.0.0" "ndk;27.1.12297006"
-                  "$SDKMGR" "cmake;3.22.1"
+
+                  # Find a working sdkmanager (latest if present, else first found)
+                  if [ -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+                    SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+                  else
+                    SDKMGR=$(ls -1d "$ANDROID_SDK_ROOT/cmdline-tools"/*/bin/sdkmanager 2>/dev/null | head -n1 || true)
+                    if [ -z "$SDKMGR" ]; then
+                      echo "No cmdline-tools found; installing 'cmdline-tools;latest' with the preinstalled sdkmanager..."
+                      # Use the prebundled sdkmanager path on GH runners
+                      SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager"
+                      "$SDKMGR" "cmdline-tools;latest"
+                      SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+                    fi
+                  fi
+
+                  echo "Using sdkmanager at: $SDKMGR"
+
+                  # Accept licenses; don't fail on SIGPIPE from 'yes'
+                  yes | "$SDKMGR" --licenses >/dev/null 2>&1 || true
+
+                  # Helper: install component if missing
+                  need() {
+                    local p="$1"
+                    if ! "$SDKMGR" --list_installed | grep -q "^  $p$"; then
+                      echo "Installing $p"
+                      "$SDKMGR" "$p"
+                    else
+                      echo "✓ $p already installed"
+                    fi
+                  }
+
+                  # Match your root gradle pins
+                  need "platforms;android-35"
+                  need "build-tools;35.0.0"
+                  need "ndk;27.1.12297006"
+
+                  # CMake version your native step expects (per your earlier error path)
+                  need "cmake;3.22.1"
+
+                  # Sanity output
                   "$ANDROID_SDK_ROOT/cmake/3.22.1/bin/cmake" --version || true
                   test -f "$ANDROID_SDK_ROOT/ndk/27.1.12297006/source.properties" && echo "✅ NDK 27.1.12297006 installed"
 
