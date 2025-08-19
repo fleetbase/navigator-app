@@ -595,6 +595,24 @@ jobs:
 
                   echo "✅ Profile environment setup completed"
 
+            - name: Export S3 settings for match (bucket/prefix/region)
+              run: |
+                  echo "PROFILE=${{ needs.detect-release.outputs.profile }}" >> $GITHUB_ENV
+                  echo "MATCH_S3_BUCKET=${{ env.S3_BUCKET }}" >> $GITHUB_ENV
+                  echo "MATCH_S3_OBJECT_PREFIX=${{ needs.detect-release.outputs.profile }}/certs" >> $GITHUB_ENV
+                  # Reuse the region you already configured for AWS creds
+                  echo "MATCH_S3_REGION=${{ secrets.AWS_REGION || 'ap-southeast-1' }}" >> $GITHUB_ENV
+
+            - name: Create Fastlane Pluginfile (match storage on S3)
+              run: |
+                  mkdir -p ios/fastlane
+                  cat > ios/fastlane/Pluginfile <<'EOF'
+                  gem 'fastlane-plugin-match_storage_s3'
+                  EOF
+
+                  echo "📦 Fastlane Pluginfile created:"
+                  cat ios/fastlane/Pluginfile
+
             - name: Set up iOS authentication
               run: |
                   echo "🔐 Setting up iOS authentication (required for all iOS builds)"
@@ -651,23 +669,26 @@ jobs:
 
             - name: Build or Deploy iOS app
               run: |
+                  set -e
                   cd ios
 
-                  export GYM_XCARGS="-allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM=${DEVELOPMENT_TEAM_ID}"
+                  # Fastlane core
+                  echo "🚀 Installing Fastlane"
+                  sudo gem install fastlane --no-document
 
-                  # Install Fastlane for deployment
-                  if [ "${{ needs.detect-release.outputs.deploy }}" == "true" ]; then
-                    echo "🚀 Installing Fastlane for deployment"
-                    sudo gem install fastlane
-                    
-                    echo "📋 Available Fastlane lanes:"
-                    fastlane lanes
-                    
+                  # Install plugins from Pluginfile (non-interactive)
+                  echo "🔌 Installing Fastlane plugins from Pluginfile"
+                  fastlane install_plugins
+
+                  echo "📋 Available Fastlane lanes:"
+                  fastlane lanes
+
+                  # Decide build/deploy path
+                  if [ "${{ needs.detect-release.outputs.deploy }}" = "true" ]; then
                     echo "🚀 Deploying to App Store Connect"
                     echo "Profile: ${{ needs.detect-release.outputs.profile }}"
                     echo "Release Track: ${{ needs.detect-release.outputs.release_track }}"
-                    
-                    # Use Fastlane to build and deploy (single step)
+
                     case "${{ needs.detect-release.outputs.release_track }}" in
                       "production")
                         echo "📱 Deploying to App Store for review"
@@ -678,15 +699,14 @@ jobs:
                         fastlane deploy_testflight
                         ;;
                     esac
-                    
-                    echo "✅ Successfully deployed to App Store Connect"
-                    
+
+                    echo "✅ Successfully invoked Fastlane deployment"
                   else
-                    # Just build for testing/artifacts
                     echo "🔨 Building iOS app (no deployment)"
+
                     case "${{ needs.detect-release.outputs.build_type }}" in
                       "release")
-                        echo "🔨 Building iOS Release Archive"
+                        echo "🔨 Building iOS Release Archive with automatic signing"
                         xcodebuild -workspace NavigatorApp.xcworkspace \
                           -scheme NavigatorApp \
                           -configuration Release \
@@ -701,8 +721,7 @@ jobs:
                         ;;
                       *)
                         echo "🔨 Building iOS Debug for Simulator (with automatic signing)"
-                        
-                        # Find available iPhone simulator
+
                         SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}' | head -1)
                         if [ -n "$SIMULATOR_ID" ]; then
                           DESTINATION="id=$SIMULATOR_ID"
@@ -711,8 +730,7 @@ jobs:
                           DESTINATION="generic/platform=iOS Simulator"
                           echo "📱 Using generic iOS Simulator"
                         fi
-                        
-                        # Build for simulator with automatic signing
+
                         xcodebuild -workspace NavigatorApp.xcworkspace \
                           -scheme NavigatorApp \
                           -configuration Debug \
