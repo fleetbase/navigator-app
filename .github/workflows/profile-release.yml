@@ -404,6 +404,22 @@ jobs:
                   echo "📋 Current versions:"
                   grep "ANDROID_VERSION\|IOS_VERSION" ./.env || echo "  No version info in .env"
 
+            - name: Export .env to runner env (Android)
+              shell: bash
+              run: |
+                  echo "🔄 Exporting profile .env → environment"
+                  set -a
+                  source ./.env
+                  set +a
+
+                  # Also persist into $GITHUB_ENV for all subsequent steps
+                  while IFS='=' read -r key value || [ -n "$key" ]; do
+                    [[ $key =~ ^#.*$ || -z $key ]] && continue
+                    value=$(echo "$value" | sed 's/^"//;s/"$//')   # strip surrounding quotes
+                    echo "$key=$value" >> "$GITHUB_ENV"
+                  done < ./.env
+                  echo "✅ Export complete"
+
             - name: Install ImageMagick (Ubuntu)
               run: |
                   sudo apt-get update
@@ -603,16 +619,6 @@ jobs:
                   # Reuse the region you already configured for AWS creds
                   echo "MATCH_S3_REGION=${{ secrets.AWS_REGION || 'ap-southeast-1' }}" >> $GITHUB_ENV
 
-            - name: Create Fastlane Pluginfile (match storage on S3)
-              run: |
-                  mkdir -p ios/fastlane
-                  cat > ios/fastlane/Pluginfile <<'EOF'
-                  gem 'fastlane-plugin-match_storage_s3'
-                  EOF
-
-                  echo "📦 Fastlane Pluginfile created:"
-                  cat ios/fastlane/Pluginfile
-
             - name: Set up iOS authentication
               run: |
                   echo "🔐 Setting up iOS authentication (required for all iOS builds)"
@@ -667,23 +673,32 @@ jobs:
                   echo "📦 Installing iOS dependencies"
                   cd ios && pod install --repo-update
 
+            - name: Create Gemfile and install Fastlane + plugins
+              run: |
+                  set -e
+                  cat > Gemfile <<'EOF'
+                  source "https://rubygems.org"
+                  gem "fastlane", "~> 2.228"
+                  gem "fastlane-plugin-match_storage_s3"
+                  EOF
+
+                  # Optional: speed up / be deterministic
+                  export BUNDLE_PATH="vendor/bundle"
+                  export BUNDLE_JOBS=4
+                  export BUNDLE_RETRY=3
+                  bundle install
+
             - name: Build or Deploy iOS app
+              env:
+                  FASTLANE_SKIP_UPDATE_CHECK: '1'
+                  FASTLANE_DISABLE_PROMPTS: '1'
               run: |
                   set -e
                   cd ios
 
-                  # Fastlane core
-                  echo "🚀 Installing Fastlane"
-                  sudo gem install fastlane --no-document
-
-                  # Install plugins from Pluginfile (non-interactive)
-                  echo "🔌 Installing Fastlane plugins from Pluginfile"
-                  fastlane install_plugins
-
                   echo "📋 Available Fastlane lanes:"
-                  fastlane lanes
+                  bundle exec fastlane lanes
 
-                  # Decide build/deploy path
                   if [ "${{ needs.detect-release.outputs.deploy }}" = "true" ]; then
                     echo "🚀 Deploying to App Store Connect"
                     echo "Profile: ${{ needs.detect-release.outputs.profile }}"
@@ -692,15 +707,15 @@ jobs:
                     case "${{ needs.detect-release.outputs.release_track }}" in
                       "production")
                         echo "📱 Deploying to App Store for review"
-                        fastlane deploy_appstore
+                        bundle exec fastlane deploy_appstore
                         ;;
                       "internal"|"alpha"|"beta"|*)
                         echo "📱 Deploying to TestFlight"
-                        fastlane deploy_testflight
+                        bundle exec fastlane deploy_testflight
                         ;;
                     esac
 
-                    echo "✅ Successfully invoked Fastlane deployment"
+                    echo "✅ Fastlane finished"
                   else
                     echo "🔨 Building iOS app (no deployment)"
 
