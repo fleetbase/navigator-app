@@ -447,6 +447,9 @@ jobs:
                   cd android
                   chmod +x ./gradlew
 
+                  # Sanity check
+                  ./gradlew :app:signingReport --no-daemon
+
                   # Install Fastlane for deployment
                   if [ "${{ needs.detect-release.outputs.deploy }}" == "true" ]; then
                     echo "🚀 Installing Fastlane for deployment"
@@ -679,7 +682,6 @@ jobs:
                   cat > Gemfile <<'EOF'
                   source "https://rubygems.org"
                   gem "fastlane", "~> 2.228"
-                  gem "fastlane-plugin-match_storage_s3"
                   EOF
 
                   # Optional: speed up / be deterministic

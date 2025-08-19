@@ -78,10 +78,18 @@ def enableProguardInReleaseBuilds = false
 def jscFlavor = 'org.webkit:android-jsc:+'
 
 /**
-* Helper function to prefer project property variables or fallback to env variable
+* Helper function to pull from env, -P props, or project.env (dotenv)
 */
-def envOrProp(String key) {
-  return project.hasProperty(key) ? project.property(key) : System.getenv(key)
+def readVar = { String key ->
+    def v = System.getenv(key)
+    if (v == null && project.hasProperty(key)) v = project.property(key)?.toString()
+    if (v == null && project.hasProperty('env')) {
+        def m = project.property('env')
+        if (m instanceof Map || m instanceof Properties) {
+            v = m.get(key)?.toString()
+        }
+    }
+    return v
 }
 
 android {
@@ -104,10 +112,10 @@ android {
     }
     signingConfigs {
         release {
-            def ksFile   = envOrProp('MYAPP_UPLOAD_STORE_FILE')
-            def ksPass   = envOrProp('MYAPP_UPLOAD_STORE_PASSWORD')
-            def keyAlias = envOrProp('MYAPP_UPLOAD_KEY_ALIAS')
-            def keyPass  = envOrProp('MYAPP_UPLOAD_KEY_PASSWORD')
+            def ksFile   = readVar('ANDROID_UPLOAD_STORE_FILE')
+            def ksPass   = readVar('ANDROID_UPLOAD_STORE_PASSWORD')
+            def keyAlias = readVar('ANDROID_UPLOAD_KEY_ALIAS')
+            def keyPass  = readVar('ANDROID_UPLOAD_KEY_PASSWORD')
 
             if (ksFile && ksPass && keyAlias && keyPass) {
                 storeFile file(ksFile)
