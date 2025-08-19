@@ -77,21 +77,6 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
-/**
-* Helper function to pull from env, -P props, or project.env (dotenv)
-*/
-def readVar = { String key ->
-    def v = System.getenv(key)
-    if (v == null && project.hasProperty(key)) v = project.property(key)?.toString()
-    if (v == null && project.hasProperty('env')) {
-        def m = project.property('env')
-        if (m instanceof Map || m instanceof Properties) {
-            v = m.get(key)?.toString()
-        }
-    }
-    return v
-}
-
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -112,15 +97,15 @@ android {
     }
     signingConfigs {
         release {
-            def ksFile   = readVar('ANDROID_UPLOAD_STORE_FILE')
-            def ksPass   = readVar('ANDROID_UPLOAD_STORE_PASSWORD')
-            def keyAlias = readVar('ANDROID_UPLOAD_KEY_ALIAS')
-            def keyPass  = readVar('ANDROID_UPLOAD_KEY_PASSWORD')
+            def ksPath       = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE')       ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE')
+            def ksPass       = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD')   ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD')
+            def keyAliasName = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS')        ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS')
+            def keyPass      = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD')     ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD')
 
-            if (ksFile && ksPass && keyAlias && keyPass) {
-                storeFile file(ksFile)
+            if (ksPath && ksPass && keyAliasName && keyPass) {
+                storeFile file(ksPath)
                 storePassword ksPass
-                keyAlias keyAlias
+                keyAlias keyAliasName
                 keyPassword keyPass
             }
         }
