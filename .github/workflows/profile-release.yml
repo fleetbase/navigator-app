@@ -595,6 +595,14 @@ jobs:
 
                   echo "✅ Profile environment setup completed"
 
+            - name: Export S3 settings for match (bucket/prefix/region)
+              run: |
+                  echo "PROFILE=${{ needs.detect-release.outputs.profile }}" >> $GITHUB_ENV
+                  echo "MATCH_S3_BUCKET=${{ env.S3_BUCKET }}" >> $GITHUB_ENV
+                  echo "MATCH_S3_OBJECT_PREFIX=${{ needs.detect-release.outputs.profile }}/certs" >> $GITHUB_ENV
+                  # Reuse the region you already configured for AWS creds
+                  echo "MATCH_S3_REGION=${{ secrets.AWS_REGION || 'ap-southeast-1' }}" >> $GITHUB_ENV
+
             - name: Create Fastlane Pluginfile (match storage on S3)
               run: |
                   mkdir -p ios/fastlane
