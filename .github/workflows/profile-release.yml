@@ -462,12 +462,12 @@ jobs:
                     fi
                   }
 
-                  # Match your root gradle pins
+                  # Match root gradle pins
                   need "platforms;android-35"
                   need "build-tools;35.0.0"
                   need "ndk;27.1.12297006"
 
-                  # CMake version your native step expects (per your earlier error path)
+                  # CMake version
                   need "cmake;3.22.1"
 
                   # Sanity output
