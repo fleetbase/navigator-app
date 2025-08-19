@@ -118,12 +118,29 @@ jobs:
               run: |
                   echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
 
-            # Use JDK 21 to match your local environment
             - name: Set up JDK 21
               uses: actions/setup-java@v4
               with:
                   distribution: 'temurin'
                   java-version: '21'
+
+            - name: Install ImageMagick & Ninja (Ubuntu)
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y imagemagick ninja-build
+
+            - name: Ensure Android SDK/NDK/CMake toolchain
+              shell: bash
+              env:
+                  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+              run: |
+                  set -e
+                  SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+                  yes | "$SDKMGR" --licenses > /dev/null
+                  "$SDKMGR" "platforms;android-35" "build-tools;35.0.0" "ndk;27.1.12297006"
+                  "$SDKMGR" "cmake;3.22.1"
+                  "$ANDROID_SDK_ROOT/cmake/3.22.1/bin/cmake" --version || true
+                  test -f "$ANDROID_SDK_ROOT/ndk/27.1.12297006/source.properties" && echo "✅ NDK 27.1.12297006 installed"
 
             - name: Cache Gradle Wrapper
               uses: actions/cache@v4
