@@ -77,6 +77,13 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+/**
+* Helper function to prefer project property variables or fallback to env variable
+*/
+def envOrProp(String key) {
+  return project.hasProperty(key) ? project.property(key) : System.getenv(key)
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -97,11 +104,16 @@ android {
     }
     signingConfigs {
         release {
-            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
-                storeFile file(MYAPP_UPLOAD_STORE_FILE)
-                storePassword MYAPP_UPLOAD_STORE_PASSWORD
-                keyAlias MYAPP_UPLOAD_KEY_ALIAS
-                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            def ksFile   = envOrProp('MYAPP_UPLOAD_STORE_FILE')
+            def ksPass   = envOrProp('MYAPP_UPLOAD_STORE_PASSWORD')
+            def keyAlias = envOrProp('MYAPP_UPLOAD_KEY_ALIAS')
+            def keyPass  = envOrProp('MYAPP_UPLOAD_KEY_PASSWORD')
+
+            if (ksFile && ksPass && keyAlias && keyPass) {
+                storeFile file(ksFile)
+                storePassword ksPass
+                keyAlias keyAlias
+                keyPassword keyPass
             }
         }
         debug {
