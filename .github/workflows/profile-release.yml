@@ -725,7 +725,7 @@ jobs:
                   FASTLANE_SKIP_UPDATE_CHECK: '1'
                   FASTLANE_DISABLE_PROMPTS: '1'
                   MATCH_S3_BUCKET: ${{ env.S3_BUCKET }}
-                  MATCH_S3_OBJECT_PREFIX: '${{ needs.detect-release.outputs.profile }}/certs'
+                  MATCH_S3_OBJECT_PREFIX: '${{ needs.detect-release.outputs.profile }}/certs/'
                   MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
                   MATCH_S3_REGION: ${{ secrets.AWS_REGION || 'ap-southeast-1' }}
               run: |
