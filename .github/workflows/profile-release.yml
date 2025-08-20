@@ -133,8 +133,7 @@ jobs:
                       echo "build_type=release" >> $GITHUB_OUTPUT
                       echo "deploy=true" >> $GITHUB_OUTPUT
                       echo "is_release=true" >> $GITHUB_OUTPUT
-                      echo "version=" >> $GITHUB_OUTPUT  # Will be auto-incremented
-                      echo "build_number=" >> $GITHUB_OUTPUT  # Will be auto-incremented
+                      echo "build_number=" >> $GITHUB_OUTPUT
                       
                       # Determine release track based on version
                       if [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"rc"* ]]; then
@@ -146,12 +145,11 @@ jobs:
                     else
                       # Regular development push
                       echo "🔧 Development push detected"
-                      echo "version=dev" >> $GITHUB_OUTPUT
+                      echo "version=v${FALLBACK_VERSION_NAME}-dev" >> $GITHUB_OUTPUT
                       echo "build_type=debug" >> $GITHUB_OUTPUT
                       echo "deploy=false" >> $GITHUB_OUTPUT
                       echo "release_track=internal" >> $GITHUB_OUTPUT
                       echo "is_release=false" >> $GITHUB_OUTPUT
-                      echo "version=" >> $GITHUB_OUTPUT
                       echo "build_number=" >> $GITHUB_OUTPUT
                     fi
                   fi
@@ -281,7 +279,8 @@ jobs:
                     sed -i "s/^IOS_BUILD_NUMBER=.*/IOS_BUILD_NUMBER=$BUILD_NUMBER/" ./profile-config/.env || \
                     echo "IOS_BUILD_NUMBER=$BUILD_NUMBER" >> ./profile-config/.env
 
-                  # Persist for downstream jobs
+                  # SECURITY FIX: Create a separate versions file with only version info
+                  # This prevents sensitive .env data from being exposed in logs
                   printf "IOS_VERSION=%s\n" "$VERSION_NAME" > versions.env
                   printf "IOS_BUILD_NUMBER=%s\n" "$BUILD_NUMBER" >> versions.env
                   printf "ANDROID_VERSION_NAME=%s\n" "$VERSION_NAME" >> versions.env
@@ -337,7 +336,7 @@ jobs:
                   echo "📦 Downloading profile: ${{ needs.detect-release.outputs.profile }}"
                   aws s3 sync s3://${{ env.S3_BUCKET }}/${{ needs.detect-release.outputs.profile }}/ ./profile-config/
 
-                  # Validate required files (simplified structure)
+                  # Validate required files
                   required_files=(
                     "./profile-config/.env"
                     "./profile-config/google-services.json"
@@ -367,13 +366,22 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: versions
+                  path: .
 
-            - name: Source versions
+            - name: Source environment
               run: |
-                  set -e
+                  echo "🔧 Setting up profile environment securely"
+
+                  # Load .env variables into process environment WITHOUT exposing in logs
+                  set -a
+                  source ./profile-config/.env
+                  set +a
+
+                  # Load version overrides from secure artifact
                   source ./versions.env
                   echo "Android building: $ANDROID_VERSION_NAME ($ANDROID_VERSION_CODE)"
-                  # (Optionally export to this job's env)
+
+                  # Export versions
                   echo "ANDROID_VERSION_NAME=$ANDROID_VERSION_NAME" >> $GITHUB_ENV
                   echo "ANDROID_VERSION_CODE=$ANDROID_VERSION_CODE" >> $GITHUB_ENV
 
@@ -393,32 +401,13 @@ jobs:
                     cp ./profile-config/release.keystore ./android/app/release.keystore
                   fi
 
-                  # Setup Fastlane files (simplified)
+                  # Setup Fastlane files
                   mkdir -p android/fastlane
                   cp ./profile-config/android-Fastfile android/fastlane/Fastfile
                   cp ./profile-config/android-Appfile android/fastlane/Appfile
 
                   echo "✅ Profile environment setup completed for: ${{ needs.detect-release.outputs.profile }}"
-
-                  # Show current versions
-                  echo "📋 Current versions:"
-                  grep "ANDROID_VERSION\|IOS_VERSION" ./.env || echo "  No version info in .env"
-
-            - name: Export .env to runner env (Android)
-              shell: bash
-              run: |
-                  echo "🔄 Exporting profile .env → environment"
-                  set -a
-                  source ./.env
-                  set +a
-
-                  # Also persist into $GITHUB_ENV for all subsequent steps
-                  while IFS='=' read -r key value || [ -n "$key" ]; do
-                    [[ $key =~ ^#.*$ || -z $key ]] && continue
-                    value=$(echo "$value" | sed 's/^"//;s/"$//')   # strip surrounding quotes
-                    echo "$key=$value" >> "$GITHUB_ENV"
-                  done < ./.env
-                  echo "✅ Export complete"
+                  echo "📱 Version: $ANDROID_VERSION_NAME ($ANDROID_VERSION_CODE)"
 
             - name: Install ImageMagick & Ninja (Ubuntu)
               run: |
@@ -619,7 +608,14 @@ jobs:
 
             - name: Source versions & bump Info.plist
               run: |
-                  set -e
+                  echo "🔧 Setting up profile environment securely"
+
+                  # Load .env variables into process environment WITHOUT exposing in logs
+                  set -a
+                  source ./profile-config/.env
+                  set +a
+
+                  # Load version overrides from secure artifact
                   source ./versions.env
                   echo "iOS building: $IOS_VERSION ($IOS_BUILD_NUMBER)"
                   # enforce parity in the app:
@@ -635,41 +631,13 @@ jobs:
                   cp ./profile-config/app-icon.png ./assets/app-icon.png
                   cp ./profile-config/splash-screen.png ./assets/splash-screen.png
 
-                  # Setup Fastlane files (simplified)
+                  # Setup Fastlane files
                   mkdir -p ios/fastlane
                   cp ./profile-config/ios-Fastfile ios/fastlane/Fastfile
                   cp ./profile-config/ios-Appfile ios/fastlane/Appfile
 
-                  echo "🔄 Loading profile environment variables into CI/CD environment"
-
-                  # Export ALL .env variables to CI/CD environment (now clean, no multi-line issues)
-                  set -a  # Automatically export all variables
-                  source ./.env
-                  set +a  # Stop auto-exporting
-
-                  # Export to GitHub environment for subsequent steps
-                  while IFS='=' read -r key value || [ -n "$key" ]; do
-                    # Skip comments and empty lines
-                    [[ $key =~ ^#.*$ ]] && continue
-                    [[ -z $key ]] && continue
-                    
-                    # Remove quotes if present
-                    value=$(echo "$value" | sed 's/^"//;s/"$//')
-                    
-                    # All values are now single-line, so simple export
-                    echo "$key=$value" >> $GITHUB_ENV
-                    echo "✅ Exported variable: $key"
-                  done < ./.env
-
-                  echo "✅ Profile environment setup completed"
-
-            - name: Export S3 settings for match (bucket/prefix/region)
-              run: |
-                  echo "PROFILE=${{ needs.detect-release.outputs.profile }}" >> $GITHUB_ENV
-                  echo "MATCH_S3_BUCKET=${{ env.S3_BUCKET }}" >> $GITHUB_ENV
-                  echo "MATCH_S3_OBJECT_PREFIX=${{ needs.detect-release.outputs.profile }}/certs" >> $GITHUB_ENV
-                  # Reuse the region you already configured for AWS creds
-                  echo "MATCH_S3_REGION=${{ secrets.AWS_REGION || 'ap-southeast-1' }}" >> $GITHUB_ENV
+                  echo "✅ Profile environment setup completed for: ${{ needs.detect-release.outputs.profile }}"
+                  echo "📱 Version: $IOS_VERSION ($IOS_BUILD_NUMBER)"
 
             - name: Set up iOS authentication
               run: |
@@ -741,9 +709,13 @@ jobs:
 
             - name: Build or Deploy iOS app
               env:
+                  PROFILE: ${{ needs.detect-release.outputs.profile }}
                   FASTLANE_SKIP_UPDATE_CHECK: '1'
                   FASTLANE_DISABLE_PROMPTS: '1'
+                  MATCH_S3_BUCKET: ${{ env.S3_BUCKET }}
+                  MATCH_S3_OBJECT_PREFIX: '${{ needs.detect-release.outputs.profile }}/certs'
                   MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+                  MATCH_S3_REGION: ${{ secrets.AWS_REGION || 'ap-southeast-1' }}
               run: |
                   set -e
                   cd ios
