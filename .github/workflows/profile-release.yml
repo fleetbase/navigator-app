@@ -482,6 +482,8 @@ jobs:
 
             - name: Build or Deploy Android app
               run: |
+                  set -e
+
                   # Load .env variables into step
                   set -a
                   source ./.env
