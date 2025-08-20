@@ -482,6 +482,13 @@ jobs:
 
             - name: Build or Deploy Android app
               run: |
+                  set -e
+
+                  # Load .env variables into step
+                  set -a
+                  source ./.env
+                  set +a
+
                   cd android
                   chmod +x ./gradlew
 
@@ -641,6 +648,11 @@ jobs:
 
             - name: Set up iOS authentication
               run: |
+                  # Load .env variables into step
+                  set -a
+                  source ./.env
+                  set +a
+
                   echo "🔐 Setting up iOS authentication (required for all iOS builds)"
 
                   # Check if Apple credentials are available
@@ -718,6 +730,12 @@ jobs:
                   MATCH_S3_REGION: ${{ secrets.AWS_REGION || 'ap-southeast-1' }}
               run: |
                   set -e
+
+                  # Load .env variables into step
+                  set -a
+                  source ./.env
+                  set +a
+
                   cd ios
 
                   echo "📋 Available Fastlane lanes:"
