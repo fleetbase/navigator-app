@@ -94,6 +94,7 @@ android {
             appLinkScheme: project.env.get("APP_LINK_PREFIX") ?: "flbnavigator"
         ]
         resValue "string", "build_config_package", "io.fleetbase.navigator"
+        resValue "string", "app_name", project.env.get("APP_NAME") ?: "NavigatorApp"
     }
     signingConfigs {
         release {
