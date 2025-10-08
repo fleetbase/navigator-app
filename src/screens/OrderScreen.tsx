@@ -1,50 +1,44 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import { ScrollView, RefreshControl, SafeAreaView, StyleSheet, Alert, Platform } from 'react-native';
-import { Separator, Button, Image, Stack, Text, YStack, XStack, Spinner, useTheme } from 'tamagui';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPaperPlane, faPenToSquare, faFlagCheckered, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
-import { BlurView } from '@react-native-community/blur';
-import { PortalHost } from '@gorhom/portal';
-import LaunchNavigator from 'react-native-launch-navigator';
-import FastImage from 'react-native-fast-image';
 import { Order, Place } from '@fleetbase/sdk';
-import { format as formatDate, formatDistance, add } from 'date-fns';
+import { faBan, faCheck, faFlagCheckered, faPaperPlane, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { PortalHost } from '@gorhom/portal';
+import { useNavigation } from '@react-navigation/native';
+import { format as formatDate } from 'date-fns';
 import { titleize } from 'inflected';
-import { formatCurrency, formatMeters, formatDuration, smartHumanize } from '../utils/format';
-import { restoreFleetbasePlace, getCoordinates } from '../utils/location';
-import { toast } from '../utils/toast';
-import { config, showActionSheet } from '../utils';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Platform, RefreshControl, ScrollView } from 'react-native';
+import LaunchNavigator from 'react-native-launch-navigator';
+import { Button, Image, Separator, Spinner, Text, useTheme, XStack, YStack } from 'tamagui';
+import Badge from '../components/Badge';
+import { ActionContainer, SectionHeader, SectionInfoLine } from '../components/Content';
+import CurrentDestinationSelect from '../components/CurrentDestinationSelect';
+import DestinationChangedAlert from '../components/DestinationChangedAlert';
+import LiveOrderRoute from '../components/LiveOrderRoute';
+import LoadingOverlay from '../components/LoadingOverlay';
+import NavigationAppSelector, { NavigationAppSelectorRef } from '../components/NavigationAppSelector';
+import OrderActivitySelect from '../components/OrderActivitySelect';
+import OrderCommentThread from '../components/OrderCommentThread';
+import OrderCustomerCard from '../components/OrderCustomerCard';
+import OrderDocumentFiles from '../components/OrderDocumentFiles';
+import OrderPayloadEntities from '../components/OrderPayloadEntities';
+import OrderProgressBar from '../components/OrderProgressBar';
+import OrderProofOfDelivery from '../components/OrderProofOfDelivery';
+import OrderWaypointList from '../components/OrderWaypointList';
+import Spacer from '../components/Spacer';
 import { useAuth } from '../contexts/AuthContext';
-import { useLocation } from '../contexts/LocationContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useLocation } from '../contexts/LocationContext';
 import { useOrderManager } from '../contexts/OrderManagerContext';
 import { useTempStore } from '../contexts/TempStoreContext';
-import useSocketClusterClient from '../hooks/use-socket-cluster-client';
-import useStorage from '../hooks/use-storage';
 import useAppTheme from '../hooks/use-app-theme';
+import useFleetbase from '../hooks/use-fleetbase';
 import useOrderResource from '../hooks/use-order-resource';
 import usePromiseWithLoading from '../hooks/use-promise-with-loading';
-import useFleetbase from '../hooks/use-fleetbase';
-import LiveOrderRoute from '../components/LiveOrderRoute';
-import PlaceCard from '../components/PlaceCard';
-import OrderItems from '../components/OrderItems';
-import OrderTotal from '../components/OrderTotal';
-import OrderWaypointList from '../components/OrderWaypointList';
-import OrderPayloadEntities from '../components/OrderPayloadEntities';
-import OrderDocumentFiles from '../components/OrderDocumentFiles';
-import OrderCustomerCard from '../components/OrderCustomerCard';
-import OrderProgressBar from '../components/OrderProgressBar';
-import OrderCommentThread from '../components/OrderCommentThread';
-import OrderProofOfDelivery from '../components/OrderProofOfDelivery';
-import CurrentDestinationSelect from '../components/CurrentDestinationSelect';
-import OrderActivitySelect from '../components/OrderActivitySelect';
-import LoadingOverlay from '../components/LoadingOverlay';
-import DestinationChangedAlert from '../components/DestinationChangedAlert';
-import Badge from '../components/Badge';
-import Spacer from '../components/Spacer';
-import BackButton from '../components/BackButton';
-import { SectionHeader, SectionInfoLine, ActionContainer } from '../components/Content';
+import useSocketClusterClient from '../hooks/use-socket-cluster-client';
+import { config } from '../utils';
+import { formatDuration, formatMeters, smartHumanize } from '../utils/format';
+import { getCoordinates, restoreFleetbasePlace } from '../utils/location';
+import { toast } from '../utils/toast';
 
 const getOrderDestination = (order, adapter) => {
     const pickup = order.getAttribute('payload.pickup');
@@ -84,6 +78,7 @@ const OrderScreen = ({ route }) => {
     const isUpdatingActivity = useRef(false);
     const listenerRef = useRef();
     const activitySheetRef = useRef();
+    const navigationAppSelectorRef = useRef<NavigationAppSelectorRef>();
     const isAdhoc = order.getAttribute('adhoc') === true;
     const isIncomingAdhoc = isAdhoc && order.getAttribute('driver_assigned') === null;
     const isDriverAssigned = order.getAttribute('driver_assigned') !== null;
@@ -162,27 +157,33 @@ const OrderScreen = ({ route }) => {
         const apps = await LaunchNavigator.getAvailableApps();
         const availableApps = Object.keys(apps).filter((appName) => apps[appName] === true);
 
-        showActionSheet({
-            options: [...availableApps.map((appName) => LaunchNavigator.APP_NAMES[appName]), t('common.cancel')],
-            cancelButtonIndex: availableApps.length,
-            onSelect: async (buttonIndex) => {
-                if (buttonIndex === availableApps.length) return;
+        // Create app list with display names
+        const appList = availableApps.map((appKey) => ({
+            name: LaunchNavigator.APP_NAMES[appKey] || appKey,
+            key: appKey,
+        }));
 
-                const app = availableApps[buttonIndex];
-                const destinationCoordinates = getCoordinates(destination);
-
-                try {
-                    await LaunchNavigator.navigate(destinationCoordinates, {
-                        app,
-                        launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
-                        destinationName: destination.getAttribute('name') ?? destination.getAttribute('street1'),
-                    });
-                } catch (err) {
-                    console.warn('Error launching navigation:', err);
-                }
-            },
-        });
+        // Open bottom sheet selector
+        navigationAppSelectorRef.current?.open(appList);
     }, [destination]);
+
+    const handleNavigationAppSelect = useCallback(
+        async (appKey: string, index: number) => {
+            const destinationCoordinates = getCoordinates(destination);
+
+            try {
+                await LaunchNavigator.navigate(destinationCoordinates, {
+                    app: appKey,
+                    launchMode: LaunchNavigator.LAUNCH_MODE.TURN_BY_TURN,
+                    destinationName: destination.getAttribute('name') ?? destination.getAttribute('street1'),
+                });
+            } catch (err) {
+                console.warn('Error launching navigation:', err);
+                toast.error('Failed to launch navigation app. Please try again.');
+            }
+        },
+        [destination]
+    );
 
     const alertDestinationChanged = (previousDestination, currentDestination, order) => {
         return Alert.alert(
@@ -681,6 +682,7 @@ const OrderScreen = ({ route }) => {
                     textColor={isDarkMode ? '$textPrimary' : '$white'}
                 />
             )}
+            <NavigationAppSelector ref={navigationAppSelectorRef} onSelect={handleNavigationAppSelect} />
             <OrderActivitySelect
                 ref={activitySheetRef}
                 onChange={sendOrderActivityUpdate}
