@@ -1,6 +1,8 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.firebase.crashlytics"
+apply plugin: "com.google.firebase.firebase-perf"
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 // background-geolocation
@@ -96,19 +98,19 @@ android {
         resValue "string", "build_config_package", "io.fleetbase.navigator"
     }
     signingConfigs {
-        release {
+         release {
             def ksPath       = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE')       ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE')
             def ksPass       = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD')   ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD')
             def keyAliasName = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS')        ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS')
             def keyPass      = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD')     ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD')
-
+    
             if (ksPath && ksPass && keyAliasName && keyPass) {
                 storeFile file(ksPath)
                 storePassword ksPass
                 keyAlias keyAliasName
                 keyPassword keyPass
             }
-        }
+            }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -146,6 +148,8 @@ dependencies {
     // Firebase setup
     implementation platform('com.google.firebase:firebase-bom:32.7.3')
     implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-perf'
 
     // Splash screen
     implementation 'androidx.core:core-splashscreen:1.0.0-alpha02' 

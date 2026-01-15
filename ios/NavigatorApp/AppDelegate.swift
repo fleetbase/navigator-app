@@ -4,12 +4,16 @@ import ReactAppDependencyProvider
 import UIKit
 import FBSDKCoreKit
 import GoogleSignIn
+import FirebaseCore
 
 class AppDelegate: RCTAppDelegate {
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // Initialize Firebase FIRST before anything else
+        FirebaseApp.configure()
+
          // Initialize ReactNativeNotifications
         RNNotifications.startMonitorNotifications()
 

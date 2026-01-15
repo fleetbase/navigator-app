@@ -1,6 +1,7 @@
 module.exports = {
-    presets: ['module:@react-native/babel-preset'],
+    presets: [['module:@react-native/babel-preset', { useTransformReactJSXExperimental: true }]],
     plugins: [
+        ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }],
         'preval',
         'react-native-reanimated/plugin',
         '@babel/plugin-proposal-export-namespace-from',

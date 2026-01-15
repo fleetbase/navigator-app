@@ -13,6 +13,10 @@ node_require('react-native-permissions/scripts/setup.rb')
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+# React Native Firebase + CocoaPods: build Firebase as static frameworks when frameworks
+# are enabled (avoids a number of module/header issues).
+$RNFirebaseAsStaticFramework = true
+
 # Permissions handlers
 setup_permissions([
   'Camera',
@@ -26,12 +30,11 @@ setup_permissions([
   'PhotoLibraryAddOnly',
 ])
 
-linkage = ENV['USE_FRAMEWORKS']
+linkage = (ENV['USE_FRAMEWORKS'] || 'static').to_sym
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
 end
-
 target 'NavigatorApp' do
   config = use_native_modules!
 
@@ -58,6 +61,12 @@ target 'NavigatorApp' do
         if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
           config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
         end
+
+        # Ensure ReactCommon headers are discoverable under the New Architecture
+        header_search_paths = config.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        header_search_paths = Array(header_search_paths)
+        header_search_paths << '$(PODS_ROOT)/../../node_modules/react-native/ReactCommon'
+        header_search_paths << '$(PODS_ROOT)/../../node_modules/react-native/ReactCommon/react/renderer/textlayoutmanager/platform/ios'
       end
     end
   end

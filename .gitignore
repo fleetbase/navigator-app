@@ -88,6 +88,8 @@ ios/tmp.xcconfig
 android/app/google-services.json
 android/app/play-store-credentials.json
 
+GoogleService-Info.plist
+
 # Navigator assets/configurations
 #
 navigator.config.js
