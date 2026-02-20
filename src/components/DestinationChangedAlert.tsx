@@ -35,10 +35,10 @@ const DestinationChangedAlert: React.FC<DestinationChangedAlertProps> = ({ visib
                         <YStack py='$2'>
                             <YStack mt='$3' space='$2' px='$4'>
                                 <Text fontSize='$4' color='$textSecondary'>
-                                    {t('DestinationChangedAlert.waypointCompleted')} for waypoint <Text color='$infoText'>{prevAddress}</Text> is complete.
+                                    {t('DestinationChangedAlert.waypointCompletedForWaypoint')} <Text color='$infoText'>{prevAddress}</Text> is complete.
                                 </Text>
                                 <Text fontSize='$4' color='$textSecondary'>
-                                    Your current destination has changed to <Text color='$infoText'>{currAddress}</Text>.
+                                    {t('DestinationChangedAlert.youCurrentDestinationHasChangedTo')} <Text color='$infoText'>{currAddress}</Text>.
                                 </Text>
                             </YStack>
                             <YStack mt='$5' px='$4'>

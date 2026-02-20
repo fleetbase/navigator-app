@@ -527,6 +527,18 @@ export const currencies = [
         symbolPlacement: 'before',
     },
     {
+        iso2: 'KZ',
+        name: 'Kazakhstan',
+        emoji: '🇰🇿',
+        code: 'KZT',
+        title: 'Kazakhstani Tenge',
+        symbol: ' ₸',
+        precision: 2,
+        thousandSeparator: ' ',
+        decimalSeparator: '.',
+        symbolPlacement: 'after',
+    },
+    {
         iso2: 'KE',
         name: 'Kenya',
         emoji: '🇰🇪',

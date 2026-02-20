@@ -89,6 +89,8 @@ export default {
   DestinationChangedAlert: {
     continue: 'Continue',
     waypointCompleted: 'Waypoint Completed',
+    waypointCompletedForWaypoint: 'Waypoint Completed for waypoint',
+    youCurrentDestinationHasChangedTo: 'Your current destination has changed to',
   },
   DriverDashboardScreen: {
     activeOrders: 'Active Orders',
