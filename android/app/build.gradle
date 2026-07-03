@@ -84,7 +84,7 @@ android {
     
     namespace "io.fleetbase.navigator"
     defaultConfig {
-        applicationId project.env.get("APP_IDENTIFIER")
+        applicationId project.env.get("APP_IDENTIFIER") ?: "io.fleetbase.navigator"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode project.env.get("ANDROID_VERSION_CODE")?.toInteger() ?: 1
