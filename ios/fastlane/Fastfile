@@ -1,0 +1,185 @@
+default_platform(:ios)
+
+# Helpers shared by lanes
+def api_key_from_env
+  app_store_connect_api_key(
+    key_id: ENV["APPSTORE_API_KEY_ID"],
+    issuer_id: ENV["APPSTORE_API_ISSUER_ID"],
+    key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{ENV["APPSTORE_API_KEY_ID"]}.p8")
+  )
+end
+
+def bundle_ids_from_env
+  # Support a single bundle id or comma-separated list for multi-target projects
+  (ENV["APP_IDENTIFIER"] || ",").split(",").map(&:strip).reject(&:empty?)
+end
+
+def match_readonly?
+  (ENV["MATCH_READONLY"] || "true").downcase == "true"
+end
+
+def ensure_ci_keychain
+  keychain_name = "ci-signing"
+  keychain_password = "ci-signing-pass"
+
+  # Create a new keychain or unlock existing one
+  # The create_keychain action returns the full path to the created keychain.
+  # We need to capture this path and use it for subsequent security commands.
+  keychain_path = create_keychain(
+    name: keychain_name,
+    password: keychain_password,
+    default_keychain: true,
+    unlock: true,
+    timeout: 3600
+  )
+
+  # Fastlane's create_keychain action already sets it as default and unlocks it.
+  # The issue was likely that the `security` commands were not using the exact path.
+  # We will use the `keychain_path` returned by `create_keychain`.
+
+  # Set the keychain as the default and add it to the search list
+  # This command ensures the keychain is in the user's search path for identities
+  sh("security list-keychains -d user -s \"#{keychain_path}\"")
+
+  # Set keychain settings to allow all applications to access items without warning
+  sh("security set-keychain-settings -t 3600 -l \"#{keychain_path}\"")
+
+  # Explicitly unlock the keychain to ensure it's accessible (redundant but safe)
+  sh("security unlock-keychain -p #{keychain_password} \"#{keychain_path}\"")
+
+  # Add the certificate to the keychain and set it as trusted
+  # This step is crucial for the certificates to be recognized by Xcode
+  # match should handle this, but explicitly ensuring it here as a fallback/double-check
+  # Fastlane's match action should install the certs into the created keychain automatically.
+  # The issue might be related to the keychain not being fully trusted or accessible by the build process.
+  # We'll rely on match to install, but ensure the keychain is properly set up.
+end
+
+def cleanup_ci_keychain
+  delete_keychain(name: "ci-signing")
+end
+
+def install_signing_assets_with_match_s3(api_key:)
+  # S3 params come from env (set in workflow), AWS creds/region come from aws-actions step.
+  bucket        = ENV.fetch("MATCH_S3_BUCKET")
+  region        = ENV.fetch("MATCH_S3_REGION", ENV["AWS_REGION"])
+  object_prefix = ENV["MATCH_S3_OBJECT_PREFIX"] || "#{ENV["PROFILE"]}/certs"
+
+  UI.message("Using match S3 storage: s3://#{bucket}/#{object_prefix} (#{region})")
+
+  match(
+    type: "appstore",
+    readonly: match_readonly?,
+    api_key: api_key,
+    storage_mode: "s3",
+    s3_bucket: bucket,
+    s3_region: region,
+    s3_object_prefix: object_prefix,
+    keychain_name: "ci-signing",
+    keychain_password: "ci-signing-pass",
+    team_id: ENV["DEVELOPMENT_TEAM_ID"],
+    app_identifier: bundle_ids_from_env,
+    # Ensure certificates are installed and trusted
+    force_for_new_certificates: true,
+    force_for_new_devices: true
+  )
+end
+
+def build_with_gym
+  # Determine workspace or project file
+  workspace_path = "NavigatorApp.xcworkspace"
+  project_path = "NavigatorApp.xcodeproj"
+
+  if File.exist?(workspace_path)
+    build_file = workspace_path
+    build_type = :workspace
+  elsif File.exist?(project_path)
+    build_file = project_path
+    build_type = :project
+  else
+    UI.user_error!("Neither NavigatorApp.xcworkspace nor NavigatorApp.xcodeproj found!")
+  end
+
+  # Get the provisioning profile name from match
+  profile_name = "match AppStore #{ENV["APP_IDENTIFIER"]}"
+
+  # Build configuration
+  build_config = {
+    scheme: "NavigatorApp",
+    configuration: "Release",
+    export_method: "app-store",
+    output_directory: "build",
+    build_path: "build",
+    clean: true,
+    # Use manual code signing with specific provisioning profile
+    export_options: {
+      method: "app-store",
+      teamID: ENV["DEVELOPMENT_TEAM_ID"],
+      provisioningProfiles: {
+        ENV["APP_IDENTIFIER"] => profile_name
+      },
+      signingStyle: "manual",
+      uploadBitcode: false,
+      uploadSymbols: true,
+      compileBitcode: false
+    }
+  }
+
+  # Add workspace or project
+  if build_type == :workspace
+    build_config[:workspace] = build_file
+  else
+    build_config[:project] = build_file
+  end
+
+  UI.message("Building with #{build_type}: #{build_file}")
+  UI.message("Using provisioning profile: #{profile_name}")
+  UI.message("Team ID: #{ENV["DEVELOPMENT_TEAM_ID"]}")
+  UI.message("Bundle ID: #{ENV["APP_IDENTIFIER"]}")
+
+  build_app(build_config)
+end
+
+platform :ios do
+  desc "Build only"
+  lane :build_ios do
+    api = api_key_from_env
+    ensure_ci_keychain
+    install_signing_assets_with_match_s3(api_key: api)
+    build_with_gym
+  ensure
+    cleanup_ci_keychain
+  end
+
+  desc "Deploy to TestFlight"
+  lane :deploy_testflight do
+    api = api_key_from_env
+    ensure_ci_keychain
+    install_signing_assets_with_match_s3(api_key: api)
+    build_with_gym
+
+    upload_to_testflight(
+      api_key: api,
+      skip_waiting_for_build_processing: true,
+      distribute_external: true
+    )
+  ensure
+    cleanup_ci_keychain
+  end
+
+  desc "Deploy to App Store"
+  lane :deploy_appstore do
+    api = api_key_from_env
+    ensure_ci_keychain
+    install_signing_assets_with_match_s3(api_key: api)
+    build_with_gym
+
+    upload_to_app_store(
+      api_key: api,
+      submit_for_review: false,
+      automatic_release: false
+    )
+  ensure
+    cleanup_ci_keychain
+  end
+end
