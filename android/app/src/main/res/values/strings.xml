@@ -1,5 +1,5 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">NavigatorApp</string>
-    <string name="facebook_app_id">@string/facebook_app_id</string>
-    <string name="facebook_client_token">@string/facebook_client_token</string>
+    <string name="facebook_app_id" tools:ignore="ResourceCycle">@string/facebook_app_id</string>
+    <string name="facebook_client_token" tools:ignore="ResourceCycle">@string/facebook_client_token</string>
 </resources>

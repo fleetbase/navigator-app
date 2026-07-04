@@ -44,7 +44,7 @@
     </activity>
     <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_notification" />
     <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/colorAccent" />
-    <meta-data android:name="com.transistorsoft.locationmanager.license" android:value="@string/TRANSISTORSOFT_LICENSE_KEY" />
+    <meta-data android:name="com.transistorsoft.locationmanager.license" android:value="@string/TRANSISTORSOFT_LICENSE_KEY_ANDROID" />
     <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/FACEBOOK_APP_ID"/>
     <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/FACEBOOK_CLIENT_TOKEN"/>
     <meta-data android:name="com.google.android.geo.API_KEY" android:value="@string/GOOGLE_MAPS_API_KEY" />

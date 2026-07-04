@@ -35,8 +35,10 @@ end
 target 'NavigatorApp' do
   config = use_native_modules!
 
-  # React Native Maps dependencies
-  pod 'react-native-google-maps', :path => '../node_modules/react-native-maps'
+  # React Native Maps Google provider
+  pod 'react-native-maps/Google', :path => '../node_modules/react-native-maps'
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
 
   use_react_native!(
     :path => config[:reactNativePath],
