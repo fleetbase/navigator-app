@@ -72,6 +72,11 @@ buck-out/
 */fastlane/report.xml
 */fastlane/Preview.html
 */fastlane/screenshots
+*/fastlane/.env*
+*/fastlane/*api_key*.json
+*/fastlane/AuthKey_*.p8
+*/fastlane/metadata/review_information/
+*.p8
 
 # Bundle artifact
 *.jsbundle
