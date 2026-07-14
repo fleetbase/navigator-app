@@ -1576,27 +1576,7 @@ PODS:
     - ReactNativeDependencies
     - Yoga
   - react-native-blur (4.4.1):
-    - hermes-engine
-    - RCTRequired
-    - RCTTypeSafety
     - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - Yoga
   - react-native-cameraroll (7.10.2):
     - hermes-engine
     - RCTRequired
@@ -1683,27 +1663,7 @@ PODS:
     - ReactNativeDependencies
     - Yoga
   - react-native-image-resizer (3.0.11):
-    - hermes-engine
-    - RCTRequired
-    - RCTTypeSafety
     - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - Yoga
   - react-native-maps (1.29.0):
     - react-native-maps/Maps (= 1.29.0)
   - react-native-maps/Generated (1.29.0):
@@ -3224,13 +3184,13 @@ SPEC CHECKSUMS:
   React-Mapbuffer: c058c051f571589e37a29bce18d0e9b730faa9d0
   React-microtasksnativemodule: 03752e60738a797bb49f4d6cb0291dfa398099b8
   React-mutationobservernativemodule: 2e568e13c98bd185fe83266795233fa7ad2cbc19
-  react-native-blur: baf5874b4abf3bb8b2012172a3d0905653a1a2b5
+  react-native-blur: 32db1a8e94964c17f3f85424dd822b2ffa1a83c4
   react-native-cameraroll: 76daf9ff17079fba7fbe80e92cab81db6509825a
   react-native-config: 93721be89c97d983d5a90e2f3e692c8ff1d95720
   react-native-fbsdk-next: 4fa40d3b1df411ed9bc3cca899572b41f58a4dae
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-image-picker: 2146157d5d37a34c2063d1d2ed01081b56d0b87b
-  react-native-image-resizer: ecb5c6df1318c592e5045a9510458b5357560bce
+  react-native-image-resizer: 6260ba497fb8d1a593c1c92ccd593f570df6f5b7
   react-native-maps: e48595e300ecb82baa3fe3a4b54950ead8d017ba
   react-native-notifications: 4601a5a8db4ced6ae7cfc43b44d35fe437ac50c4
   react-native-render-html: 984dfe2294163d04bf5fe25d7c9f122e60e05ebe
@@ -3298,7 +3258,7 @@ SPEC CHECKSUMS:
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
   TSBackgroundFetch: 18918b6449a1e3f01eb0f5b44d6d79ce6160a5a5
   VisionCamera: 3ea10c46a5c612f5f89fb46a54bef4a0de8b58a7
-  Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
+  Yoga: 94172d87dd5d83fc929bf1ee53121b5d4490b5f2
 
 PODFILE CHECKSUM: 0164fa7be80f3ee1da7393146eca6ed72e4d3f6b
 
