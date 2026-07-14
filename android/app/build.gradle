@@ -94,6 +94,7 @@ android {
             appLinkScheme: project.env.get("APP_LINK_PREFIX") ?: "flbnavigator"
         ]
         resValue "string", "build_config_package", "io.fleetbase.navigator"
+        resValue "string", "TRANSISTORSOFT_LICENSE_KEY_ANDROID", project.env.get("TRANSISTORSOFT_LICENSE_KEY_ANDROID") ?: project.env.get("TRANSISTORSOFT_LICENSE_KEY") ?: ""
     }
     signingConfigs {
         release {
@@ -124,6 +125,9 @@ android {
             shrinkResources false
         }
     }
+    // lintOptions {
+    //     disable 'ResourceCycle'
+    // }
 }
 
 dependencies {
