@@ -25,7 +25,7 @@
         "adb:reverse": "adb reverse tcp:8081 tcp:8081",
         "adb:devmenu": "adb shell input keyevent 82",
         "generate:app-icon": "npx app-icon generate -i ./assets/app-icon.png && node scripts/fix-android-app-icons.js --input ./assets/app-icon.png",
-        "generate:launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background=#111827 --logo-width=100 --flavor=main"
+        "generate:launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background=#111827 --logo-width=100 --flavor=main && node scripts/fix-android-launch-screen.js --input ./assets/splash-screen.png"
     },
     "dependencies": {
         "@babel/plugin-proposal-async-generator-functions": "^7.20.7",

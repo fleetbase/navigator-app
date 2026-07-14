@@ -14,6 +14,10 @@ const densities = {
 };
 
 const androidSourceSets = ['main', 'debug'];
+const notificationIcons = [
+    path.join('main', 'res', 'drawable', 'ic_notification.png'),
+    path.join('main', 'res', 'drawable', 'notification_icon.png'),
+];
 
 function readArg(name, fallback) {
     const index = process.argv.indexOf(name);
@@ -57,6 +61,19 @@ async function writeIcon(source, destination, size, round) {
     await image.toFile(destination);
 }
 
+async function writeNotificationIcon(source, destination) {
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+
+    await sharp(source)
+        .resize(512, 512, {
+            fit: 'contain',
+            position: 'center',
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .png()
+        .toFile(destination);
+}
+
 async function generateIcons() {
     const input = resolveProjectPath(readArg('--input', './assets/app-icon.png'));
     const androidSrcRoot = resolveProjectPath(readArg('--android-src', './android/app/src'));
@@ -74,9 +91,13 @@ async function generateIcons() {
         }
     }
 
+    for (const notificationIcon of notificationIcons) {
+        writes.push(writeNotificationIcon(input, path.join(androidSrcRoot, notificationIcon)));
+    }
+
     await Promise.all(writes);
 
-    console.log(`Updated Android launcher icons from ${path.relative(process.cwd(), input)}`);
+    console.log(`Updated Android launcher and notification icons from ${path.relative(process.cwd(), input)}`);
 }
 
 generateIcons().catch((error) => {
