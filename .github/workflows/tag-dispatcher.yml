@@ -6,7 +6,7 @@ on:
             - 'v*'
 
 env:
-    S3_BUCKET: MATCH_S3_BUCKET
+    S3_BUCKET: flb-navigator-app-profiles
 
 jobs:
     dispatch-to-profiles:

@@ -5,7 +5,5 @@
     <application
         android:usesCleartextTraffic="true"
         tools:targetApi="28"
-        tools:ignore="GoogleAppIndexingWarning"
-        android:appComponentFactory="whateverString"
-        tools:replace="android:appComponentFactory" />
+        tools:ignore="GoogleAppIndexingWarning" />
 </manifest>

@@ -146,8 +146,6 @@
 	<string>This app allows you to upload photos from your photo library</string>
 	<key>NSUserAuthenticationUsageDescription</key>
 	<string>Sign in with Apple is used to authenticate your account.</string>
-	<key>RCTNewArchEnabled</key>
-	<true/>
 	<key>TSLocationManagerLicense</key>
 	<string>${TRANSISTORSOFT_LICENSE_KEY_IOS}</string>
 	<key>UIBackgroundModes</key>
@@ -156,6 +154,7 @@
 		<string>processing</string>
 		<string>location</string>
 		<string>fetch</string>
+		<string>audio</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>BootSplash</string>

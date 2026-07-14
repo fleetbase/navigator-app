@@ -67,6 +67,7 @@ class AppDelegate: RCTAppDelegate {
 
     override func bundleURL() -> URL? {
         #if DEBUG
+            RCTBundleURLProvider.sharedSettings().jsLocation = "localhost:8083"
             return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
         #else
             return Bundle.main.url(forResource: "main", withExtension: "jsbundle")

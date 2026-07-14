@@ -119,6 +119,7 @@
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				1323646AD0BC058AED3D162E /* [CP] Embed Pods Frameworks */,
+				E4D1C8A22D5D6C2A00D34FBB /* Generate Hermes dSYM */,
 				0CCD7CD8E83DAB0F076E758D /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
@@ -201,9 +202,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -218,13 +223,34 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
+			outputPaths = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E4D1C8A22D5D6C2A00D34FBB /* Generate Hermes dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework/ios-arm64/hermes.framework/hermes",
+			);
+			name = "Generate Hermes dSYM";
+			outputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/hermes.framework.dSYM",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nif [ \"${ACTION:-}\" != \"install\" ] || [ \"${CONFIGURATION:-}\" != \"Release\" ]; then\n  echo \"Skipping Hermes dSYM generation for ACTION=${ACTION:-} CONFIGURATION=${CONFIGURATION:-}\"\n  exit 0\nfi\n\nHERMES_BINARY=\"${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/universal/hermes.xcframework/ios-arm64/hermes.framework/hermes\"\nARCHIVE_DSYM=\"${DWARF_DSYM_FOLDER_PATH}/hermes.framework.dSYM\"\nTEMP_DSYM=\"${DERIVED_FILE_DIR}/hermes.framework.dSYM\"\n\nif [ ! -f \"${HERMES_BINARY}\" ]; then\n  echo \"error: Hermes binary not found at ${HERMES_BINARY}\" >&2\n  exit 1\nfi\n\nif [ -z \"${DWARF_DSYM_FOLDER_PATH:-}\" ]; then\n  echo \"error: DWARF_DSYM_FOLDER_PATH is not set; cannot place hermes.framework.dSYM in the archive.\" >&2\n  exit 1\nfi\n\nrm -rf \"${TEMP_DSYM}\" \"${ARCHIVE_DSYM}\"\nmkdir -p \"${DWARF_DSYM_FOLDER_PATH}\"\n\nxcrun dsymutil \"${HERMES_BINARY}\" -o \"${TEMP_DSYM}\"\n\nBINARY_UUIDS=\"$(xcrun dwarfdump --uuid \"${HERMES_BINARY}\" | awk '{print $2}' | sort -u)\"\nDSYM_UUIDS=\"$(xcrun dwarfdump --uuid \"${TEMP_DSYM}\" | awk '{print $2}' | sort -u)\"\n\nif [ -z \"${BINARY_UUIDS}\" ]; then\n  echo \"error: Unable to read UUIDs from ${HERMES_BINARY}\" >&2\n  exit 1\nfi\n\nfor UUID in ${BINARY_UUIDS}; do\n  if ! echo \"${DSYM_UUIDS}\" | grep -qx \"${UUID}\"; then\n    echo \"error: Generated Hermes dSYM is missing UUID ${UUID}\" >&2\n    echo \"error: Hermes binary UUIDs: ${BINARY_UUIDS}\" >&2\n    echo \"error: Hermes dSYM UUIDs: ${DSYM_UUIDS}\" >&2\n    exit 1\n  fi\ndone\n\ncp -R \"${TEMP_DSYM}\" \"${ARCHIVE_DSYM}\"\necho \"Generated Hermes dSYM at ${ARCHIVE_DSYM} with UUIDs: ${DSYM_UUIDS}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		1B0FEAB432AB9B7C1F7C5586 /* [CP] Check Pods Manifest.lock */ = {
@@ -270,11 +296,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
-				CURRENT_PROJECT_VERSION = 11;
-				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = HQ9VD993LZ;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
+				INFOPLIST_KEY_CFBundleDisplayName = "DOSH Logistics";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -287,7 +313,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.fleetbase.navigator;
+				PRODUCT_BUNDLE_IDENTIFIER = com.opintechnologies.doshlogistics;
 				PRODUCT_NAME = NavigatorApp;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/NavigatorApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -303,10 +329,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NavigatorApp/NavigatorApp.entitlements;
-				CURRENT_PROJECT_VERSION = 11;
-				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = HQ9VD993LZ;
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
+				INFOPLIST_KEY_CFBundleDisplayName = "DOSH Logistics";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -319,7 +345,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.fleetbase.navigator;
+				PRODUCT_BUNDLE_IDENTIFIER = com.opintechnologies.doshlogistics;
 				PRODUCT_NAME = NavigatorApp;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/NavigatorApp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -389,10 +415,6 @@
 				);
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_CFLAGS = (
-					"$(inherited)",
-					"-DRCT_REMOVE_LEGACY_ARCH=1",
-				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
@@ -400,17 +422,11 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
-					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
-				PODFILE_DIR = "$(SRCROOT)";
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
-				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 			};
 			name = Debug;
@@ -469,10 +485,6 @@
 					"\"$(inherited)\"",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_CFLAGS = (
-					"$(inherited)",
-					"-DRCT_REMOVE_LEGACY_ARCH=1",
-				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
@@ -480,16 +492,10 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
-					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
-				PODFILE_DIR = "$(SRCROOT)";
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
 			};

@@ -35,7 +35,7 @@ end
 target 'NavigatorApp' do
   config = use_native_modules!
 
-  # React Native Maps Google provider
+  # React Native Maps dependencies
   pod 'react-native-maps/Google', :path => '../node_modules/react-native-maps'
   pod 'GoogleUtilities', :modular_headers => true
   pod 'RecaptchaInterop', :modular_headers => true
@@ -54,5 +54,29 @@ target 'NavigatorApp' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+        end
+
+        if target.name == 'fmt'
+          definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+          definitions << 'FMT_USE_CONSTEVAL=0' unless definitions.include?('FMT_USE_CONSTEVAL=0')
+        end
+      end
+    end
+
+    fmt_base_header = File.join(installer.sandbox.root, 'fmt/include/fmt/base.h')
+    if File.exist?(fmt_base_header)
+      File.chmod(0644, fmt_base_header)
+      contents = File.read(fmt_base_header)
+      contents.gsub!(
+        "#elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L\n#  define FMT_USE_CONSTEVAL 0  // consteval is broken in Apple clang < 14.",
+        "#elif defined(__apple_build_version__)\n#  define FMT_USE_CONSTEVAL 0  // consteval is broken in Apple clang for this fmt release."
+      )
+      File.write(fmt_base_header, contents)
+    end
   end
 end

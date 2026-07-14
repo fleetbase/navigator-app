@@ -31,7 +31,6 @@ local.properties
 *.iml
 android/*.hprof
 android/app/build
-android/app/.cxx/
 android/.kotlin
 *.aab
 *.apk
@@ -50,6 +49,7 @@ buck-out/
 \.buckd/
 *.keystore
 !debug.keystore
+.kotlin/
 
 # testing
 /coverage
@@ -72,11 +72,8 @@ buck-out/
 */fastlane/report.xml
 */fastlane/Preview.html
 */fastlane/screenshots
-*/fastlane/.env*
-*/fastlane/*api_key*.json
-*/fastlane/AuthKey_*.p8
-*/fastlane/metadata/review_information/
-*.p8
+android/fastlane
+ios/fastlane
 
 # Bundle artifact
 *.jsbundle

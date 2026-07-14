@@ -5,13 +5,20 @@ buildscript {
         playServicesLocationVersion = "21.0.1"
         firebaseMessagingVersion = "22.0.0"
         firebaseVersion = "22.0.0"
-        buildToolsVersion = "36.0.0"
+        buildToolsVersion = "35.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 36
+        compileSdkVersion = 35
         targetSdkVersion = 35
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
         appCompatVersion = "1.4.2"
+        REACT_NATIVE_NODE_MODULES_DIR = file("../node_modules/react-native").absolutePath
+        nodeExecutable = [
+            System.getenv("NODE_BINARY"),
+            "/opt/homebrew/bin/node",
+            "/usr/local/bin/node",
+            "node"
+        ].find { it && (it == "node" || file(it).canExecute()) }
     }
     repositories {
         google()
