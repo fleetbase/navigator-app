@@ -3,6 +3,23 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
+def resolveNodeExecutable() {
+    def nodeBinary = System.getenv("NODE_BINARY")
+    if (nodeBinary != null && !nodeBinary.trim().isEmpty()) {
+        return nodeBinary
+    }
+
+    def candidatePaths = [
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+        "/usr/bin/node"
+    ]
+
+    return candidatePaths.find { file(it).exists() } ?: "node"
+}
+
+ext.REACT_NATIVE_NODE_MODULES_DIR = file("$rootDir/../node_modules/react-native").absolutePath
+
 // background-geolocation
 Project background_geolocation = project(':react-native-background-geolocation')
 apply from: "${background_geolocation.projectDir}/app.gradle"
@@ -30,7 +47,7 @@ react {
 
     /* Bundling */
     //   A list containing the node command and its flags. Default is just 'node'.
-    nodeExecutableAndArgs = [rootProject.ext.nodeExecutable]
+    nodeExecutableAndArgs = [resolveNodeExecutable()]
     //
     //   The command to run when bundling. By default is 'bundle'
     // bundleCommand = "ram-bundle"
@@ -68,14 +85,14 @@ def enableProguardInReleaseBuilds = false
  * The preferred build flavor of JavaScriptCore (JSC)
  *
  * For example, to use the international variant, you can use:
- * `def jscFlavor = io.github.react-native-community:jsc-android-intl:2026004.+`
+ * `def jscFlavor = 'org.webkit:android-jsc-intl:+'`
  *
  * The international variant includes ICU i18n library and necessary data
  * allowing to use e.g. `Date.toLocaleString` and `String.localeCompare` that
  * give correct results when using with locales other than en-US. Note that
  * this variant is about 6MiB larger per architecture than default.
  */
-def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+def jscFlavor = 'org.webkit:android-jsc:+'
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -94,19 +111,16 @@ android {
             appLinkScheme: project.env.get("APP_LINK_PREFIX") ?: "flbnavigator"
         ]
         resValue "string", "build_config_package", "io.fleetbase.navigator"
+        resValue "string", "app_name", project.env.get("APP_NAME") ?: "Navigator"
+        resValue "string", "TRANSISTORSOFT_LICENSE_KEY_ANDROID", project.env.get("TRANSISTORSOFT_LICENSE_KEY_ANDROID") ?: project.env.get("TRANSISTORSOFT_LICENSE_KEY") ?: ""
     }
     signingConfigs {
         release {
-            def ksPath       = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE')       ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE')
-            def ksPass       = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD')   ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD')
-            def keyAliasName = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS')        ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS')
-            def keyPass      = System.getenv('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD')     ?: project.findProperty('ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD')
-
-            if (ksPath && ksPass && keyAliasName && keyPass) {
-                storeFile file(ksPath)
-                storePassword ksPass
-                keyAlias keyAliasName
-                keyPassword keyPass
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
             }
         }
         debug {
@@ -154,6 +168,35 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+def cleanStaleNativeBuildState = tasks.register("cleanStaleNativeBuildState", Delete) {
+    delete file(".cxx")
+}
+
+tasks.matching { it.name.startsWith("externalNativeBuildClean") }.configureEach {
+    dependsOn(cleanStaleNativeBuildState)
+    onlyIf { false }
+}
+
+tasks.named("clean").configure {
+    dependsOn(cleanStaleNativeBuildState)
+}
+
+[
+    Debug: "Debug",
+    RelWithDebInfo: "Release"
+].each { cmakeVariant, prefabVariant ->
+    def prefabProducerTasks = [
+        ":react-native-nitro-modules:prefab${prefabVariant}Package",
+        ":react-native-reanimated:prefab${prefabVariant}Package",
+        ":react-native-vision-camera:prefab${prefabVariant}Package",
+        ":react-native-worklets:prefab${prefabVariant}Package"
+    ]
+
+    tasks.matching { it.name.startsWith("configureCMake${cmakeVariant}") }.configureEach {
+        dependsOn(prefabProducerTasks)
     }
 }
 

@@ -1,26 +1,11 @@
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings") }
-
-def nodeExecutable = [
-    System.getenv("NODE_BINARY"),
-    "/opt/homebrew/bin/node",
-    "/usr/local/bin/node",
-    "node"
-].find { it && (it == "node" || file(it).canExecute()) }
-
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex ->
-    ex.autolinkLibrariesFromCommand([
-        nodeExecutable,
-        "../node_modules/@react-native-community/cli/build/bin.js",
-        "config"
-    ])
-}
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'NavigatorApp'
 include ':react-native-config'
 project(':react-native-config').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-config/android')
 include ':react-native-photo-view'
 project(':react-native-photo-view').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-photo-view/android')
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
 include ':app', ':react-native-i18n'
