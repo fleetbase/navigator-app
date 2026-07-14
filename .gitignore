@@ -90,6 +90,7 @@ ios/tmp.xcconfig
 # Credentials/ Config
 #
 android/app/google-services.json
+android/app/src/debug/google-services.json
 android/app/play-store-credentials.json
 
 # Navigator assets/configurations
