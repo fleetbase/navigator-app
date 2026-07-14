@@ -1,6 +1,34 @@
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+
+def resolveNodeExecutable() {
+    def nodeBinary = System.getenv("NODE_BINARY")
+    if (nodeBinary != null && !nodeBinary.trim().isEmpty()) {
+        return nodeBinary
+    }
+
+    def candidatePaths = [
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+        "/usr/bin/node"
+    ]
+
+    def toolcache = new File("/opt/hostedtoolcache/node")
+    if (toolcache.exists()) {
+        toolcache.eachDir { versionDir ->
+            versionDir.eachDir { archDir ->
+                candidatePaths.add(new File(archDir, "bin/node").absolutePath)
+            }
+        }
+    }
+
+    return candidatePaths.find { new File(it).exists() } ?: "node"
+}
+
+def reactNativeCli = new File(rootDir, "../node_modules/@react-native-community/cli/build/bin.js").absolutePath
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand([resolveNodeExecutable(), reactNativeCli, "config"])
+}
 rootProject.name = 'NavigatorApp'
 include ':react-native-config'
 project(':react-native-config').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-config/android')
