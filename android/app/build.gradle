@@ -3,6 +3,23 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
+def resolveNodeExecutable() {
+    def nodeBinary = System.getenv("NODE_BINARY")
+    if (nodeBinary != null && !nodeBinary.trim().isEmpty()) {
+        return nodeBinary
+    }
+
+    def candidatePaths = [
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+        "/usr/bin/node"
+    ]
+
+    return candidatePaths.find { file(it).exists() } ?: "node"
+}
+
+ext.REACT_NATIVE_NODE_MODULES_DIR = file("$rootDir/../node_modules/react-native").absolutePath
+
 // background-geolocation
 Project background_geolocation = project(':react-native-background-geolocation')
 apply from: "${background_geolocation.projectDir}/app.gradle"
@@ -30,7 +47,7 @@ react {
 
     /* Bundling */
     //   A list containing the node command and its flags. Default is just 'node'.
-    // nodeExecutableAndArgs = ["node"]
+    nodeExecutableAndArgs = [resolveNodeExecutable()]
     //
     //   The command to run when bundling. By default is 'bundle'
     // bundleCommand = "ram-bundle"
@@ -151,6 +168,19 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+}
+
+def cleanStaleNativeBuildState = tasks.register("cleanStaleNativeBuildState", Delete) {
+    delete file(".cxx")
+}
+
+tasks.matching { it.name.startsWith("externalNativeBuildClean") }.configureEach {
+    dependsOn(cleanStaleNativeBuildState)
+    onlyIf { false }
+}
+
+tasks.named("clean").configure {
+    dependsOn(cleanStaleNativeBuildState)
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -45,10 +45,45 @@ const reactNativeNotificationsFcmToken = path.join(
     'FcmToken.java'
 );
 
+const reactNativeReanimatedBuildGradle = path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'react-native-reanimated',
+    'android',
+    'build.gradle.kts'
+);
+
+const reactNativeWorkletsBuildGradle = path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'react-native-worklets',
+    'android',
+    'build.gradle.kts'
+);
+
 const staleCodegenPackageJsons = [
     path.join(__dirname, '..', 'node_modules', '@bam.tech', 'react-native-image-resizer', 'package.json'),
     path.join(__dirname, '..', 'node_modules', '@react-native-community', 'blur', 'package.json'),
 ];
+
+const kotlinGradleNodeResolver = `fun resolveNodeExecutable(): String {
+    val nodeBinary = System.getenv("NODE_BINARY")
+    if (!nodeBinary.isNullOrBlank()) {
+        return nodeBinary
+    }
+
+    val candidatePaths = listOf(
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+        "/usr/bin/node"
+    )
+
+    return candidatePaths.firstOrNull { File(it).exists() } ?: "node"
+}
+
+`;
 
 function patchImageResizerPodspec() {
     if (!fs.existsSync(imageResizerPodspec)) {
@@ -164,7 +199,35 @@ function patchReactNativeNotificationsFcmToken() {
     }
 }
 
+function patchKotlinGradleNodeResolution(buildGradlePath, packageName) {
+    if (!fs.existsSync(buildGradlePath)) {
+        return;
+    }
+
+    let buildGradle = fs.readFileSync(buildGradlePath, 'utf8');
+    const original = buildGradle;
+
+    if (!buildGradle.includes('fun resolveNodeExecutable(): String')) {
+        buildGradle = buildGradle.replace(
+            'fun safeExtGet(prop: String, fallback: Any?): Any? =\n',
+            `${kotlinGradleNodeResolver}fun safeExtGet(prop: String, fallback: Any?): Any? =\n`
+        );
+    }
+
+    buildGradle = buildGradle.replaceAll(
+        'commandLine("node",',
+        'commandLine(resolveNodeExecutable(),'
+    );
+
+    if (buildGradle !== original) {
+        fs.writeFileSync(buildGradlePath, buildGradle);
+        console.log(`Patched ${packageName} Android Gradle node resolution.`);
+    }
+}
+
 patchImageResizerPodspec();
 patchReactNativeI18nGradle();
 patchStaleCodegenPackageJsons();
 patchReactNativeNotificationsFcmToken();
+patchKotlinGradleNodeResolution(reactNativeReanimatedBuildGradle, 'react-native-reanimated');
+patchKotlinGradleNodeResolution(reactNativeWorkletsBuildGradle, 'react-native-worklets');

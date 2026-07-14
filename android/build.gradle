@@ -12,6 +12,7 @@ buildscript {
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
         appCompatVersion = "1.4.2"
+        REACT_NATIVE_NODE_MODULES_DIR = file("$rootDir/../node_modules/react-native").absolutePath
     }
     repositories {
         google()
