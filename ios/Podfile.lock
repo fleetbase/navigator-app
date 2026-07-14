@@ -100,9 +100,55 @@ PODS:
   - libwebp/sharpyuv (1.5.0)
   - libwebp/webp (1.5.0):
     - libwebp/sharpyuv
-  - MMKV (1.3.13):
-    - MMKVCore (~> 1.3.13)
-  - MMKVCore (1.3.13)
+  - MMKVCore (2.4.0)
+  - NitroMmkv (4.3.2):
+    - hermes-engine
+    - MMKVCore (= 2.4.0)
+    - NitroModules
+    - RCTRequired
+    - RCTTypeSafety
+    - React-callinvoker
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - NitroModules (0.36.1):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-callinvoker
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - PromisesObjC (2.4.1)
   - PromisesSwift (2.4.1):
     - PromisesObjC (= 2.4.1)
@@ -1731,30 +1777,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - react-native-mmkv-storage (0.11.2):
-    - hermes-engine
-    - MMKV (~> 1.3.9)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - Yoga
-  - react-native-notifications (5.2.2):
+  - react-native-notifications (5.1.0):
     - React-Core
   - react-native-render-html (6.3.4):
     - React-Core
@@ -2376,7 +2399,7 @@ PODS:
     - Yoga
   - RNI18n (2.0.15):
     - React
-  - RNKeychain (9.2.3):
+  - RNKeychain (10.0.0):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2770,6 +2793,8 @@ DEPENDENCIES:
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - GoogleUtilities
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
+  - NitroMmkv (from `../node_modules/react-native-mmkv`)
+  - NitroModules (from `../node_modules/react-native-nitro-modules`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../node_modules/react-native/Libraries/Required`)
   - RCTSwiftUI (from `../node_modules/react-native/ReactApple/RCTSwiftUI`)
@@ -2817,7 +2842,6 @@ DEPENDENCIES:
   - "react-native-image-resizer (from `../node_modules/@bam.tech/react-native-image-resizer`)"
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-maps/Google (from `../node_modules/react-native-maps`)
-  - react-native-mmkv-storage (from `../node_modules/react-native-mmkv-storage`)
   - react-native-notifications (from `../node_modules/react-native-notifications`)
   - react-native-render-html (from `../node_modules/react-native-render-html`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -2901,7 +2925,6 @@ SPEC REPOS:
     - GTMAppAuth
     - GTMSessionFetcher
     - libwebp
-    - MMKV
     - MMKVCore
     - PromisesObjC
     - PromisesSwift
@@ -2918,6 +2941,10 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-v250829098.0.14
+  NitroMmkv:
+    :path: "../node_modules/react-native-mmkv"
+  NitroModules:
+    :path: "../node_modules/react-native-nitro-modules"
   RCTDeprecation:
     :path: "../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation"
   RCTRequired:
@@ -3008,8 +3035,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@bam.tech/react-native-image-resizer"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
-  react-native-mmkv-storage:
-    :path: "../node_modules/react-native-mmkv-storage"
   react-native-notifications:
     :path: "../node_modules/react-native-notifications"
   react-native-render-html:
@@ -3157,8 +3182,9 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 7645614372a013662d3d1135338c541c1ae41355
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
-  MMKV: 5854d45476fc3757bacfa7e13cc0fbcd274ab0e4
-  MMKVCore: edbad9714bb70344544148f086a4a69061ff31b6
+  MMKVCore: 3d16ce9f7d411e135020915fde98a056859a1efa
+  NitroMmkv: cfcbd8c18465caa558dd5095be16d078b5155905
+  NitroModules: 7e004af1d2cbc3072b071de62aeb9c147ef79d34
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
@@ -3206,8 +3232,7 @@ SPEC CHECKSUMS:
   react-native-image-picker: 2146157d5d37a34c2063d1d2ed01081b56d0b87b
   react-native-image-resizer: ecb5c6df1318c592e5045a9510458b5357560bce
   react-native-maps: e48595e300ecb82baa3fe3a4b54950ead8d017ba
-  react-native-mmkv-storage: 146cf3f03d2f2c6328dc2143bb2e959afc594a8f
-  react-native-notifications: 801e1a5220d474384968de5ccf8b863d05aa552a
+  react-native-notifications: 4601a5a8db4ced6ae7cfc43b44d35fe437ac50c4
   react-native-render-html: 984dfe2294163d04bf5fe25d7c9f122e60e05ebe
   react-native-safe-area-context: c1eb308f4b36372a4de4b3bdaa8ed695ec3dd461
   react-native-webview: cf1541e140494e4af434a5787a211959fefe9a3e
@@ -3259,7 +3284,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: a21ad1bb32b203570440c29b7e406a342a690842
   RNGoogleSignin: 7b48b915471868fcc2a160aaaa26ad27a6e6d484
   RNI18n: e2f7e76389fcc6e84f2c8733ea89b92502351fd8
-  RNKeychain: 8ca4c78e5ab91d5e512ae8cef94f180cc2c83cae
+  RNKeychain: 1b055a0ec36d058cb0a075e965d8c9d335e0c828
   RNLaunchNavigator: d855643e1f842f13c6cc65575e0755975667032c
   RNLocalize: a0dd99f2d709904a07fb826e0b748234f629af34
   RNPermissions: 05fd962dc7a10f43d6c93d72af0ee8ce3308a20f

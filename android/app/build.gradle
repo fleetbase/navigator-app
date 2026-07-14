@@ -111,6 +111,7 @@ android {
             appLinkScheme: project.env.get("APP_LINK_PREFIX") ?: "flbnavigator"
         ]
         resValue "string", "build_config_package", "io.fleetbase.navigator"
+        resValue "string", "app_name", project.env.get("APP_NAME") ?: "Navigator"
         resValue "string", "TRANSISTORSOFT_LICENSE_KEY_ANDROID", project.env.get("TRANSISTORSOFT_LICENSE_KEY_ANDROID") ?: project.env.get("TRANSISTORSOFT_LICENSE_KEY") ?: ""
     }
     signingConfigs {
@@ -181,6 +182,22 @@ tasks.matching { it.name.startsWith("externalNativeBuildClean") }.configureEach 
 
 tasks.named("clean").configure {
     dependsOn(cleanStaleNativeBuildState)
+}
+
+[
+    Debug: "Debug",
+    RelWithDebInfo: "Release"
+].each { cmakeVariant, prefabVariant ->
+    def prefabProducerTasks = [
+        ":react-native-nitro-modules:prefab${prefabVariant}Package",
+        ":react-native-reanimated:prefab${prefabVariant}Package",
+        ":react-native-vision-camera:prefab${prefabVariant}Package",
+        ":react-native-worklets:prefab${prefabVariant}Package"
+    ]
+
+    tasks.matching { it.name.startsWith("configureCMake${cmakeVariant}") }.configureEach {
+        dependsOn(prefabProducerTasks)
+    }
 }
 
 apply plugin: 'com.google.gms.google-services'
