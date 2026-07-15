@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import { NativeModules } from 'react-native';
 import BackgroundGeolocation from 'react-native-background-geolocation';
-import BackgroundFetch from 'react-native-background-fetch';
 import { Place, Point } from '@fleetbase/sdk';
 import { isEmpty, config } from '../utils';
 import { useAuth } from './AuthContext';
@@ -153,6 +153,21 @@ export const LocationProvider = ({ children }) => {
 
     // Configure BackgroundFetch for periodic tasks.
     useEffect(() => {
+        let BackgroundFetch;
+
+        try {
+            if (!NativeModules.RNBackgroundFetch) {
+                console.warn('[BackgroundFetch] native module unavailable, skipping periodic location task.');
+                return;
+            }
+
+            const BackgroundFetchModule = require('react-native-background-fetch');
+            BackgroundFetch = BackgroundFetchModule?.default ?? BackgroundFetchModule;
+        } catch (error) {
+            console.warn('[BackgroundFetch] unavailable, skipping periodic location task:', error);
+            return;
+        }
+
         BackgroundFetch.configure(
             {
                 minimumFetchInterval: 5,

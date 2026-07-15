@@ -184,6 +184,66 @@ tasks.named("clean").configure {
     dependsOn(cleanStaleNativeBuildState)
 }
 
+def nitroModulesCodegenDir = file("$rootDir/../node_modules/react-native-nitro-modules/android/build/generated/source/codegen")
+
+def generateNitroModulesCodegenSchema = tasks.register("generateNitroModulesCodegenSchema", Exec) {
+    def repoRoot = rootDir.parentFile
+    def schemaFile = file("$nitroModulesCodegenDir/schema.json")
+    def nitroSrcDir = file("$rootDir/../node_modules/react-native-nitro-modules/src")
+
+    workingDir repoRoot
+    commandLine resolveNodeExecutable(),
+        "node_modules/@react-native/codegen/lib/cli/combine/combine-js-to-schema-cli.js",
+        "--platform",
+        "android",
+        "--exclude",
+        "NativeSampleTurboModule",
+        schemaFile.absolutePath,
+        nitroSrcDir.absolutePath
+
+    inputs.dir(nitroSrcDir)
+    outputs.file(schemaFile)
+}
+
+def generateNitroModulesCodegenArtifacts = tasks.register("generateNitroModulesCodegenArtifacts", Exec) {
+    def repoRoot = rootDir.parentFile
+    def schemaFile = file("$nitroModulesCodegenDir/schema.json")
+
+    dependsOn(generateNitroModulesCodegenSchema)
+    workingDir repoRoot
+    commandLine resolveNodeExecutable(),
+        "node_modules/react-native/scripts/generate-specs-cli.js",
+        "--platform",
+        "android",
+        "--schemaPath",
+        schemaFile.absolutePath,
+        "--outputDir",
+        nitroModulesCodegenDir.absolutePath,
+        "--libraryName",
+        "NitroModulesSpec",
+        "--javaPackageName",
+        "com.margelo.nitro"
+
+    inputs.file(schemaFile)
+    outputs.dir(file("$nitroModulesCodegenDir/java"))
+    outputs.dir(file("$nitroModulesCodegenDir/jni"))
+}
+
+gradle.projectsEvaluated {
+    def nitroProject = project(":react-native-nitro-modules")
+    nitroProject.tasks.matching {
+        it.name in ["preBuild", "preDebugBuild", "preReleaseBuild"] ||
+            it.name.startsWith("compile") ||
+            it.name.startsWith("configureCMake")
+    }.configureEach {
+        dependsOn(generateNitroModulesCodegenArtifacts)
+    }
+
+    tasks.matching { it.name.startsWith("configureCMake") }.configureEach {
+        dependsOn(generateNitroModulesCodegenArtifacts)
+    }
+}
+
 [
     Debug: "Debug",
     RelWithDebInfo: "Release"
