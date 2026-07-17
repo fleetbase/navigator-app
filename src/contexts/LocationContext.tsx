@@ -74,6 +74,12 @@ export const LocationProvider = ({ children }) => {
         };
     }, [adapter, driver, authToken]);
 
+    // Callback to handle location updates.
+    const onLocation = useCallback((location) => {
+        console.log('[BackgroundGeolocation] onLocation:', location);
+        setLocation(location);
+    }, []);
+
     // Callback to handle activity updates.
     const onMotionChange = useCallback(
         (event) => {
@@ -84,12 +90,6 @@ export const LocationProvider = ({ children }) => {
         },
         [onLocation]
     );
-
-    // Callback to handle location updates.
-    const onLocation = useCallback((location) => {
-        console.log('[BackgroundGeolocation] onLocation:', location);
-        setLocation(location);
-    }, []);
 
     // Callback to handle location errors.
     const onLocationError = useCallback((error) => {

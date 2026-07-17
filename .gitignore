@@ -31,9 +31,11 @@ local.properties
 *.iml
 android/*.hprof
 android/app/build
+android/app/.cxx/
 android/.kotlin
 *.aab
 *.apk
+*.jks
 android/app/src/main/assets/index.android.bundle
 
 # node.js
@@ -71,6 +73,11 @@ buck-out/
 */fastlane/report.xml
 */fastlane/Preview.html
 */fastlane/screenshots
+*/fastlane/.env*
+*/fastlane/*api_key*.json
+*/fastlane/AuthKey_*.p8
+*/fastlane/metadata/review_information/
+*.p8
 
 # Bundle artifact
 *.jsbundle
@@ -84,6 +91,7 @@ ios/tmp.xcconfig
 # Credentials/ Config
 #
 android/app/google-services.json
+android/app/src/debug/google-services.json
 android/app/play-store-credentials.json
 
 # Navigator assets/configurations

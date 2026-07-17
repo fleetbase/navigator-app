@@ -1,10 +1,18 @@
-import { create, useMMKVStorage, MMKVLoader } from 'react-native-mmkv-storage';
 import { Collection } from '@fleetbase/sdk';
 import { isArray, isVoid } from './Helper';
-
-const storage = new MMKVLoader().initialize();
-const useStorage = create(storage);
-const { getString, setString, getInt, setInt, getBool, setBool, getArray, setArray } = storage;
+import {
+    storage,
+    useMMKVStorage,
+    useStorage,
+    getString,
+    setString,
+    getInt,
+    setInt,
+    getBool,
+    setBool,
+    getArray,
+    setArray,
+} from '../../hooks/use-storage';
 
 /**
  * Storage utility functions.
@@ -14,10 +22,10 @@ const { getString, setString, getInt, setInt, getBool, setBool, getArray, setArr
  */
 export default class StorageUtil {
     /**
-     * Returns the initialized storage session from mmkv.
+     * Returns the initialized storage session.
      *
      * @static
-     * @return {MMKVStorage}
+     * @return {object}
      * @memberof StorageUtil
      */
     static instance() {
@@ -133,7 +141,7 @@ export default class StorageUtil {
     }
 
     /**
-     * Checks if object is storage state object from mmkv.
+     * Checks if object is a legacy storage state object.
      *
      * @static
      * @param {object} obj
