@@ -1,5 +1,5 @@
 import Config from 'react-native-config';
-import { Platform, ActionSheetIOS, Alert, Dimensions } from 'react-native';
+import { Platform, ActionSheetIOS, Alert, Image } from 'react-native';
 import { Collection, lookup } from '@fleetbase/sdk';
 import storage, { getString } from './storage';
 import { capitalize } from './format';
@@ -11,10 +11,27 @@ import { parseISO } from 'date-fns';
 import NavigatorConfig from '../../navigator.config';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
+// Image.getSize is callback based, so wrap it to be awaitable. Resolves null
+// instead of rejecting so callers can decide how to degrade, matching how the
+// other promise wrappers in this app handle failure.
+function getImageSize(uri: string): Promise<{ width: number, height: number } | null> {
+    return new Promise((resolve) => {
+        Image.getSize(uri, (width, height) => resolve({ width, height }), () => resolve(null));
+    });
+}
+
 export async function resizePhoto(uri: string, maxSize = 1024): Promise<string> {
     const MAX_DIMENSION = maxSize;
 
-    const { width, height } = Dimensions.get('window');
+    // Measure the photo itself, not the device screen
+    const size = await getImageSize(uri);
+
+    // If the image can't be read, upload it as-is rather than lose the photo
+    if (!size) {
+        return uri;
+    }
+
+    const { width, height } = size;
     // preserve aspect ratio
     const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height, 1);
 
