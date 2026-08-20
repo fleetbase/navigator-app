@@ -11,7 +11,12 @@ import { parseISO } from 'date-fns';
 import NavigatorConfig from '../../navigator.config';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
-export async function resizePhoto(uri: string, maxSize = 1024): Promise<string> {
+/**
+ * @param {string} uri
+ * @param {number} [maxSize]
+ * @returns {Promise<string>}
+ */
+export async function resizePhoto(uri, maxSize = 1024) {
     const MAX_DIMENSION = maxSize;
 
     const { width, height } = Dimensions.get('window');

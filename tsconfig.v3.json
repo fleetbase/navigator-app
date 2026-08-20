@@ -1,0 +1,19 @@
+{
+    "//": "Typechecks the v3 tree only. The root tsconfig.json extends nothing and there is no typecheck script, so TypeScript in this project has only ever been stripped by Babel, never checked. Scoping to src/v3 lets the new tree be strict without first fixing every pre-existing error in the v2 tree.",
+    "//sdkTypes": "@fleetbase/sdk ships declarations in types/ but its package.json does not reference them, so TS cannot resolve them. The paths entry below points at the real ones rather than hand-writing a shim.",
+    "extends": "@react-native/typescript-config",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "strict": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "jsx": "react-jsx",
+        "allowJs": true,
+        "checkJs": false,
+        "types": ["jest", "react", "react-native"],
+        "paths": {
+            "@fleetbase/sdk": ["node_modules/@fleetbase/sdk/types/fleetbase.d.ts"]
+        }
+    },
+    "include": ["src/v3/**/*.ts", "src/v3/**/*.tsx"]
+}
