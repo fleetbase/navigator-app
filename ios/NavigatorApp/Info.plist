@@ -171,5 +171,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Archivo-Regular.ttf</string>
+		<string>JetBrainsMono-Regular.ttf</string>
+		<string>Archivo-SemiBold.ttf</string>
+		<string>Archivo-Medium.ttf</string>
+		<string>JetBrainsMono-SemiBold.ttf</string>
+		<string>Archivo-Bold.ttf</string>
+		<string>Archivo-ExtraBold.ttf</string>
+		<string>JetBrainsMono-Medium.ttf</string>
+	</array>
 </dict>
 </plist>
