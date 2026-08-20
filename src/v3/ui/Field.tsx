@@ -9,43 +9,103 @@
  * `Field` is the shell. `PickerField` composes it with a selector.
  */
 import { forwardRef, useState } from 'react';
-import type { TextInput } from 'react-native';
-import { Input as TamaguiInput, XStack, YStack, styled } from 'tamagui';
+import { TextInput, View } from 'react-native';
+import { Input as TamaguiInput, XStack, YStack, styled, useTheme } from 'tamagui';
 import { Body, Caption, Micro } from './Text';
 import { hitTarget, radius, space } from '../theme/tokens';
 
 const FIELD_HEIGHT = 50;
 
-const Shell = styled(XStack, {
-    name: 'FieldShell',
-    alignItems: 'center',
-    height: FIELD_HEIGHT,
-    borderRadius: radius.compact + 2,
-    borderWidth: 1,
-    borderColor: '$border',
-    backgroundColor: '$surface',
-    paddingLeft: space[4],
-    paddingRight: space[2],
-    gap: space[2],
+/**
+ * The field's frame is a plain `View`, not a Tamagui `styled()` stack.
+ *
+ * As `styled(XStack)` it had a variant, `focused`, toggled from the input's own
+ * `onFocus`. **Changing a variant on the styled wrapper makes the child
+ * TextInput resign first responder**, so the field focused and was blurred again
+ * within the same tap: no caret, no keyboard, nothing typeable anywhere in v3.
+ * The focus ring was destroying the focus it existed to show.
+ *
+ * Measured on device with the input instrumented — the touch reached the input
+ * and `onFocus` fired (`foc 1 blr 1`), and the native node was never remounted
+ * (`mounts 1`), so this is an explicit blur, not a remount. Holding the wrapper's
+ * props constant while still re-rendering kept focus (`blr 0`), which isolates
+ * the variant change as the cause.
+ *
+ * A plain `View` takes an ordinary style object, so the same visual change no
+ * longer disturbs the child. Tamagui is fine everywhere else in the library, and
+ * fine as an *ancestor* of a field — it is a styled wrapper immediately around a
+ * text input, whose props change while that input is focused, that breaks.
+ */
+/**
+ * The focus ring is drawn by a **sibling overlay**, never by an ancestor of the
+ * input. That is the whole reason this component is shaped the way it is.
+ *
+ * Originally the ring was a `focused` variant on the `styled(XStack)` that
+ * contained the input, toggled from the input's own `onFocus`. **Changing the
+ * style of any ancestor of a focused TextInput makes it resign first
+ * responder**, so the field focused and blurred within the same tap: no caret,
+ * no keyboard, nothing typeable anywhere in v3 — sign-in included. The focus
+ * ring was destroying the focus it existed to show.
+ *
+ * Measured on device with the input instrumented:
+ *
+ *   - the touch reached the input and `onFocus` fired, then `onBlur` at once
+ *     (`foc 1 blr 1`), and the native node was never remounted (`mounts 1`) —
+ *     an explicit blur, not a remount;
+ *   - holding the wrapper's props constant while still re-rendering kept focus
+ *     (`blr 0`, caret, typing, list filtering), which isolates the style change;
+ *   - a plain `View` wrapper whose style still changed blurred it too, so this
+ *     is not a Tamagui quirk;
+ *   - moving the ring one level out, to the grandparent, blurred it as well.
+ *
+ * So `Frame` — everything from the input upwards — is constant by contract, and
+ * the ring is an absolutely-positioned sibling that only ever changes its own
+ * style. Changing a sibling is safe; changing an ancestor is not.
+ */
+const RING_RADIUS = radius.compact + 2;
 
-    variants: {
-        focused: {
-            true: {
-                borderWidth: 1.5,
-                borderColor: '$primary',
-                // The design's focus ring.
-                shadowColor: '$primary',
-                shadowOpacity: 0.17,
-                shadowRadius: 3,
-                shadowOffset: { width: 0, height: 0 },
-            },
-        },
-        invalid: { true: { borderWidth: 1.5, borderColor: '$danger' } },
-        disabled: { true: { opacity: 0.38 } },
-        /** No trailing accessory — reclaim the right padding. */
-        plain: { true: { paddingRight: space[4] } },
-    } as const,
-});
+/** Constant by contract: nothing here may depend on focus or error state. */
+function useFrameStyle(plain: boolean, multiline?: boolean, disabled?: boolean) {
+    const theme = useTheme();
+    return {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        height: multiline ? undefined : FIELD_HEIGHT,
+        minHeight: multiline ? FIELD_HEIGHT : undefined,
+        borderRadius: RING_RADIUS,
+        borderWidth: 1,
+        borderColor: theme.border?.val as string,
+        backgroundColor: theme.surface?.val as string,
+        paddingLeft: space[4],
+        paddingRight: plain ? space[4] : space[2],
+        gap: space[2],
+        opacity: disabled ? 0.38 : 1,
+    };
+}
+
+/**
+ * Always mounted, so focus does not add or remove a node either — only this
+ * sibling's own style changes. Transparent until there is something to show.
+ */
+function useRingStyle(focused?: boolean, invalid?: boolean) {
+    const theme = useTheme();
+    const active = focused || invalid;
+    const color = (invalid ? theme.danger?.val : theme.primary?.val) as string;
+
+    return {
+        position: 'absolute' as const,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: RING_RADIUS,
+        borderWidth: active ? 1.5 : 0,
+        borderColor: active ? color : 'transparent',
+        ...(focused && !invalid
+            ? { shadowColor: color, shadowOpacity: 0.17, shadowRadius: 3, shadowOffset: { width: 0, height: 0 } }
+            : null),
+    };
+}
 
 const BareInput = styled(TamaguiInput, {
     name: 'FieldInput',
@@ -57,7 +117,8 @@ const BareInput = styled(TamaguiInput, {
     fontFamily: '$body',
     fontSize: 16,
     color: '$textPrimary',
-    // Tamagui adds a focus ring of its own; the shell owns that treatment.
+    // Tamagui adds a focus ring of its own; the ring overlay owns that
+    // treatment. This must stay empty of anything that changes on focus.
     focusStyle: { borderWidth: 0, outlineWidth: 0 },
 });
 
@@ -93,33 +154,40 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
     ref
 ) {
     const [focused, setFocused] = useState(false);
+    const frame = useFrameStyle(!accessory, multiline, disabled);
+    const ring = useRingStyle(focused && !error, !!error);
 
     return (
         <YStack gap={space[2] - 2} testID={testID}>
             {label ? <Caption tone={error ? 'danger' : 'secondary'}>{label}</Caption> : null}
 
-            <Shell focused={focused && !error} invalid={!!error} disabled={disabled} plain={!accessory} height={multiline ? undefined : FIELD_HEIGHT}>
-                <BareInput
-                    ref={ref as never}
-                    value={value}
-                    placeholder={placeholder}
-                    placeholderTextColor="$textMuted"
-                    editable={!disabled}
-                    keyboardType={keyboardType}
-                    autoCapitalize={autoCapitalize}
-                    multiline={multiline}
-                    secureTextEntry={secure}
-                    fontVariant={tabular ? ['tabular-nums'] : undefined}
-                    onChangeText={onChangeText}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => {
-                        setFocused(false);
-                        onBlur?.();
-                    }}
-                    accessibilityLabel={label}
-                />
-                {accessory}
-            </Shell>
+            {/* The ring is a sibling of the frame, never an ancestor of the input. */}
+            <View>
+                <View style={frame} testID={testID ? `${testID}-frame` : undefined}>
+                    <BareInput
+                        ref={ref as never}
+                        value={value}
+                        placeholder={placeholder}
+                        placeholderTextColor="$textMuted"
+                        editable={!disabled}
+                        keyboardType={keyboardType}
+                        autoCapitalize={autoCapitalize}
+                        multiline={multiline}
+                        secureTextEntry={secure}
+                        fontVariant={tabular ? ['tabular-nums'] : undefined}
+                        onChangeText={onChangeText}
+                        onFocus={() => setFocused(true)}
+                        onBlur={() => {
+                            setFocused(false);
+                            onBlur?.();
+                        }}
+                        accessibilityLabel={label}
+                        testID={testID ? `${testID}-input` : undefined}
+                    />
+                    {accessory}
+                </View>
+                <View pointerEvents="none" style={ring} testID={testID ? `${testID}-ring` : undefined} />
+            </View>
 
             {error ? <Micro tone="danger">{error}</Micro> : hint ? <Micro>{hint}</Micro> : null}
         </YStack>

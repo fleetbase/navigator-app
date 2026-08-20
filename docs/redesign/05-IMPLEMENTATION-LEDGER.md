@@ -194,55 +194,54 @@ values by context (`DriverIdContext`), never as a closed-over prop. `tabBar` is
 exempt: it is a render prop, so a new function re-renders the bar instead of
 remounting it — which is why the badge count may still be closed over.
 
-## Open defect — the `Field` component cannot be focused by tapping
+## Fixed — the focus ring was destroying the focus it existed to show
 
-**Reproducible on the simulator against the live instance.** Tapping the Orders
-search field produces no caret, no focus ring and no keyboard, anywhere within
-its drawn bounds.
+Every text field in v3 was unusable: tapping produced no caret, no keyboard and
+no typed text, anywhere, sign-in included. **Fixed.** Recorded here because the
+cause generalises and the wrong conclusion was reached twice on the way.
 
-It is narrower than the earlier note claimed. What actually works:
+**Cause.** `Field` drew its focus ring by toggling a `focused` variant on the
+element wrapping the input, driven by the input's own `onFocus`. On iOS,
+**changing the style of any ancestor of a focused `TextInput` makes it resign
+first responder.** So the field focused and blurred inside the same tap. The
+symptom — nothing happens when you tap — looks exactly like a dead control, which
+is why substituting components got nowhere: it focused every time.
 
-- A bare `TextInput` **on the same screen**, rendered as a sibling directly
-  above *and* directly below the field, focuses and accepts text normally.
-- The same is true **inside** the navigator (on the Today screen) and **outside**
-  it (in `DriverShell`, beside the header). The navigator is not involved.
-- A bare `TextInput` **bound to the same `query` state** as the field focuses and
-  types fine — and doing so filters the list correctly and renders the "no
-  matches" state. So `OrdersScreen`'s search is functionally complete; the field
-  renders its value and its `onChangeText` works. **Only tap-to-focus fails.**
+**What actually found it.** Instrumenting the input and reading the counters off
+the screen, rather than guessing at candidates:
 
-Ruled out by bisection, each verified on device:
+| Measurement | Reading | What it settled |
+|---|---|---|
+| `measureInWindow` on the field | `16,193 370x63` | The frame is where it is drawn — no touch/layout offset |
+| capture + `onTouchStart` counters | `cap 1 tch 1` | The touch reaches the input |
+| `onFocus` / `onBlur` counters | `foc 1 blr 1` | **It focuses, then is blurred at once** |
+| ref-callback mount counter | `mounts 1` | An explicit blur, not a remount |
+| Wrapper props held constant | `blr 0`, caret, typing, list filtering | The wrapper's style change is the cause |
 
-| Suspect | How it was excluded |
-|---|---|
-| The screen-identity remount | Reproduces after that fix, with taps, scrolling and navigation all working |
-| Native permission alert / LogBox toast | Screenshot taken immediately before each tap, screen clear |
-| The test environment | The simulator has a hardware keyboard attached so no software keyboard appears anywhere — including in iOS Spotlight — but Spotlight shows a caret and accepts injected text, and so do the bare inputs above |
-| `react-native-screens` | Reproduces with `enableScreens(false)` |
-| `BottomSheetModalProvider`, `GestureHandlerRootView`, `<Toasts>` | Reproduces with each removed |
-| Being inside the navigator, or the Orders screen | Bare inputs focus in both |
-| Position on the screen | Bare inputs focus immediately above and below the field |
-| Controlled vs uncontrolled | A controlled bare input bound to `query` focuses |
-| Tamagui `Input` (`BareInput`) | Reproduces with a bare `TextInput` substituted |
-| Tamagui `styled(XStack)` shell | Reproduces with the shell as a plain `View` |
-| The outer Tamagui `YStack` | Reproduces with that as a plain `View` too |
-| `pointerEvents="box-none"` on the shell | No effect |
+Before that, twelve components had been swapped out one at a time — rn-screens,
+the gesture root, the sheet provider, the toast overlay, Tamagui's `Input`, the
+styled wrapper, the outer stack — and every one "failed", because each still
+focused and blurred. **Substitution cannot distinguish "never focused" from
+"focused and blurred"; only instrumentation can.** When a control looks dead,
+measure whether the event arrives before replacing anything.
 
-So a `Field` rebuilt entirely from `react-native` primitives — plain `View`
-wrapper, plain `View` shell, plain `TextInput` — still cannot be focused, while
-an identical bare `TextInput` beside it can. That rewrite was reverted, since it
-fixed nothing and the original is consistent with the rest of the library.
+**The fix.** `Field` now separates the two concerns:
 
-Whatever is left is something about the composition itself rather than any one
-element, and it needs a tool this pass did not use: **attach a debugger or the
-React DevTools inspector and hit-test the field's frame** to see which view
-actually receives the touch. Guessing at candidates has been exhausted; the next
-step should be an observation, not another substitution.
+- **Frame** — the element containing the input — is *constant by contract*.
+  Nothing in it may depend on focus or error state.
+- **Ring** — an absolutely-positioned, always-mounted, `pointerEvents="none"`
+  **sibling** — carries the border, colour and shadow that react to focus.
 
-Impact is smaller than first recorded but still real: any screen whose flow
-requires typing cannot be completed by hand — sign-in, fuel-report create,
-issue create, profile edit. Read paths and every non-text control are unaffected,
-so those slices can still be verified on device.
+Changing a sibling is safe; changing an ancestor is not. The design's focused and
+error treatments are unchanged, in all four schemes.
+
+`src/v3/ui/__tests__/field-focus.test.tsx` guards the invariant by asserting the
+frame's style is byte-identical before and after focus while the ring's is not.
+Reintroducing the bug fails six of its nine tests.
+
+The same rule applies to any future component that wraps a text input — the
+scanner's manual-entry field, the composer, the odometer capture. Put reactive
+styling on a sibling, never on a parent of the input.
 
 ## Known follow-ups
 
