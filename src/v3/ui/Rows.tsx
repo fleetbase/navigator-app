@@ -11,7 +11,7 @@ import { Body, Caption, Micro, Secondary } from './Text';
 import { Identifier } from './Identifier';
 import { Surface } from './Surface';
 import { radius, space } from '../theme/tokens';
-import { formatDuration, formatMeters } from '../format';
+import { formatDuration, formatMeters, type DistanceUnit } from '../format';
 
 export type StopState = 'current' | 'pending' | 'completed' | 'failed';
 
@@ -34,6 +34,8 @@ export interface StopRowProps {
     state?: StopState;
     /** Completion time for the collapsed completed row. */
     completedAt?: string;
+    /** Driver's unit preference, from src/v3/settings. */
+    units?: DistanceUnit;
     onPress?: () => void;
     testID?: string;
 }
@@ -80,6 +82,7 @@ export function StopRow({
     durationFromPrevS,
     state = 'pending',
     completedAt,
+    units = 'metric',
     onPress,
     testID,
 }: StopRowProps) {
@@ -114,7 +117,7 @@ export function StopRow({
     const isCurrent = state === 'current';
     const leg =
         distanceFromPrevM != null
-            ? `${formatMeters(distanceFromPrevM)}${durationFromPrevS != null ? ` · ${formatDuration(durationFromPrevS)}` : ''}`
+            ? `${formatMeters(distanceFromPrevM, units)}${durationFromPrevS != null ? ` · ${formatDuration(durationFromPrevS)}` : ''}`
             : undefined;
 
     return (

@@ -17,7 +17,10 @@
         "confirmation": "Confirmation",
         "ok": "OK",
         "done": "Done",
-        "tryAgain": "Try Again"
+        "tryAgain": "Try Again",
+        "search": "Search",
+        "clear": "Clear",
+        "offline": "You're offline"
     },
     "orderStatuses": {
         "created": "Created",
@@ -84,5 +87,40 @@
         "locationBlockedPrompt": "Location access has been blocked. Please open Settings and enable it to continue.",
         "goToSettings": "Go to Settings",
         "skipForNow": "Skip for now"
+    },
+    "ordersScreen": {
+        "title": "Orders",
+        "segmentActive": "Active",
+        "segmentScheduled": "Scheduled",
+        "segmentCompleted": "Completed",
+        "searchPlaceholder": "Search tracking number, customer, address",
+        "trackingNumberLabel": "TRACKING NUMBER",
+        "stopProgress": "%{completed} of %{total} stops",
+        "itemCount": {
+            "one": "%{count} item",
+            "other": "%{count} items"
+        },
+        "waypointCount": {
+            "one": "%{count} waypoint",
+            "other": "%{count} waypoints"
+        },
+        "pickupDeparted": "Pickup · departed %{time}",
+        "pickupScheduled": "Pickup · scheduled %{time}",
+        "dropoffWindow": "Drop-off · window %{window}",
+        "dropoff": "Drop-off",
+        "multiStop": "Multi-stop drop-off",
+        "completedAt": "completed %{time}",
+        "proofCaptured": "proof captured",
+        "emptyActiveTitle": "No active orders",
+        "emptyActiveBody": "Work assigned to you will appear here.",
+        "emptyScheduledTitle": "Nothing scheduled",
+        "emptyScheduledBody": "Upcoming work will appear here once dispatch assigns it.",
+        "emptyCompletedTitle": "No completed orders yet",
+        "emptyCompletedBody": "Orders you finish will be listed here.",
+        "noSearchResultsTitle": "No matches",
+        "noSearchResultsBody": "Nothing matches “%{query}”.",
+        "errorTitle": "Couldn't load orders",
+        "errorBody": "Check your connection and try again.",
+        "offlineNotice": "Showing saved orders — reconnect to refresh"
     }
 }

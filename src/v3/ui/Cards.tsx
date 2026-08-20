@@ -13,7 +13,7 @@ import { StatusPill } from './StatusPill';
 import { Surface, Divider } from './Surface';
 import { Button } from './Button';
 import { radius, space } from '../theme/tokens';
-import { formatDuration, formatMeters } from '../format';
+import { formatDuration, formatMeters, type DistanceUnit } from '../format';
 
 export interface OrderCardStop {
     name: string;
@@ -36,6 +36,8 @@ export interface OrderCardProps {
     totalStops?: number;
     /** Multi-waypoint summary line, e.g. "4 waypoints · Purbeck district". */
     summary?: string;
+    /** Driver's unit preference, from src/v3/settings. Metric unless told otherwise. */
+    units?: DistanceUnit;
     onPress?: () => void;
     testID?: string;
 }
@@ -51,12 +53,13 @@ export function OrderCard({
     completedStops,
     totalStops,
     summary,
+    units = 'metric',
     onPress,
     testID,
 }: OrderCardProps) {
     const meta = [
         distanceM != null || durationS != null
-            ? [distanceM != null ? formatMeters(distanceM) : null, durationS != null ? formatDuration(durationS) : null].filter(Boolean).join(' · ')
+            ? [distanceM != null ? formatMeters(distanceM, units) : null, durationS != null ? formatDuration(durationS) : null].filter(Boolean).join(' · ')
             : null,
         itemCount != null ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}` : null,
         customerName ?? null,

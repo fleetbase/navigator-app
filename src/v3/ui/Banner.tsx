@@ -138,16 +138,33 @@ export function EmptyState({
     );
 }
 
-export function ErrorState({ title, body, onRetry, testID }: { title: string; body?: string; onRetry?: () => void; testID?: string }) {
+export function ErrorState({
+    title,
+    body,
+    onRetry,
+    /**
+     * Required when onRetry is set. The component library carries no copy of
+     * its own — callers pass translated strings so nothing here needs a
+     * translator's attention.
+     */
+    retryLabel,
+    testID,
+}: {
+    title: string;
+    body?: string;
+    onRetry?: () => void;
+    retryLabel?: string;
+    testID?: string;
+}) {
     return (
         <YStack testID={testID} alignItems="center" gap={space[2]} padding={space[5]}>
             <Body fontWeight="700" tone="danger" center>
                 {title}
             </Body>
             {body ? <Secondary center>{body}</Secondary> : null}
-            {onRetry ? (
+            {onRetry && retryLabel ? (
                 <Button variant="secondary" marginTop={space[2]} onPress={onRetry}>
-                    Try again
+                    {retryLabel}
                 </Button>
             ) : null}
         </YStack>

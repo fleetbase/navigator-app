@@ -58,7 +58,7 @@ function QueueBoundSync({ children, isConnected, queue }: { children: React.Reac
  * Derives tab badges from the order store so the count is live without the
  * navigator's `options` callbacks ever touching a hook.
  */
-function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number }) {
+function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number; driverId?: string }) {
     const activeOrders = useActiveOrderCount();
     return (
         <DriverShell
@@ -66,6 +66,7 @@ function DriverSurface(props: { organizationName: string; subtitle?: string; bad
             subtitle={props.subtitle}
             badges={{ Orders: activeOrders || undefined, ...props.badges }}
             activeStopCount={props.activeStopCount || activeOrders}
+            driverId={props.driverId}
         />
     );
 }
@@ -100,6 +101,8 @@ export interface V3AppProps {
      * The auth *screens* are Phase 3 / design round 2 — this is just the gate.
      */
     isAuthenticated?: boolean;
+    /** Signed-in driver's public id; scopes order queries. */
+    driverId?: string;
     /** Rendered inside the providers — toasts, portals the host app owns. */
     children?: React.ReactNode;
 }
@@ -137,6 +140,7 @@ export function V3App({
     badges,
     activeStopCount = 0,
     isAuthenticated = false,
+    driverId,
     children,
 }: V3AppProps): React.JSX.Element {
     return (
@@ -165,6 +169,7 @@ export function V3App({
                                                         subtitle={subtitle}
                                                         badges={badges}
                                                         activeStopCount={activeStopCount}
+                                                        driverId={driverId}
                                                     />
                                                 ) : (
                                                     <AuthGate />

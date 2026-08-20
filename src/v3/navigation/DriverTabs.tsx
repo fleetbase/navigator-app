@@ -15,6 +15,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
+import OrdersScreen from '../screens/OrdersScreen';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -48,10 +49,11 @@ function RouteStack() {
     );
 }
 
-function OrdersStack() {
+function OrdersStack({ driverId }: { driverId?: string }) {
+    const OrdersHome = () => <OrdersScreen driverId={driverId} />;
     return (
         <Stack.Navigator screenOptions={screenOptions}>
-            <Stack.Screen name="OrdersHome" component={placeholder('Orders', P3)} />
+            <Stack.Screen name="OrdersHome" component={OrdersHome} />
             <Stack.Screen name="OrderDetail" component={placeholder('Order detail', P3)} />
             <Stack.Screen name="EditPayloadItem" component={placeholder('Edit item', P3)} />
             <Stack.Screen name="EntityDetail" component={placeholder('Item detail', P3)} />
@@ -85,7 +87,8 @@ function AccountStack() {
     );
 }
 
-export function DriverTabs({ badges }: { badges?: TabBadges }) {
+export function DriverTabs({ badges, driverId }: { badges?: TabBadges; driverId?: string }) {
+    const Orders = () => <OrdersStack driverId={driverId} />;
     return (
         <Tab.Navigator
             // Options are static objects — no hooks, nothing recomputed per
@@ -95,7 +98,7 @@ export function DriverTabs({ badges }: { badges?: TabBadges }) {
         >
             <Tab.Screen name="Today" component={TodayStack} options={{ tabBarLabel: 'Today' }} />
             <Tab.Screen name="Route" component={RouteStack} options={{ tabBarLabel: 'Route' }} />
-            <Tab.Screen name="Orders" component={OrdersStack} options={{ tabBarLabel: 'Orders' }} />
+            <Tab.Screen name="Orders" component={Orders} options={{ tabBarLabel: 'Orders' }} />
             <Tab.Screen name="Inbox" component={InboxStack} options={{ tabBarLabel: 'Inbox' }} />
             <Tab.Screen name="Account" component={AccountStack} options={{ tabBarLabel: 'Account' }} />
         </Tab.Navigator>

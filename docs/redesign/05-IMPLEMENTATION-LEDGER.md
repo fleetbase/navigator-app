@@ -21,6 +21,7 @@ Legend: `DONE` · `TODO` · `BLOCKED — <what it needs>`
 | Normalised order store + selectors | DONE |
 | `NAVIGATOR_V3` cutover flag | DONE |
 | H1 Settings (R2) + live theme switching | DONE |
+| v3 i18n layer (i18n-js, plurals, interpolation) | DONE |
 
 ---
 
@@ -30,7 +31,7 @@ Endpoints all exist. No backend work required.
 
 | # | Slice | Design | Endpoints |
 |---|---|---|---|
-| 1 | **Orders list** — segments, search, filters | R1 s05/s18 | `GET /v1/orders` |
+| ~~1~~ | ~~**Orders list**~~ — DONE: segments, search, all states, units, verified on device | R1 s05/s18 | `GET /v1/orders` |
 | 2 | **Order detail** — dynamic activity stepper from order config | R1 s06 + correction 1 | `orders/{id}`, `/tracker`, `/eta`, `/next-activity`, `/update-activity`, `order-configs` |
 | 3 | **Edit payload item** — server-declared editable fields | R1 s07 | `orders/{id}/editable-entity-fields`, `PUT /v1/entities/{id}` |
 | 4 | **Item detail** | R2 D4 | `entities/{id}` |
@@ -112,6 +113,12 @@ need a design round 3 or an explicit decision to ship without them.
 ---
 
 ## Known follow-ups
+
+- **The component library still carries English literals.** `OfflineBanner`
+  ("You're offline — work is saved on device"), `SyncedBanner`, and the queue's
+  `describeMutation` labels predate the i18n layer. `ErrorState` was fixed while
+  building Orders (it now takes `retryLabel`); do the rest the next time a slice
+  touches them, or as a dedicated pass before cutover.
 
 - `isConnected` still proxies off the SocketCluster connection; there is no
   netinfo dependency. Decide whether to add one before Tier 1 lands.

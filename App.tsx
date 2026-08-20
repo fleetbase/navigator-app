@@ -58,6 +58,7 @@ function DriverBridge(): React.JSX.Element {
             organizationName={organizationName}
             subtitle={driver?.getAttribute?.('name')}
             isAuthenticated={!!isAuthenticated}
+            driverId={driver?.id}
             isOnline={!!isOnline}
             onToggleOnline={(next) => toggleOnline(next)}
             breakSupported={false}
