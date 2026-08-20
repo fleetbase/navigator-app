@@ -28,7 +28,13 @@ import { useSync } from '../shell';
 import { useSettings } from '../settings';
 import { formatClock, formatMeters } from '../format';
 
-export function OrderDetailScreen({ orderId }: { orderId: string }) {
+export function OrderDetailScreen({
+    orderId,
+    onEditEntity,
+}: {
+    orderId: string;
+    onEditEntity?: (entity: { id: string; name?: string }) => void;
+}) {
     const { t } = useTranslation();
     const { units } = useSettings();
     const { isOnline } = useSync();
@@ -148,7 +154,13 @@ export function OrderDetailScreen({ orderId }: { orderId: string }) {
                             return (
                                 <YStack key={e.id ?? i}>
                                     {i > 0 ? <Divider /> : null}
-                                    <YStack padding={space[3]} gap={space[1]}>
+                                    <YStack
+                                        padding={space[3]}
+                                        gap={space[1]}
+                                        testID={`entity-${e.id ?? i}`}
+                                        onPress={onEditEntity && e.id ? () => onEditEntity({ id: e.id!, name: e.name }) : undefined}
+                                        pressStyle={onEditEntity ? { opacity: 0.7 } : undefined}
+                                    >
                                         <Body fontSize={14} fontWeight="600">
                                             {e.name}
                                         </Body>

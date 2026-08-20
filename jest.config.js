@@ -6,6 +6,11 @@
  */
 module.exports = {
     preset: '@react-native/jest-preset',
+    // Tamagui render tests mount a full themed tree four times per suite. Under
+    // parallel workers on a loaded machine they exceed jest's 5s default and
+    // fail intermittently — the same files pass in ~2s when run alone. Raise
+    // the ceiling so a green suite means "correct", not "the machine was idle".
+    testTimeout: 30000,
     setupFiles: ['react-native-gesture-handler/jestSetup', '<rootDir>/jest.setup.js'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     // These ship ESM/Flow/TS and must go through babel rather than be treated

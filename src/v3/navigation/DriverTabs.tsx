@@ -17,6 +17,7 @@ import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
+import EditPayloadItemScreen from '../screens/EditPayloadItemScreen';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -54,14 +55,36 @@ function OrdersStack({ driverId }: { driverId?: string }) {
     const OrdersHome = ({ navigation }: { navigation: { navigate: (r: string, p?: object) => void } }) => (
         <OrdersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />
     );
-    const OrderDetail = ({ route }: { route: { params?: { orderId?: string } } }) => (
-        <OrderDetailScreen orderId={String(route.params?.orderId ?? '')} />
+    const OrderDetail = ({
+        route,
+        navigation,
+    }: {
+        route: { params?: { orderId?: string } };
+        navigation: { navigate: (r: string, p?: object) => void };
+    }) => (
+        <OrderDetailScreen
+            orderId={String(route.params?.orderId ?? '')}
+            onEditEntity={(entity) => navigation.navigate('EditPayloadItem', { orderId: route.params?.orderId, entity })}
+        />
+    );
+    const EditPayloadItem = ({
+        route,
+        navigation,
+    }: {
+        route: { params?: { orderId?: string; entity?: { id: string } } };
+        navigation: { goBack: () => void };
+    }) => (
+        <EditPayloadItemScreen
+            orderId={String(route.params?.orderId ?? '')}
+            entity={route.params?.entity ?? { id: '' }}
+            onDone={navigation.goBack}
+        />
     );
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="OrdersHome" component={OrdersHome} />
             <Stack.Screen name="OrderDetail" component={OrderDetail} />
-            <Stack.Screen name="EditPayloadItem" component={placeholder('Edit item', P3)} />
+            <Stack.Screen name="EditPayloadItem" component={EditPayloadItem} options={{ presentation: 'modal' }} />
             <Stack.Screen name="EntityDetail" component={placeholder('Item detail', P3)} />
         </Stack.Navigator>
     );

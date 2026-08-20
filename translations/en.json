@@ -6,7 +6,7 @@
         "cancel": "Cancel",
         "new": "New",
         "create": "Create",
-        "save": "Save",
+        "save": "Save changes",
         "delete": "Delete",
         "edit": "Edit",
         "update": "Update",
@@ -22,7 +22,8 @@
         "clear": "Clear",
         "offline": "You're offline",
         "close": "Close",
-        "notAvailable": "Not available"
+        "notAvailable": "Not available",
+        "saving": "Saving…"
     },
     "orderStatuses": {
         "created": "Created",
@@ -157,5 +158,29 @@
         "updateFailed": "Couldn't update this order",
         "loadFailed": "Couldn't load this order",
         "notFound": "Order not found"
+    },
+    "editPayloadItem": {
+        "title": "Editing",
+        "editableSummary": "%{count} of %{total} fields are editable on this order.",
+        "lockedByConfig": "The rest is locked by the %{config} order configuration.",
+        "lockedByDefault": "The rest is locked by this order’s configuration.",
+        "permissionsUnavailable": "Couldn't load edit permissions — fields are locked",
+        "nothingEditable": "Nothing on this item can be edited on this order.",
+        "fieldEditable": "EDITABLE",
+        "fieldName": "Name",
+        "fieldQuantity": "Quantity",
+        "fieldWeight": "Weight",
+        "fieldDimensions": "Dimensions",
+        "fieldDeclaredValue": "Declared value",
+        "fieldSerialNumber": "Serial number",
+        "fieldSku": "SKU",
+        "fieldDescription": "Description",
+        "fieldNotes": "Driver note",
+        "notesPlaceholder": "Add a note about this item…",
+        "flagDamaged": "Flag as damaged",
+        "flagDamagedHint": "Requires a photo at the next step",
+        "saveQueued": "Saved on device — will sync when you reconnect",
+        "saveFailed": "Couldn't save these changes",
+        "saved": "Changes saved"
     }
 }

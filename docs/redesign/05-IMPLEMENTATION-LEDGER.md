@@ -33,7 +33,7 @@ Endpoints all exist. No backend work required.
 |---|---|---|---|
 | ~~1~~ | ~~**Orders list**~~ — DONE: segments, search, all states, units, verified on device | R1 s05/s18 | `GET /v1/orders` |
 | ~~2~~ | ~~**Order detail**~~ — DONE: config-driven stepper (2/5/7 steps tested), optimistic offline advance | R1 s06 + correction 1 | as listed |
-| 3 | **Edit payload item** — server-declared editable fields | R1 s07 | `orders/{id}/editable-entity-fields`, `PUT /v1/entities/{id}` |
+| ~~3~~ | ~~**Edit payload item**~~ — DONE: allowlist-driven, locks on failure, queues offline | R1 s07 | as listed |
 | 4 | **Item detail** | R2 D4 | `entities/{id}` |
 | 5 | **Order timeline** | R2 D5 | `tracking-statuses`, order activity |
 | 6 | **Fuel log list + detail + create** | R1 s09, R2 F2 | `fuel-reports` CRUD, `fuel-transactions` |
