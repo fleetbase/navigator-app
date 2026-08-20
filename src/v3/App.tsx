@@ -1,0 +1,190 @@
+/**
+ * v3 presentation root.
+ *
+ * Takes plain data props and imports nothing from the v2 tree. That boundary is
+ * deliberate: the v2 contexts are untyped and reach for tokens the Waypoint
+ * config does not define, so the adaptation lives in App.tsx — outside this
+ * tree, where it is obviously temporary — and Phase 2 deletes it rather than
+ * untangling it from here.
+ */
+import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PortalHost, PortalProvider } from '@gorhom/portal';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { NavigationContainer } from '@react-navigation/native';
+import BootSplash from 'react-native-bootsplash';
+import { TamaguiProvider, Theme } from 'tamagui';
+
+import waypointConfig, { type SchemeName } from './theme';
+import { useResolvedScheme } from './settings';
+import { placeholder } from './screens/Placeholder';
+import { DriverShell } from './navigation';
+import { DutyProvider, SyncProvider } from './shell';
+import type { TabBadges } from './navigation/TabBar';
+import { FleetbaseProvider, mutationQueue, useQueue, type MutationQueue } from './api';
+import { useActiveOrderCount } from './data';
+
+/**
+ * Signed-out surface. The real Welcome / Find your organization / OTP screens
+ * exist in the round 1 design (s13–s16) and are built in Phase 3, with the
+ * secure join flow landing in Phase 5.
+ */
+const AuthGate = placeholder('Sign in', 'Phase 3', 'platform-token onboarding endpoints (Phase 5)');
+
+/**
+ * Feeds the shell's connectivity strip from the real queue rather than the
+ * Phase 1 stub: the "N queued" count and the failed/retry state now reflect
+ * work actually waiting to reach the server.
+ */
+function QueueBoundSync({ children, isConnected, queue }: { children: React.ReactNode; isConnected: boolean; queue: MutationQueue }) {
+    const { pendingCount, failedCount, isFlushing } = useQueue(queue);
+    return (
+        <SyncProvider
+            isOnline={isConnected}
+            queuedCount={pendingCount + failedCount}
+            syncState={failedCount > 0 ? 'failed' : isFlushing ? 'syncing' : 'idle'}
+            onRetry={() => {
+                queue.retryFailed();
+                void queue.flush();
+            }}
+        >
+            {children}
+        </SyncProvider>
+    );
+}
+
+/**
+ * Derives tab badges from the order store so the count is live without the
+ * navigator's `options` callbacks ever touching a hook.
+ */
+function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number }) {
+    const activeOrders = useActiveOrderCount();
+    return (
+        <DriverShell
+            organizationName={props.organizationName}
+            subtitle={props.subtitle}
+            badges={{ Orders: activeOrders || undefined, ...props.badges }}
+            activeStopCount={props.activeStopCount || activeOrders}
+        />
+    );
+}
+
+export interface V3AppProps {
+    scheme?: SchemeName;
+    organizationName: string;
+    subtitle?: string;
+    /** Driver's online flag, from the driver resource. */
+    isOnline?: boolean;
+    onToggleOnline?: (online: boolean) => Promise<unknown>;
+    /** True once the Phase 4a shift endpoints exist. */
+    breakSupported?: boolean;
+    /**
+     * Connectivity. Still a proxy off the socket connection — the app has no
+     * netinfo dependency — but the queued count and sync state below are now
+     * real, read from the mutation queue.
+     */
+    isConnected?: boolean;
+    /** API host. Required so the single Fleetbase instance can be built. */
+    host?: string;
+    platformToken?: string;
+    /** Driver Sanctum token. Changing it re-authorises without rebuilding. */
+    userToken?: string;
+    onUnauthorized?: () => void;
+    queue?: MutationQueue;
+    badges?: TabBadges;
+    activeStopCount?: number;
+    /**
+     * Gates the driver shell. v2 gated its navigator with `if: useIsAuthenticated`;
+     * without an equivalent the shell would render for a signed-out driver.
+     * The auth *screens* are Phase 3 / design round 2 — this is just the gate.
+     */
+    isAuthenticated?: boolean;
+    /** Rendered inside the providers — toasts, portals the host app owns. */
+    children?: React.ReactNode;
+}
+
+/**
+ * Reads the driver's theme preference so the whole tree re-themes live.
+ * `scheme` remains overridable for tests and screenshots.
+ */
+function ThemedRoot({ scheme, children }: { scheme?: SchemeName; children: (s: SchemeName) => React.JSX.Element }) {
+    const resolved = useResolvedScheme();
+
+    // react-native-bootsplash needs an explicit hide(). v2 did it in BootScreen,
+    // which the v3 tree does not mount — without this the app sits on the splash
+    // forever. Runs once the themed tree has committed, so there is no flash of
+    // an unthemed frame.
+    React.useEffect(() => {
+        void BootSplash.hide({ fade: true }).catch(() => {});
+    }, []);
+    return children(scheme ?? resolved);
+}
+
+export function V3App({
+    scheme,
+    organizationName,
+    subtitle,
+    isOnline = false,
+    onToggleOnline,
+    breakSupported = false,
+    isConnected = true,
+    host = 'https://api.fleetbase.io',
+    platformToken,
+    userToken,
+    onUnauthorized,
+    queue = mutationQueue,
+    badges,
+    activeStopCount = 0,
+    isAuthenticated = false,
+    children,
+}: V3AppProps): React.JSX.Element {
+    return (
+        <PortalProvider>
+            <ThemedRoot scheme={scheme}>
+                {(active) => (
+            <TamaguiProvider config={waypointConfig} defaultTheme={active}>
+                <Theme name={active}>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                        <SafeAreaProvider>
+                            <BottomSheetModalProvider>
+                                <FleetbaseProvider
+                                    host={host}
+                                    platformToken={platformToken}
+                                    userToken={userToken}
+                                    onUnauthorized={onUnauthorized}
+                                    queue={queue}
+                                    isConnected={isConnected}
+                                >
+                                    <QueueBoundSync isConnected={isConnected} queue={queue}>
+                                        <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
+                                            <NavigationContainer>
+                                                {isAuthenticated ? (
+                                                    <DriverSurface
+                                                        organizationName={organizationName}
+                                                        subtitle={subtitle}
+                                                        badges={badges}
+                                                        activeStopCount={activeStopCount}
+                                                    />
+                                                ) : (
+                                                    <AuthGate />
+                                                )}
+                                            </NavigationContainer>
+                                            {children}
+                                            <PortalHost name="MainPortal" />
+                                            <PortalHost name="BottomSheetPanelPortal" />
+                                        </DutyProvider>
+                                    </QueueBoundSync>
+                                </FleetbaseProvider>
+                            </BottomSheetModalProvider>
+                        </SafeAreaProvider>
+                    </GestureHandlerRootView>
+                </Theme>
+            </TamaguiProvider>
+                )}
+            </ThemedRoot>
+        </PortalProvider>
+    );
+}
+
+export default V3App;
