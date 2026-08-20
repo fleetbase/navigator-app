@@ -1,5 +1,4 @@
 import BootScreen from '../../screens/BootScreen';
-import TestScreen from '../../screens/TestScreen';
 import LocationPermissionScreen from '../../screens/LocationPermissionScreen';
 import InstanceLinkScreen from '../../screens/InstanceLinkScreen';
 import { getTheme } from '../../utils';
@@ -46,13 +45,8 @@ export const InstanceLink = {
     },
 };
 
-export const Test = {
-    screen: TestScreen,
-};
-
 const CoreStack = {
     Boot,
-    Test,
     LocationPermission,
     InstanceLink,
 };
