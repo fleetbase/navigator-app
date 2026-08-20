@@ -35,7 +35,7 @@ Endpoints all exist. No backend work required.
 | ~~2~~ | ~~**Order detail**~~ — DONE: config-driven stepper (2/5/7 steps tested), optimistic offline advance | R1 s06 + correction 1 | as listed |
 | ~~3~~ | ~~**Edit payload item**~~ — DONE: allowlist-driven, locks on failure, queues offline | R1 s07 | as listed |
 | ~~4~~ | ~~**Item detail**~~ — DONE: photo, base64 barcode/QR, scan history via `tracking-statuses`, null-metadata rows omitted, verified on device | R2 D4 | `entities/{id}` + `tracking-statuses?tracking_number=` |
-| 5 | **Order timeline** | R2 D5 | `tracking-statuses`, order activity |
+| ~~5~~ | ~~**Order timeline**~~ — DONE: chronological, paints from the order's embedded `tracking_statuses` then refreshes; null-island locations suppressed; no actor exists, and it says so | R2 D5 | embedded `tracking_statuses` + `tracking-statuses?tracking_number=` |
 | 6 | **Fuel log list + detail + create** | R1 s09, R2 F2 | `fuel-reports` CRUD, `fuel-transactions` |
 | 7 | **Issues list + detail + create** | R1 s10, R2 F3 | `issues` CRUD |
 | 8 | **Inbox: conversation, composer, participants** | R2 G1/G3, gap G2 | `chat-channels` + send/read/participants |

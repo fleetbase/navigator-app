@@ -33,6 +33,7 @@ import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import EditPayloadItemScreen from '../screens/EditPayloadItemScreen';
 import ItemDetailScreen from '../screens/ItemDetailScreen';
+import OrderTimelineScreen from '../screens/OrderTimelineScreen';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -85,6 +86,7 @@ function OrderDetail({ route, navigation }: { route: { params?: { orderId?: stri
             onOpenEntity={({ id, entity }) =>
                 navigation.navigate('EntityDetail', { orderId: route.params?.orderId, entityId: id, entity })
             }
+            onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId: route.params?.orderId })}
         />
     );
 }
@@ -104,6 +106,10 @@ function EntityDetail({
             onEdit={(entity) => navigation.navigate('EditPayloadItem', { orderId: route.params?.orderId, entity })}
         />
     );
+}
+
+function OrderTimeline({ route }: { route: { params?: { orderId?: string } } }) {
+    return <OrderTimelineScreen orderId={String(route.params?.orderId ?? '')} />;
 }
 
 function EditPayloadItem({
@@ -150,6 +156,7 @@ function OrdersStack() {
             <Stack.Screen name="OrderDetail" component={OrderDetail} />
             <Stack.Screen name="EditPayloadItem" component={EditPayloadItem} options={modalOptions} />
             <Stack.Screen name="EntityDetail" component={EntityDetail} />
+            <Stack.Screen name="OrderTimeline" component={OrderTimeline} />
         </Stack.Navigator>
     );
 }

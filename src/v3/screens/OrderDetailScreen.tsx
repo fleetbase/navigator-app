@@ -41,10 +41,13 @@ import { formatClock, formatMeters } from '../format';
 export function OrderDetailScreen({
     orderId,
     onOpenEntity,
+    onOpenTimeline,
 }: {
     orderId: string;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
     onOpenEntity?: (entity: { id: string; name?: string; entity: Record<string, unknown> }) => void;
+    /** Opens the full activity history (R2 D5). */
+    onOpenTimeline?: () => void;
 }) {
     const { t } = useTranslation();
     const { units } = useSettings();
@@ -197,6 +200,12 @@ export function OrderDetailScreen({
                     <Secondary>{(order.notes as string) || t('orderDetail.noNotes')}</Secondary>
                 </Surface>
             </YStack>
+
+            {onOpenTimeline ? (
+                <Button variant="ghost" onPress={onOpenTimeline} testID="open-timeline">
+                    {t('orderTimeline.viewTimeline')}
+                </Button>
+            ) : null}
 
             {/* Progress + the one action. Config-driven, any length. */}
             <YStack gap={space[3]}>

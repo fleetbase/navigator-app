@@ -238,5 +238,19 @@
         "loadFailed": "Could not load this item",
         "loadFailedBody": "Check your connection and try again.",
         "edit": "Edit item details"
+    },
+    "orderTimeline": {
+        "title": "Timeline",
+        "orderLabel": "Order",
+        "current": "Current status",
+        "emptyTitle": "No activity yet",
+        "emptyBody": "Status changes for this order will appear here.",
+        "sparseNote": "Only the first status has been recorded so far.",
+        "actorUnavailable": "Status changes do not record who made them.",
+        "offlineCached": "Offline — showing the history saved on this device.",
+        "refreshFailed": "Could not refresh the timeline. Showing the last known history.",
+        "loadFailed": "Could not load the timeline",
+        "loadFailedBody": "Check your connection and try again.",
+        "viewTimeline": "View full timeline"
     }
 }
