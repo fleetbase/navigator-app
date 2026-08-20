@@ -10,7 +10,7 @@
         "jsx": "react-jsx",
         "allowJs": true,
         "checkJs": false,
-        "types": ["jest", "react", "react-native"],
+        "types": ["jest", "node", "react", "react-native"],
         "paths": {
             "@fleetbase/sdk": ["node_modules/@fleetbase/sdk/types/fleetbase.d.ts"]
         }

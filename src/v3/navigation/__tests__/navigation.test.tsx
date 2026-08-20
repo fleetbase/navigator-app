@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { NavigationContainer } from '@react-navigation/native';
@@ -84,5 +86,56 @@ describe('v3 navigation', () => {
         expect(s).toContain('Today');
         expect(s).toContain('Phase 3');
         ReactTestRenderer.act(() => t.unmount());
+    });
+});
+
+/**
+ * Guards the defect that made the whole content area look dead to touch: screen
+ * components were being created during render (`const Orders = () => <.../>`,
+ * `component={placeholder('Today', P3)}`), so every parent render produced a new
+ * component type and React remounted the entire screen subtree. Chrome kept
+ * working, content did not — scroll position, keyboard focus and in-flight
+ * touches were all destroyed on each render.
+ *
+ * A behavioural remount is awkward to observe through the navigator, so this
+ * asserts the property that actually matters at the source: nothing is passed to
+ * `component=` except a stable identifier.
+ */
+describe('screen identity', () => {
+    const raw = readFileSync(join(__dirname, '..', 'DriverTabs.tsx'), 'utf8');
+    // The file documents the bad patterns by quoting them, so comments must go
+    // before the source is scanned for them.
+    const source = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+    it('never passes an inline function or a factory call to component=', () => {
+        const offenders = [...source.matchAll(/component=\{([^}]*)\}/g)]
+            .map((m) => m[1].trim())
+            .filter((expr) => expr.includes('=>') || expr.includes('('));
+
+        expect(offenders).toEqual([]);
+    });
+
+    it('declares every screen component at module scope', () => {
+        // A screen component defined inside another component's body is the
+        // same bug wearing a name. Everything referenced by component= must be
+        // declared with a top-level `function X(` or `const X =`.
+        const referenced = [...source.matchAll(/component=\{(\w+)\}/g)].map((m) => m[1]);
+        expect(referenced.length).toBeGreaterThan(10);
+
+        for (const name of referenced) {
+            // An import is module scope too — `SettingsScreen` arrives that way.
+            const declaredAtModuleScope =
+                new RegExp(`^function ${name}\\(`, 'm').test(source) ||
+                new RegExp(`^const ${name} =`, 'm').test(source) ||
+                new RegExp(`^import .*\\b${name}\\b`, 'm').test(source);
+            expect({ name, declaredAtModuleScope }).toEqual({ name, declaredAtModuleScope: true });
+        }
+    });
+
+    it('keeps screen-scoped values out of props, so screens need no closure', () => {
+        // driverId reaches OrdersScreen through context; passing it as a prop is
+        // what forced the inline component in the first place.
+        expect(source).toContain('DriverIdContext');
+        expect(source).not.toMatch(/<OrdersStack\s+driverId/);
     });
 });

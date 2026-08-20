@@ -10,7 +10,21 @@
  * Uses the dynamic navigator API with a custom tab bar. The static API pushed v2
  * into calling hooks from `options` callbacks to get badge counts; a custom bar
  * lets those subscriptions live in a component instead.
+ *
+ * **Every screen component here is declared at module scope, and nothing is
+ * passed to one as a prop.** `component={...}` is identity-compared: a component
+ * created during render — `const Orders = () => <OrdersStack driverId={id} />`,
+ * or `component={placeholder('Today', P3)}` — is a new type on every parent
+ * render, so React unmounts and remounts the entire screen subtree each time.
+ * That is invisible in a screenshot but fatal in the hand: scroll position
+ * resets, a focused text field loses the keyboard, and a touch that began before
+ * the remount never lands. It made the whole content area appear dead to touch
+ * while the header and tab bar — which are not remounted — kept working.
+ *
+ * Screen-scoped values therefore travel by context (`DriverIdContext`), never by
+ * closing over a prop.
  */
+import { createContext, useContext, useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { placeholder } from '../screens/Placeholder';
@@ -18,6 +32,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import EditPayloadItemScreen from '../screens/EditPayloadItemScreen';
+import ItemDetailScreen from '../screens/ItemDetailScreen';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -31,11 +46,88 @@ const MANIFESTS = 'driver-scoped manifest endpoints (Phase 4a)';
 const SHIFTS = 'shift + HOS endpoints (Phase 4a)';
 
 const screenOptions = { headerShown: false } as const;
+const modalOptions = { presentation: 'modal' } as const;
+
+/** The signed-in driver's public id, for screens that scope a query by it. */
+const DriverIdContext = createContext<string | undefined>(undefined);
+export const useDriverId = () => useContext(DriverIdContext);
+
+/* -- Placeholders, built once. ------------------------------------------- */
+const TodayHome = placeholder('Today', P3, `${SHIFTS} for the HOS and break cards`);
+const RouteHome = placeholder('Route', P4, MANIFESTS);
+const StopDetail = placeholder('Stop detail', P4, MANIFESTS);
+const StopExecution = placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)');
+const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimise endpoint (Phase 4a)');
+const InboxHome = placeholder('Inbox', P3);
+const Conversation = placeholder('Conversation', P3);
+const NewConversation = placeholder('New conversation', P3);
+const AccountHome = placeholder('Account', P3);
+const FuelLog = placeholder('Fuel log', P3);
+const Issues = placeholder('Issues & defects', P3);
+const MyVehicle = placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)');
+const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
+const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
+const SyncQueue = placeholder('Sync queue', P3, 'design round 2');
+
+/* -- Orders tab. ---------------------------------------------------------- */
+
+type Nav = { navigate: (route: string, params?: object) => void; goBack: () => void };
+
+function OrdersHome({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    return <OrdersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
+}
+
+function OrderDetail({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
+    return (
+        <OrderDetailScreen
+            orderId={String(route.params?.orderId ?? '')}
+            onOpenEntity={({ id, entity }) =>
+                navigation.navigate('EntityDetail', { orderId: route.params?.orderId, entityId: id, entity })
+            }
+        />
+    );
+}
+
+function EntityDetail({
+    route,
+    navigation,
+}: {
+    route: { params?: { orderId?: string; entityId?: string; entity?: Record<string, unknown> } };
+    navigation: Nav;
+}) {
+    return (
+        <ItemDetailScreen
+            entityId={route.params?.entityId}
+            entity={route.params?.entity}
+            onBack={navigation.goBack}
+            onEdit={(entity) => navigation.navigate('EditPayloadItem', { orderId: route.params?.orderId, entity })}
+        />
+    );
+}
+
+function EditPayloadItem({
+    route,
+    navigation,
+}: {
+    route: { params?: { orderId?: string; entity?: { id: string } } };
+    navigation: Nav;
+}) {
+    return (
+        <EditPayloadItemScreen
+            orderId={String(route.params?.orderId ?? '')}
+            entity={route.params?.entity ?? { id: '' }}
+            onDone={navigation.goBack}
+        />
+    );
+}
+
+/* -- Stacks. -------------------------------------------------------------- */
 
 function TodayStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
-            <Stack.Screen name="TodayHome" component={placeholder('Today', P3, `${SHIFTS} for the HOS and break cards`)} />
+            <Stack.Screen name="TodayHome" component={TodayHome} />
         </Stack.Navigator>
     );
 }
@@ -43,49 +135,21 @@ function TodayStack() {
 function RouteStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
-            <Stack.Screen name="RouteHome" component={placeholder('Route', P4, MANIFESTS)} />
-            <Stack.Screen name="StopDetail" component={placeholder('Stop detail', P4, MANIFESTS)} />
-            <Stack.Screen name="StopExecution" component={placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)')} />
-            <Stack.Screen name="OptimisePreview" component={placeholder('Optimise route', P4, 'driver-scoped optimise endpoint (Phase 4a)')} />
+            <Stack.Screen name="RouteHome" component={RouteHome} />
+            <Stack.Screen name="StopDetail" component={StopDetail} />
+            <Stack.Screen name="StopExecution" component={StopExecution} />
+            <Stack.Screen name="OptimisePreview" component={OptimisePreview} />
         </Stack.Navigator>
     );
 }
 
-function OrdersStack({ driverId }: { driverId?: string }) {
-    const OrdersHome = ({ navigation }: { navigation: { navigate: (r: string, p?: object) => void } }) => (
-        <OrdersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />
-    );
-    const OrderDetail = ({
-        route,
-        navigation,
-    }: {
-        route: { params?: { orderId?: string } };
-        navigation: { navigate: (r: string, p?: object) => void };
-    }) => (
-        <OrderDetailScreen
-            orderId={String(route.params?.orderId ?? '')}
-            onEditEntity={(entity) => navigation.navigate('EditPayloadItem', { orderId: route.params?.orderId, entity })}
-        />
-    );
-    const EditPayloadItem = ({
-        route,
-        navigation,
-    }: {
-        route: { params?: { orderId?: string; entity?: { id: string } } };
-        navigation: { goBack: () => void };
-    }) => (
-        <EditPayloadItemScreen
-            orderId={String(route.params?.orderId ?? '')}
-            entity={route.params?.entity ?? { id: '' }}
-            onDone={navigation.goBack}
-        />
-    );
+function OrdersStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="OrdersHome" component={OrdersHome} />
             <Stack.Screen name="OrderDetail" component={OrderDetail} />
-            <Stack.Screen name="EditPayloadItem" component={EditPayloadItem} options={{ presentation: 'modal' }} />
-            <Stack.Screen name="EntityDetail" component={placeholder('Item detail', P3)} />
+            <Stack.Screen name="EditPayloadItem" component={EditPayloadItem} options={modalOptions} />
+            <Stack.Screen name="EntityDetail" component={EntityDetail} />
         </Stack.Navigator>
     );
 }
@@ -93,9 +157,9 @@ function OrdersStack({ driverId }: { driverId?: string }) {
 function InboxStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
-            <Stack.Screen name="InboxHome" component={placeholder('Inbox', P3)} />
-            <Stack.Screen name="Conversation" component={placeholder('Conversation', P3)} />
-            <Stack.Screen name="NewConversation" component={placeholder('New conversation', P3)} />
+            <Stack.Screen name="InboxHome" component={InboxHome} />
+            <Stack.Screen name="Conversation" component={Conversation} />
+            <Stack.Screen name="NewConversation" component={NewConversation} />
         </Stack.Navigator>
     );
 }
@@ -103,34 +167,54 @@ function InboxStack() {
 function AccountStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
-            <Stack.Screen name="AccountHome" component={placeholder('Account', P3)} />
+            <Stack.Screen name="AccountHome" component={AccountHome} />
             {/* Reports moved here from their own tab. */}
-            <Stack.Screen name="FuelLog" component={placeholder('Fuel log', P3)} />
-            <Stack.Screen name="Issues" component={placeholder('Issues & defects', P3)} />
-            <Stack.Screen name="MyVehicle" component={placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)')} />
-            <Stack.Screen name="Inspection" component={placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2')} />
-            <Stack.Screen name="Documents" component={placeholder('My documents', P4, 'driver document endpoints (Phase 5)')} />
+            <Stack.Screen name="FuelLog" component={FuelLog} />
+            <Stack.Screen name="Issues" component={Issues} />
+            <Stack.Screen name="MyVehicle" component={MyVehicle} />
+            <Stack.Screen name="Inspection" component={Inspection} />
+            <Stack.Screen name="Documents" component={Documents} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="SyncQueue" component={placeholder('Sync queue', P3, 'design round 2')} />
+            <Stack.Screen name="SyncQueue" component={SyncQueue} />
         </Stack.Navigator>
     );
 }
 
+const TAB_OPTIONS = {
+    Today: { tabBarLabel: 'Today' },
+    Route: { tabBarLabel: 'Route' },
+    Orders: { tabBarLabel: 'Orders' },
+    Inbox: { tabBarLabel: 'Inbox' },
+    Account: { tabBarLabel: 'Account' },
+} as const;
+
 export function DriverTabs({ badges, driverId }: { badges?: TabBadges; driverId?: string }) {
-    const Orders = () => <OrdersStack driverId={driverId} />;
+    // `tabBar` is a render prop, not `component`, so re-creating it re-renders
+    // the bar rather than remounting it — which is why the badges may close
+    // over `badges` while the screens above may not.
+    const renderTabBar = useMemo(
+        () =>
+            function renderTabBar(props: React.ComponentProps<typeof TabBar>) {
+                return <TabBar {...props} badges={badges} />;
+            },
+        [badges]
+    );
+
     return (
-        <Tab.Navigator
-            // Options are static objects — no hooks, nothing recomputed per
-            // navigation state change.
-            screenOptions={{ headerShown: false }}
-            tabBar={(props) => <TabBar {...props} badges={badges} />}
-        >
-            <Tab.Screen name="Today" component={TodayStack} options={{ tabBarLabel: 'Today' }} />
-            <Tab.Screen name="Route" component={RouteStack} options={{ tabBarLabel: 'Route' }} />
-            <Tab.Screen name="Orders" component={Orders} options={{ tabBarLabel: 'Orders' }} />
-            <Tab.Screen name="Inbox" component={InboxStack} options={{ tabBarLabel: 'Inbox' }} />
-            <Tab.Screen name="Account" component={AccountStack} options={{ tabBarLabel: 'Account' }} />
-        </Tab.Navigator>
+        <DriverIdContext.Provider value={driverId}>
+            <Tab.Navigator
+                // Options are static objects — no hooks, nothing recomputed per
+                // navigation state change.
+                screenOptions={screenOptions}
+                tabBar={renderTabBar}
+            >
+                <Tab.Screen name="Today" component={TodayStack} options={TAB_OPTIONS.Today} />
+                <Tab.Screen name="Route" component={RouteStack} options={TAB_OPTIONS.Route} />
+                <Tab.Screen name="Orders" component={OrdersStack} options={TAB_OPTIONS.Orders} />
+                <Tab.Screen name="Inbox" component={InboxStack} options={TAB_OPTIONS.Inbox} />
+                <Tab.Screen name="Account" component={AccountStack} options={TAB_OPTIONS.Account} />
+            </Tab.Navigator>
+        </DriverIdContext.Provider>
     );
 }
 

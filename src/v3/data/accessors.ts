@@ -93,3 +93,36 @@ export function entityTrackingNumberOf(entity?: Record<string, unknown> | null):
     }
     return (entity.sku as string | undefined) ?? undefined;
 }
+
+/**
+ * Entity identity.
+ *
+ * A live instance returns `id: null` on **every** entity row — identity lives
+ * in `internal_id` ("product_jFpaNGYwZG"). Reading `.id` therefore produced a
+ * PUT to `entities/null`, and gating the row's onPress on `.id` made the whole
+ * edit screen unreachable. Both were live-only failures: the fixtures had ids.
+ */
+export function entityIdOf(entity?: Record<string, unknown> | null): string | undefined {
+    if (!entity) return undefined;
+    return idOf(entity.id) ?? idOf(entity.internal_id) ?? idOf(entity.uuid) ?? idOf(entity.public_id);
+}
+
+/** Human label for an entity, falling back through the identifiers. */
+export function entityNameOf(entity?: Record<string, unknown> | null): string | undefined {
+    const name = entity?.name;
+    if (typeof name === 'string' && name.trim()) return name;
+    return entityTrackingNumberOf(entity) ?? entityIdOf(entity);
+}
+
+/**
+ * Has this item been flagged damaged?
+ *
+ * The column is not part of the public entity payload, so it arrives via
+ * `meta` on instances that use it. Checked in both places.
+ */
+export function entityDamagedOf(entity?: Record<string, unknown> | null): boolean {
+    if (!entity) return false;
+    if (entity.damaged != null) return Boolean(entity.damaged);
+    const meta = entity.meta as Record<string, unknown> | null | undefined;
+    return Boolean(meta?.damaged);
+}

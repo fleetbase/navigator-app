@@ -34,7 +34,7 @@ Endpoints all exist. No backend work required.
 | ~~1~~ | ~~**Orders list**~~ — DONE: segments, search, all states, units, verified on device | R1 s05/s18 | `GET /v1/orders` |
 | ~~2~~ | ~~**Order detail**~~ — DONE: config-driven stepper (2/5/7 steps tested), optimistic offline advance | R1 s06 + correction 1 | as listed |
 | ~~3~~ | ~~**Edit payload item**~~ — DONE: allowlist-driven, locks on failure, queues offline | R1 s07 | as listed |
-| 4 | **Item detail** | R2 D4 | `entities/{id}` |
+| ~~4~~ | ~~**Item detail**~~ — DONE: photo, base64 barcode/QR, scan history via `tracking-statuses`, null-metadata rows omitted, verified on device | R2 D4 | `entities/{id}` + `tracking-statuses?tracking_number=` |
 | 5 | **Order timeline** | R2 D5 | `tracking-statuses`, order activity |
 | 6 | **Fuel log list + detail + create** | R1 s09, R2 F2 | `fuel-reports` CRUD, `fuel-transactions` |
 | 7 | **Issues list + detail + create** | R1 s10, R2 F3 | `issues` CRUD |
@@ -128,10 +128,24 @@ test only.
 
 ## Device verification — read this before blaming the code
 
-An earlier pass recorded a "touch input does not reach v3 components" blocker.
-**That was wrong.** v3 touch handling is fine: with nothing overlaying the
-screen, the duty pill opens the duty sheet on the first tap. Two environmental
-obstructions produced the false signal, and both will do it again:
+An earlier pass recorded a "touch input does not reach v3 components" blocker,
+and a later pass called that blocker false. **Both were partly wrong, and the
+way each was reached is the lesson.**
+
+The first pass was right that something was broken but never located it. The
+second cleared it on the evidence that *the duty pill opens the duty sheet on
+the first tap* — but the duty pill lives in `AppHeader`, outside the navigator.
+It proved the header was alive and said nothing about the screen content, which
+was in fact dead: taps on the segmented control, the search field and every
+order card did nothing, and the list would not scroll.
+
+The actual cause was found later and fixed (see **Screen identity** below): the
+tab and stack screens were being created during render, so React remounted the
+entire content subtree on every parent render. Chrome kept working because
+chrome is not remounted.
+
+Two *environmental* obstructions are also real, and will produce the same false
+signal again:
 
 1. **A chain of native permission alerts.** react-native-background-geolocation
    raises three in sequence after sign-in — "use your location", then the
@@ -145,9 +159,65 @@ obstructions produced the false signal, and both will do it again:
    tab-bar coordinate hits the toast instead. Dev-only — LogBox does not exist
    in a release build — but it makes tab navigation untestable until dismissed.
 
-Rule of thumb: before concluding a control is broken, screenshot *immediately
-before* the tap, not several actions earlier, and confirm nothing is overlaying
-it. Guessing from a stale screenshot is what produced the false blocker.
+Rules of thumb:
+
+- Before concluding a control is broken, screenshot *immediately before* the
+  tap, not several actions earlier, and confirm nothing is overlaying it.
+- Before concluding a control is **fine**, exercise the control that was
+  actually reported — and one inside the navigator's content, not just the
+  header or tab bar. Clearing a defect with evidence from a different part of
+  the tree is how the content-area remount survived a whole extra pass.
+- A tap that does nothing and a list that will not scroll are the *same*
+  symptom. Scrolling needs no JS handler, so if scrolling is dead too, the
+  cause is structural — an overlay, or a subtree being remounted — not a
+  missing `onPress`.
+
+## Screen identity — never build a screen component during render
+
+`component={...}` on a `Screen` is identity-compared. Any of these creates a new
+component type on every parent render, and React responds by unmounting and
+remounting the whole screen subtree:
+
+```jsx
+const Orders = () => <OrdersStack driverId={driverId} />;   // in DriverTabs
+<Stack.Screen component={OrdersHome} />                      // defined in the parent body
+<Stack.Screen component={placeholder('Today', P3)} />        // factory called in JSX
+```
+
+Nothing looks wrong in a screenshot — the tree re-renders with identical output.
+What breaks is everything that depends on *continuity*: scroll position resets,
+a focused input loses the keyboard, and a touch that began before the remount
+never completes. It reads as "touch is broken".
+
+`DriverTabs` now declares every screen at module scope and passes screen-scoped
+values by context (`DriverIdContext`), never as a closed-over prop. `tabBar` is
+exempt: it is a render prop, so a new function re-renders the bar instead of
+remounting it — which is why the badge count may still be closed over.
+
+## Open defect — text inputs never take focus
+
+**Reproducible on the simulator against the live instance.** Tapping any text
+field — the Orders search box — produces no caret, no focus ring, and no
+keyboard, so nothing can be typed anywhere in v3.
+
+Ruled out so far:
+
+- Not the remount bug above: it reproduces after that fix, with taps, scrolling
+  and navigation all working normally on the same screen.
+- Not a native permission alert or the LogBox toast: verified with a screenshot
+  taken immediately before the tap, screen clear.
+- Not `react-native-screens`: reproduces with `enableScreens(false)`.
+- Not Tamagui's `Input` or the `Field` wrapper: reproduces with a bare
+  `react-native` `TextInput` substituted directly into `Field`.
+
+That leaves something above the component — the provider stack in
+`src/v3/App.tsx` (`GestureHandlerRootView`, `BottomSheetModalProvider`,
+`PortalProvider`) or the keyboard/responder configuration — as the remaining
+suspect. Next step: bisect that stack, and compare against v2, which shares the
+same providers.
+
+Until this is fixed, no slice with a form can be verified end to end on device:
+sign-in, search, edit item, fuel log and issue capture are all affected.
 
 ## Known follow-ups
 

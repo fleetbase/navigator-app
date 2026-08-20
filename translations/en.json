@@ -26,7 +26,8 @@
         "saving": "Saving…",
         "signIn": "Sign in",
         "email": "Email",
-        "password": "Password"
+        "password": "Password",
+        "back": "Back"
     },
     "orderStatuses": {
         "created": "Created",
@@ -184,7 +185,8 @@
         "flagDamagedHint": "Requires a photo at the next step",
         "saveQueued": "Saved on device — will sync when you reconnect",
         "saveFailed": "Couldn't save these changes",
-        "saved": "Changes saved"
+        "saved": "Changes saved",
+        "missingIdentifier": "This item has no identifier on the server, so it cannot be edited."
     },
     "signIn": {
         "title": "Sign in",
@@ -204,5 +206,37 @@
         "invalidCredentials": "Those details were not recognised",
         "offline": "You need a connection to sign in",
         "signingIn": "Signing in…"
+    },
+    "itemDetail": {
+        "title": "Item",
+        "untitled": "Unnamed item",
+        "trackingNumberLabel": "Tracking number",
+        "sku": "SKU",
+        "internalId": "Internal ID",
+        "type": "Type",
+        "dimensions": "Dimensions",
+        "weight": "Weight",
+        "price": "Price",
+        "declaredValue": "Declared value",
+        "destination": "Destination",
+        "customer": "Customer",
+        "trackingStatus": "Tracking status",
+        "minimalMetadata": "No further details recorded for this item.",
+        "scanLabel": "Scan this item",
+        "barcodeAlt": "Barcode for this item",
+        "qrAlt": "QR code for this item",
+        "scanHistory": "Scan history",
+        "noScansTitle": "No scans yet",
+        "noScansBody": "Scan events appear here once this item is scanned at a stop.",
+        "noTrackingNumberBody": "This item has no tracking number, so it cannot be scanned.",
+        "historyUnavailable": "Scan history unavailable",
+        "historyUnavailableBody": "The history could not be loaded. The item details above are still current.",
+        "damagedFlagged": "Flagged as damaged",
+        "damagedHint": "Dispatch has been notified. Handle with care and note the condition at delivery.",
+        "damagedPill": "Damaged",
+        "offlineCached": "Offline — showing the last details saved on this device.",
+        "loadFailed": "Could not load this item",
+        "loadFailedBody": "Check your connection and try again.",
+        "edit": "Edit item details"
     }
 }

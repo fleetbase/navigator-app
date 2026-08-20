@@ -54,11 +54,19 @@ function QueueBoundSync({ children, isConnected, queue }: { children: React.Reac
  */
 function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number; driverId?: string }) {
     const activeOrders = useActiveOrderCount();
+
+    // Memoised because this object reaches `DriverTabs`, and an unstable
+    // reference there re-renders the navigator on every parent render.
+    const badges = React.useMemo(
+        () => ({ Orders: activeOrders || undefined, ...props.badges }),
+        [activeOrders, props.badges]
+    );
+
     return (
         <DriverShell
             organizationName={props.organizationName}
             subtitle={props.subtitle}
-            badges={{ Orders: activeOrders || undefined, ...props.badges }}
+            badges={badges}
             activeStopCount={props.activeStopCount || activeOrders}
             driverId={props.driverId}
         />

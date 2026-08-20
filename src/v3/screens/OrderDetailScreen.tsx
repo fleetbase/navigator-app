@@ -22,7 +22,17 @@ import { ActivityStepper, ProofRequiredHint, nextActivity, type FlowActivity } f
 import { space } from '../theme/tokens';
 import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
-import { useOrder, useOrderConfig, orderStore, displayIdOf, entityTrackingNumberOf, orderConfigIdOf, payloadOf } from '../data';
+import {
+    useOrder,
+    useOrderConfig,
+    orderStore,
+    displayIdOf,
+    entityIdOf,
+    entityNameOf,
+    entityTrackingNumberOf,
+    orderConfigIdOf,
+    payloadOf,
+} from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
 import { useSync } from '../shell';
 import { useSettings } from '../settings';
@@ -30,10 +40,11 @@ import { formatClock, formatMeters } from '../format';
 
 export function OrderDetailScreen({
     orderId,
-    onEditEntity,
+    onOpenEntity,
 }: {
     orderId: string;
-    onEditEntity?: (entity: { id: string; name?: string }) => void;
+    /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
+    onOpenEntity?: (entity: { id: string; name?: string; entity: Record<string, unknown> }) => void;
 }) {
     const { t } = useTranslation();
     const { units } = useSettings();
@@ -149,16 +160,20 @@ export function OrderDetailScreen({
                     {entities.length ? (
                         entities.map((raw, i) => {
                             const e = raw as Record<string, unknown> & { id?: string; name?: string };
+                            // `id` is null on every entity a live instance
+                            // returns; identity is in `internal_id`. Gating the
+                            // row on `e.id` made the item screens unreachable.
+                            const rowId = entityIdOf(e);
                             const entityId = entityTrackingNumberOf(e);
                             return (
-                                <YStack key={e.id ?? i}>
+                                <YStack key={rowId ?? i}>
                                     {i > 0 ? <Divider /> : null}
                                     <YStack
                                         padding={space[3]}
                                         gap={space[1]}
-                                        testID={`entity-${e.id ?? i}`}
-                                        onPress={onEditEntity && e.id ? () => onEditEntity({ id: e.id!, name: e.name }) : undefined}
-                                        pressStyle={onEditEntity ? { opacity: 0.7 } : undefined}
+                                        testID={`entity-${rowId ?? i}`}
+                                        onPress={onOpenEntity && rowId ? () => onOpenEntity({ id: rowId, name: entityNameOf(e), entity: e }) : undefined}
+                                        pressStyle={onOpenEntity ? { opacity: 0.7 } : undefined}
                                     >
                                         <Body fontSize={14} fontWeight="600">
                                             {String(e.name ?? '')}

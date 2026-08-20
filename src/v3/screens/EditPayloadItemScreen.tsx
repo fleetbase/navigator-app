@@ -17,7 +17,7 @@ import { Button } from '../ui/Button';
 import { Banner, ErrorState } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useEditableEntityFields, entityTrackingNumberOf } from '../data';
+import { useEditableEntityFields, entityIdOf, entityNameOf, entityTrackingNumberOf } from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
 
 /** Every field the screen knows how to show, in display order. */
@@ -33,7 +33,12 @@ const FIELDS = [
 ];
 
 export interface PayloadEntity {
-    id: string;
+    /**
+     * Null on every entity a live instance returns — identity is in
+     * `internal_id`. Always resolve it with `entityIdOf`, never read directly.
+     */
+    id?: string | null;
+    internal_id?: string | null;
     name?: string;
     tracking_number?: string;
     sku?: string;
@@ -67,7 +72,13 @@ export function EditPayloadItemScreen({
     const editableCount = useMemo(() => FIELDS.filter((f) => isEditable(f.key)).length, [isEditable]);
     const dirty = Object.keys(draft).length > 0 || damaged !== Boolean(entity.damaged);
 
+    const entityId = entityIdOf(entity);
+
     const save = useCallback(async () => {
+        if (!entityId) {
+            setSaveError(t('editPayloadItem.missingIdentifier'));
+            return;
+        }
         setIsSaving(true);
         setSaveError(null);
         try {
@@ -78,7 +89,7 @@ export function EditPayloadItemScreen({
             }
             if (damaged !== Boolean(entity.damaged)) body.damaged = damaged;
 
-            const result = await adapter.put(`entities/${entity.id}`, body);
+            const result = await adapter.put(`entities/${entityId}`, body);
             if (isQueuedAck(result)) setQueued(true);
             else onDone?.();
         } catch (err) {
@@ -86,14 +97,14 @@ export function EditPayloadItemScreen({
         } finally {
             setIsSaving(false);
         }
-    }, [adapter, draft, damaged, entity, isEditable, onDone]);
+    }, [adapter, draft, damaged, entity, entityId, isEditable, onDone, t]);
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="edit-payload-item">
             <YStack gap={space[2]}>
                 <XStack justifyContent="space-between" alignItems="center">
                     <Body fontSize={17} fontWeight="800">
-                        {entity.name}
+                        {entityNameOf(entity)}
                     </Body>
                     <Caption tone="brand">{t('editPayloadItem.title')}</Caption>
                 </XStack>
@@ -186,7 +197,7 @@ export function EditPayloadItemScreen({
                 </Button>
                 <Button
                     flex={2}
-                    disabled={!dirty || editableCount === 0}
+                    disabled={!dirty || editableCount === 0 || !entityId}
                     loading={isSaving}
                     onPress={save}
                     testID="save-edit"

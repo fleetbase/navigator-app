@@ -3,10 +3,7 @@
  * (GET http://localhost:8000/v1/orders), not invented. Both cases below were
  * real bugs found by running against it.
  */
-import {
-    customerNameOf, displayIdOf, entityTrackingNumberOf, orderConfigIdOf,
-    payloadOf, podRequiredOf, trackingNumberOf, trackingStatusCodeOf,
-} from '../accessors';
+import { customerNameOf, displayIdOf, entityTrackingNumberOf, orderConfigIdOf, payloadOf, podRequiredOf, trackingNumberOf, trackingStatusCodeOf, entityIdOf, entityNameOf, entityDamagedOf } from '../accessors';
 
 /** Trimmed but structurally faithful to the live response. */
 const liveOrder = {
@@ -79,5 +76,53 @@ describe('order accessors against live API shapes', () => {
         expect(entityTrackingNumberOf({ tracking_number: { tracking_number: 'ENT-2' } })).toBe('ENT-2');
         expect(entityTrackingNumberOf({ sku: 'SKU-3' })).toBe('SKU-3');
         expect(entityTrackingNumberOf(null)).toBeUndefined();
+    });
+});
+
+describe('entityIdOf', () => {
+    it('prefers id when present', () => {
+        expect(entityIdOf({ id: 'entity_1', internal_id: 'product_x' })).toBe('entity_1');
+    });
+
+    it('falls back to internal_id — live entities return id: null', () => {
+        expect(entityIdOf({ id: null, internal_id: 'product_jFpaNGYwZG' })).toBe('product_jFpaNGYwZG');
+    });
+
+    it('never yields the string "null"', () => {
+        // The bug this guards: `entities/${entity.id}` PUT to "entities/null".
+        expect(entityIdOf({ id: null })).toBeUndefined();
+        expect(String(entityIdOf({ id: null, internal_id: 'product_x' }))).not.toBe('null');
+    });
+
+    it('is undefined for an entity with no identifier at all', () => {
+        expect(entityIdOf({ name: 'Box' })).toBeUndefined();
+        expect(entityIdOf(null)).toBeUndefined();
+    });
+});
+
+describe('entityNameOf', () => {
+    it('uses the name when there is one', () => {
+        expect(entityNameOf({ name: 'Orchard Fruit Box' })).toBe('Orchard Fruit Box');
+    });
+
+    it('falls through name → tracking number → id', () => {
+        expect(entityNameOf({ name: '  ', tracking_number: 'ENT-1' })).toBe('ENT-1');
+        expect(entityNameOf({ internal_id: 'product_x' })).toBe('product_x');
+    });
+});
+
+describe('entityDamagedOf', () => {
+    it('reads the column when the instance exposes it', () => {
+        expect(entityDamagedOf({ damaged: true })).toBe(true);
+        expect(entityDamagedOf({ damaged: false })).toBe(false);
+    });
+
+    it('falls back to meta, which is where it actually arrives', () => {
+        expect(entityDamagedOf({ meta: { damaged: true } })).toBe(true);
+    });
+
+    it('defaults to not damaged', () => {
+        expect(entityDamagedOf({})).toBe(false);
+        expect(entityDamagedOf(null)).toBe(false);
     });
 });
