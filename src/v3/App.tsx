@@ -18,19 +18,13 @@ import { TamaguiProvider, Theme } from 'tamagui';
 
 import waypointConfig, { type SchemeName } from './theme';
 import { useResolvedScheme } from './settings';
-import { placeholder } from './screens/Placeholder';
+import SignInScreen, { type AuthMethod } from './screens/SignInScreen';
 import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
 import { FleetbaseProvider, mutationQueue, useQueue, type MutationQueue } from './api';
 import { useActiveOrderCount } from './data';
 
-/**
- * Signed-out surface. The real Welcome / Find your organization / OTP screens
- * exist in the round 1 design (s13–s16) and are built in Phase 3, with the
- * secure join flow landing in Phase 5.
- */
-const AuthGate = placeholder('Sign in', 'Phase 3', 'platform-token onboarding endpoints (Phase 5)');
 
 /**
  * Feeds the shell's connectivity strip from the real queue rather than the
@@ -103,6 +97,10 @@ export interface V3AppProps {
     isAuthenticated?: boolean;
     /** Signed-in driver's public id; scopes order queries. */
     driverId?: string;
+    /** Resolves on success, rejects with a message to show inline. */
+    onSignIn?: (identity: string, password: string) => Promise<void>;
+    /** Per-organisation auth alternates. */
+    authMethods?: AuthMethod[];
     /** Rendered inside the providers — toasts, portals the host app owns. */
     children?: React.ReactNode;
 }
@@ -141,6 +139,8 @@ export function V3App({
     activeStopCount = 0,
     isAuthenticated = false,
     driverId,
+    onSignIn,
+    authMethods,
     children,
 }: V3AppProps): React.JSX.Element {
     return (
@@ -172,7 +172,12 @@ export function V3App({
                                                         driverId={driverId}
                                                     />
                                                 ) : (
-                                                    <AuthGate />
+                                                    <SignInScreen
+                                                        onSignIn={onSignIn ?? (() => Promise.reject(new Error('Sign-in is not configured')))}
+                                                        methods={authMethods}
+                                                        organizationName={organizationName}
+                                                        host={host}
+                                                    />
                                                 )}
                                             </NavigationContainer>
                                             {children}

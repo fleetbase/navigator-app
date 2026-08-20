@@ -42,7 +42,7 @@ Endpoints all exist. No backend work required.
 | 9 | **Account home** | prototype | `drivers/{id}`, `organizations` |
 | 10 | **Org switcher** | R2 A3 | `drivers/{id}/organizations`, `switch-organization` |
 | 11 | **Profile edit** | R2 A7 | `PUT /v1/drivers/{id}` |
-| 12 | **Sign in + OTP** | R2 A1, R1 s15 | `drivers/login`, `login-with-sms`, `verify-code` |
+| ~~12~~ | **Sign in** — DONE (password); OTP still TODO | R2 A1, R1 s15 | `drivers/login` verified live |
 | 13 | **Navigation hand-off picker** | R2 D6 | client only |
 | 14 | **Permissions primer** | R2 A2 | client only |
 | 15 | **Self-hosted connection** | R2 A4 | client only |
@@ -125,6 +125,27 @@ does not provide. The instance has test drivers (`ava.driver.testing@example.tes
 `ken.driver.testing@example.test`) but their passwords are not in the repo.
 Until a credential is available, screens behind the auth gate are verified by
 test only.
+
+## BLOCKER — touch input does not reach v3 components on device
+
+Found while verifying sign-in against the live instance. Reproduced twice:
+
+  - `Field` never takes focus. Tapping the email/password inputs produces no
+    keyboard, no focus ring, and typed characters go nowhere.
+  - `TabBar` taps stop switching tabs once past the auth gate. (Tab taps DID
+    work in an earlier build, so this is a regression, not an original defect —
+    bisect against commit 3c6eeb1, which is the last build where tapping
+    Today → Orders worked.)
+
+Everything renders correctly and every unit test passes, so this is purely an
+event-propagation problem — most likely a Tamagui `onPress`/`pressStyle` on a
+non-pressable frame, or a parent swallowing touches (`DriverShell`'s nested
+`YStack`s, the `ScrollView` in `SignInScreen`, or the Modal used for the duty
+sheet remaining mounted).
+
+**Fix this before building another screen.** Every remaining slice is
+interactive, so shipping more on top of a broken touch layer just multiplies
+the rework. A render test cannot catch it; reproduce on device.
 
 ## Known follow-ups
 

@@ -24,6 +24,7 @@ import { V2App } from './App.v2';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { ChatProvider, useChat } from './src/contexts/ChatContext';
 import { ConfigProvider, useConfig } from './src/contexts/ConfigContext';
+import useFleetbaseV2 from './src/hooks/use-fleetbase';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { LocationProvider } from './src/contexts/LocationContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
@@ -37,7 +38,8 @@ import { TempStoreProvider } from './src/contexts/TempStoreContext';
  * throws. Phase 2 replaces it; the screens that need it are Phase 3 and 4b.
  */
 function DriverBridge(): React.JSX.Element {
-    const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, logout } = useAuth();
+    const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, logout, createDriverSession } = useAuth();
+    const { fleetbase } = useFleetbaseV2();
     const { unreadCount } = useChat();
     const { resolveConnectionConfig } = useConfig();
 
@@ -46,8 +48,20 @@ function DriverBridge(): React.JSX.Element {
         return current?.name ?? driver?.getAttribute?.('company_name') ?? 'Navigator';
     }, [organizations, driver]);
 
+    // Password sign-in. The SDK's driver store already implements it; v2's
+    // AuthContext only wires the SMS path, so call it directly and hand the
+    // result to createDriverSession, which persists the token the adapter reads.
+    const handleSignIn = React.useCallback(
+        async (identity, password) => {
+            const result = await fleetbase.drivers.login(identity, password);
+            await createDriverSession(result);
+        },
+        [fleetbase, createDriverSession]
+    );
+
     return (
         <V3App
+            onSignIn={handleSignIn}
             // One Fleetbase instance for the app; the adapter takes credentials
             // without being rebuilt, so a login or org switch no longer
             // invalidates every consumer the way v2's did.

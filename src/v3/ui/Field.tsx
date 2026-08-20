@@ -77,13 +77,19 @@ export interface FieldProps {
     keyboardType?: 'default' | 'numeric' | 'decimal-pad' | 'phone-pad' | 'email-address';
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
     multiline?: boolean;
+    /**
+     * Masks the value. Kept as a Field variant rather than a separate
+     * component so a password field inherits the same label / focus / error /
+     * accessory treatment as every other field.
+     */
+    secure?: boolean;
     onChangeText?: (text: string) => void;
     onBlur?: () => void;
     testID?: string;
 }
 
 export const Field = forwardRef<TextInput, FieldProps>(function Field(
-    { label, value, placeholder, error, hint, disabled, accessory, tabular, keyboardType, autoCapitalize, multiline, onChangeText, onBlur, testID },
+    { label, value, placeholder, error, hint, disabled, accessory, tabular, keyboardType, autoCapitalize, multiline, secure, onChangeText, onBlur, testID },
     ref
 ) {
     const [focused, setFocused] = useState(false);
@@ -102,6 +108,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
                     keyboardType={keyboardType}
                     autoCapitalize={autoCapitalize}
                     multiline={multiline}
+                    secureTextEntry={secure}
                     fontVariant={tabular ? ['tabular-nums'] : undefined}
                     onChangeText={onChangeText}
                     onFocus={() => setFocused(true)}

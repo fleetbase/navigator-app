@@ -23,7 +23,10 @@
         "offline": "You're offline",
         "close": "Close",
         "notAvailable": "Not available",
-        "saving": "Saving…"
+        "saving": "Saving…",
+        "signIn": "Sign in",
+        "email": "Email",
+        "password": "Password"
     },
     "orderStatuses": {
         "created": "Created",
@@ -182,5 +185,24 @@
         "saveQueued": "Saved on device — will sync when you reconnect",
         "saveFailed": "Couldn't save these changes",
         "saved": "Changes saved"
+    },
+    "signIn": {
+        "title": "Sign in",
+        "connectedTo": "%{organization} · %{host}",
+        "connectedToHost": "Connected to %{host}",
+        "emailLabel": "EMAIL",
+        "emailPlaceholder": "you@company.com",
+        "passwordLabel": "PASSWORD",
+        "passwordPlaceholder": "••••••••",
+        "forgotPassword": "Forgot password",
+        "submit": "Sign in",
+        "alternatesHeading": "OR CONTINUE WITH",
+        "phoneMethod": "Phone number",
+        "ssoMethod": "Single sign-on (SAML)",
+        "qrMethod": "Scan organisation QR",
+        "missingFields": "Enter your email and password",
+        "invalidCredentials": "Those details were not recognised",
+        "offline": "You need a connection to sign in",
+        "signingIn": "Signing in…"
     }
 }
