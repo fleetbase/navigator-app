@@ -17,7 +17,7 @@ import { Button } from '../ui/Button';
 import { Banner, ErrorState } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useEditableEntityFields } from '../data';
+import { useEditableEntityFields, entityTrackingNumberOf } from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
 
 /** Every field the screen knows how to show, in display order. */
@@ -97,7 +97,7 @@ export function EditPayloadItemScreen({
                     </Body>
                     <Caption tone="brand">{t('editPayloadItem.title')}</Caption>
                 </XStack>
-                {entity.tracking_number ? <Identifier value={entity.tracking_number} boxed={false} /> : null}
+                {entityTrackingNumberOf(entity) ? <Identifier value={entityTrackingNumberOf(entity)!} boxed={false} /> : null}
             </YStack>
 
             {failed ? (

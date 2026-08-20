@@ -25,10 +25,23 @@
  */
 import { readJSON, writeJSON } from '../api/storage';
 
+/**
+ * The tracking number as the v1 API actually returns it: usually an expanded
+ * object, sometimes a bare string. Read it with `trackingNumberOf`, never
+ * `String(...)` — the object form stringifies to "[object Object]".
+ */
+export interface TrackingNumberRef {
+    id?: string;
+    tracking_number?: string;
+    status?: string;
+    status_code?: string;
+    [key: string]: unknown;
+}
+
 /** The subset of the order payload the app actually renders. */
 export interface OrderRecord {
     id: string;
-    tracking_number?: string;
+    tracking_number?: string | TrackingNumberRef;
     internal_id?: string;
     status?: string;
     adhoc?: boolean;
@@ -40,6 +53,9 @@ export interface OrderRecord {
     distance?: number;
     time?: number;
     customer?: { name?: string; phone?: string; email?: string; photo_url?: string } | null;
+    /** Bare public id string on the live API; object when expanded. */
+    order_config?: string | { id?: string; public_id?: string; [key: string]: unknown };
+    pod_required?: boolean;
     payload?: unknown;
     meta?: unknown;
     [key: string]: unknown;

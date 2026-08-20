@@ -112,6 +112,20 @@ need a design round 3 or an explicit decision to ship without them.
 
 ---
 
+## Verifying against a real instance
+
+`.env.dev` in the **main checkout** points at a live local Fleetbase
+(`http://localhost:8000`) with working credentials. `.env*` is gitignored, so a
+git worktree does not inherit it — copy it in and append `NAVIGATOR_V3=true`.
+Running against it immediately caught two shape bugs that unit tests with
+invented fixtures could not (see src/v3/data/accessors.ts).
+
+Reaching the driver shell needs a **driver session**, which the company API key
+does not provide. The instance has test drivers (`ava.driver.testing@example.test`,
+`ken.driver.testing@example.test`) but their passwords are not in the repo.
+Until a credential is available, screens behind the auth gate are verified by
+test only.
+
 ## Known follow-ups
 
 - **`orderStatuses.*` in en.json is now generated from the registry's design

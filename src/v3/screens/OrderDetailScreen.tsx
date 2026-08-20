@@ -22,7 +22,7 @@ import { ActivityStepper, ProofRequiredHint, nextActivity, type FlowActivity } f
 import { space } from '../theme/tokens';
 import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
-import { useOrder, useOrderConfig, orderStore } from '../data';
+import { useOrder, useOrderConfig, orderStore, displayIdOf, entityTrackingNumberOf, orderConfigIdOf, payloadOf } from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
 import { useSync } from '../shell';
 import { useSettings } from '../settings';
@@ -41,7 +41,7 @@ export function OrderDetailScreen({
     const { adapter } = useFleetbase();
 
     const order = useOrder(orderId);
-    const configId = (order?.order_config as { id?: string } | undefined)?.id ?? (order?.order_config_uuid as string | undefined);
+    const configId = orderConfigIdOf(order);
     const { flow, failed: configFailed } = useOrderConfig(configId);
 
     const [isAdvancing, setIsAdvancing] = useState(false);
@@ -90,11 +90,9 @@ export function OrderDetailScreen({
         );
     }
 
-    const payload = order.payload as
-        | { pickup?: { name?: string; address?: string }; dropoff?: { name?: string; address?: string }; entities?: unknown[] }
-        | undefined;
-    const entities = payload?.entities ?? [];
-    const destination = payload?.dropoff?.name ?? payload?.dropoff?.address;
+    const payload = payloadOf(order);
+    const entities = payload.entities ?? [];
+    const destination = payload.dropoff?.name ?? payload.dropoff?.address;
     const tracker = order.tracker_data as { eta_seconds?: number; distance_m?: number } | undefined;
 
     return (
@@ -106,7 +104,7 @@ export function OrderDetailScreen({
                         <Caption>{t('orderDetail.trackingNumberLabel')}</Caption>
                         <StatusPill status={order.status} t={(k, fb) => t(k, { defaultValue: fb })} />
                     </XStack>
-                    <Identifier value={String(order.tracking_number ?? order.id)} boxed={false} />
+                    <Identifier value={displayIdOf(order)} boxed={false} />
                     <Micro>
                         {order.dispatched_at
                             ? t('orderDetail.createdDispatched', {
@@ -150,7 +148,8 @@ export function OrderDetailScreen({
                 <Surface>
                     {entities.length ? (
                         entities.map((raw, i) => {
-                            const e = raw as { id?: string; name?: string; tracking_number?: string };
+                            const e = raw as Record<string, unknown> & { id?: string; name?: string };
+                            const entityId = entityTrackingNumberOf(e);
                             return (
                                 <YStack key={e.id ?? i}>
                                     {i > 0 ? <Divider /> : null}
@@ -162,9 +161,9 @@ export function OrderDetailScreen({
                                         pressStyle={onEditEntity ? { opacity: 0.7 } : undefined}
                                     >
                                         <Body fontSize={14} fontWeight="600">
-                                            {e.name}
+                                            {String(e.name ?? '')}
                                         </Body>
-                                        {e.tracking_number ? <Identifier value={e.tracking_number} boxed={false} /> : null}
+                                        {entityId ? <Identifier value={entityId} boxed={false} /> : null}
                                     </YStack>
                                 </YStack>
                             );

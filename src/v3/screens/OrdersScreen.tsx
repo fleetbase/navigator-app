@@ -17,7 +17,7 @@ import { Field } from '../ui/Field';
 import { Segmented } from '../ui/Field';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useAllOrders, useOrderQuery } from '../data';
+import { useAllOrders, useOrderQuery, customerNameOf, displayIdOf, payloadOf, trackingNumberOf } from '../data';
 import { useSync } from '../shell';
 import { formatClock } from '../format';
 import { useSettings } from '../settings';
@@ -39,11 +39,11 @@ function segmentOf(order: OrderRecord): Segment {
 function matches(order: OrderRecord, query: string): boolean {
     if (!query) return true;
     const q = query.toLowerCase();
-    const payload = order.payload as { pickup?: { address?: string }; dropoff?: { address?: string } } | undefined;
+    const payload = payloadOf(order);
     return [
-        order.tracking_number,
+        trackingNumberOf(order),
         order.internal_id,
-        (order.customer as { name?: string } | null)?.name,
+        customerNameOf(order),
         payload?.pickup?.address,
         payload?.dropoff?.address,
     ]
@@ -52,12 +52,9 @@ function matches(order: OrderRecord, query: string): boolean {
 }
 
 function toStops(order: OrderRecord, t: ReturnType<typeof useTranslation>['t']): OrderCardStop[] {
-    const payload = order.payload as
-        | { pickup?: { address?: string; name?: string }; dropoff?: { address?: string; name?: string }; waypoints?: unknown[] }
-        | undefined;
-
-    const pickupName = payload?.pickup?.name ?? payload?.pickup?.address;
-    const dropoffName = payload?.dropoff?.name ?? payload?.dropoff?.address;
+    const payload = payloadOf(order);
+    const pickupName = payload.pickup?.name ?? payload.pickup?.address;
+    const dropoffName = payload.dropoff?.name ?? payload.dropoff?.address;
     const stops: OrderCardStop[] = [];
 
     if (pickupName) {
@@ -109,14 +106,14 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
 
     const renderItem = useCallback(
         ({ item }: { item: OrderRecord }) => {
-            const payload = item.payload as { waypoints?: unknown[]; entities?: unknown[] } | undefined;
-            const waypointCount = payload?.waypoints?.length ?? 0;
+            const payload = payloadOf(item);
+            const waypointCount = payload.waypoints?.length ?? 0;
 
             return (
                 <YStack paddingHorizontal={space[4]} paddingVertical={space[2]}>
                     <OrderCard
                         testID={`order-${item.id}`}
-                        trackingNumber={String(item.tracking_number ?? item.id)}
+                        trackingNumber={displayIdOf(item)}
                         status={item.status}
                         stops={toStops(item, t)}
                         summary={
@@ -126,8 +123,8 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
                         }
                         distanceM={item.distance}
                         durationS={item.time}
-                        itemCount={payload?.entities?.length}
-                        customerName={(item.customer as { name?: string } | null)?.name}
+                        itemCount={payload.entities?.length}
+                        customerName={customerNameOf(item)}
                         units={units}
                         onPress={onOpenOrder ? () => onOpenOrder(item.id) : undefined}
                     />
