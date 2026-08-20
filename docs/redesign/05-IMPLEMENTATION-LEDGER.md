@@ -200,21 +200,39 @@ remounting it — which is why the badge count may still be closed over.
 field — the Orders search box — produces no caret, no focus ring, and no
 keyboard, so nothing can be typed anywhere in v3.
 
-Ruled out so far:
+**Not the test environment.** The simulator has a hardware keyboard attached,
+so *no* software keyboard appears anywhere — including in iOS Spotlight. But
+Spotlight shows a caret on tap and accepts injected text normally, so focus and
+text injection both work at system level. In v3 there is no caret and no focus
+ring, which is the real signal; the missing keyboard is a red herring, and
+judging by the keyboard alone would be another stale-evidence mistake.
 
-- Not the remount bug above: it reproduces after that fix, with taps, scrolling
-  and navigation all working normally on the same screen.
-- Not a native permission alert or the LogBox toast: verified with a screenshot
-  taken immediately before the tap, screen clear.
-- Not `react-native-screens`: reproduces with `enableScreens(false)`.
-- Not Tamagui's `Input` or the `Field` wrapper: reproduces with a bare
-  `react-native` `TextInput` substituted directly into `Field`.
+Ruled out by bisection, each verified on device against the live instance:
 
-That leaves something above the component — the provider stack in
-`src/v3/App.tsx` (`GestureHandlerRootView`, `BottomSheetModalProvider`,
-`PortalProvider`) or the keyboard/responder configuration — as the remaining
-suspect. Next step: bisect that stack, and compare against v2, which shares the
-same providers.
+| Suspect | How it was excluded |
+|---|---|
+| The remount bug above | Reproduces after the fix, while taps, scrolling and navigation all work on the same screen |
+| Native permission alert / LogBox toast | Screenshot taken immediately before the tap, screen clear |
+| `react-native-screens` | Reproduces with `enableScreens(false)` |
+| Tamagui `Input` / the `Field` wrapper | Reproduces with a bare RN `TextInput` substituted into `Field` |
+| `BottomSheetModalProvider` | Reproduces with the provider removed |
+| `GestureHandlerRootView` | Reproduces with it replaced by a plain `View` |
+| `<Toasts>` overlay | Reproduces with it removed |
+| Library versions | rngh 2.32, bottom-sheet 5.2.14, reanimated 4.5.1, rn-screens 4.25.2 — all current for RN 0.86 |
+
+Still unexamined: `PortalProvider`, `SafeAreaProvider`, `TamaguiProvider`/`Theme`,
+`NavigationContainer`, and the v2 provider chain in `App.tsx` (`ConfigProvider`
+→ … → `ChatProvider`) that wraps `DriverBridge`.
+
+Two things worth doing before bisecting further, because either would cut the
+search in half:
+
+1. **Run v2 and try its text fields.** v2 shares the same native config and most
+   of the same providers. If v2 also cannot focus, this is not a v3 defect at all
+   and the search moves to the native/podfile layer.
+2. **Check whether it is screen-specific.** Every observation so far is from the
+   Orders search box. Confirm on a second screen with a field — sign in, reached
+   by logging out — before continuing to treat it as app-wide.
 
 Until this is fixed, no slice with a form can be verified end to end on device:
 sign-in, search, edit item, fuel log and issue capture are all affected.
