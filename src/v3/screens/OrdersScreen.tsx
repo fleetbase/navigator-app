@@ -77,7 +77,7 @@ function toStops(order: OrderRecord, t: ReturnType<typeof useTranslation>['t']):
     return stops;
 }
 
-export function OrdersScreen({ driverId }: { driverId?: string }) {
+export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onOpenOrder?: (id: string) => void }) {
     const { t } = useTranslation();
     const theme = useTheme();
     const { units } = useSettings();
@@ -129,11 +129,12 @@ export function OrdersScreen({ driverId }: { driverId?: string }) {
                         itemCount={payload?.entities?.length}
                         customerName={(item.customer as { name?: string } | null)?.name}
                         units={units}
+                        onPress={onOpenOrder ? () => onOpenOrder(item.id) : undefined}
                     />
                 </YStack>
             );
         },
-        [t, units]
+        [t, units, onOpenOrder]
     );
 
     const empty = useMemo(() => {

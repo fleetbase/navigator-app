@@ -16,6 +16,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -50,11 +51,16 @@ function RouteStack() {
 }
 
 function OrdersStack({ driverId }: { driverId?: string }) {
-    const OrdersHome = () => <OrdersScreen driverId={driverId} />;
+    const OrdersHome = ({ navigation }: { navigation: { navigate: (r: string, p?: object) => void } }) => (
+        <OrdersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />
+    );
+    const OrderDetail = ({ route }: { route: { params?: { orderId?: string } } }) => (
+        <OrderDetailScreen orderId={String(route.params?.orderId ?? '')} />
+    );
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="OrdersHome" component={OrdersHome} />
-            <Stack.Screen name="OrderDetail" component={placeholder('Order detail', P3)} />
+            <Stack.Screen name="OrderDetail" component={OrderDetail} />
             <Stack.Screen name="EditPayloadItem" component={placeholder('Edit item', P3)} />
             <Stack.Screen name="EntityDetail" component={placeholder('Item detail', P3)} />
         </Stack.Navigator>

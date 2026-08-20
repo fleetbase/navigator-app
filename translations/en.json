@@ -20,16 +20,24 @@
         "tryAgain": "Try Again",
         "search": "Search",
         "clear": "Clear",
-        "offline": "You're offline"
+        "offline": "You're offline",
+        "close": "Close",
+        "notAvailable": "Not available"
     },
     "orderStatuses": {
         "created": "Created",
         "preparing": "Preparing",
         "dispatched": "Dispatched",
-        "driver_enroute": "Driver en-route",
+        "driver_enroute": "En route",
         "pending": "Pending",
         "in_progress": "In progress",
-        "completed": "Completed"
+        "completed": "Completed",
+        "driver_assigned": "Assigned",
+        "started": "Started",
+        "arrived": "Arrived",
+        "canceled": "Canceled",
+        "failed": "Failed",
+        "on_hold": "On hold"
     },
     "BootScreen": {
         "missingRequiredConfigurationKeys": "Missing required configuration keys"
@@ -122,5 +130,32 @@
         "errorTitle": "Couldn't load orders",
         "errorBody": "Check your connection and try again.",
         "offlineNotice": "Showing saved orders — reconnect to refresh"
+    },
+    "orderDetail": {
+        "trackingNumberLabel": "TRACKING NUMBER",
+        "createdDispatched": "Created %{created} · dispatched %{dispatched}",
+        "created": "Created %{created}",
+        "etaLabel": "ETA",
+        "remainingLabel": "REMAINING",
+        "currentDestination": "Current destination",
+        "payloadHeading": "Payload",
+        "payloadCount": {
+            "one": "%{count} item",
+            "other": "%{count} items"
+        },
+        "editableFields": "%{count} of %{total} fields editable",
+        "noEditableFields": "Nothing on this order is editable",
+        "customerHeading": "Customer",
+        "notesHeading": "Delivery notes",
+        "noNotes": "No notes for this order",
+        "flowUnavailable": "Activity flow unavailable for this order",
+        "advanceTo": "Mark %{activity}",
+        "terminalReached": "This order is complete",
+        "proofRequired": "Proof required",
+        "updating": "Updating…",
+        "queuedOffline": "Saved on device — will sync when you reconnect",
+        "updateFailed": "Couldn't update this order",
+        "loadFailed": "Couldn't load this order",
+        "notFound": "Order not found"
     }
 }

@@ -1,0 +1,199 @@
+import React from 'react';
+import ReactTestRenderer from 'react-test-renderer';
+import { TamaguiProvider, Theme } from 'tamagui';
+import config, { SCHEMES, type SchemeName } from '../../theme';
+import { OrderDetailScreen } from '../OrderDetailScreen';
+import { FleetbaseProvider, MutationQueue } from '../../api';
+import { SyncProvider } from '../../shell';
+import { orderStore, clearOrderConfigCache, type OrderRecord } from '../../data';
+import { clearV3 } from '../../api/storage';
+import { settingsStore } from '../../settings';
+
+/** Flows of 2, 5 and 7 — the stepper must not assume the mockup's four. */
+const FLOWS = {
+    two: [
+        { code: 'created', status: 'Created' },
+        { code: 'completed', status: 'Completed', complete: true },
+    ],
+    five: [
+        { code: 'created', status: 'Created' },
+        { code: 'dispatched', status: 'Dispatched' },
+        { code: 'driver_enroute', status: 'Driver Enroute' },
+        { code: 'arrived', status: 'Arrived', require_pod: true },
+        { code: 'completed', status: 'Completed', complete: true },
+    ],
+    seven: [
+        { code: 'created', status: 'Created' },
+        { code: 'preparing', status: 'Preparing' },
+        { code: 'dispatched', status: 'Dispatched' },
+        { code: 'driver_assigned', status: 'Assigned' },
+        { code: 'driver_enroute', status: 'Driver Enroute' },
+        { code: 'arrived', status: 'Arrived' },
+        { code: 'completed', status: 'Completed', complete: true },
+    ],
+};
+
+const order = (over: Partial<OrderRecord> = {}): OrderRecord => ({
+    id: 'order_1',
+    tracking_number: 'FLE0636178718SG',
+    status: 'driver_enroute',
+    created_at: '2026-08-20T09:02:00Z',
+    order_config: { id: 'cfg_1' },
+    payload: { dropoff: { name: 'Harbour View Pharmacy' }, entities: [{ id: 'e1', name: 'Rx box', tracking_number: 'ENT-000004471-A' }] },
+    ...over,
+});
+
+let fetchMock: jest.Mock;
+
+function mockConfig(flow: unknown[]) {
+    fetchMock.mockImplementation((url: string) =>
+        Promise.resolve({
+            ok: true, status: 200, statusText: 'OK',
+            json: () => Promise.resolve(String(url).includes('order-configs') ? { id: 'cfg_1', flow } : {}),
+        })
+    );
+}
+
+beforeEach(() => {
+    clearV3();
+    orderStore.clear();
+    clearOrderConfigCache();
+    settingsStore.reset();
+    fetchMock = jest.fn();
+    (globalThis as unknown as { fetch: jest.Mock }).fetch = fetchMock;
+    mockConfig(FLOWS.five);
+});
+
+async function render(scheme: SchemeName = 'dark', sync: { isOnline?: boolean } = {}) {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+        tree = ReactTestRenderer.create(
+            <TamaguiProvider config={config} defaultTheme={scheme}>
+                <Theme name={scheme}>
+                    <SyncProvider isOnline={sync.isOnline ?? true}>
+                        <FleetbaseProvider host="https://x.test" queue={new MutationQueue()}>
+                            <OrderDetailScreen orderId="order_1" />
+                        </FleetbaseProvider>
+                    </SyncProvider>
+                </Theme>
+            </TamaguiProvider>
+        );
+        await Promise.resolve();
+    });
+    // @ts-expect-error assigned inside act
+    return tree;
+}
+
+type N = { children?: unknown[]; props?: Record<string, unknown> };
+function walk(node: unknown, visit: (n: N) => void): void {
+    if (!node || typeof node === 'string') return;
+    if (Array.isArray(node)) return node.forEach((c) => walk(c, visit));
+    visit(node as N);
+    (node as N).children?.forEach((c) => walk(c, visit));
+}
+const textOf = (t: ReactTestRenderer.ReactTestRenderer) => {
+    const out: string[] = [];
+    walk(t.toJSON(), (n) => n.children?.forEach((c) => typeof c === 'string' && out.push(c)));
+    return out.join(' ');
+};
+const testIDs = (t: ReactTestRenderer.ReactTestRenderer) => {
+    const out: string[] = [];
+    walk(t.toJSON(), (n) => typeof n.props?.testID === 'string' && out.push(n.props.testID as string));
+    return out;
+};
+
+describe('OrderDetailScreen', () => {
+    it.each(SCHEMES)('renders in the %s scheme', async (scheme) => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render(scheme);
+        expect(t.toJSON()).toBeTruthy();
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    // The whole point of correction 1: the stepper is not four fixed steps.
+    it.each([
+        ['two', 2] as const,
+        ['five', 5] as const,
+        ['seven', 7] as const,
+    ])('renders a %s-step flow from the order config', async (name, count) => {
+        mockConfig(FLOWS[name]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render();
+        const steps = testIDs(t).filter((id) => id.startsWith('step-'));
+        expect(steps).toHaveLength(count);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('uses the registry label, not the config wording', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render();
+        const text = textOf(t);
+        // Config says "Driver Enroute"; the design says "En route".
+        expect(text).toContain('En route');
+        expect(text).not.toContain('Driver Enroute');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('offers the next activity, not a hardcoded one', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'dispatched' })); });
+        const t = await render();
+        expect(textOf(t)).toContain('En route');
+        expect(testIDs(t)).toContain('advance-activity');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('offers nothing at a terminal activity', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'completed' })); });
+        const t = await render();
+        const ids = testIDs(t);
+        expect(ids).not.toContain('advance-activity');
+        expect(ids).toContain('order-terminal');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('flags when the next step will demand proof', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'driver_enroute' })); });
+        const t = await render();
+        expect(testIDs(t)).toContain('proof-required');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('degrades honestly when the config cannot be loaded', async () => {
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render();
+        const ids = testIDs(t);
+        expect(ids).toContain('flow-unavailable');
+        // No invented flow, and therefore no action to advance into.
+        expect(ids.filter((i) => i.startsWith('step-'))).toHaveLength(0);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('renders identifiers in full', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render();
+        const text = textOf(t);
+        expect(text).toContain('FLE0636178718SG');
+        expect(text).toContain('ENT-000004471-A');
+        expect(text).not.toContain('…');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('queues the activity update offline and advances optimistically', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'dispatched' })); });
+        const t = await render('dark', { isOnline: false });
+
+        // Config loaded; now the mutation fails at the transport layer.
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+
+        const btn = t.root.findAll((n) => n.props?.testID === 'advance-activity')[0];
+        await ReactTestRenderer.act(async () => {
+            (btn.props as { onPress?: () => void }).onPress?.();
+            await Promise.resolve();
+        });
+
+        expect(orderStore.get('order_1')?.status).toBe('driver_enroute');
+        expect(testIDs(t)).toContain('advance-queued');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+});

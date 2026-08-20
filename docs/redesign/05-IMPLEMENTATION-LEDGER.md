@@ -32,7 +32,7 @@ Endpoints all exist. No backend work required.
 | # | Slice | Design | Endpoints |
 |---|---|---|---|
 | ~~1~~ | ~~**Orders list**~~ — DONE: segments, search, all states, units, verified on device | R1 s05/s18 | `GET /v1/orders` |
-| 2 | **Order detail** — dynamic activity stepper from order config | R1 s06 + correction 1 | `orders/{id}`, `/tracker`, `/eta`, `/next-activity`, `/update-activity`, `order-configs` |
+| ~~2~~ | ~~**Order detail**~~ — DONE: config-driven stepper (2/5/7 steps tested), optimistic offline advance | R1 s06 + correction 1 | as listed |
 | 3 | **Edit payload item** — server-declared editable fields | R1 s07 | `orders/{id}/editable-entity-fields`, `PUT /v1/entities/{id}` |
 | 4 | **Item detail** | R2 D4 | `entities/{id}` |
 | 5 | **Order timeline** | R2 D5 | `tracking-statuses`, order activity |
@@ -114,6 +114,10 @@ need a design round 3 or an explicit decision to ship without them.
 
 ## Known follow-ups
 
+- **`orderStatuses.*` in en.json is now generated from the registry's design
+  labels.** It said "Driver en-route" where the design says "En route", and the
+  catalogue silently won over the registry. If a status label changes, change it
+  in `palette.ts` and re-sync the catalogue — not the other way round.
 - **The component library still carries English literals.** `OfflineBanner`
   ("You're offline — work is saved on device"), `SyncedBanner`, and the queue's
   `describeMutation` labels predate the i18n layer. `ErrorState` was fixed while

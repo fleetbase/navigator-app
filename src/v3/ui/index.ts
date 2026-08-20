@@ -18,3 +18,4 @@ export { default as OdometerNumber } from './primitives/OdometerNumber';
 export { default as DashedLine } from './primitives/DashedLine';
 export { default as ContainerDimensions } from './primitives/ContainerDimensions';
 export { default as LoadingText } from './primitives/LoadingText';
+export * from './ActivityStepper';
