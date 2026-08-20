@@ -126,26 +126,28 @@ does not provide. The instance has test drivers (`ava.driver.testing@example.tes
 Until a credential is available, screens behind the auth gate are verified by
 test only.
 
-## BLOCKER — touch input does not reach v3 components on device
+## Device verification — read this before blaming the code
 
-Found while verifying sign-in against the live instance. Reproduced twice:
+An earlier pass recorded a "touch input does not reach v3 components" blocker.
+**That was wrong.** v3 touch handling is fine: with nothing overlaying the
+screen, the duty pill opens the duty sheet on the first tap. Two environmental
+obstructions produced the false signal, and both will do it again:
 
-  - `Field` never takes focus. Tapping the email/password inputs produces no
-    keyboard, no focus ring, and typed characters go nowhere.
-  - `TabBar` taps stop switching tabs once past the auth gate. (Tab taps DID
-    work in an earlier build, so this is a regression, not an original defect —
-    bisect against commit 3c6eeb1, which is the last build where tapping
-    Today → Orders worked.)
+1. **A chain of native permission alerts.** react-native-background-geolocation
+   raises three in sequence after sign-in — "use your location", then the
+   always-allow escalation, then "Background location is not enabled". Each is
+   a native modal that swallows every tap, and the later two appear *after* a
+   delay, so a screenshot taken before them looks clear while the taps that
+   follow are eaten. Dismiss all three before testing anything.
 
-Everything renders correctly and every unit test passes, so this is purely an
-event-propagation problem — most likely a Tamagui `onPress`/`pressStyle` on a
-non-pressable frame, or a parent swallowing touches (`DriverShell`'s nested
-`YStack`s, the `ScrollView` in `SignInScreen`, or the Modal used for the duty
-sheet remaining mounted).
+2. **The LogBox dev toast sits on top of the tab bar.** "Open debugger to view
+   warnings" occupies roughly the same 54pt strip as the tabs, so a tap at the
+   tab-bar coordinate hits the toast instead. Dev-only — LogBox does not exist
+   in a release build — but it makes tab navigation untestable until dismissed.
 
-**Fix this before building another screen.** Every remaining slice is
-interactive, so shipping more on top of a broken touch layer just multiplies
-the rework. A render test cannot catch it; reproduce on device.
+Rule of thumb: before concluding a control is broken, screenshot *immediately
+before* the tap, not several actions earlier, and confirm nothing is overlaying
+it. Guessing from a stale screenshot is what produced the false blocker.
 
 ## Known follow-ups
 

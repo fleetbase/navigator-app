@@ -88,8 +88,14 @@ npx react-native start --port 8083
 ```
 
 Then attach the simulator panel, build, launch, and screenshot the slice in
-dark and light at minimum. Device runs have already caught three bugs that unit
-tests could not — treat a green suite as necessary, not sufficient.
+dark and light at minimum. Device runs have already caught bugs unit tests
+could not — treat a green suite as necessary, not sufficient.
+
+**Before concluding a control is broken, screenshot immediately before the tap
+and confirm nothing is overlaying it.** Native permission alerts from
+background-geolocation and the LogBox dev toast both swallow taps, and the
+alerts appear on a delay — a screenshot taken a few actions earlier looks
+clear. See the device-verification note in the ledger.
 
 ## Definition of done for the whole effort
 
