@@ -194,48 +194,55 @@ values by context (`DriverIdContext`), never as a closed-over prop. `tabBar` is
 exempt: it is a render prop, so a new function re-renders the bar instead of
 remounting it — which is why the badge count may still be closed over.
 
-## Open defect — text inputs never take focus
+## Open defect — the `Field` component cannot be focused by tapping
 
-**Reproducible on the simulator against the live instance.** Tapping any text
-field — the Orders search box — produces no caret, no focus ring, and no
-keyboard, so nothing can be typed anywhere in v3.
+**Reproducible on the simulator against the live instance.** Tapping the Orders
+search field produces no caret, no focus ring and no keyboard, anywhere within
+its drawn bounds.
 
-**Not the test environment.** The simulator has a hardware keyboard attached,
-so *no* software keyboard appears anywhere — including in iOS Spotlight. But
-Spotlight shows a caret on tap and accepts injected text normally, so focus and
-text injection both work at system level. In v3 there is no caret and no focus
-ring, which is the real signal; the missing keyboard is a red herring, and
-judging by the keyboard alone would be another stale-evidence mistake.
+It is narrower than the earlier note claimed. What actually works:
 
-Ruled out by bisection, each verified on device against the live instance:
+- A bare `TextInput` **on the same screen**, rendered as a sibling directly
+  above *and* directly below the field, focuses and accepts text normally.
+- The same is true **inside** the navigator (on the Today screen) and **outside**
+  it (in `DriverShell`, beside the header). The navigator is not involved.
+- A bare `TextInput` **bound to the same `query` state** as the field focuses and
+  types fine — and doing so filters the list correctly and renders the "no
+  matches" state. So `OrdersScreen`'s search is functionally complete; the field
+  renders its value and its `onChangeText` works. **Only tap-to-focus fails.**
+
+Ruled out by bisection, each verified on device:
 
 | Suspect | How it was excluded |
 |---|---|
-| The remount bug above | Reproduces after the fix, while taps, scrolling and navigation all work on the same screen |
-| Native permission alert / LogBox toast | Screenshot taken immediately before the tap, screen clear |
+| The screen-identity remount | Reproduces after that fix, with taps, scrolling and navigation all working |
+| Native permission alert / LogBox toast | Screenshot taken immediately before each tap, screen clear |
+| The test environment | The simulator has a hardware keyboard attached so no software keyboard appears anywhere — including in iOS Spotlight — but Spotlight shows a caret and accepts injected text, and so do the bare inputs above |
 | `react-native-screens` | Reproduces with `enableScreens(false)` |
-| Tamagui `Input` / the `Field` wrapper | Reproduces with a bare RN `TextInput` substituted into `Field` |
-| `BottomSheetModalProvider` | Reproduces with the provider removed |
-| `GestureHandlerRootView` | Reproduces with it replaced by a plain `View` |
-| `<Toasts>` overlay | Reproduces with it removed |
-| Library versions | rngh 2.32, bottom-sheet 5.2.14, reanimated 4.5.1, rn-screens 4.25.2 — all current for RN 0.86 |
+| `BottomSheetModalProvider`, `GestureHandlerRootView`, `<Toasts>` | Reproduces with each removed |
+| Being inside the navigator, or the Orders screen | Bare inputs focus in both |
+| Position on the screen | Bare inputs focus immediately above and below the field |
+| Controlled vs uncontrolled | A controlled bare input bound to `query` focuses |
+| Tamagui `Input` (`BareInput`) | Reproduces with a bare `TextInput` substituted |
+| Tamagui `styled(XStack)` shell | Reproduces with the shell as a plain `View` |
+| The outer Tamagui `YStack` | Reproduces with that as a plain `View` too |
+| `pointerEvents="box-none"` on the shell | No effect |
 
-Still unexamined: `PortalProvider`, `SafeAreaProvider`, `TamaguiProvider`/`Theme`,
-`NavigationContainer`, and the v2 provider chain in `App.tsx` (`ConfigProvider`
-→ … → `ChatProvider`) that wraps `DriverBridge`.
+So a `Field` rebuilt entirely from `react-native` primitives — plain `View`
+wrapper, plain `View` shell, plain `TextInput` — still cannot be focused, while
+an identical bare `TextInput` beside it can. That rewrite was reverted, since it
+fixed nothing and the original is consistent with the rest of the library.
 
-Two things worth doing before bisecting further, because either would cut the
-search in half:
+Whatever is left is something about the composition itself rather than any one
+element, and it needs a tool this pass did not use: **attach a debugger or the
+React DevTools inspector and hit-test the field's frame** to see which view
+actually receives the touch. Guessing at candidates has been exhausted; the next
+step should be an observation, not another substitution.
 
-1. **Run v2 and try its text fields.** v2 shares the same native config and most
-   of the same providers. If v2 also cannot focus, this is not a v3 defect at all
-   and the search moves to the native/podfile layer.
-2. **Check whether it is screen-specific.** Every observation so far is from the
-   Orders search box. Confirm on a second screen with a field — sign in, reached
-   by logging out — before continuing to treat it as app-wide.
-
-Until this is fixed, no slice with a form can be verified end to end on device:
-sign-in, search, edit item, fuel log and issue capture are all affected.
+Impact is smaller than first recorded but still real: any screen whose flow
+requires typing cannot be completed by hand — sign-in, fuel-report create,
+issue create, profile edit. Read paths and every non-text control are unaffected,
+so those slices can still be verified on device.
 
 ## Known follow-ups
 
