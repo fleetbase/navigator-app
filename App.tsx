@@ -1,70 +1,96 @@
-import React from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { TamaguiProvider, Theme } from 'tamagui';
+/**
+ * Root selector.
+ *
+ * The redesign is built in a parallel tree, so the whole presentation layer is
+ * chosen here rather than screen by screen. The two must never share a
+ * TamaguiProvider: v2 components read tokens (`$red-600`,
+ * `$borderColorWithShadow`) that the Waypoint config does not define, and v3
+ * components read tokens (`$surfaceRaised`, `$onPrimary`, the status families)
+ * that v2 does not. Mixing them resolves to undefined rather than failing loudly.
+ *
+ * Set NAVIGATOR_V3=true to build the v3 shell.
+ *
+ * This file is the only place v3 touches v2. `DriverBridge` adapts the v2 auth
+ * and socket contexts into the plain props V3App takes; Phase 2 replaces the
+ * data layer and this bridge goes with it.
+ */
+import React, { useMemo } from 'react';
 import { Toasts } from '@backpackapp-io/react-native-toast';
-import { PortalProvider, PortalHost } from '@gorhom/portal';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { AuthProvider } from './src/contexts/AuthContext';
-import { SocketClusterProvider } from './src/contexts/SocketClusterContext';
-import { OrderManagerProvider } from './src/contexts/OrderManagerContext';
-import { LanguageProvider } from './src/contexts/LanguageContext';
-import { TempStoreProvider } from './src/contexts/TempStoreContext';
-import AppNavigator from './src/navigation/AppNavigator';
-import { ThemeProvider, useThemeContext } from './src/contexts/ThemeContext';
-import { NotificationProvider } from './src/contexts/NotificationContext';
-import { ChatProvider } from './src/contexts/ChatContext';
-import { LocationProvider } from './src/contexts/LocationContext';
-import { ConfigProvider } from './src/contexts/ConfigContext';
-import config from './tamagui.config';
 
-function AppContent(): React.JSX.Element {
-    const { appTheme } = useThemeContext();
+import { isV3Enabled } from './src/v3/flag';
+import V3App from './src/v3/App';
+import { V2App } from './App.v2';
+
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ChatProvider, useChat } from './src/contexts/ChatContext';
+import { ConfigProvider, useConfig } from './src/contexts/ConfigContext';
+import { LanguageProvider } from './src/contexts/LanguageContext';
+import { LocationProvider } from './src/contexts/LocationContext';
+import { NotificationProvider } from './src/contexts/NotificationContext';
+import { SocketClusterProvider } from './src/contexts/SocketClusterContext';
+import { TempStoreProvider } from './src/contexts/TempStoreContext';
+
+/**
+ * OrderManagerProvider is intentionally absent from the v3 branch: it reads
+ * `theme['$red-600']` (OrderManagerContext.tsx:69) from the Tailwind ramp, which
+ * the Waypoint config does not carry, so mounting it under the v3 provider
+ * throws. Phase 2 replaces it; the screens that need it are Phase 3 and 4b.
+ */
+function DriverBridge(): React.JSX.Element {
+    const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, logout } = useAuth();
+    const { unreadCount } = useChat();
+    const { resolveConnectionConfig } = useConfig();
+
+    const organizationName = useMemo(() => {
+        const current = Array.isArray(organizations) ? organizations[0] : undefined;
+        return current?.name ?? driver?.getAttribute?.('company_name') ?? 'Navigator';
+    }, [organizations, driver]);
 
     return (
-        <TamaguiProvider config={config} theme={appTheme}>
-            <Theme name={appTheme}>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                    <SafeAreaProvider>
-                        <BottomSheetModalProvider>
-                            <ConfigProvider>
-                                <NotificationProvider>
-                                    <LanguageProvider>
-                                        <AuthProvider>
-                                            <SocketClusterProvider>
-                                                <LocationProvider>
-                                                    <TempStoreProvider>
-                                                        <ChatProvider>
-                                                            <OrderManagerProvider>
-                                                                <AppNavigator />
-                                                                <Toasts extraInsets={{ bottom: 80 }} />
-                                                                <PortalHost name='MainPortal' />
-                                                                <PortalHost name='BottomSheetPanelPortal' />
-                                                                <PortalHost name='LocationPickerPortal' />
-                                                            </OrderManagerProvider>
-                                                        </ChatProvider>
-                                                    </TempStoreProvider>
-                                                </LocationProvider>
-                                            </SocketClusterProvider>
-                                        </AuthProvider>
-                                    </LanguageProvider>
-                                </NotificationProvider>
-                            </ConfigProvider>
-                        </BottomSheetModalProvider>
-                    </SafeAreaProvider>
-                </GestureHandlerRootView>
-            </Theme>
-        </TamaguiProvider>
+        <V3App
+            // One Fleetbase instance for the app; the adapter takes credentials
+            // without being rebuilt, so a login or org switch no longer
+            // invalidates every consumer the way v2's did.
+            host={resolveConnectionConfig('FLEETBASE_HOST')}
+            platformToken={resolveConnectionConfig('FLEETBASE_KEY')}
+            userToken={authToken ?? undefined}
+            onUnauthorized={logout}
+            organizationName={organizationName}
+            subtitle={driver?.getAttribute?.('name')}
+            isAuthenticated={!!isAuthenticated}
+            isOnline={!!isOnline}
+            onToggleOnline={(next) => toggleOnline(next)}
+            breakSupported={false}
+            badges={{ Inbox: unreadCount || undefined }}
+        >
+            <Toasts extraInsets={{ bottom: 80 }} />
+        </V3App>
     );
 }
 
 function App(): React.JSX.Element {
+    if (!isV3Enabled()) {
+        return <V2App />;
+    }
+
     return (
-        <PortalProvider>
-            <ThemeProvider>
-                <AppContent />
-            </ThemeProvider>
-        </PortalProvider>
+        <ConfigProvider>
+            <NotificationProvider>
+                <LanguageProvider>
+                    <AuthProvider>
+                        <SocketClusterProvider>
+                            <LocationProvider>
+                                <TempStoreProvider>
+                                    <ChatProvider>
+                                        <DriverBridge />
+                                    </ChatProvider>
+                                </TempStoreProvider>
+                            </LocationProvider>
+                        </SocketClusterProvider>
+                    </AuthProvider>
+                </LanguageProvider>
+            </NotificationProvider>
+        </ConfigProvider>
     );
 }
 
