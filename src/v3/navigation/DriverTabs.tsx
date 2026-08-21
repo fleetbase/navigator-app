@@ -41,7 +41,10 @@ import FuelReportCreateScreen from '../screens/FuelReportCreateScreen';
 import IssuesScreen from '../screens/IssuesScreen';
 import IssueDetailScreen from '../screens/IssueDetailScreen';
 import IssueCreateScreen from '../screens/IssueCreateScreen';
-import type { FuelReportRecord, IssueRecord } from '../data';
+import InboxScreen from '../screens/InboxScreen';
+import ConversationScreen from '../screens/ConversationScreen';
+import NewConversationScreen from '../screens/NewConversationScreen';
+import type { FuelReportRecord, IssueRecord, ChatChannelRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -61,15 +64,16 @@ const modalOptions = { presentation: 'modal' } as const;
 const DriverIdContext = createContext<string | undefined>(undefined);
 export const useDriverId = () => useContext(DriverIdContext);
 
+/** The driver's *user* id — chat identifies people by user, not by driver. */
+const DriverUserIdContext = createContext<string | undefined>(undefined);
+export const useDriverUserId = () => useContext(DriverUserIdContext);
+
 /* -- Placeholders, built once. ------------------------------------------- */
 const TodayHome = placeholder('Today', P3, `${SHIFTS} for the HOS and break cards`);
 const RouteHome = placeholder('Route', P4, MANIFESTS);
 const StopDetail = placeholder('Stop detail', P4, MANIFESTS);
 const StopExecution = placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)');
 const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimise endpoint (Phase 4a)');
-const InboxHome = placeholder('Inbox', P3);
-const Conversation = placeholder('Conversation', P3);
-const NewConversation = placeholder('New conversation', P3);
 const AccountHome = placeholder('Account', P3, undefined, [
     { route: 'FuelLog', label: 'Fuel log' },
     { route: 'Issues', label: 'Issues & defects' },
@@ -211,6 +215,40 @@ function IssueCreate({ navigation }: { navigation: Nav }) {
     return <IssueCreateScreen driverId={driverId} onDone={() => navigation.goBack()} />;
 }
 
+/* -- Inbox. ---------------------------------------------------------------- */
+
+function InboxHome({ navigation }: { navigation: Nav }) {
+    const userId = useDriverUserId();
+    const reloadToken = useFocusCount();
+    return (
+        <InboxScreen
+            userId={userId}
+            reloadToken={reloadToken}
+            onOpenChannel={(channel) => navigation.navigate('Conversation', { channel })}
+            onCompose={() => navigation.navigate('NewConversation', {})}
+        />
+    );
+}
+
+function Conversation({ route }: { route: { params?: { channel?: ChatChannelRecord } } }) {
+    const userId = useDriverUserId();
+    const channel = route.params?.channel;
+    return <ConversationScreen channelId={channel?.id} channel={channel} userId={userId} />;
+}
+
+function NewConversation({ navigation }: { navigation: Nav }) {
+    const userId = useDriverUserId();
+    return (
+        <NewConversationScreen
+            userId={userId}
+            onCancel={navigation.goBack}
+            // Replace, so Back from the new conversation returns to the inbox
+            // rather than to the picker that created it.
+            onCreated={(channel) => navigation.navigate('Conversation', { channel })}
+        />
+    );
+}
+
 /* -- Stacks. -------------------------------------------------------------- */
 
 function TodayStack() {
@@ -288,7 +326,7 @@ const TAB_OPTIONS = {
     Account: { tabBarLabel: 'Account' },
 } as const;
 
-export function DriverTabs({ badges, driverId }: { badges?: TabBadges; driverId?: string }) {
+export function DriverTabs({ badges, driverId, driverUserId }: { badges?: TabBadges; driverId?: string; driverUserId?: string }) {
     // `tabBar` is a render prop, not `component`, so re-creating it re-renders
     // the bar rather than remounting it — which is why the badges may close
     // over `badges` while the screens above may not.
@@ -302,6 +340,7 @@ export function DriverTabs({ badges, driverId }: { badges?: TabBadges; driverId?
 
     return (
         <DriverIdContext.Provider value={driverId}>
+            <DriverUserIdContext.Provider value={driverUserId}>
             <Tab.Navigator
                 // Options are static objects — no hooks, nothing recomputed per
                 // navigation state change.
@@ -314,6 +353,7 @@ export function DriverTabs({ badges, driverId }: { badges?: TabBadges; driverId?
                 <Tab.Screen name="Inbox" component={InboxStack} options={TAB_OPTIONS.Inbox} />
                 <Tab.Screen name="Account" component={AccountStack} options={TAB_OPTIONS.Account} />
             </Tab.Navigator>
+            </DriverUserIdContext.Provider>
         </DriverIdContext.Provider>
     );
 }

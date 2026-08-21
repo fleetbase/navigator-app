@@ -27,7 +27,8 @@
         "signIn": "Sign in",
         "email": "Email",
         "password": "Password",
-        "back": "Back"
+        "back": "Back",
+        "dismiss": "Dismiss"
     },
     "orderStatuses": {
         "active": "Active",
@@ -384,5 +385,64 @@
         "queued": "Saved on this device. It will be sent when you are back online.",
         "saveFailed": "Could not report this issue",
         "save": "Report issue"
+    },
+    "inbox": {
+        "title": "Inbox",
+        "untitled": "Conversation",
+        "newConversation": "New conversation",
+        "noMessagesYet": "No messages yet",
+        "peopleCount": {
+            "one": "%{count} person",
+            "other": "%{count} people"
+        },
+        "emptyTitle": "No conversations",
+        "emptyBody": "Messages from dispatch and your team appear here.",
+        "offlineNotice": "Offline — showing the conversations saved on this device.",
+        "loadFailed": "Could not load your inbox",
+        "loadFailedBody": "Check your connection and try again."
+    },
+    "conversation": {
+        "participants": {
+            "one": "%{count} other person",
+            "other": "%{count} other people"
+        },
+        "someoneOnline": "Online now",
+        "composerPlaceholder": "Write a message",
+        "send": "Send",
+        "readBy": {
+            "one": "Read",
+            "other": "Read by %{count}"
+        },
+        "emptyBody": "No messages yet. Say something to get started.",
+        "offlineNotice": "Offline — your message will be sent when you are back online.",
+        "queued": "Saved on this device. It will send when you are back online.",
+        "sendFailed": "Could not send that message",
+        "notAParticipant": "You are not a participant in this conversation, so you cannot post to it.",
+        "loadFailed": "Could not open this conversation",
+        "loadFailedBody": "Check your connection and try again.",
+        "quick": {
+            "onMyWay": "On my way",
+            "runningLate": "Running 10 min late",
+            "arrived": "Arrived"
+        }
+    },
+    "newConversation": {
+        "title": "New conversation",
+        "searchPlaceholder": "Search by name or email",
+        "selected": {
+            "zero": "Nobody selected yet",
+            "one": "%{count} person selected",
+            "other": "%{count} people selected"
+        },
+        "online": "Online",
+        "start": "Start conversation",
+        "untitledName": "New conversation",
+        "noMatchesTitle": "No matches",
+        "noMatchesBody": "Nobody matches “%{query}”.",
+        "noneTitle": "Nobody available",
+        "noneBody": "There is nobody in your organisation to start a conversation with.",
+        "loadFailed": "Could not load people",
+        "loadFailedBody": "Check your connection and try again.",
+        "createFailed": "Could not start the conversation"
     }
 }

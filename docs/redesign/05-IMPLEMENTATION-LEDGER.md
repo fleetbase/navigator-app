@@ -38,7 +38,7 @@ Endpoints all exist. No backend work required.
 | ~~5~~ | ~~**Order timeline**~~ — DONE: chronological, paints from the order's embedded `tracking_statuses` then refreshes; null-island locations suppressed; no actor exists, and it says so | R2 D5 | embedded `tracking_statuses` + `tracking-statuses?tracking_number=` |
 | ~~6~~ | ~~**Fuel log list + detail + create**~~ — DONE: list, detail, create; economy derived client-side; four designed fields have no backing and are omitted rather than discarded (see below) | R1 s09, R2 F2 | `fuel-reports` CRUD |
 | ~~7~~ | ~~**Issues list + detail + create**~~ — DONE: list, detail, create with type→category taxonomy; location bridged from v2 because create requires it; status timeline is internal-only and says so | R1 s10, R2 F3 | `issues` CRUD |
-| 8 | **Inbox: conversation, composer, participants** | R2 G1/G3, gap G2 | `chat-channels` + send/read/participants |
+| ~~8~~ | ~~**Inbox: conversation, composer, participants**~~ — DONE: channel list, feed with self/other/system bubbles, composer + quick replies, participant picker. Attachments and order-context not built (see below) | R2 G1/G3, gap G2 | `chat-channels` (core-api, not fleetops) |
 | 9 | **Account home** | prototype | `drivers/{id}`, `organizations` |
 | 10 | **Org switcher** | R2 A3 | `drivers/{id}/organizations`, `switch-organization` |
 | 11 | **Profile edit** | R2 A7 | `PUT /v1/drivers/{id}` |
@@ -284,6 +284,35 @@ driver's fuel spend in the company. A test asserts the parameter name.
 `driver_uuid` is ignored and returns every issue in the company. Same as
 fuel-reports — assume it holds for every driver-scoped list until proven
 otherwise, and assert the parameter in a test.
+
+## Inbox — shapes worth knowing before touching chat again
+
+Chat lives in **core-api**, not fleetops, under `/v1/chat-channels` with the
+`fleetbase.api` guard the driver token already passes.
+
+- **`feed` is pre-merged.** A channel returns one ordered array of
+  `{ type: 'log' | 'message', data }`, so G1's self / other / **system** bubbles
+  need no client-side merge. Logs carry both `content`
+  (`"{subject.0.name} has …"`) and `resolved_content`; only the latter is fit to
+  show.
+- **Two different "person" shapes.** A channel's `participants` are
+  `chat_participant_*` records with a separate `user` field. But
+  `available-participants` returns **User** records, where the user id *is*
+  `id` and there is no `user` key. Reading `.user` on those silently offered the
+  driver a conversation with themselves and would have posted `add-participant`
+  with no user. `personUserId()` resolves both.
+- **Sending needs the participant id**, not a user or driver id —
+  `POST {id}/send-message` takes `sender` = `chat_participant_*`, and 422s
+  otherwise. The driver's own participant is found by matching `user`.
+- **`title` already excludes the viewer.** A channel of Ron + 3 comes back to
+  Ron titled with the other three, so the server's title is used as-is.
+- **No bulk add-participant route** — the channel is created, then people are
+  added one at a time, so a partial failure leaves a real channel.
+
+**Not built, and why:** attachments (camera/file/location) need the upload half,
+`POST /v1/files`, plus a picker — so the composer offers text and quick replies
+rather than a button that does nothing. G1's order-context header has nothing to
+hang on: the public channel resource carries no order reference.
 
 ## Known follow-ups
 

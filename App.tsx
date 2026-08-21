@@ -76,6 +76,10 @@ function DriverBridge(): React.JSX.Element {
             subtitle={driver?.getAttribute?.('name')}
             isAuthenticated={!!isAuthenticated}
             driverId={driver?.id}
+            // `Resource` defines a getter for `id` only — every other attribute
+            // lives in `attributes` and needs getAttribute(). `driver.user` is
+            // silently undefined, which read as "I am in no conversation".
+            driverUserId={(driver as { getAttribute?: (k: string) => unknown })?.getAttribute?.('user') as string | undefined}
             location={location}
             isOnline={!!isOnline}
             onToggleOnline={(next) => toggleOnline(next)}

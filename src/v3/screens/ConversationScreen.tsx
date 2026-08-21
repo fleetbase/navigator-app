@@ -1,0 +1,272 @@
+/**
+ * Conversation — R2 frames G1 and G2.
+ *
+ * The server already interleaves system events and messages into one ordered
+ * `feed`, so the three bubble kinds G1 asks for — self, other, system — are a
+ * render of `entry.type` plus "is this sender me", with no client-side merge.
+ *
+ * What is not built, and why:
+ *
+ *   - **Attachments** (camera, file, location share). The API accepts a `files`
+ *     array of ids, so this needs the upload half — `POST /v1/files` — and a
+ *     picker. The composer therefore offers text and quick replies only, rather
+ *     than showing an attachment button that does nothing.
+ *   - **Order-context header.** A channel carries no order reference on the
+ *     public resource, so there is nothing to tap through to.
+ *
+ * Read receipts are shown where the API gives them: `receipts` on each message.
+ */
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, ScrollView } from 'react-native';
+import { XStack, YStack } from 'tamagui';
+import { Body, Caption, Micro } from '../ui/Text';
+import { Field } from '../ui/Field';
+import { Button } from '../ui/Button';
+import { Banner, ErrorState, Skeleton } from '../ui/Banner';
+import { space, radius } from '../theme/tokens';
+import { useTranslation } from '../i18n/useTranslation';
+import { useSync } from '../shell';
+import {
+    useChatChannel,
+    useSendMessage,
+    myParticipant,
+    channelTitle,
+    otherParticipants,
+    type ChatChannelRecord,
+    type FeedEntry,
+} from '../data';
+import { formatClock } from '../format';
+
+/** G2's quick replies — the three things a driver says most. */
+const QUICK_REPLY_KEYS = ['onMyWay', 'runningLate', 'arrived'] as const;
+
+function SystemLine({ text, at }: { text: string; at?: string }) {
+    return (
+        <YStack alignItems="center" paddingVertical={space[2]} gap={2}>
+            <Micro textAlign="center">{text}</Micro>
+            {at ? <Micro tabular>{formatClock(at)}</Micro> : null}
+        </YStack>
+    );
+}
+
+function Bubble({
+    content,
+    author,
+    at,
+    mine,
+    readBy,
+    t,
+    testID,
+}: {
+    content: string;
+    author?: string;
+    at?: string;
+    mine: boolean;
+    readBy: number;
+    t: (key: string, options?: Record<string, unknown>) => string;
+    testID?: string;
+}) {
+    return (
+        <YStack alignItems={mine ? 'flex-end' : 'flex-start'} paddingVertical={space[1]} testID={testID}>
+            {/* Only the other side needs naming — the driver knows who they are. */}
+            {!mine && author ? <Micro paddingHorizontal={space[2]}>{author}</Micro> : null}
+
+            <YStack
+                maxWidth="82%"
+                paddingHorizontal={space[3]}
+                paddingVertical={space[2]}
+                borderRadius={radius.hero}
+                backgroundColor={mine ? '$primary' : '$surfaceRaised'}
+                borderWidth={mine ? 0 : 1}
+                borderColor="$border"
+            >
+                <Body fontSize={15} color={mine ? '$onPrimary' : '$textPrimary'}>
+                    {content}
+                </Body>
+            </YStack>
+
+            <XStack gap={space[2]} paddingHorizontal={space[2]} paddingTop={2} alignItems="center">
+                {at ? <Micro tabular>{formatClock(at)}</Micro> : null}
+                {mine && readBy > 0 ? <Micro tone="brand">{t('conversation.readBy', { count: readBy })}</Micro> : null}
+            </XStack>
+        </YStack>
+    );
+}
+
+export function ConversationScreen({
+    channelId,
+    channel: seed,
+    userId,
+}: {
+    channelId?: string;
+    channel?: ChatChannelRecord | null;
+    userId?: string;
+}) {
+    const { t } = useTranslation();
+    const { isOnline } = useSync();
+    const listRef = useRef<FlatList<FeedEntry>>(null);
+
+    const { channel, isLoading, isBlocked, error, reload } = useChatChannel(channelId, seed);
+    const me = myParticipant(channel, userId);
+    const { send, isSending, queued, error: sendError, clearError } = useSendMessage(channelId, me?.id);
+
+    const [draft, setDraft] = useState('');
+
+    const entries = useMemo(() => {
+        const feed = channel?.feed ?? [];
+        // Oldest first, so the newest sits at the bottom where a chat belongs.
+        return [...feed].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')));
+    }, [channel]);
+
+    const submit = useCallback(
+        async (text: string) => {
+            const sent = await send(text);
+            if (sent) {
+                setDraft('');
+                // Cheapest correct refresh: the feed is assembled server-side.
+                await reload();
+            }
+        },
+        [send, reload]
+    );
+
+    const renderItem = useCallback(
+        ({ item }: { item: FeedEntry }) => {
+            if (item.type === 'log') {
+                // `content` still carries "{subject.0.name}" placeholders.
+                const text = item.data.resolved_content ?? item.data.content ?? '';
+                return text ? <SystemLine text={text} at={item.created_at ?? item.data.created_at} /> : null;
+            }
+
+            const mine = !!userId && item.data.sender?.user === userId;
+            return (
+                <Bubble
+                    content={item.data.content ?? ''}
+                    author={item.data.sender?.name}
+                    at={item.created_at ?? item.data.created_at}
+                    mine={mine}
+                    readBy={(item.data.receipts ?? []).length}
+                    t={t}
+                    testID={`${mine ? 'mine' : 'theirs'}-${item.data.id}`}
+                />
+            );
+        },
+        [t, userId]
+    );
+
+    if (isLoading) {
+        return (
+            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="conversation-loading">
+                <Skeleton height={56} />
+                <Skeleton height={56} />
+                <Skeleton height={56} />
+            </YStack>
+        );
+    }
+
+    if (isBlocked || !channel) {
+        return (
+            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="conversation-error">
+                <ErrorState
+                    title={t('conversation.loadFailed')}
+                    body={error?.message ?? t('conversation.loadFailedBody')}
+                    onRetry={reload}
+                    retryLabel={t('common.retry')}
+                />
+            </YStack>
+        );
+    }
+
+    const others = otherParticipants(channel, userId);
+    const canSend = !!me && draft.trim().length > 0;
+
+    return (
+        <YStack flex={1} backgroundColor="$background" testID="conversation">
+            <YStack paddingHorizontal={space[4]} paddingTop={space[2]} gap={space[2]}>
+                <Body fontSize={15} fontWeight="800" numberOfLines={1}>
+                    {channelTitle(channel, userId, t('inbox.untitled'))}
+                </Body>
+                <XStack gap={space[2]} alignItems="center">
+                    <Caption testID="participant-summary">{t('conversation.participants', { count: others.length })}</Caption>
+                    {others.some((p) => p.is_online) ? <Micro tone="success">{t('conversation.someoneOnline')}</Micro> : null}
+                </XStack>
+                {!isOnline ? <Banner tone="neutral" message={t('conversation.offlineNotice')} testID="conversation-offline" /> : null}
+                {/* Without a participant record the API rejects every send. */}
+                {!me ? <Banner tone="warning" message={t('conversation.notAParticipant')} testID="not-participant" /> : null}
+            </YStack>
+
+            <FlatList
+                ref={listRef}
+                data={entries}
+                keyExtractor={(e, i) => e.data?.id ?? String(i)}
+                renderItem={renderItem}
+                contentContainerStyle={{ padding: space[4], gap: space[1] }}
+                testID="conversation-feed"
+                onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+                ListEmptyComponent={
+                    <YStack paddingVertical={space[5]}>
+                        <Micro textAlign="center" testID="conversation-empty">
+                            {t('conversation.emptyBody')}
+                        </Micro>
+                    </YStack>
+                }
+            />
+
+            <YStack paddingHorizontal={space[4]} paddingBottom={space[3]} gap={space[2]}>
+                {queued ? <Banner tone="neutral" message={t('conversation.queued')} testID="send-queued" /> : null}
+                {sendError ? (
+                    <ErrorState
+                        title={t('conversation.sendFailed')}
+                        body={sendError === 'missing-participant' ? t('conversation.notAParticipant') : sendError}
+                        onRetry={clearError}
+                        retryLabel={t('common.dismiss')}
+                        testID="send-error"
+                    />
+                ) : null}
+
+                {/*
+                  * Scrolls rather than dividing the width three ways: at equal
+                  * widths "Running 10 min late" truncated to "Runnin…", and a
+                  * translation can be longer still. Content-sized buttons in a
+                  * scroller keep every label whole in every locale.
+                  */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: space[2], paddingRight: space[4] }}
+                    testID="quick-replies"
+                >
+                    {QUICK_REPLY_KEYS.map((key) => (
+                        <Button
+                            key={key}
+                            variant="secondary"
+                            disabled={!me || isSending}
+                            onPress={() => submit(t(`conversation.quick.${key}`))}
+                            testID={`quick-${key}`}
+                        >
+                            {t(`conversation.quick.${key}`)}
+                        </Button>
+                    ))}
+                </ScrollView>
+
+                <XStack gap={space[2]} alignItems="flex-end">
+                    <YStack flex={1}>
+                        <Field
+                            value={draft}
+                            onChangeText={setDraft}
+                            placeholder={t('conversation.composerPlaceholder')}
+                            multiline
+                            disabled={!me}
+                            testID="composer"
+                        />
+                    </YStack>
+                    <Button disabled={!canSend} loading={isSending} onPress={() => submit(draft)} testID="send">
+                        {t('conversation.send')}
+                    </Button>
+                </XStack>
+            </YStack>
+        </YStack>
+    );
+}
+
+export default ConversationScreen;

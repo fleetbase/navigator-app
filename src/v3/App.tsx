@@ -52,7 +52,7 @@ function QueueBoundSync({ children, isConnected, queue }: { children: React.Reac
  * Derives tab badges from the order store so the count is live without the
  * navigator's `options` callbacks ever touching a hook.
  */
-function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number; driverId?: string }) {
+function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number; driverId?: string; driverUserId?: string }) {
     const activeOrders = useActiveOrderCount();
 
     // Memoised because this object reaches `DriverTabs`, and an unstable
@@ -69,6 +69,7 @@ function DriverSurface(props: { organizationName: string; subtitle?: string; bad
             badges={badges}
             activeStopCount={props.activeStopCount || activeOrders}
             driverId={props.driverId}
+            driverUserId={props.driverUserId}
         />
     );
 }
@@ -105,6 +106,12 @@ export interface V3AppProps {
     isAuthenticated?: boolean;
     /** Signed-in driver's public id; scopes order queries. */
     driverId?: string;
+    /**
+     * The driver's *user* id. Chat identifies people by user, not by driver:
+     * a channel's participants carry `user`, and sending a message needs the
+     * participant record whose `user` is this one.
+     */
+    driverUserId?: string;
     /**
      * Last known position, from v2's tracking. Required to file an issue, so
      * the screens must be able to tell whether there is a fix.
@@ -152,6 +159,7 @@ export function V3App({
     activeStopCount = 0,
     isAuthenticated = false,
     driverId,
+    driverUserId,
     location,
     onSignIn,
     authMethods,
@@ -185,6 +193,7 @@ export function V3App({
                                                         badges={badges}
                                                         activeStopCount={activeStopCount}
                                                         driverId={driverId}
+                                                        driverUserId={driverUserId}
                                                     />
                                                 ) : (
                                                     <SignInScreen
