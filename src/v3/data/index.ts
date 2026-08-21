@@ -6,3 +6,4 @@ export * from './useEditableEntityFields';
 export * from './accessors';
 export * from './useEntity';
 export * from './useOrderTimeline';
+export * from './useFuelReports';

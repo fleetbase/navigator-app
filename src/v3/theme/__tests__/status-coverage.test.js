@@ -71,6 +71,18 @@ describe('v3 status registry', () => {
 });
 
 describe('status labels', () => {
+    it('gives every registry status its own label, so none inherits another word', () => {
+        // `describeStatus` falls back to the *tone's* design label when a status
+        // has no translation of its own. That made a draft fuel report read
+        // "Created", a rejected one "Failed" and an approved one "Completed",
+        // because all three share a tone with an order status. Every status
+        // therefore needs its own entry, even when the wording is the same.
+        const catalogue = JSON.parse(read('translations/en.json')).orderStatuses ?? {};
+        const missing = [...registryKeys()].filter((k) => !(k in catalogue));
+        expect(missing).toEqual([]);
+    });
+
+
     it('uses the design wording rather than naive humanisation', () => {
         const src = read('src/v3/theme/palette.ts');
         const block = src.slice(src.indexOf('export const statusHues'), src.indexOf('} satisfies Record<string, StatusHue>'));

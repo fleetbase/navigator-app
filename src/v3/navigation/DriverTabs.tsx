@@ -24,7 +24,8 @@
  * Screen-scoped values therefore travel by context (`DriverIdContext`), never by
  * closing over a prop.
  */
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { placeholder } from '../screens/Placeholder';
@@ -34,6 +35,10 @@ import OrderDetailScreen from '../screens/OrderDetailScreen';
 import EditPayloadItemScreen from '../screens/EditPayloadItemScreen';
 import ItemDetailScreen from '../screens/ItemDetailScreen';
 import OrderTimelineScreen from '../screens/OrderTimelineScreen';
+import FuelLogScreen from '../screens/FuelLogScreen';
+import FuelReportScreen from '../screens/FuelReportScreen';
+import FuelReportCreateScreen from '../screens/FuelReportCreateScreen';
+import type { FuelReportRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -62,8 +67,7 @@ const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimis
 const InboxHome = placeholder('Inbox', P3);
 const Conversation = placeholder('Conversation', P3);
 const NewConversation = placeholder('New conversation', P3);
-const AccountHome = placeholder('Account', P3);
-const FuelLog = placeholder('Fuel log', P3);
+const AccountHome = placeholder('Account', P3, undefined, [{ route: 'FuelLog', label: 'Fuel log' }, { route: 'Settings', label: 'Settings' }]);
 const Issues = placeholder('Issues & defects', P3);
 const MyVehicle = placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)');
 const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
@@ -128,6 +132,53 @@ function EditPayloadItem({
     );
 }
 
+/* -- Account: fuel log. ---------------------------------------------------- */
+
+/**
+ * Counts arrivals at a screen, so it can refetch on return without knowing
+ * anything about navigation. Incremented in an effect rather than during
+ * render — a ref bumped mid-render is a side effect, and double-counts.
+ */
+function useFocusCount(): number {
+    const isFocused = useIsFocused();
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+        if (isFocused) setCount((n) => n + 1);
+    }, [isFocused]);
+    return count;
+}
+
+function FuelLog({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const reloadToken = useFocusCount();
+    return (
+        <FuelLogScreen
+            driverId={driverId}
+            reloadToken={reloadToken}
+            onOpenReport={({ report, previous }) => navigation.navigate('FuelReport', { report, previous })}
+            onCreate={() => navigation.navigate('FuelReportCreate', {})}
+        />
+    );
+}
+
+function FuelReport({ route }: { route: { params?: { report?: FuelReportRecord; previous?: FuelReportRecord } } }) {
+    const report = route.params?.report;
+    if (!report) return null;
+    return <FuelReportScreen report={report} previous={route.params?.previous} />;
+}
+
+function FuelReportCreate({ route, navigation }: { route: { params?: { last?: FuelReportRecord; currency?: string } }; navigation: Nav }) {
+    const driverId = useDriverId();
+    return (
+        <FuelReportCreateScreen
+            driverId={driverId}
+            lastReport={route.params?.last}
+            currency={route.params?.currency}
+            onDone={() => navigation.goBack()}
+        />
+    );
+}
+
 /* -- Stacks. -------------------------------------------------------------- */
 
 function TodayStack() {
@@ -177,6 +228,8 @@ function AccountStack() {
             <Stack.Screen name="AccountHome" component={AccountHome} />
             {/* Reports moved here from their own tab. */}
             <Stack.Screen name="FuelLog" component={FuelLog} />
+            <Stack.Screen name="FuelReport" component={FuelReport} />
+            <Stack.Screen name="FuelReportCreate" component={FuelReportCreate} options={modalOptions} />
             <Stack.Screen name="Issues" component={Issues} />
             <Stack.Screen name="MyVehicle" component={MyVehicle} />
             <Stack.Screen name="Inspection" component={Inspection} />

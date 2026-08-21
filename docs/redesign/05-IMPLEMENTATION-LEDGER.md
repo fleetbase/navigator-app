@@ -36,7 +36,7 @@ Endpoints all exist. No backend work required.
 | ~~3~~ | ~~**Edit payload item**~~ — DONE: allowlist-driven, locks on failure, queues offline | R1 s07 | as listed |
 | ~~4~~ | ~~**Item detail**~~ — DONE: photo, base64 barcode/QR, scan history via `tracking-statuses`, null-metadata rows omitted, verified on device | R2 D4 | `entities/{id}` + `tracking-statuses?tracking_number=` |
 | ~~5~~ | ~~**Order timeline**~~ — DONE: chronological, paints from the order's embedded `tracking_statuses` then refreshes; null-island locations suppressed; no actor exists, and it says so | R2 D5 | embedded `tracking_statuses` + `tracking-statuses?tracking_number=` |
-| 6 | **Fuel log list + detail + create** | R1 s09, R2 F2 | `fuel-reports` CRUD, `fuel-transactions` |
+| ~~6~~ | ~~**Fuel log list + detail + create**~~ — DONE: list, detail, create; economy derived client-side; four designed fields have no backing and are omitted rather than discarded (see below) | R1 s09, R2 F2 | `fuel-reports` CRUD |
 | 7 | **Issues list + detail + create** | R1 s10, R2 F3 | `issues` CRUD |
 | 8 | **Inbox: conversation, composer, participants** | R2 G1/G3, gap G2 | `chat-channels` + send/read/participants |
 | 9 | **Account home** | prototype | `drivers/{id}`, `organizations` |
@@ -242,6 +242,28 @@ Reintroducing the bug fails six of its nine tests.
 The same rule applies to any future component that wraps a text input — the
 scanner's manual-entry field, the composer, the odometer capture. Put reactive
 styling on a sibling, never on a parent of the input.
+
+## Fuel log — what the driver API cannot carry
+
+Four things R1 s09 / R2 F2 ask for have no home on the driver-facing API, so the
+screens omit them rather than collect data the server drops:
+
+- **Fuel type.** `type` is on the resource but not writable — a create sending
+  `"diesel"` returns `type: null`. Verified against the live instance.
+- **Station name.** No column exists on `FuelReport`. Location *is* storable, so
+  the pump's coordinates stand in for it.
+- **Receipt photo.** Not on the resource; would need the files association.
+- **Fuel-card match.** `source`, `provider` and `fuel_provider_transaction_uuid`
+  are all `isInternalRequest()`-gated, so a driver token cannot tell a
+  card-matched report from a hand-entered one. F2's "matched to card" state and
+  its rejection *reason* are both invisible for the same reason.
+
+If these matter, they are backend work: expose the four fields to the driver
+token, and make `type` writable.
+
+**Scoping trap.** `GET /v1/fuel-reports` filters on **`driver=<public id>`**.
+`driver_uuid` and `driver_assigned` are silently *ignored* and return every
+driver's fuel spend in the company. A test asserts the parameter name.
 
 ## Known follow-ups
 
