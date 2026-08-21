@@ -47,6 +47,24 @@ export function isQueuedAck(value: unknown): value is QueuedAck {
 
 const MUTATIONS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+/**
+ * Mutations that must **never** be queued, however they fail.
+ *
+ * The queue exists so work done in a basement survives to reach the server. That
+ * is right for a stop completion or a fuel report — replaying them later is
+ * exactly what the driver meant. It is wrong for anything that changes *who the
+ * session is*: an organisation switch replayed twenty minutes later would move
+ * the driver between organisations without them asking, quite possibly while
+ * they are mid-job somewhere else.
+ *
+ * These fail loudly instead, so the screen can say it did not work.
+ */
+const NEVER_QUEUE = [/switch-organization/, /\/login\b/, /\/logout\b/, /verify-code/, /switch-vehicle/];
+
+function isQueueable(path: string): boolean {
+    return !NEVER_QUEUE.some((pattern) => pattern.test(path));
+}
+
 export interface NavigatorAdapterConfig {
     host: string;
     namespace?: string;
@@ -126,7 +144,7 @@ export class NavigatorAdapter extends BrowserAdapter {
 
                 // Only transport failures queue. An HTTP error means the server
                 // saw the request and rejected it; replaying will not help.
-                if (isMutation && err.isTransport) {
+                if (isMutation && err.isTransport && isQueueable(path)) {
                     const item = this.queue.enqueue({
                         method: upper as QueuedMutation['method'],
                         path,

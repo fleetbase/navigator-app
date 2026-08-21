@@ -42,6 +42,7 @@ import IssuesScreen from '../screens/IssuesScreen';
 import IssueDetailScreen from '../screens/IssueDetailScreen';
 import IssueCreateScreen from '../screens/IssueCreateScreen';
 import AccountScreen from '../screens/AccountScreen';
+import OrgSwitcherScreen from '../screens/OrgSwitcherScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -72,6 +73,10 @@ export const useDriverUserId = () => useContext(DriverUserIdContext);
 /** Explicit sign-out, handed down from the host app. */
 const SignOutContext = createContext<(() => void) | undefined>(undefined);
 export const useSignOut = () => useContext(SignOutContext);
+
+/** Current organisation, and the host's handler for a completed switch. */
+const OrganizationContext = createContext<{ id?: string; onSwitched?: (driver: unknown) => void }>({});
+export const useOrganization = () => useContext(OrganizationContext);
 
 /* -- Placeholders, built once. ------------------------------------------- */
 const TodayHome = placeholder('Today', P3, `${SHIFTS} for the HOS and break cards`);
@@ -231,6 +236,22 @@ function AccountHome({ navigation }: { navigation: Nav }) {
     );
 }
 
+function OrgSwitcher({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const { id, onSwitched } = useOrganization();
+    return (
+        <OrgSwitcherScreen
+            driverId={driverId}
+            currentOrganizationId={id}
+            onSwitched={(driver) => {
+                onSwitched?.(driver);
+                navigation.goBack();
+            }}
+            onDone={navigation.goBack}
+        />
+    );
+}
+
 /* -- Inbox. ---------------------------------------------------------------- */
 
 function InboxHome({ navigation }: { navigation: Nav }) {
@@ -328,6 +349,7 @@ function AccountStack() {
             <Stack.Screen name="MyVehicle" component={MyVehicle} />
             <Stack.Screen name="Inspection" component={Inspection} />
             <Stack.Screen name="Documents" component={Documents} />
+            <Stack.Screen name="OrgSwitcher" component={OrgSwitcher} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="SyncQueue" component={SyncQueue} />
         </Stack.Navigator>
@@ -347,15 +369,24 @@ export function DriverTabs({
     driverId,
     driverUserId,
     onSignOut,
+    organizationId,
+    onOrganizationSwitched,
 }: {
     badges?: TabBadges;
     driverId?: string;
     driverUserId?: string;
     onSignOut?: () => void;
+    organizationId?: string;
+    onOrganizationSwitched?: (driver: unknown) => void;
 }) {
     // `tabBar` is a render prop, not `component`, so re-creating it re-renders
     // the bar rather than remounting it — which is why the badges may close
     // over `badges` while the screens above may not.
+    const organizationValue = useMemo(
+        () => ({ id: organizationId, onSwitched: onOrganizationSwitched }),
+        [organizationId, onOrganizationSwitched]
+    );
+
     const renderTabBar = useMemo(
         () =>
             function renderTabBar(props: React.ComponentProps<typeof TabBar>) {
@@ -368,6 +399,7 @@ export function DriverTabs({
         <DriverIdContext.Provider value={driverId}>
             <DriverUserIdContext.Provider value={driverUserId}>
                 <SignOutContext.Provider value={onSignOut}>
+                    <OrganizationContext.Provider value={organizationValue}>
             <Tab.Navigator
                 // Options are static objects — no hooks, nothing recomputed per
                 // navigation state change.
@@ -380,6 +412,7 @@ export function DriverTabs({
                 <Tab.Screen name="Inbox" component={InboxStack} options={TAB_OPTIONS.Inbox} />
                 <Tab.Screen name="Account" component={AccountStack} options={TAB_OPTIONS.Account} />
             </Tab.Navigator>
+                    </OrganizationContext.Provider>
                 </SignOutContext.Provider>
             </DriverUserIdContext.Provider>
         </DriverIdContext.Provider>

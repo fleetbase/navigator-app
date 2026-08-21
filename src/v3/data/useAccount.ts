@@ -134,3 +134,84 @@ export function useCurrentOrganization(reloadToken = 0) {
 
     return { organization, isLoading: state === 'loading', failed: state === 'error', retry: load };
 }
+
+/**
+ * The organisations this driver belongs to.
+ *
+ * `GET /v1/organizations` is the wrong endpoint here — it needs a **platform**
+ * token and 401s for a driver. This one is driver-scoped and works with the
+ * Sanctum token.
+ */
+export function useDriverOrganizations(driverId?: string, reloadToken = 0) {
+    const { adapter } = useFleetbase();
+    const [organizations, setOrganizations] = useState<OrganizationRecord[] | null>(null);
+    const [state, setState] = useState<LoadState>('idle');
+    const [error, setError] = useState<ApiError | null>(null);
+
+    const load = useCallback(async () => {
+        if (!driverId) return;
+        setState('loading');
+        setError(null);
+        try {
+            const raw = (await adapter.get(`drivers/${driverId}/organizations`)) as unknown;
+            const rows = Array.isArray(raw) ? raw : ((raw as { data?: unknown[] })?.data ?? []);
+            setOrganizations(rows as OrganizationRecord[]);
+            setState('ready');
+        } catch (err) {
+            setError(err as ApiError);
+            setState('error');
+        }
+    }, [adapter, driverId]);
+
+    useEffect(() => {
+        void load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [load, reloadToken]);
+
+    return {
+        organizations,
+        state,
+        error,
+        isLoading: state === 'loading' && !organizations,
+        failed: state === 'error',
+        retry: load,
+    };
+}
+
+/**
+ * Switching organisation returns a **new driver, with a new token** — the
+ * session is replaced, not amended. This hook performs the request and hands the
+ * driver back; creating the session stays with the host app, which owns auth.
+ *
+ * Written here rather than reusing v2's `switchOrganization` because that one
+ * swallows every failure into a `console.warn`, so the screen could never tell
+ * the driver it had not worked.
+ */
+export function useSwitchOrganization(driverId?: string) {
+    const { adapter } = useFleetbase();
+    const [switchingTo, setSwitchingTo] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const switchTo = useCallback(
+        async (organizationId: string): Promise<DriverRecord | null> => {
+            if (!driverId) return null;
+            setSwitchingTo(organizationId);
+            setError(null);
+            try {
+                // `next`, not `organization` — the API 422s on anything else.
+                const raw = await adapter.post(`drivers/${driverId}/switch-organization`, { next: organizationId });
+                const body = ((raw as { data?: unknown })?.data ?? raw) as { driver?: DriverRecord } | DriverRecord;
+                const driver = (body as { driver?: DriverRecord }).driver ?? (body as DriverRecord);
+                return driver && (driver as DriverRecord).id ? (driver as DriverRecord) : null;
+            } catch (err) {
+                setError((err as Error).message);
+                return null;
+            } finally {
+                setSwitchingTo(null);
+            }
+        },
+        [adapter, driverId]
+    );
+
+    return { switchTo, switchingTo, error, clearError: useCallback(() => setError(null), []) };
+}

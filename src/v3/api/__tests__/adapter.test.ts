@@ -158,3 +158,40 @@ describe('NavigatorAdapter queue replay', () => {
         expect(paths).toEqual(['a', 'b', 'c']);
     });
 });
+
+/**
+ * The queue is for work the driver meant to do — a stop completion replayed on
+ * reconnect is right. Replaying an *organisation switch* is not: it would move
+ * the driver between organisations later, unasked, possibly mid-job.
+ */
+describe('mutations that must never queue', () => {
+    const offline = () => Promise.reject(new TypeError('Network request failed'));
+
+    it('queues an ordinary mutation that fails on transport', async () => {
+        const queue = new MutationQueue();
+        const adapter = make({ queue });
+        fetchMock.mockImplementation(offline);
+
+        const result = await adapter.post('fuel-reports', { volume: '10' });
+        expect(isQueuedAck(result)).toBe(true);
+        expect(queue.snapshot().pendingCount).toBe(1);
+    });
+
+    it('refuses to queue an organisation switch, and throws instead', async () => {
+        const queue = new MutationQueue();
+        const adapter = make({ queue });
+        fetchMock.mockImplementation(offline);
+
+        await expect(adapter.post('drivers/driver_1/switch-organization', { next: 'company_2' })).rejects.toBeTruthy();
+        expect(queue.snapshot().pendingCount).toBe(0);
+    });
+
+    it('refuses to queue sign-in, which would replay a stale credential', async () => {
+        const queue = new MutationQueue();
+        const adapter = make({ queue });
+        fetchMock.mockImplementation(offline);
+
+        await expect(adapter.post('drivers/login', { identity: 'x', password: 'y' })).rejects.toBeTruthy();
+        expect(queue.snapshot().pendingCount).toBe(0);
+    });
+});

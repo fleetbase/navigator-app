@@ -78,6 +78,12 @@ Android note: `shadowOpacity` alone draws nothing there. When Android is in
 scope, set elevation through a prop the style system does not rewrite rather
 than re-adding the key.
 
+### Offline queue
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-23 | **S1** | **An organisation switch that failed on transport was queued and replayed later.** The queue exists so work done in a basement survives, which is right for a stop completion — but replaying a *session* change moves the driver between organisations twenty minutes later, unasked, possibly mid-job somewhere else. Sign-in had the same exposure: a queued credential replayed after the fact. | `NEVER_QUEUE` in the adapter covers switch-organization, login, logout, verify-code and switch-vehicle; they fail loudly so the screen can say so. Found by a test asserting a failure was *reported*, which instead found it silently queued. |
+
 ### Status registry
 
 | # | Sev | What | Fix |
@@ -122,6 +128,7 @@ if v2 ships again before cutover.
 | N-6 | S3 | Hooks are called inside navigator `options` callbacks in five places, re-running on every navigation state change. |
 | N-7 | S3 | `DriverLayout` navigates to a `ChatList` route that does not exist (`ChatHome` does). |
 | N-8 | S3 | `tabBarLabelStyle` is a function where a style object is expected and references an undefined `focued`; it silently never runs. |
+| N-13 | S2 | v2's `switchOrganization` swallows every failure into a `console.warn`, so a driver whose switch failed is never told. It also `console.log`s the new driver **and its token** — a credential in the device log. |
 | N-9 | S4 | `src/hooks/use-locale.ts` imports a `setLanguage` that `localize.js` does not export. |
 | N-10 | S4 | v2 lint reports **595 errors** (pre-existing; v3 is clean). |
 | N-11 | S4 | The component library still carries English literals in `OfflineBanner`, `SyncedBanner` and the queue's `describeMutation`. |

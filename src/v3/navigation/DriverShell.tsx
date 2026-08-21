@@ -22,6 +22,8 @@ export function DriverShell({
     driverId,
     driverUserId,
     onSignOut,
+    organizationId,
+    onOrganizationSwitched,
 }: {
     organizationName: string;
     subtitle?: string;
@@ -31,6 +33,8 @@ export function DriverShell({
     driverId?: string;
     driverUserId?: string;
     onSignOut?: () => void;
+    organizationId?: string;
+    onOrganizationSwitched?: (driver: unknown) => void;
 }) {
     const insets = useSafeAreaInsets();
     const { duty, isChanging, breakSupported, setDuty, error } = useDuty();
@@ -61,7 +65,7 @@ export function DriverShell({
             </YStack>
 
             <YStack flex={1}>
-                <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} />
+                <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} organizationId={organizationId} onOrganizationSwitched={onOrganizationSwitched} />
             </YStack>
 
             <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>

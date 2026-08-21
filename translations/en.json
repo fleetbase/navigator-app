@@ -468,5 +468,18 @@
         "offlineNotice": "Offline — showing the details saved on this device.",
         "loadFailed": "Could not load your account",
         "loadFailedBody": "Check your connection and try again."
+    },
+    "orgSwitcher": {
+        "title": "Organisation",
+        "pick": "Choose which organisation to work in.",
+        "onlyOne": "You belong to one organisation.",
+        "current": "Current",
+        "switch": "Switch",
+        "warning": "Switching signs you in again for the new organisation. Anything not yet synced is sent first.",
+        "noneTitle": "No organisations",
+        "noneBody": "This driver is not attached to an organisation. Ask dispatch to add you to one.",
+        "switchFailed": "Could not switch organisation",
+        "loadFailed": "Could not load your organisations",
+        "loadFailedBody": "Check your connection and try again."
     }
 }

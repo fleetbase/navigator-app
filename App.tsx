@@ -76,6 +76,8 @@ function DriverBridge(): React.JSX.Element {
             userToken={authToken ?? undefined}
             onUnauthorized={logout}
             onSignOut={logout}
+            organizationId={(driver as { getAttribute?: (k: string) => unknown })?.getAttribute?.('company') as string | undefined}
+            onOrganizationSwitched={createDriverSession}
             organizationName={organizationName}
             subtitle={driver?.getAttribute?.('name')}
             isAuthenticated={!!isAuthenticated}

@@ -60,6 +60,8 @@ function DriverSurface(props: {
     driverId?: string;
     driverUserId?: string;
     onSignOut?: () => void;
+    organizationId?: string;
+    onOrganizationSwitched?: (driver: unknown) => void;
 }) {
     const activeOrders = useActiveOrderCount();
 
@@ -79,6 +81,8 @@ function DriverSurface(props: {
             driverId={props.driverId}
             driverUserId={props.driverUserId}
             onSignOut={props.onSignOut}
+            organizationId={props.organizationId}
+            onOrganizationSwitched={props.onOrganizationSwitched}
         />
     );
 }
@@ -106,6 +110,13 @@ export interface V3AppProps {
     onUnauthorized?: () => void;
     /** Explicit sign-out from Account, distinct from a 401 forcing one. */
     onSignOut?: () => void;
+    /** The organisation the driver is currently working in. */
+    organizationId?: string;
+    /**
+     * Switching organisation returns a new driver with a new token, so the host
+     * app re-creates the session; v3 does not own auth.
+     */
+    onOrganizationSwitched?: (driver: unknown) => void;
     queue?: MutationQueue;
     badges?: TabBadges;
     activeStopCount?: number;
@@ -166,6 +177,8 @@ export function V3App({
     userToken,
     onUnauthorized,
     onSignOut,
+    organizationId,
+    onOrganizationSwitched,
     queue = mutationQueue,
     badges,
     activeStopCount = 0,
@@ -207,6 +220,8 @@ export function V3App({
                                                         driverId={driverId}
                                                         driverUserId={driverUserId}
                                                         onSignOut={onSignOut}
+                                                        organizationId={organizationId}
+                                                        onOrganizationSwitched={onOrganizationSwitched}
                                                     />
                                                 ) : (
                                                     <SignInScreen
