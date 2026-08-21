@@ -69,9 +69,13 @@ function DriverBridge(): React.JSX.Element {
             // without being rebuilt, so a login or org switch no longer
             // invalidates every consumer the way v2's did.
             host={resolveConnectionConfig('FLEETBASE_HOST')}
-            platformToken={resolveConnectionConfig('FLEETBASE_KEY')}
+            // FLEETBASE_KEY is the organisation's *API key* — an admin-scoped
+            // credential that should never sit on a handset. The platform token
+            // is the pre-auth one, scoped to onboarding.
+            platformToken={resolveConnectionConfig('FLEETBASE_PLATFORM_TOKEN')}
             userToken={authToken ?? undefined}
             onUnauthorized={logout}
+            onSignOut={logout}
             organizationName={organizationName}
             subtitle={driver?.getAttribute?.('name')}
             isAuthenticated={!!isAuthenticated}

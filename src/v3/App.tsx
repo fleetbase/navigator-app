@@ -52,7 +52,15 @@ function QueueBoundSync({ children, isConnected, queue }: { children: React.Reac
  * Derives tab badges from the order store so the count is live without the
  * navigator's `options` callbacks ever touching a hook.
  */
-function DriverSurface(props: { organizationName: string; subtitle?: string; badges?: TabBadges; activeStopCount: number; driverId?: string; driverUserId?: string }) {
+function DriverSurface(props: {
+    organizationName: string;
+    subtitle?: string;
+    badges?: TabBadges;
+    activeStopCount: number;
+    driverId?: string;
+    driverUserId?: string;
+    onSignOut?: () => void;
+}) {
     const activeOrders = useActiveOrderCount();
 
     // Memoised because this object reaches `DriverTabs`, and an unstable
@@ -70,6 +78,7 @@ function DriverSurface(props: { organizationName: string; subtitle?: string; bad
             activeStopCount={props.activeStopCount || activeOrders}
             driverId={props.driverId}
             driverUserId={props.driverUserId}
+            onSignOut={props.onSignOut}
         />
     );
 }
@@ -95,6 +104,8 @@ export interface V3AppProps {
     /** Driver Sanctum token. Changing it re-authorises without rebuilding. */
     userToken?: string;
     onUnauthorized?: () => void;
+    /** Explicit sign-out from Account, distinct from a 401 forcing one. */
+    onSignOut?: () => void;
     queue?: MutationQueue;
     badges?: TabBadges;
     activeStopCount?: number;
@@ -154,6 +165,7 @@ export function V3App({
     platformToken,
     userToken,
     onUnauthorized,
+    onSignOut,
     queue = mutationQueue,
     badges,
     activeStopCount = 0,
@@ -194,6 +206,7 @@ export function V3App({
                                                         activeStopCount={activeStopCount}
                                                         driverId={driverId}
                                                         driverUserId={driverUserId}
+                                                        onSignOut={onSignOut}
                                                     />
                                                 ) : (
                                                     <SignInScreen

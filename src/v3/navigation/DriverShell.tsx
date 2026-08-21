@@ -21,6 +21,7 @@ export function DriverShell({
     activeStopCount = 0,
     driverId,
     driverUserId,
+    onSignOut,
 }: {
     organizationName: string;
     subtitle?: string;
@@ -29,6 +30,7 @@ export function DriverShell({
     /** Scopes order queries to the signed-in driver. */
     driverId?: string;
     driverUserId?: string;
+    onSignOut?: () => void;
 }) {
     const insets = useSafeAreaInsets();
     const { duty, isChanging, breakSupported, setDuty, error } = useDuty();
@@ -59,7 +61,7 @@ export function DriverShell({
             </YStack>
 
             <YStack flex={1}>
-                <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} />
+                <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} />
             </YStack>
 
             <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>

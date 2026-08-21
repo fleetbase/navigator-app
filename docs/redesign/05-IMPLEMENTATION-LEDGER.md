@@ -39,7 +39,7 @@ Endpoints all exist. No backend work required.
 | ~~6~~ | ~~**Fuel log list + detail + create**~~ — DONE: list, detail, create; economy derived client-side; four designed fields have no backing and are omitted rather than discarded (see below) | R1 s09, R2 F2 | `fuel-reports` CRUD |
 | ~~7~~ | ~~**Issues list + detail + create**~~ — DONE: list, detail, create with type→category taxonomy; location bridged from v2 because create requires it; status timeline is internal-only and says so | R1 s10, R2 F3 | `issues` CRUD |
 | ~~8~~ | ~~**Inbox: conversation, composer, participants**~~ — DONE: channel list, feed with self/other/system bubbles, composer + quick replies, participant picker. Attachments and order-context not built (see below) | R2 G1/G3, gap G2 | `chat-channels` (core-api, not fleetops) |
-| 9 | **Account home** | prototype | `drivers/{id}`, `organizations` |
+| ~~9~~ | ~~**Account home**~~ — DONE: identity, organisation, assigned vehicle, links to everything under Account, sign out. Earnings omitted (no endpoint) | prototype | `drivers/{id}`, `organizations/current` |
 | 10 | **Org switcher** | R2 A3 | `drivers/{id}/organizations`, `switch-organization` |
 | 11 | **Profile edit** | R2 A7 | `PUT /v1/drivers/{id}` |
 | ~~12~~ | **Sign in** — DONE (password); OTP still TODO | R2 A1, R1 s15 | `drivers/login` verified live |

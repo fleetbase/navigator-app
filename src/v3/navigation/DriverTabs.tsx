@@ -41,6 +41,7 @@ import FuelReportCreateScreen from '../screens/FuelReportCreateScreen';
 import IssuesScreen from '../screens/IssuesScreen';
 import IssueDetailScreen from '../screens/IssueDetailScreen';
 import IssueCreateScreen from '../screens/IssueCreateScreen';
+import AccountScreen from '../screens/AccountScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -68,17 +69,16 @@ export const useDriverId = () => useContext(DriverIdContext);
 const DriverUserIdContext = createContext<string | undefined>(undefined);
 export const useDriverUserId = () => useContext(DriverUserIdContext);
 
+/** Explicit sign-out, handed down from the host app. */
+const SignOutContext = createContext<(() => void) | undefined>(undefined);
+export const useSignOut = () => useContext(SignOutContext);
+
 /* -- Placeholders, built once. ------------------------------------------- */
 const TodayHome = placeholder('Today', P3, `${SHIFTS} for the HOS and break cards`);
 const RouteHome = placeholder('Route', P4, MANIFESTS);
 const StopDetail = placeholder('Stop detail', P4, MANIFESTS);
 const StopExecution = placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)');
 const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimise endpoint (Phase 4a)');
-const AccountHome = placeholder('Account', P3, undefined, [
-    { route: 'FuelLog', label: 'Fuel log' },
-    { route: 'Issues', label: 'Issues & defects' },
-    { route: 'Settings', label: 'Settings' },
-]);
 const MyVehicle = placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)');
 const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
 const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
@@ -215,6 +215,22 @@ function IssueCreate({ navigation }: { navigation: Nav }) {
     return <IssueCreateScreen driverId={driverId} onDone={() => navigation.goBack()} />;
 }
 
+/* -- Account. -------------------------------------------------------------- */
+
+function AccountHome({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const reloadToken = useFocusCount();
+    const signOut = useSignOut();
+    return (
+        <AccountScreen
+            driverId={driverId}
+            reloadToken={reloadToken}
+            onNavigate={(route) => navigation.navigate(route, {})}
+            onSignOut={signOut}
+        />
+    );
+}
+
 /* -- Inbox. ---------------------------------------------------------------- */
 
 function InboxHome({ navigation }: { navigation: Nav }) {
@@ -326,7 +342,17 @@ const TAB_OPTIONS = {
     Account: { tabBarLabel: 'Account' },
 } as const;
 
-export function DriverTabs({ badges, driverId, driverUserId }: { badges?: TabBadges; driverId?: string; driverUserId?: string }) {
+export function DriverTabs({
+    badges,
+    driverId,
+    driverUserId,
+    onSignOut,
+}: {
+    badges?: TabBadges;
+    driverId?: string;
+    driverUserId?: string;
+    onSignOut?: () => void;
+}) {
     // `tabBar` is a render prop, not `component`, so re-creating it re-renders
     // the bar rather than remounting it — which is why the badges may close
     // over `badges` while the screens above may not.
@@ -341,6 +367,7 @@ export function DriverTabs({ badges, driverId, driverUserId }: { badges?: TabBad
     return (
         <DriverIdContext.Provider value={driverId}>
             <DriverUserIdContext.Provider value={driverUserId}>
+                <SignOutContext.Provider value={onSignOut}>
             <Tab.Navigator
                 // Options are static objects — no hooks, nothing recomputed per
                 // navigation state change.
@@ -353,6 +380,7 @@ export function DriverTabs({ badges, driverId, driverUserId }: { badges?: TabBad
                 <Tab.Screen name="Inbox" component={InboxStack} options={TAB_OPTIONS.Inbox} />
                 <Tab.Screen name="Account" component={AccountStack} options={TAB_OPTIONS.Account} />
             </Tab.Navigator>
+                </SignOutContext.Provider>
             </DriverUserIdContext.Provider>
         </DriverIdContext.Provider>
     );

@@ -444,5 +444,29 @@
         "loadFailed": "Could not load people",
         "loadFailedBody": "Check your connection and try again.",
         "createFailed": "Could not start the conversation"
+    },
+    "account": {
+        "title": "Account",
+        "unnamed": "Driver",
+        "driverId": "Driver ID",
+        "organization": "Organisation",
+        "unknownOrganization": "Not known",
+        "switch": "Switch",
+        "assignedVehicle": "Assigned vehicle",
+        "noVehicle": "No vehicle assigned",
+        "licence": "Licence",
+        "licenceExpires": "Expires %{date}",
+        "fuelLog": "Fuel log",
+        "issues": "Issues & defects",
+        "myVehicle": "My vehicle",
+        "inspection": "Vehicle inspection",
+        "documents": "My documents",
+        "syncQueue": "Sync queue",
+        "settings": "Settings",
+        "laterPhase": "Coming soon",
+        "signOut": "Sign out",
+        "offlineNotice": "Offline — showing the details saved on this device.",
+        "loadFailed": "Could not load your account",
+        "loadFailedBody": "Check your connection and try again."
     }
 }

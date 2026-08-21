@@ -19,6 +19,7 @@ cannot tell you a text field focused and was blurred again in the same tap.
 | # | Sev | What | Where |
 |---|---|---|---|
 | O-1 | **S1** | `driver_uuid` and `driver_assigned` are **silently ignored** as filters on `fuel-reports` and `issues`, returning *every driver's* records in the company. Only `driver=` filters. An unrecognised filter should 400, not fall through to the whole table — one plausible-looking parameter name is a cross-driver data leak. | fleetops API |
+| O-12 | S3 | `react-native-config` bakes `.env` into the **native build**, not the JS bundle, so the platform token only reaches the app after a native rebuild — a Metro restart is not enough. Worth knowing before the next credential change looks like it did nothing. | tooling |
 | O-2 | S2 | Fuel report `type` is on the resource but **not writable** — a create sending `"diesel"` returns `type: null`. The design's fuel-type picker has no backing. | `FuelReportController` |
 | O-3 | S2 | Fuel reports have **no station field** at all, and the resource carries no receipt/photo association. Two more designed fields with nowhere to go. | `FuelReport` model |
 | O-4 | S2 | `source`, `provider`, `fuel_provider_transaction_uuid`, `meta` and `report` are `isInternalRequest()`-gated on the fuel resource, so a driver cannot see **fuel-card match state** or the **reason a report was rejected**. | `Http/Resources/v1/FuelReport` |
@@ -54,6 +55,12 @@ Both were misdiagnosed first — see *How these were found*, below.
 | F-7 | **S1** | The SDK's `Resource` defines a getter for **`id` only** — every other attribute needs `getAttribute()`. `driver.user` was silently undefined, so chat believed the driver was in no conversation: own name in every title, every message rendered as someone else's, sending disabled. | `getAttribute('user')`. `f8a1900` |
 | F-8 | S2 | `available-participants` returns **User** records (the user id *is* `id`, no `user` key), while channel participants are `chat_participant_*` records that do have one. Reading `.user` listed the driver as someone to message themselves, and would have posted `add-participant` with no user. | `personUserId()`. `f8a1900` |
 | F-9 | S3 | The chat channel `title` is **already computed per viewer** and excludes the person asking. Rebuilding it from participants put the driver's own name back into every row. | Use the server's title. `f8a1900` |
+
+### Credentials
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-21 | **S1** | `App.tsx` passed **`FLEETBASE_KEY` — the organisation's admin-scoped API key — into the adapter's `platformToken` slot**. That is the credential the audit flagged as the security hole, being handed to the pre-auth code path. | Passes `FLEETBASE_PLATFORM_TOKEN`. `ConfigContext` now resolves it. |
 
 ### Status registry
 
