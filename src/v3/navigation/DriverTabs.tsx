@@ -45,6 +45,7 @@ import AccountScreen from '../screens/AccountScreen';
 import OrgSwitcherScreen from '../screens/OrgSwitcherScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import NavigationHandoffScreen from '../screens/NavigationHandoffScreen';
+import PermissionsPrimerScreen from '../screens/PermissionsPrimerScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -250,6 +251,10 @@ function AccountHome({ navigation }: { navigation: Nav }) {
     );
 }
 
+function PermissionsPrimer({ navigation }: { navigation: Nav }) {
+    return <PermissionsPrimerScreen onDone={navigation.goBack} />;
+}
+
 function ProfileEdit({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const { driver } = useDriver(driverId);
@@ -371,6 +376,7 @@ function AccountStack() {
             <Stack.Screen name="Inspection" component={Inspection} />
             <Stack.Screen name="Documents" component={Documents} />
             <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
+            <Stack.Screen name="Permissions" component={PermissionsPrimer} />
             <Stack.Screen name="OrgSwitcher" component={OrgSwitcher} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="SyncQueue" component={SyncQueue} />

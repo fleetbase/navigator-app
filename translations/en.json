@@ -469,7 +469,8 @@
         "offlineNotice": "Offline — showing the details saved on this device.",
         "loadFailed": "Could not load your account",
         "loadFailedBody": "Check your connection and try again.",
-        "profile": "Your details"
+        "profile": "Your details",
+        "permissions": "Permissions"
     },
     "orgSwitcher": {
         "title": "Organisation",
@@ -520,5 +521,27 @@
         "noneInstalledBody": "Install Google Maps or Waze, or open directions in your browser.",
         "noDestinationTitle": "No destination",
         "noDestinationBody": "This stop has no location recorded, so there is nowhere to navigate to."
+    },
+    "permissions": {
+        "title": "A few permissions before you start",
+        "intro": "Your phone will ask about each of these once. Here is what each one is for.",
+        "locationTitle": "Location, including in the background",
+        "locationBody": "Dispatch sees where you are so they can assign work near you, and your stops update as you drive. Background access is what keeps that working when the app is not open.",
+        "locationPartial": "You allowed location only while the app is open. Tracking will stop when you switch away — you can change this in Settings.",
+        "notificationsTitle": "Notifications",
+        "notificationsBody": "New work, dispatch messages and changes to your route. Without these you would have to keep checking the app.",
+        "cameraTitle": "Camera",
+        "cameraBody": "Photos as proof of delivery, and scanning package barcodes. Only used when you are completing a stop.",
+        "granted": "Allowed",
+        "required": "Required",
+        "optional": "Optional",
+        "allow": "Allow",
+        "blocked": "You have declined this before, so it can only be changed in Settings.",
+        "openSettings": "Open Settings",
+        "unavailable": "Not available on this device.",
+        "allSet": "You are all set.",
+        "outstanding": "You can start without these, but some things will not work until you allow them.",
+        "later": "Not now",
+        "continue": "Continue"
     }
 }

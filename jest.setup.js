@@ -34,3 +34,9 @@ jest.mock('react-native-bootsplash', () => ({
     show: jest.fn(() => Promise.resolve()),
     isVisible: jest.fn(() => Promise.resolve(false)),
 }));
+
+/**
+ * react-native-permissions reaches for a TurboModule that does not exist under
+ * Jest. The library ships an official mock for exactly this.
+ */
+jest.mock('react-native-permissions', () => require('react-native-permissions/mock'));

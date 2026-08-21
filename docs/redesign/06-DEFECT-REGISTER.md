@@ -21,6 +21,8 @@ cannot tell you a text field focused and was blurred again in the same tap.
 | O-1 | **S1** | `driver_uuid` and `driver_assigned` are **silently ignored** as filters on `fuel-reports` and `issues`, returning *every driver's* records in the company. Only `driver=` filters. An unrecognised filter should 400, not fall through to the whole table — one plausible-looking parameter name is a cross-driver data leak. | fleetops API |
 | O-13 | **S1** | `PUT /v1/drivers/{id}` accepts `password` and **sets it without verifying the current one**. Anyone holding an unlocked handset — or any client that can reach the endpoint with the driver's token — can take the account. The app therefore offers no password change at all; it needs a server-side current-password check first. | `DriverController@update` |
 | O-14 | S3 | Email uniqueness is enforced **only on create**: `Rule::when($isCreating, [Rule::unique('users')…])`. A profile update can therefore set an email that already belongs to another user. | `CreateDriverRequest` |
+| O-15 | S2 | **`NSContactsUsageDescription` is declared, and `Contacts` is in the Podfile's `setup_permissions`, but the driver app has no contacts feature.** Shipping an unused permission with a vague reason ("for sharing") is an App Store rejection risk and an unnecessary privacy ask. Removing it needs a `pod install` and a native rebuild, so it is left for a deliberate pass. | `ios/Podfile`, `Info.plist` |
+| O-16 | S4 | Two keys in `Info.plist` are **not real iOS keys** and do nothing: `NSLocalUsageDescription` (notifications need no purpose string) and `NSUserAuthenticationUsageDescription`. Harmless, but they read as coverage that is not there. | `Info.plist` |
 | O-12 | S3 | `react-native-config` bakes `.env` into the **native build**, not the JS bundle, so the platform token only reaches the app after a native rebuild — a Metro restart is not enough. Worth knowing before the next credential change looks like it did nothing. | tooling |
 | O-2 | S2 | Fuel report `type` is on the resource but **not writable** — a create sending `"diesel"` returns `type: null`. The design's fuel-type picker has no backing. | `FuelReportController` |
 | O-3 | S2 | Fuel reports have **no station field** at all, and the resource carries no receipt/photo association. Two more designed fields with nowhere to go. | `FuelReport` model |
@@ -63,6 +65,12 @@ Both were misdiagnosed first — see *How these were found*, below.
 | # | Sev | What | Fix |
 |---|---|---|---|
 | F-21 | **S1** | `App.tsx` passed **`FLEETBASE_KEY` — the organisation's admin-scoped API key — into the adapter's `platformToken` slot**. That is the credential the audit flagged as the security hole, being handed to the pre-auth code path. | Passes `FLEETBASE_PLATFORM_TOKEN`. `ConfigContext` now resolves it. |
+
+### iOS permission strings
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-24 | S2 | **The camera prompt told drivers the wrong reason.** `NSCameraUsageDescription` read *"This app may need to use your camera for your profile picture"* — the camera is for proof-of-delivery photos and barcode scanning. Seen on device while verifying the primer. Both photo-library strings were equally vague. Purpose strings are what the driver reads at the one moment they decide, and App Review requires them to be accurate. | All three rewritten to say what the app actually does. **Needs a native rebuild to take effect.** |
 
 ### Design fidelity
 

@@ -127,7 +127,7 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app may need to use your camera for your profile picture</string>
+	<string>Navigator uses the camera to take proof-of-delivery photos and to scan package barcodes when you complete a stop.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>This app may need to access your contacts for sharing</string>
 	<key>NSLocalUsageDescription</key>
@@ -141,9 +141,9 @@
 	<key>NSMotionUsageDescription</key>
 	<string>Navigator uses motion data to enhance navigation and track physical activity for improved task management.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>This app allows you to download photos to your photo library</string>
+	<string>Navigator saves proof-of-delivery photos to your photo library so you keep a copy of what you captured.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app allows you to upload photos from your photo library</string>
+	<string>Navigator attaches photos from your library as proof of delivery or evidence on an issue you report.</string>
 	<key>NSUserAuthenticationUsageDescription</key>
 	<string>Sign in with Apple is used to authenticate your account.</string>
 	<key>RCTNewArchEnabled</key>

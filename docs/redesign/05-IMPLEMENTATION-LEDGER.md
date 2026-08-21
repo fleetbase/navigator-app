@@ -44,7 +44,7 @@ Endpoints all exist. No backend work required.
 | ~~11~~ | ~~**Profile edit**~~ — DONE: name, email, phone, city, country; sends only what changed; queues offline. No password change (endpoint does not verify the current one) | R2 A7 | `PUT /v1/drivers/{id}` |
 | ~~12~~ | **Sign in** — DONE (password); OTP still TODO | R2 A1, R1 s15 | `drivers/login` verified live |
 | ~~13~~ | ~~**Navigation hand-off picker**~~ — DONE: Apple/Google/Waze/Uber, remembered default, browser fallback, none-installed state; verified opening Apple Maps on device | R2 D6 | client only |
-| 14 | **Permissions primer** | R2 A2 | client only |
+| ~~14~~ | ~~**Permissions primer**~~ — DONE: location/notifications/camera, denied vs blocked kept apart, partial-location state, Settings hand-off; verified on device | R2 A2 | client only |
 | 15 | **Self-hosted connection** | R2 A4 | client only |
 | 16 | **Sync queue screen** | gap I1 (undesigned) | client only — reads `useQueue()` |
 | 17 | **Error states set** | gap I2 (undesigned) | client only |
