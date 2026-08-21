@@ -13,7 +13,7 @@ import type { SchemeName } from '../theme';
 /** `system` follows the OS; the rest pin a scheme. */
 export type ThemePreference = 'system' | SchemeName;
 export type UnitPreference = 'metric' | 'imperial';
-export type NavigationApp = 'apple' | 'google' | 'waze';
+export type NavigationApp = 'apple' | 'google' | 'waze' | 'uber';
 
 export interface Settings {
     theme: ThemePreference;

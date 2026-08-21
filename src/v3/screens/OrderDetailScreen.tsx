@@ -37,17 +37,21 @@ import { useFleetbase, isQueuedAck } from '../api';
 import { useSync } from '../shell';
 import { useSettings } from '../settings';
 import { formatClock, formatMeters } from '../format';
+import { fromGeoPoint } from '../navigate/handoff';
 
 export function OrderDetailScreen({
     orderId,
     onOpenEntity,
     onOpenTimeline,
+    onNavigate,
 }: {
     orderId: string;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
     onOpenEntity?: (entity: { id: string; name?: string; entity: Record<string, unknown> }) => void;
     /** Opens the full activity history (R2 D5). */
     onOpenTimeline?: () => void;
+    /** Opens the navigation hand-off for the current destination (R2 D6). */
+    onNavigate?: (destination: { latitude: number; longitude: number; label?: string }) => void;
 }) {
     const { t } = useTranslation();
     const { units } = useSettings();
@@ -107,6 +111,11 @@ export function OrderDetailScreen({
     const payload = payloadOf(order);
     const entities = payload.entities ?? [];
     const destination = payload.dropoff?.name ?? payload.dropoff?.address;
+    // GeoJSON is [longitude, latitude]; fromGeoPoint owns that flip.
+    const dropoffPoint = fromGeoPoint(
+        (payload.dropoff as { location?: { coordinates?: number[] } } | undefined)?.location,
+        payload.dropoff?.name ?? payload.dropoff?.address
+    );
     const tracker = order.tracker_data as { eta_seconds?: number; distance_m?: number } | undefined;
 
     return (
@@ -149,8 +158,18 @@ export function OrderDetailScreen({
 
             {destination ? (
                 <Surface padded="compact">
-                    <Caption>{t('orderDetail.currentDestination')}</Caption>
-                    <Body fontWeight="700">{destination}</Body>
+                    <XStack justifyContent="space-between" alignItems="center" gap={space[3]}>
+                        <YStack flex={1} gap={2}>
+                            <Caption>{t('orderDetail.currentDestination')}</Caption>
+                            <Body fontWeight="700">{destination}</Body>
+                        </YStack>
+                        {/* Only offered when there is a real point to send. */}
+                        {onNavigate && dropoffPoint ? (
+                            <Button variant="secondary" onPress={() => onNavigate(dropoffPoint)} testID="navigate-to-dropoff">
+                                {t('orderDetail.navigate')}
+                            </Button>
+                        ) : null}
+                    </XStack>
                 </Surface>
             ) : null}
 

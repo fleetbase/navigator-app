@@ -206,7 +206,8 @@
         "queuedOffline": "Saved on device — will sync when you reconnect",
         "updateFailed": "Couldn't update this order",
         "loadFailed": "Couldn't load this order",
-        "notFound": "Order not found"
+        "notFound": "Order not found",
+        "navigate": "Navigate"
     },
     "editPayloadItem": {
         "title": "Editing",
@@ -500,5 +501,24 @@
         "queued": "Saved on this device. It will sync when you are back online.",
         "saveFailed": "Could not save your details",
         "save": "Save changes"
+    },
+    "handoff": {
+        "title": "Navigate to",
+        "destination": "Destination",
+        "apple": "Apple Maps",
+        "google": "Google Maps",
+        "waze": "Waze",
+        "uber": "Uber",
+        "open": "Open",
+        "openInBrowser": "Open in browser",
+        "notInstalled": "Not installed",
+        "yourDefault": "Your default",
+        "remember": "Remember this choice",
+        "usedBrowser": "That app is not installed, so it opened in your browser.",
+        "failed": "Nothing on this phone could open directions.",
+        "noneInstalledTitle": "No navigation app installed",
+        "noneInstalledBody": "Install Google Maps or Waze, or open directions in your browser.",
+        "noDestinationTitle": "No destination",
+        "noDestinationBody": "This stop has no location recorded, so there is nowhere to navigate to."
     }
 }

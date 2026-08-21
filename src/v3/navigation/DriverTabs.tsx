@@ -44,6 +44,7 @@ import IssueCreateScreen from '../screens/IssueCreateScreen';
 import AccountScreen from '../screens/AccountScreen';
 import OrgSwitcherScreen from '../screens/OrgSwitcherScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
+import NavigationHandoffScreen from '../screens/NavigationHandoffScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -107,6 +108,7 @@ function OrderDetail({ route, navigation }: { route: { params?: { orderId?: stri
             onOpenEntity={({ id, entity }) =>
                 navigation.navigate('EntityDetail', { orderId: route.params?.orderId, entityId: id, entity })
             }
+            onNavigate={(destination: object) => navigation.navigate('NavigationHandoff', { destination })}
             onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId: route.params?.orderId })}
         />
     );
@@ -131,6 +133,16 @@ function EntityDetail({
 
 function OrderTimeline({ route }: { route: { params?: { orderId?: string } } }) {
     return <OrderTimelineScreen orderId={String(route.params?.orderId ?? '')} />;
+}
+
+function NavigationHandoff({
+    route,
+    navigation,
+}: {
+    route: { params?: { destination?: { latitude: number; longitude: number; label?: string } } };
+    navigation: Nav;
+}) {
+    return <NavigationHandoffScreen destination={route.params?.destination} onDone={navigation.goBack} />;
 }
 
 function EditPayloadItem({
@@ -322,6 +334,7 @@ function OrdersStack() {
             <Stack.Screen name="OrderDetail" component={OrderDetail} />
             <Stack.Screen name="EditPayloadItem" component={EditPayloadItem} options={modalOptions} />
             <Stack.Screen name="EntityDetail" component={EntityDetail} />
+            <Stack.Screen name="NavigationHandoff" component={NavigationHandoff} />
             <Stack.Screen name="OrderTimeline" component={OrderTimeline} />
         </Stack.Navigator>
     );
