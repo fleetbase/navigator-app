@@ -26,7 +26,7 @@ import { ChatProvider, useChat } from './src/contexts/ChatContext';
 import { ConfigProvider, useConfig } from './src/contexts/ConfigContext';
 import useFleetbaseV2 from './src/hooks/use-fleetbase';
 import { LanguageProvider } from './src/contexts/LanguageContext';
-import { LocationProvider } from './src/contexts/LocationContext';
+import { LocationProvider, useLocation } from './src/contexts/LocationContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 import { SocketClusterProvider } from './src/contexts/SocketClusterContext';
 import { TempStoreProvider } from './src/contexts/TempStoreContext';
@@ -42,6 +42,9 @@ function DriverBridge(): React.JSX.Element {
     const { fleetbase } = useFleetbaseV2();
     const { unreadCount } = useChat();
     const { resolveConnectionConfig } = useConfig();
+    // v2 already runs background geolocation for the whole app; v3 reads its
+    // last fix rather than starting a second consumer of the same hardware.
+    const { location } = useLocation();
 
     const organizationName = useMemo(() => {
         const current = Array.isArray(organizations) ? organizations[0] : undefined;
@@ -73,6 +76,7 @@ function DriverBridge(): React.JSX.Element {
             subtitle={driver?.getAttribute?.('name')}
             isAuthenticated={!!isAuthenticated}
             driverId={driver?.id}
+            location={location}
             isOnline={!!isOnline}
             onToggleOnline={(next) => toggleOnline(next)}
             breakSupported={false}

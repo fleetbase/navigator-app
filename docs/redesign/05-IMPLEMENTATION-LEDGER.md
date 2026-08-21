@@ -37,7 +37,7 @@ Endpoints all exist. No backend work required.
 | ~~4~~ | ~~**Item detail**~~ — DONE: photo, base64 barcode/QR, scan history via `tracking-statuses`, null-metadata rows omitted, verified on device | R2 D4 | `entities/{id}` + `tracking-statuses?tracking_number=` |
 | ~~5~~ | ~~**Order timeline**~~ — DONE: chronological, paints from the order's embedded `tracking_statuses` then refreshes; null-island locations suppressed; no actor exists, and it says so | R2 D5 | embedded `tracking_statuses` + `tracking-statuses?tracking_number=` |
 | ~~6~~ | ~~**Fuel log list + detail + create**~~ — DONE: list, detail, create; economy derived client-side; four designed fields have no backing and are omitted rather than discarded (see below) | R1 s09, R2 F2 | `fuel-reports` CRUD |
-| 7 | **Issues list + detail + create** | R1 s10, R2 F3 | `issues` CRUD |
+| ~~7~~ | ~~**Issues list + detail + create**~~ — DONE: list, detail, create with type→category taxonomy; location bridged from v2 because create requires it; status timeline is internal-only and says so | R1 s10, R2 F3 | `issues` CRUD |
 | 8 | **Inbox: conversation, composer, participants** | R2 G1/G3, gap G2 | `chat-channels` + send/read/participants |
 | 9 | **Account home** | prototype | `drivers/{id}`, `organizations` |
 | 10 | **Org switcher** | R2 A3 | `drivers/{id}/organizations`, `switch-organization` |
@@ -264,6 +264,26 @@ token, and make `type` writable.
 **Scoping trap.** `GET /v1/fuel-reports` filters on **`driver=<public id>`**.
 `driver_uuid` and `driver_assigned` are silently *ignored* and return every
 driver's fuel spend in the company. A test asserts the parameter name.
+
+## Issues — what the driver API cannot carry
+
+- **The status timeline is internal-only.** `GET issues/{id}/timeline` is
+  registered under the `int/v1` prefix, so F3's "timeline of status changes"
+  cannot be shown to a driver token. Detail shows filed/resolved timestamps and
+  says the rest is unavailable.
+- **`location` is required on create**, unlike fuel reports. v3 had no location
+  source, so v2's tracking is bridged in through `App.tsx` (`LocationProvider` →
+  `useDeviceLocation`) rather than starting a second consumer of the same
+  hardware. With no fix the screen refuses to file **before** the driver writes
+  anything, rather than bouncing off server validation afterwards.
+- **The create endpoint sets no `status` and no `issue_id`.** A freshly filed
+  issue comes back with both null, so the row says "Not yet triaged" instead of
+  rendering an empty status pill.
+
+**Scoping trap, again.** `GET /v1/issues` filters on `driver=<public id>`;
+`driver_uuid` is ignored and returns every issue in the company. Same as
+fuel-reports — assume it holds for every driver-scoped list until proven
+otherwise, and assert the parameter in a test.
 
 ## Known follow-ups
 

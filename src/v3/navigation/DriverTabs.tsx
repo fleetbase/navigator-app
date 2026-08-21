@@ -38,7 +38,10 @@ import OrderTimelineScreen from '../screens/OrderTimelineScreen';
 import FuelLogScreen from '../screens/FuelLogScreen';
 import FuelReportScreen from '../screens/FuelReportScreen';
 import FuelReportCreateScreen from '../screens/FuelReportCreateScreen';
-import type { FuelReportRecord } from '../data';
+import IssuesScreen from '../screens/IssuesScreen';
+import IssueDetailScreen from '../screens/IssueDetailScreen';
+import IssueCreateScreen from '../screens/IssueCreateScreen';
+import type { FuelReportRecord, IssueRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -67,8 +70,11 @@ const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimis
 const InboxHome = placeholder('Inbox', P3);
 const Conversation = placeholder('Conversation', P3);
 const NewConversation = placeholder('New conversation', P3);
-const AccountHome = placeholder('Account', P3, undefined, [{ route: 'FuelLog', label: 'Fuel log' }, { route: 'Settings', label: 'Settings' }]);
-const Issues = placeholder('Issues & defects', P3);
+const AccountHome = placeholder('Account', P3, undefined, [
+    { route: 'FuelLog', label: 'Fuel log' },
+    { route: 'Issues', label: 'Issues & defects' },
+    { route: 'Settings', label: 'Settings' },
+]);
 const MyVehicle = placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)');
 const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
 const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
@@ -179,6 +185,32 @@ function FuelReportCreate({ route, navigation }: { route: { params?: { last?: Fu
     );
 }
 
+/* -- Account: issues. ------------------------------------------------------ */
+
+function Issues({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const reloadToken = useFocusCount();
+    return (
+        <IssuesScreen
+            driverId={driverId}
+            reloadToken={reloadToken}
+            onOpenIssue={(issue) => navigation.navigate('IssueDetail', { issue })}
+            onCreate={() => navigation.navigate('IssueCreate', {})}
+        />
+    );
+}
+
+function IssueDetail({ route }: { route: { params?: { issue?: IssueRecord } } }) {
+    const issue = route.params?.issue;
+    if (!issue) return null;
+    return <IssueDetailScreen issue={issue} />;
+}
+
+function IssueCreate({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    return <IssueCreateScreen driverId={driverId} onDone={() => navigation.goBack()} />;
+}
+
 /* -- Stacks. -------------------------------------------------------------- */
 
 function TodayStack() {
@@ -231,6 +263,14 @@ function AccountStack() {
             <Stack.Screen name="FuelReport" component={FuelReport} />
             <Stack.Screen name="FuelReportCreate" component={FuelReportCreate} options={modalOptions} />
             <Stack.Screen name="Issues" component={Issues} />
+            <Stack.Screen name="IssueDetail" component={IssueDetail} />
+            {/*
+              * Pushed, not presented as a native modal. This screen's selects
+              * open a bottom sheet through `MainPortal`, and that host lives
+              * beside NavigationContainer — a native modal sits *above* it, so
+              * the sheet would render behind the form and never be seen.
+              */}
+            <Stack.Screen name="IssueCreate" component={IssueCreate} />
             <Stack.Screen name="MyVehicle" component={MyVehicle} />
             <Stack.Screen name="Inspection" component={Inspection} />
             <Stack.Screen name="Documents" component={Documents} />

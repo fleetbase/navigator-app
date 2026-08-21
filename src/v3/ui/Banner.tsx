@@ -70,7 +70,10 @@ export function Banner({ tone = 'neutral', message, meta, action, testID }: Bann
                 {message}
             </Body>
             {meta ? (
-                <Micro tone={textTone[tone]} tabular>
+                // flexShrink, because `meta` is meant for short adornments
+                // ("3 queued") and a long one used to take its full intrinsic
+                // width and squeeze the message down to nothing.
+                <Micro tone={textTone[tone]} tabular flexShrink={1} textAlign="right">
                     {meta}
                 </Micro>
             ) : null}

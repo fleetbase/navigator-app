@@ -95,3 +95,48 @@ describe('Field focus', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 });
+
+/**
+ * Guards the select rendering "[object Object]" for ordinary `{label, value}`
+ * options — nine rows of it appeared in the issue type picker on device,
+ * because without an explicit `optionLabel` the component fell back to
+ * `String(item)`.
+ */
+describe('select option labels', () => {
+    const { labelOf, valueOf } = require('../Select') as {
+        labelOf: (item: unknown, key?: string) => string;
+        valueOf: (item: unknown, key?: string) => string;
+    };
+
+    it('reads label and value from a plain option object', () => {
+        expect(labelOf({ label: 'Vehicle', value: 'VEHICLE' })).toBe('Vehicle');
+        expect(valueOf({ label: 'Vehicle', value: 'VEHICLE' })).toBe('VEHICLE');
+    });
+
+    it('never yields "[object Object]"', () => {
+        expect(labelOf({ name: 'Driver' })).toBe('Driver');
+        expect(labelOf({ title: 'Route' })).toBe('Route');
+        expect(labelOf({ nothing: 1 })).toBe('');
+        expect(labelOf({ label: 'x' })).not.toContain('object Object');
+    });
+
+    it('still honours an explicit key', () => {
+        expect(labelOf({ label: 'ignored', custom: 'used' }, 'custom')).toBe('used');
+    });
+
+    it('resolves a stored value back to its label for display', () => {
+        // The trigger read "VEHICLE" after the driver picked "Vehicle".
+        const options = [
+            { label: 'Vehicle', value: 'VEHICLE' },
+            { label: 'Driver', value: 'DRIVER' },
+        ];
+        const match = options.find((o) => valueOf(o) === 'VEHICLE');
+        expect(labelOf(match)).toBe('Vehicle');
+    });
+
+    it('passes primitives straight through', () => {
+        expect(labelOf('Low')).toBe('Low');
+        expect(valueOf(3)).toBe('3');
+        expect(labelOf(null)).toBe('');
+    });
+});

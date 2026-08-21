@@ -93,6 +93,13 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
     warning: 'on_hold',
 
     // ── issue status ─────────────────────────────────────────────────────────
+    // `open` and `resolved` are what a live instance actually returns for an
+    // issue. Neither appears in src/constants/Enums.ts, so the coverage test —
+    // which reads that file — could not have caught them; an open issue fell to
+    // the fallback tone. Statuses seen on the wire count as much as declared ones.
+    open: 'created',
+    resolved: 'completed',
+    reopened: 'driver_assigned',
     in_progress: 'started',
     backlogged: 'on_hold',
     requires_update: 'on_hold',

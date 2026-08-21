@@ -10,7 +10,7 @@ import { Keyboard } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTheme, Text, Button, YStack } from 'tamagui';
 import { Portal } from '@gorhom/portal';
-import { radius } from '../theme/tokens';
+import { radius, space } from '../theme/tokens';
 
 /**
  * v2 called `isObject(selected)` in renderSelected() without importing it —
@@ -18,6 +18,30 @@ import { radius } from '../theme/tokens';
  * Declared locally so this component carries no v2 dependency.
  */
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * Label and value for an option, with or without `optionLabel`/`optionValue`.
+ *
+ * Without them the component used to do `String(item)` on an object option, so
+ * a perfectly ordinary `{ label, value }` list rendered nine rows of
+ * "[object Object]". An object is never usefully stringified, so the common
+ * keys are tried before giving up — an explicit `optionLabel` still wins.
+ */
+const LABEL_KEYS = ['label', 'name', 'title', 'text'] as const;
+const VALUE_KEYS = ['value', 'id', 'key'] as const;
+
+function readOption(item: unknown, key: string | undefined, fallbacks: readonly string[]): string {
+    if (!isObject(item)) return item == null ? '' : String(item);
+    if (typeof key === 'string') return String(item[key] ?? '');
+    for (const candidate of fallbacks) {
+        const found = item[candidate];
+        if (typeof found === 'string' || typeof found === 'number') return String(found);
+    }
+    return '';
+}
+
+export const labelOf = (item: unknown, optionLabel?: string) => readOption(item, optionLabel, LABEL_KEYS);
+export const valueOf = (item: unknown, optionValue?: string) => readOption(item, optionValue, VALUE_KEYS);
 import { titleize as titleizeString } from 'inflected';
 
 export type SelectOption = string | Record<string, unknown>;
@@ -44,6 +68,7 @@ export interface BottomSheetSelectProps {
     onBottomSheetClosed?: (isOpen: boolean, fromIndex: number, toIndex: number) => void;
     virtual?: boolean;
     renderInPlace?: boolean;
+    testID?: string;
 }
 
 export interface BottomSheetSelectRef {
@@ -72,6 +97,7 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
             onBottomSheetClosed,
             virtual = false,
             renderInPlace = false,
+            testID,
         }: BottomSheetSelectProps,
         ref
     ) => {
@@ -114,8 +140,8 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
                     // v2 declared these as `optionLabel`/`optionValue`, shadowing the
                     // props and self-referencing in the initializer — a TDZ
                     // ReferenceError on every search over object options.
-                    const label = typeof optionLabel === 'string' ? String(option[optionLabel] ?? '') : '';
-                    const value = typeof optionValue === 'string' ? String(option[optionValue] ?? '') : '';
+                    const label = labelOf(option, optionLabel);
+                    const value = valueOf(option, optionValue);
                     return value.toLowerCase().includes(lowerSearch) || label.toLowerCase().includes(lowerSearch);
                 }
 
@@ -140,17 +166,22 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
         );
 
         const renderSelected = useCallback(() => {
-            if (typeof selected === 'string') {
-                if (humanize === true) {
-                    return titleizeString(selected);
-                }
-                return selected;
+            if (isObject(selected)) {
+                return labelOf(selected, optionLabel);
             }
 
-            if (typeof optionLabel === 'string' && isObject(selected)) {
-                return String(selected[optionLabel] ?? '');
+            if (typeof selected === 'string' || typeof selected === 'number') {
+                // The value is what gets stored, but the *label* is what was
+                // chosen — showing the raw value left the trigger reading
+                // "VEHICLE" after picking "Vehicle".
+                const match = options.find((option) => valueOf(option, optionValue) === String(selected));
+                if (match) return labelOf(match, optionLabel);
+
+                return humanize === true ? titleizeString(String(selected)) : String(selected);
             }
-        }, [selected, optionLabel, humanize]);
+
+            return '';
+        }, [selected, options, optionLabel, optionValue, humanize]);
 
         const handleBottomSheetPositionChange = useCallback(
             (fromIndex: number, toIndex: number) => {
@@ -228,7 +259,7 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
                                 return (
                                     <Button
                                         size='$4'
-                                        onPress={() => handleSelect(typeof optionValue === 'string' && isObject(item) ? item[optionValue] : item)}
+                                        onPress={() => handleSelect(isObject(item) ? valueOf(item, optionValue) : item)}
                                         bg='$surface'
                                         justifyContent='space-between'
                                         space='$2'
@@ -243,7 +274,7 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
                                             opacity: 0.5,
                                         }}
                                     >
-                                        <Text>{typeof optionLabel === 'string' && isObject(item) ? String(item[optionLabel] ?? '') : String(item)}</Text>
+                                        <Text>{labelOf(item, optionLabel)}</Text>
                                     </Button>
                                 );
                             }}
@@ -253,12 +284,28 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
             );
         };
 
-        console.log('[BottomSheetSelect Rendered!]');
-
         return (
             <YStack>
+                {/*
+                  * The trigger takes an explicit height and padding: this is a
+                  * Tamagui Button, and the Waypoint config carries no `size`
+                  * scale for it to read a default from, so without them it
+                  * collapses and clips its own label. Matched to Field, so a
+                  * select and a text input line up.
+                  */}
                 {virtual === false && (
-                    <Button justifyContent='flex-start' textAlign='left' onPress={openBottomSheet} bg='$surface' borderWidth={1} borderColor="$border" borderRadius={radius.compact}>
+                    <Button
+                        testID={testID}
+                        height={50}
+                        paddingHorizontal={space[4]}
+                        justifyContent='flex-start'
+                        textAlign='left'
+                        onPress={openBottomSheet}
+                        bg='$surface'
+                        borderWidth={1}
+                        borderColor="$border"
+                        borderRadius={radius.compact + 2}
+                    >
                         {selected ? (
                             <Button.Text color='$textPrimary' fontSize={15}>
                                 {renderSelected()}

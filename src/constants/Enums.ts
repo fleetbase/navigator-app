@@ -56,7 +56,7 @@ export const DriverFuelReportStatus = Object.freeze({
     CANCELED: 'Canceled',
 });
 
-function convertEnumToArray(enumObj) {
+function convertEnumToArray(enumObj: Record<string, string>) {
     return Object.entries(enumObj).map(([key, value]) => ({ key, value }));
 }
 

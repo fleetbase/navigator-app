@@ -20,7 +20,7 @@ import waypointConfig, { type SchemeName } from './theme';
 import { useResolvedScheme } from './settings';
 import SignInScreen, { type AuthMethod } from './screens/SignInScreen';
 import { DriverShell } from './navigation';
-import { DutyProvider, SyncProvider } from './shell';
+import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
 import { FleetbaseProvider, mutationQueue, useQueue, type MutationQueue } from './api';
 import { useActiveOrderCount } from './data';
@@ -105,6 +105,11 @@ export interface V3AppProps {
     isAuthenticated?: boolean;
     /** Signed-in driver's public id; scopes order queries. */
     driverId?: string;
+    /**
+     * Last known position, from v2's tracking. Required to file an issue, so
+     * the screens must be able to tell whether there is a fix.
+     */
+    location?: unknown;
     /** Resolves on success, rejects with a message to show inline. */
     onSignIn?: (identity: string, password: string) => Promise<void>;
     /** Per-organisation auth alternates. */
@@ -147,6 +152,7 @@ export function V3App({
     activeStopCount = 0,
     isAuthenticated = false,
     driverId,
+    location,
     onSignIn,
     authMethods,
     children,
@@ -170,6 +176,7 @@ export function V3App({
                                 >
                                     <QueueBoundSync isConnected={isConnected} queue={queue}>
                                         <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
+                                            <LocationProvider location={location}>
                                             <NavigationContainer>
                                                 {isAuthenticated ? (
                                                     <DriverSurface
@@ -191,6 +198,7 @@ export function V3App({
                                             {children}
                                             <PortalHost name="MainPortal" />
                                             <PortalHost name="BottomSheetPanelPortal" />
+                                            </LocationProvider>
                                         </DutyProvider>
                                     </QueueBoundSync>
                                 </FleetbaseProvider>
