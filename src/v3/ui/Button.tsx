@@ -51,14 +51,18 @@ const Frame = styled(XStack, {
                 pressStyle: { backgroundColor: '$border', scale: motion.press.scale },
             },
         },
-        /** The design's floating-action treatment: brand glow under the primary CTA. */
+        /**
+         * The design's floating-action treatment: brand glow under the primary
+         * CTA. No `elevation` key — Tamagui expands it into shadow props of its
+         * own and overrides these, which is what made every shadow in the app
+         * opaque. See the note on `elevation` in theme/tokens.
+         */
         elevated: {
             true: {
                 shadowColor: '$primary',
-                shadowOpacity: 0.25,
-                shadowRadius: 20,
-                shadowOffset: { width: 0, height: 8 },
-                elevation: 8,
+                shadowOpacity: 0.22,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 6 },
             },
         },
         fullWidth: { true: { width: '100%' } },

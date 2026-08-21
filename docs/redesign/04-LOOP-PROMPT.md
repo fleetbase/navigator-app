@@ -73,6 +73,36 @@ start.
 - **Never widen scope silently.** If a slice turns out to need backend work
   that does not exist, stop, record the blocker in the ledger, and pick the
   next unblocked slice instead.
+- **Match the design as drawn.** The frames are the specification, not a mood
+  board. Shadow, radius, weight, spacing and colour come from the token layer
+  and must *resolve* to the design's values — depth in particular is where
+  drift hides, because a wrong shadow looks deliberate. If a component needs a
+  value the tokens do not have, the tokens are wrong; add the step, do not
+  hand-roll it at the call site.
+- **Specified is not resolved.** A style library can rewrite what you wrote.
+  `elevation` cost the whole app its shadow fidelity this way: written as
+  `shadowOpacity: 0.12`, it resolved to `1`. When a visual property matters,
+  render the component and read the style back — then assert the resolved value
+  in a test, not the one you typed.
+
+## Log every defect as you find it
+
+Append to `docs/redesign/06-DEFECT-REGISTER.md` in the same commit that finds or
+fixes the thing. Never batch them up for the end — the register is what the user
+reviews, and a defect found and silently fixed is invisible to them.
+
+Each entry carries an id, a severity (`S1` blocks the app or loses data · `S2`
+breaks a feature · `S3` wrong or misleading output · `S4` cosmetic), what it
+actually does wrong, and where. Split by status:
+
+- **Open** — needs a decision or backend work. Say what is required to close it.
+- **Fixed** — with the commit that fixed it.
+- **Noted** — real, deliberately not fixed here, with the reason.
+
+Record a defect even when it is yours and you fixed it in the same breath, and
+even when it turns out to be in v2 or the API rather than v3. If a diagnosis was
+wrong on the way to the fix, write down what the misleading evidence was — that
+has already been worth more than the fixes.
 
 ## Verification each iteration
 

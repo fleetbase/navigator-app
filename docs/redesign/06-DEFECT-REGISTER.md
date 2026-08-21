@@ -62,6 +62,22 @@ Both were misdiagnosed first — see *How these were found*, below.
 |---|---|---|---|
 | F-21 | **S1** | `App.tsx` passed **`FLEETBASE_KEY` — the organisation's admin-scoped API key — into the adapter's `platformToken` slot**. That is the credential the audit flagged as the security hole, being handed to the pre-auth code path. | Passes `FLEETBASE_PLATFORM_TOKEN`. `ConfigContext` now resolves it. |
 
+### Design fidelity
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-22 | S2 | **Every card, row and sheet in the app carried a fully opaque shadow.** `elevation` is an Android style prop, but Tamagui also treats it as a *shorthand* and expands it into shadow props of its own — so a token written `shadowOpacity: 0.12, shadowRadius: 2` **resolved to `shadowOpacity: 1`, radius 3**. The UI read as much heavier than the design draws it, and it looked deliberate, which is why it survived several device passes. Reported by the user, not caught by me. | `elevation` key removed from the tokens and from `Button`'s elevated variant; `ui/__tests__/elevation.test.tsx` asserts the **resolved** opacity in all four schemes. |
+
+The general lesson is now a rule in the loop prompt: **specified is not
+resolved.** A style library can rewrite what you wrote, so when a visual
+property matters, render the component and read the style back rather than
+trusting the source. Reading the resolved style found this in one run, after
+several passes of looking at screenshots did not.
+
+Android note: `shadowOpacity` alone draws nothing there. When Android is in
+scope, set elevation through a prop the style system does not rewrite rather
+than re-adding the key.
+
 ### Status registry
 
 | # | Sev | What | Fix |

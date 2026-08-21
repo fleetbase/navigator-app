@@ -81,12 +81,30 @@ export const tabular = { fontVariant: ['tabular-nums'] as const };
  * Elevation. Values are the design's; `shadowColor` is intentionally absent —
  * `themes.ts` supplies it per scheme so shadows read correctly on light.
  */
+/**
+ * Shadow only — deliberately **no `elevation` key**.
+ *
+ * `elevation` is an Android style prop, but Tamagui also treats it as a
+ * *shorthand* and expands it into shadow props of its own. Spreading a token
+ * that carried both meant Tamagui's expansion won: a card specified at
+ * `shadowOpacity: 0.12, shadowRadius: 2` resolved to **`shadowOpacity: 1`,
+ * radius 3** — a fully opaque near-black shadow instead of a 12% one. Every
+ * card, row and sheet in the app was heavier than the design draws it.
+ *
+ * Measured, not guessed: rendering a `Surface` and reading back its resolved
+ * style is what found it, and `ui/__tests__/elevation.test.tsx` now asserts the
+ * resolved values so it cannot drift back.
+ *
+ * Consequence to know: Android draws no shadow from `shadowOpacity` alone. When
+ * Android is in scope, set its elevation through a prop the style system does
+ * not rewrite, rather than re-adding the key here.
+ */
 export const elevation = {
-    base: { shadowOpacity: 0, shadowRadius: 0, shadowOffset: { width: 0, height: 0 }, elevation: 0 },
-    card: { shadowOpacity: 0.12, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-    sheet: { shadowOpacity: 0.25, shadowRadius: 32, shadowOffset: { width: 0, height: -8 }, elevation: 16 },
-    floating: { shadowOpacity: 0.25, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-    mapOverlay: { shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+    base: { shadowOpacity: 0, shadowRadius: 0, shadowOffset: { width: 0, height: 0 } },
+    card: { shadowOpacity: 0.06, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+    sheet: { shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: -6 } },
+    floating: { shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
+    mapOverlay: { shadowOpacity: 0.22, shadowRadius: 12, shadowOffset: { width: 0, height: 3 } },
 } as const;
 
 /**
