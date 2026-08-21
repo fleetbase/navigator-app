@@ -41,7 +41,7 @@ Endpoints all exist. No backend work required.
 | ~~8~~ | ~~**Inbox: conversation, composer, participants**~~ — DONE: channel list, feed with self/other/system bubbles, composer + quick replies, participant picker. Attachments and order-context not built (see below) | R2 G1/G3, gap G2 | `chat-channels` (core-api, not fleetops) |
 | ~~9~~ | ~~**Account home**~~ — DONE: identity, organisation, assigned vehicle, links to everything under Account, sign out. Earnings omitted (no endpoint) | prototype | `drivers/{id}`, `organizations/current` |
 | ~~10~~ | ~~**Org switcher**~~ — DONE: driver-scoped list, current marked, single-org state, failures reported. Not blocked on the platform token after all | R2 A3 | `drivers/{id}/organizations`, `switch-organization` |
-| 11 | **Profile edit** | R2 A7 | `PUT /v1/drivers/{id}` |
+| ~~11~~ | ~~**Profile edit**~~ — DONE: name, email, phone, city, country; sends only what changed; queues offline. No password change (endpoint does not verify the current one) | R2 A7 | `PUT /v1/drivers/{id}` |
 | ~~12~~ | **Sign in** — DONE (password); OTP still TODO | R2 A1, R1 s15 | `drivers/login` verified live |
 | 13 | **Navigation hand-off picker** | R2 D6 | client only |
 | 14 | **Permissions primer** | R2 A2 | client only |

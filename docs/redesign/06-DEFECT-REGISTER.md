@@ -19,6 +19,8 @@ cannot tell you a text field focused and was blurred again in the same tap.
 | # | Sev | What | Where |
 |---|---|---|---|
 | O-1 | **S1** | `driver_uuid` and `driver_assigned` are **silently ignored** as filters on `fuel-reports` and `issues`, returning *every driver's* records in the company. Only `driver=` filters. An unrecognised filter should 400, not fall through to the whole table — one plausible-looking parameter name is a cross-driver data leak. | fleetops API |
+| O-13 | **S1** | `PUT /v1/drivers/{id}` accepts `password` and **sets it without verifying the current one**. Anyone holding an unlocked handset — or any client that can reach the endpoint with the driver's token — can take the account. The app therefore offers no password change at all; it needs a server-side current-password check first. | `DriverController@update` |
+| O-14 | S3 | Email uniqueness is enforced **only on create**: `Rule::when($isCreating, [Rule::unique('users')…])`. A profile update can therefore set an email that already belongs to another user. | `CreateDriverRequest` |
 | O-12 | S3 | `react-native-config` bakes `.env` into the **native build**, not the JS bundle, so the platform token only reaches the app after a native rebuild — a Metro restart is not enough. Worth knowing before the next credential change looks like it did nothing. | tooling |
 | O-2 | S2 | Fuel report `type` is on the resource but **not writable** — a create sending `"diesel"` returns `type: null`. The design's fuel-type picker has no backing. | `FuelReportController` |
 | O-3 | S2 | Fuel reports have **no station field** at all, and the resource carries no receipt/photo association. Two more designed fields with nowhere to go. | `FuelReport` model |

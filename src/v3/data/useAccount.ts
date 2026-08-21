@@ -8,7 +8,7 @@
  * does not work.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFleetbase } from '../api';
+import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
 
 export interface VehicleSummary {
@@ -214,4 +214,66 @@ export function useSwitchOrganization(driverId?: string) {
     );
 
     return { switchTo, switchingTo, error, clearError: useCallback(() => setError(null), []) };
+}
+
+export interface DriverProfileDraft {
+    name?: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    country?: string;
+}
+
+/**
+ * Updates the driver's own details.
+ *
+ * `PUT /v1/drivers/{id}` splits the payload: `name`, `email`, `phone` and
+ * `password` are written to the **user** record, everything else to the driver
+ * (DriverController@update). Nothing is required on an update, so only the
+ * fields that actually changed are sent.
+ *
+ * **`password` is deliberately never sent from here.** The endpoint accepts it
+ * and sets it without asking for the current one, so offering a change in the
+ * app would let anyone holding an unlocked handset take the account. That needs
+ * a current-password check server-side first — see the register.
+ *
+ * Queueable: a name corrected in a tunnel and replayed on reconnect is still
+ * what the driver meant. Contrast the session-changing calls, which the adapter
+ * refuses to queue.
+ */
+export function useUpdateDriver(driverId?: string) {
+    const { adapter } = useFleetbase();
+    const [isSaving, setIsSaving] = useState(false);
+    const [queued, setQueued] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const save = useCallback(
+        async (changes: DriverProfileDraft): Promise<DriverRecord | null> => {
+            if (!driverId) return null;
+            const body: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(changes)) {
+                if (typeof value === 'string' && value.trim()) body[key] = value.trim();
+            }
+            if (Object.keys(body).length === 0) return null;
+
+            setIsSaving(true);
+            setError(null);
+            try {
+                const raw = await adapter.put(`drivers/${driverId}`, body);
+                if (isQueuedAck(raw)) {
+                    setQueued(true);
+                    return null;
+                }
+                return (((raw as { data?: unknown })?.data ?? raw) ?? null) as DriverRecord | null;
+            } catch (err) {
+                setError((err as Error).message);
+                return null;
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [adapter, driverId]
+    );
+
+    return { save, isSaving, queued, error, clearError: useCallback(() => setError(null), []) };
 }

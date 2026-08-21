@@ -43,9 +43,11 @@ import IssueDetailScreen from '../screens/IssueDetailScreen';
 import IssueCreateScreen from '../screens/IssueCreateScreen';
 import AccountScreen from '../screens/AccountScreen';
 import OrgSwitcherScreen from '../screens/OrgSwitcherScreen';
+import ProfileEditScreen from '../screens/ProfileEditScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
+import { useDriver } from '../data';
 import type { FuelReportRecord, IssueRecord, ChatChannelRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
 
@@ -236,6 +238,12 @@ function AccountHome({ navigation }: { navigation: Nav }) {
     );
 }
 
+function ProfileEdit({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const { driver } = useDriver(driverId);
+    return <ProfileEditScreen driverId={driverId} driver={driver} onSaved={navigation.goBack} onCancel={navigation.goBack} />;
+}
+
 function OrgSwitcher({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const { id, onSwitched } = useOrganization();
@@ -349,6 +357,7 @@ function AccountStack() {
             <Stack.Screen name="MyVehicle" component={MyVehicle} />
             <Stack.Screen name="Inspection" component={Inspection} />
             <Stack.Screen name="Documents" component={Documents} />
+            <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
             <Stack.Screen name="OrgSwitcher" component={OrgSwitcher} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="SyncQueue" component={SyncQueue} />

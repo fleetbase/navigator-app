@@ -467,7 +467,8 @@
         "signOut": "Sign out",
         "offlineNotice": "Offline — showing the details saved on this device.",
         "loadFailed": "Could not load your account",
-        "loadFailedBody": "Check your connection and try again."
+        "loadFailedBody": "Check your connection and try again.",
+        "profile": "Your details"
     },
     "orgSwitcher": {
         "title": "Organisation",
@@ -481,5 +482,23 @@
         "switchFailed": "Could not switch organisation",
         "loadFailed": "Could not load your organisations",
         "loadFailedBody": "Check your connection and try again."
+    },
+    "profile": {
+        "title": "Your details",
+        "name": "Name",
+        "nameRequired": "Your name cannot be blank.",
+        "email": "Email",
+        "emailInvalid": "That does not look like an email address.",
+        "phone": "Phone",
+        "city": "City",
+        "country": "Country",
+        "countryHint": "Two-letter country code, such as SG.",
+        "countryInvalid": "Use the two-letter code, such as SG.",
+        "dispatchOwned": "Your duty status, assigned vehicle and current job are set by dispatch, not here.",
+        "noPasswordChange": "To change your password, contact dispatch. It cannot be changed from the app yet.",
+        "offlineNotice": "Offline — your changes will be sent when you are back online.",
+        "queued": "Saved on this device. It will sync when you are back online.",
+        "saveFailed": "Could not save your details",
+        "save": "Save changes"
     }
 }

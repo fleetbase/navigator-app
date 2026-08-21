@@ -35,6 +35,7 @@ export interface AccountLink {
 
 /** Everything filed under Account, built or not. */
 const LINKS: AccountLink[] = [
+    { route: 'ProfileEdit', labelKey: 'account.profile' },
     { route: 'FuelLog', labelKey: 'account.fuelLog' },
     { route: 'Issues', labelKey: 'account.issues' },
     { route: 'MyVehicle', labelKey: 'account.myVehicle', blockedKey: 'account.laterPhase' },
