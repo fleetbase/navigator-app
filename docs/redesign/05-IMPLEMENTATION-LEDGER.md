@@ -49,9 +49,11 @@ Endpoints all exist. No backend work required.
 | ~~16~~ | ~~**Sync queue screen**~~ — DONE: failed-first ordering, reason shown, confirmed discard, retry; driver-facing labels replace "POST issues". Empty state verified on device; populated states are test-covered (see below) | gap I1 (undesigned) | client only — reads `useQueue()` |
 | ~~17~~ | ~~**Error states set**~~ — DONE: ten failure kinds classified by what the driver should do, one `FailureState` used by all ten screens, 20 duplicate strings removed | gap I2 (undesigned) | client only |
 
-**Today (R1 s01/s12)** — build after 1–2. Ships degraded: next-stop, progress
-and ETA work from tracker data; the drive-time, break and inspection strips are
-BLOCKED on Tier 3 and must render their "not enabled" variant until then.
+~~**Today (R1 s01/s12)**~~ — **DONE, degraded as planned.** Next stop, the ETA the
+server says is meaningful, progress, delay and off-route all come from
+`orders/{id}/tracker`. HOS, drive time, planned break and vehicle inspection are
+named individually as "Not enabled" rather than omitted, so the gap is legible
+to a driver. Verified on device against the live instance.
 
 ---
 

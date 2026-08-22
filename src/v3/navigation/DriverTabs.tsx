@@ -47,6 +47,7 @@ import ProfileEditScreen from '../screens/ProfileEditScreen';
 import NavigationHandoffScreen from '../screens/NavigationHandoffScreen';
 import PermissionsPrimerScreen from '../screens/PermissionsPrimerScreen';
 import SyncQueueScreen from '../screens/SyncQueueScreen';
+import TodayScreen from '../screens/TodayScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -57,12 +58,9 @@ import { TabBar, type TabBadges } from './TabBar';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-/** Screens are built in Phase 3 (today's API) and Phase 4b (after the backend work). */
-const P3 = 'Phase 3';
 const P4 = 'Phase 4b';
 
 const MANIFESTS = 'driver-scoped manifest endpoints (Phase 4a)';
-const SHIFTS = 'shift + HOS endpoints (Phase 4a)';
 
 const screenOptions = { headerShown: false } as const;
 const modalOptions = { presentation: 'modal' } as const;
@@ -84,7 +82,6 @@ const OrganizationContext = createContext<{ id?: string; onSwitched?: (driver: u
 export const useOrganization = () => useContext(OrganizationContext);
 
 /* -- Placeholders, built once. ------------------------------------------- */
-const TodayHome = placeholder('Today', P3, `${SHIFTS} for the HOS and break cards`);
 const RouteHome = placeholder('Route', P4, MANIFESTS);
 const StopDetail = placeholder('Stop detail', P4, MANIFESTS);
 const StopExecution = placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)');
@@ -251,6 +248,19 @@ function AccountHome({ navigation }: { navigation: Nav }) {
     );
 }
 
+function TodayHome({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const reloadToken = useFocusCount();
+    return (
+        <TodayScreen
+            driverId={driverId}
+            reloadToken={reloadToken}
+            onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId } })}
+            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
+        />
+    );
+}
+
 function SyncQueue() {
     return <SyncQueueScreen />;
 }
@@ -321,6 +331,9 @@ function TodayStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="TodayHome" component={TodayHome} />
+            {/* Registered here as well as under Orders — `navigate` resolves
+                within the current stack, so a shared route needs both. */}
+            <Stack.Screen name="NavigationHandoff" component={NavigationHandoff} />
         </Stack.Navigator>
     );
 }

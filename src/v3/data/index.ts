@@ -10,3 +10,4 @@ export * from './useFuelReports';
 export * from './useIssues';
 export * from './useChat';
 export * from './useAccount';
+export * from './useTracker';

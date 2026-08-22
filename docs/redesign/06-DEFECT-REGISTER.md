@@ -140,6 +140,26 @@ than re-adding the key.
 
 ---
 
+## The tracker is more honest than the app was using
+
+Not a defect, but the reason Today could be built without faking anything.
+`GET /v1/orders/{id}/tracker` already reports its own limits, and the screen
+defers to it rather than deciding for itself:
+
+- **`lifecycle.show_live_eta` / `show_start_eta`** — the server says which ETA is
+  meaningful. A dispatched-but-not-started order has an estimated *start*, not an
+  arrival; choosing client-side would put a confident arrival time on a job
+  nobody has begun.
+- **`insights.is_location_stale`** and `warnings[]` — the instance answered with
+  a driver position **42,850 seconds old**. Any estimate drawn from that has to
+  be labelled, and the screen only warns when a number is actually on screen.
+- **`capabilities`** — traffic, per-leg ETA, map matching and route geometry are
+  declared per deployment, so the Route tab can adapt rather than assume.
+- **`insights.is_delayed` / `is_off_route`** — the delay and off-route signals
+  the design asks for already exist.
+
+Worth reading before building the Route tab in Phase 4b.
+
 ## Noted — real, not fixed here
 
 These are v2 defects found while auditing. v3 supersedes the code they live in,

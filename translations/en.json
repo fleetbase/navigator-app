@@ -638,5 +638,35 @@
             "update": "Update the app",
             "contactDispatch": "Ask dispatch to give you access."
         }
+    },
+    "today": {
+        "title": "Today",
+        "nextPickup": "Next pickup",
+        "nextDropoff": "Next drop-off",
+        "noStopRecorded": "No stop address recorded",
+        "arrivingIn": "Arriving in",
+        "startingIn": "Starting in",
+        "noEta": "No arrival time yet. It appears once the job starts.",
+        "staleLocation": "Worked out from your last known position, which is out of date. Turn location on for a live estimate.",
+        "delayed": "Running %{duration} behind",
+        "offRoute": "You appear to be off the planned route.",
+        "remaining": "%{distance} left",
+        "openOrder": "Open order",
+        "navigate": "Navigate",
+        "moreWork": {
+            "one": "%{count} more job today",
+            "other": "%{count} more jobs today"
+        },
+        "trackerUnavailable": "Live progress is unavailable for this job right now.",
+        "emptyTitle": "Nothing assigned",
+        "emptyBody": "When dispatch assigns you work, it appears here.",
+        "offlineNotice": "Offline — showing the last update saved on this device.",
+        "notEnabledTitle": "Not switched on yet",
+        "notEnabledBody": "These need your organisation to enable driver shifts and hours-of-service on the server.",
+        "notEnabled": "Not enabled",
+        "hos": "Hours of service",
+        "driveTime": "Drive time left",
+        "break": "Planned break",
+        "inspection": "Vehicle inspection"
     }
 }

@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import config, { SCHEMES, type SchemeName } from '../../theme';
 import { DriverShell } from '../index';
 import { DutyProvider, SyncProvider } from '../../shell';
+import { FleetbaseProvider, MutationQueue } from '../../api';
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 
@@ -19,11 +20,13 @@ function render(scheme: SchemeName = 'dark', props = {}) {
                 <TamaguiProvider config={config} defaultTheme={scheme}>
                     <Theme name={scheme}>
                         <SyncProvider>
+                            <FleetbaseProvider host="https://x.test" queue={new MutationQueue()}>
                             <DutyProvider isOnline>
                                 <NavigationContainer>
                                     <DriverShell organizationName="Purbeck Couriers" {...props} />
                                 </NavigationContainer>
                             </DutyProvider>
+                            </FleetbaseProvider>
                         </SyncProvider>
                     </Theme>
                 </TamaguiProvider>
@@ -80,12 +83,36 @@ describe('v3 navigation', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
-    it('names the phase and blocker on unbuilt routes', () => {
+    it('opens on a built Today rather than a placeholder', () => {
+        // Today used to be a placeholder reading "Built in Phase 3". It is the
+        // first thing a driver sees, so this asserts it is no longer a stub.
         const t = render();
         const s = json(t);
-        expect(s).toContain('Today');
-        expect(s).toContain('Phase 3');
+        expect(s).not.toContain('Built in Phase 3');
+        expect(s).not.toContain('This route exists so the shell can be navigated');
         ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('still names the phase and the blocker on routes that are not built', () => {
+        // Checked on the component rather than through navigation, since the
+        // remaining placeholders sit behind tabs the shell does not open on.
+        const { Placeholder } = require('../../screens/Placeholder');
+        let tree!: ReactTestRenderer.ReactTestRenderer;
+        ReactTestRenderer.act(() => {
+            tree = ReactTestRenderer.create(
+                <SafeAreaProvider initialMetrics={metrics}>
+                    <TamaguiProvider config={config} defaultTheme="dark">
+                        <Theme name="dark">
+                            <Placeholder title="Stop execution" phase="Phase 4b" blockedOn="order-config proof declarations" />
+                        </Theme>
+                    </TamaguiProvider>
+                </SafeAreaProvider>
+            );
+        });
+        const s = JSON.stringify(tree.toJSON());
+        expect(s).toContain('Phase 4b');
+        expect(s).toContain('order-config proof declarations');
+        ReactTestRenderer.act(() => tree.unmount());
     });
 });
 
