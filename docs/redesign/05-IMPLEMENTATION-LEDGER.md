@@ -375,3 +375,39 @@ stop sequence.
   CocoaPods at all — which is why the toolchain had to be installed outside
   bundler to get the app building. Fixed, `.ruby-version` added, and
   `bundle exec pod --version` now answers 1.17.0.
+
+---
+
+## The four-scheme gate, and what walking it cost
+
+Every v3 screen renders in all four schemes under test. That was never the
+question — the tests had passed for weeks while the app was quietly wrong. What
+the gate was for was walking the *running* app, screen by screen, in each
+scheme, against a live instance.
+
+**Walked in sunlight and dark, against real data:** Today, Orders, Order detail,
+Account, Settings, Fuel log, Fuel report create, Issues, Issue detail, Inbox,
+Conversation, Profile edit, Sync queue (empty), Permissions, and the Phase 4b
+placeholders. Fifteen defects came out of it, F-39 through F-53, including the
+two that mattered most: no request timeout, and an order config whose activity
+array is not in workflow order.
+
+**Not verified on the device, and why:**
+
+- **Item detail.** Every order on the instance has an empty payload, so there is
+  no entity to open. Covered by tests in all four schemes; not seen running.
+- **OTP sign-in.** Reaching it means signing out, and exercising it means
+  sending a real code to a real phone. Rendering was checked in all four schemes
+  earlier in the branch; the send path is deliberately untested against the
+  live instance.
+- **The sync queue with items in it.** Queueing needs a transport failure, which
+  needs the API to be unreachable. The two windows where it *was* unreachable
+  were unplanned, and both closed before a write could be staged. The empty
+  state and the offline banner were verified during them. The populated state
+  rests on `queue.test.ts` and the screen tests alone — say the word and I will
+  stage it against a briefly stopped server.
+
+The pattern worth keeping: **a fixture agrees with whoever wrote it.** F-48 is
+the sharpest example in the branch — every flow fixture listed its activities in
+the order a person would naturally write them, so every test passed, and the
+real config listed `completed` fourth and `dispatched` last.
