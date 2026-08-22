@@ -229,6 +229,12 @@ firing on every launch and that nobody had looked at.
 |---|---|---|---|
 | F-43 | S3 | **`navigator.config.ts → config/default.js → utils/config.js → utils/index.js → navigator.config.ts`.** The barrel imported the config file and the config file's dependencies led back to the barrel, so whichever module evaluated second received a half-initialised namespace. It worked only because every value in the ring is read inside a function body rather than at module scope — one top-level read added anywhere in it would have produced an `undefined` at start-up with no obvious culprit. | Two leaf modules with no imports back into the ring: `utils/array.js` for the coercion helpers `config/default.js` needed, and `utils/navigator-config.js` for the config reader. Neither is re-exported from the barrel, since that would restore the import. Ten call sites updated; the warning is gone from the console at launch. |
 
+### The account tab locked itself when the server broke
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-44 | **S2** | **A failed driver fetch replaced the whole Account tab with one error state** — settings, the sync queue, the fuel log, the issue list, permissions and *sign out* all disappeared. None of them need the driver record, and they are exactly what a driver reaches for when the server is misbehaving: check what is queued, change a setting, sign out and back in. Found the moment the dev instance started returning empty 500s. | Only the driver's own details are hidden, as a card rather than a takeover. The links and sign-out always render. |
+
 ---
 
 ## The tracker is more honest than the app was using

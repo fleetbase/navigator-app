@@ -203,4 +203,24 @@ describe('AccountScreen', () => {
         expect(testIDs(t)).toContain('account-error');
         ReactTestRenderer.act(() => t.unmount());
     });
+
+    it('keeps sign out and every local link reachable when the server fails', async () => {
+        /*
+         * A driver reaches for settings, the sync queue and sign out precisely
+         * when the server is misbehaving. None of them need the driver record,
+         * and the screen used to replace all of them with one error state.
+         */
+        mockApi('fail');
+        const onNavigate = jest.fn();
+        const onSignOut = jest.fn();
+        const t = await mount(<AccountScreen driverId={driver.id} onNavigate={onNavigate} onSignOut={onSignOut} />);
+        const ids = testIDs(t);
+        expect(ids).toContain('account-error');
+        expect(ids).toContain('account-links');
+        expect(ids).toContain('sign-out');
+        expect(ids).toContain('link-SyncQueue');
+        // …and the driver's own details, which genuinely are unavailable, stay hidden.
+        expect(ids).not.toContain('account-identity');
+        ReactTestRenderer.act(() => t.unmount());
+    });
 });

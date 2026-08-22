@@ -89,21 +89,27 @@ export function AccountScreen({
         );
     }
 
-    if (isBlocked || !driver) {
-        return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="account-error">
-                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="account-error" />
-            </YStack>
-        );
-    }
-
-    const vehicle = vehicleOf(driver);
+    /*
+     * Only the driver's own details come from the server. Settings, the sync
+     * queue, the fuel log, the issue list and — most of all — sign out are
+     * local, and a driver reaches for exactly those when the server is
+     * misbehaving. Replacing the whole tab with one error state locked them out
+     * of the tools for the situation they were in.
+     */
+    const detailsUnavailable = isBlocked || !driver;
+    const vehicle = driver ? vehicleOf(driver) : undefined;
     const vehicleDetail = vehicleDescription(vehicle);
-    const licence = driver.drivers_license_number;
+    const licence = driver?.drivers_license_number;
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="account-screen">
 
+            {detailsUnavailable || !driver ? (
+                <Surface padded testID="account-error">
+                    <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="account-error" />
+                </Surface>
+            ) : (
+                <>
             <Surface hero padded testID="account-identity">
                 <XStack gap={space[3]} alignItems="center">
                     <Avatar url={driver.photo_url ?? driver.avatar_url} name={driver.name} />
@@ -178,6 +184,9 @@ export function AccountScreen({
                     </YStack>
                 </Surface>
             ) : null}
+
+                </>
+            )}
 
             <Surface testID="account-links">
                 {LINKS.map((link, i) => (
