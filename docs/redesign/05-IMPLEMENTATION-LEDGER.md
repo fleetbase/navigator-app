@@ -468,13 +468,22 @@ So the slice was buildable, and is now built:
   order is never marked delivered with nothing attached. A test asserts the
   update is not sent when proof is outstanding.
 
-**Verification status, precisely.** 23 tests, all passing. **Not verified on
-device**, for two independent reasons: no activity in the instance's own config
-sets `require_pod`, so the screen is unreachable through real data; and the iOS
-simulator has no camera, so the scan and photo methods could not be exercised
-there even if it were. The signature method would be verifiable on a simulator
-against a config that demanded it — say the word and I will set `require_pod` on
-one activity to check it.
+**Verified end to end on the device.** With the owner's go-ahead, `require_pod`
+was set on the `started` activity with `pod_method: signature` on the dev
+instance, and the whole path was walked: the order screen refused to advance and
+offered proof instead, the signature pad took a signature, and the server
+answered with a real proof record — `proof_lv6hmwbs7f`, signature PNG stored on
+S3 — attached to that order. The config was then restored byte-for-byte from a
+backup taken before the change.
+
+The same run confirmed the fleetops PR is doing its job. With `activities`
+published, the stepper reads the *real* graph — `created → dispatched → started
+→ enroute → completed` — and offered **Mark Started**. The lifecycle fallback
+had guessed `enroute` third. Both orderings are plausible; only one is the
+customer's.
+
+**Still not verified on device:** the scan and photo methods. The iOS simulator
+has no camera, so neither can be exercised there at all — they need a handset.
 
 **A design note worth keeping:** the capture dependencies are `require`d inside
 their branches rather than imported at module scope. VisionCamera initialises
