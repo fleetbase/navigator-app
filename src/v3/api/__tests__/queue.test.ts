@@ -207,3 +207,65 @@ describe('snapshot revision', () => {
         expect(seen[seen.length - 1]).toBeGreaterThan(seen[0]);
     });
 });
+
+describe('ownership', () => {
+    /*
+     * Signing out clears the token but leaves the queue on the device. Without
+     * an owner, a fuel report filed by one driver would be replayed with the
+     * *next* driver's token, and the server would record their work as someone
+     * else's. Misattributed work is worse than lost work: nobody can tell.
+     */
+    it('sends only the signed-in driver\'s work', async () => {
+        const queue = new MutationQueue();
+        const sent: string[] = [];
+        queue.setSender(async (item) => {
+            sent.push(item.path);
+            return { ok: true } as const;
+        });
+
+        queue.enqueue({ method: 'POST', path: 'mine', label: 'Mine', ownerId: 'driver_a' });
+        queue.enqueue({ method: 'POST', path: 'theirs', label: 'Theirs', ownerId: 'driver_b' });
+
+        queue.setOwner('driver_a');
+        await queue.flush();
+
+        expect(sent).toEqual(['mine']);
+        // Not discarded — it is still their work, and still theirs to send.
+        expect(queue.snapshot().items.map((i) => i.path)).toEqual(['theirs']);
+        expect(queue.strandedCount()).toBe(1);
+    });
+
+    it('sends it once its own driver signs back in', async () => {
+        const queue = new MutationQueue();
+        const sent: string[] = [];
+        queue.setSender(async (item) => {
+            sent.push(item.path);
+            return { ok: true } as const;
+        });
+        queue.enqueue({ method: 'POST', path: 'theirs', label: 'Theirs', ownerId: 'driver_b' });
+
+        queue.setOwner('driver_a');
+        await queue.flush();
+        expect(sent).toEqual([]);
+
+        queue.setOwner('driver_b');
+        await queue.flush();
+        expect(sent).toEqual(['theirs']);
+    });
+
+    it('treats work with no owner as the current driver\'s, as it was before', async () => {
+        // Items written before ownership existed must keep working.
+        const queue = new MutationQueue();
+        const sent: string[] = [];
+        queue.setSender(async (item) => {
+            sent.push(item.path);
+            return { ok: true } as const;
+        });
+        queue.enqueue({ method: 'POST', path: 'legacy', label: 'Legacy' });
+
+        queue.setOwner('driver_a');
+        await queue.flush();
+        expect(sent).toEqual(['legacy']);
+        expect(queue.strandedCount()).toBe(0);
+    });
+});

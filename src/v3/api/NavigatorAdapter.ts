@@ -162,6 +162,9 @@ export class NavigatorAdapter extends BrowserAdapter {
                         label: this.describe(upper, path),
                         labelKey: describeMutation(upper, path).labelKey,
                         idempotencyKey,
+                        // Stamped so this cannot be sent under the next
+                        // driver's token if the handset changes hands.
+                        ownerId: this.ownerId,
                     });
                     const ack: QueuedAck = { __queued: true, id: item.id, idempotencyKey: item.idempotencyKey };
                     return ack;
@@ -247,6 +250,9 @@ export class NavigatorAdapter extends BrowserAdapter {
      * Starts optimistic: assuming offline before any request has been made
      * would show the offline banner on every cold start.
      */
+    /** The signed-in driver, stamped onto anything this adapter queues. */
+    ownerId?: string;
+
     private reachable = true;
     private reachabilityListeners = new Set<(reachable: boolean) => void>();
 

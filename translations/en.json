@@ -448,7 +448,14 @@
         "laterPhase": "Coming soon",
         "signOut": "Sign out",
         "profile": "Your details",
-        "permissions": "Permissions"
+        "permissions": "Permissions",
+        "signOutTitle": "Sign out?",
+        "signOutBody": "You will need your password or a one-time code to sign back in.",
+        "signOutWithQueued": {
+            "one": "%{count} thing you did has not reached dispatch yet. It stays on this phone and can only be sent by you — sign back in on this device to finish sending it.",
+            "other": "%{count} things you did have not reached dispatch yet. They stay on this phone and can only be sent by you — sign back in on this device to finish sending them."
+        },
+        "signOutConfirm": "Sign out"
     },
     "orgSwitcher": {
         "title": "Organisation",

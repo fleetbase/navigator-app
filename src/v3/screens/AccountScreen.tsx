@@ -13,6 +13,7 @@
  *     `license_expiry`) but are null on the instance, so the row appears only
  *     when there is something in it.
  */
+import { useState } from 'react';
 import { ScrollView, Image } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
@@ -25,6 +26,7 @@ import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
+import { useQueue, useFleetbase } from '../api';
 import { useDriver, useCurrentOrganization, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
@@ -77,6 +79,14 @@ export function AccountScreen({
     const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { driver, isLoading, isBlocked, error, retry } = useDriver(driverId, seed, reloadToken);
+    const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+    // Everything still waiting to reach the server, failed items included —
+    // a parked item is exactly the kind the driver would want to know about.
+    // The provider's queue, not the module default — a test (or a second
+    // instance) supplies its own, and reading the wrong one would count zero.
+    const { queue } = useFleetbase();
+    const { pendingCount, failedCount } = useQueue(queue);
+    const waiting = pendingCount + failedCount;
     const { organization } = useCurrentOrganization(reloadToken);
 
     if (isLoading) {
@@ -208,10 +218,43 @@ export function AccountScreen({
                 ))}
             </Surface>
 
-            {onSignOut ? (
-                <Button variant="destructive" fullWidth onPress={onSignOut} testID="sign-out">
+            {/*
+              * The confirmation replaces the button rather than following it.
+              * Rendered underneath, it landed below the fold at the end of a
+              * scrolling screen: the driver tapped Sign out, saw nothing move,
+              * and had no reason to think anything had happened.
+              */}
+            {onSignOut && !confirmingSignOut ? (
+                <Button variant="destructive" fullWidth onPress={() => setConfirmingSignOut(true)} testID="sign-out">
                     {t('account.signOut')}
                 </Button>
+            ) : null}
+
+            {onSignOut && confirmingSignOut ? (
+                /*
+                 * Gap spec H4. Signing out clears the token but leaves queued
+                 * work on the device, and that work can only ever be sent by
+                 * the driver who created it — so it has to be named before it
+                 * is stranded, with the count, not a vague "unsaved changes".
+                 */
+                <Surface padded testID="sign-out-confirm">
+                    <YStack gap={space[3]}>
+                        <Body fontSize={15} fontWeight="700">
+                            {t('account.signOutTitle')}
+                        </Body>
+                        <Secondary fontSize={13}>
+                            {waiting > 0 ? t('account.signOutWithQueued', { count: waiting }) : t('account.signOutBody')}
+                        </Secondary>
+                        <XStack gap={space[2]}>
+                            <Button flex={1} variant="ghost" onPress={() => setConfirmingSignOut(false)} testID="sign-out-cancel">
+                                {t('common.cancel')}
+                            </Button>
+                            <Button flex={1} variant="destructive" onPress={onSignOut} testID="sign-out-confirm-yes">
+                                {t('account.signOutConfirm')}
+                            </Button>
+                        </XStack>
+                    </YStack>
+                </Surface>
             ) : null}
         </ScrollView>
     );

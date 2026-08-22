@@ -178,13 +178,57 @@ describe('AccountScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
-    it('signs out when asked', async () => {
+    it('confirms before signing out, rather than doing it on one tap', async () => {
         const onSignOut = jest.fn();
         const t = await mount(<AccountScreen driverId={driver.id} onSignOut={onSignOut} />);
         await ReactTestRenderer.act(async () => {
             (byID(t, 'sign-out').props as { onPress?: () => void }).onPress?.();
         });
+        expect(onSignOut).not.toHaveBeenCalled();
+        const ids = testIDs(t);
+        expect(ids).toContain('sign-out-confirm');
+        // The confirmation takes the button's place; leaving both on screen put
+        // the confirmation below the fold, where the tap looked like a no-op.
+        expect(ids).not.toContain('sign-out');
+
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'sign-out-confirm-yes').props as { onPress?: () => void }).onPress?.();
+        });
         expect(onSignOut).toHaveBeenCalled();
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('names how much unsynced work signing out would strand', async () => {
+        /*
+         * Gap spec H4. The token goes, the queue stays, and queued work can
+         * only be sent by the driver who made it — so the count is the whole
+         * point of the warning.
+         *
+         * Enqueued after mount deliberately: the provider flushes on mount, and
+         * with fetch mocked to succeed anything queued beforehand is sent and
+         * gone before the screen ever renders. This also exercises the live
+         * subscription rather than the first snapshot.
+         */
+        const t = await mount(<AccountScreen driverId={driver.id} onSignOut={jest.fn()} />);
+        await ReactTestRenderer.act(async () => {
+            queue.enqueue({ method: 'POST', path: 'issues', label: 'Report an issue' });
+            queue.enqueue({ method: 'POST', path: 'fuel-reports', label: 'Log a fill' });
+        });
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'sign-out').props as { onPress?: () => void }).onPress?.();
+        });
+        expect(textOf(t)).toContain('2 things');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('says nothing about queued work when there is none', async () => {
+        const t = await mount(<AccountScreen driverId={driver.id} onSignOut={jest.fn()} />);
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'sign-out').props as { onPress?: () => void }).onPress?.();
+        });
+        const text = textOf(t);
+        expect(text).toContain('Sign out?');
+        expect(text).not.toMatch(/have not reached dispatch/);
         ReactTestRenderer.act(() => t.unmount());
     });
 

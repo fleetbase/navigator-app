@@ -35,6 +35,12 @@ export interface FleetbaseProviderProps {
     platformToken?: string;
     /** Driver Sanctum token. Changing this does NOT rebuild the adapter. */
     userToken?: string;
+    /**
+     * Who is signed in. Queued work is stamped with it and only sent back under
+     * the same driver, so a handset that changes hands cannot post one driver's
+     * work as another's.
+     */
+    driverId?: string;
     onUnauthorized?: () => void;
     queue?: MutationQueue;
     /** Flush the queue when connectivity returns. */
@@ -47,6 +53,7 @@ export function FleetbaseProvider({
     namespace = 'v1',
     platformToken,
     userToken,
+    driverId,
     onUnauthorized,
     queue = mutationQueue,
     isConnected = true,
@@ -84,6 +91,16 @@ export function FleetbaseProvider({
     useEffect(() => {
         value.adapter.setPlatformToken(platformToken);
     }, [value, platformToken]);
+
+    /*
+     * Identity has to reach both sides: the adapter stamps new work with it,
+     * and the queue uses it to decide what may be sent. Set before the flush
+     * effect below runs, so a cold start never drains someone else's work.
+     */
+    useEffect(() => {
+        value.adapter.ownerId = driverId;
+        queue.setOwner(driverId);
+    }, [value, queue, driverId]);
 
     // Drain whatever accumulated while offline — on mount, and again whenever
     // the API becomes reachable after having failed. Reads recover on their own

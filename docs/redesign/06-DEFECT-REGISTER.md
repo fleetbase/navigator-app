@@ -301,6 +301,14 @@ The rule lives in `useChat` as a pure function with its own tests, because the
 screen's channel comes from a fetch the test cannot easily steer: driving it
 through the seed prop proved nothing, since the loaded channel replaced it.
 
+### Signing out stranded work, silently — gap spec H4
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-54 | **S1** | **Queued work carried across a sign-out and would have been sent under the next driver's token.** Sign-out clears the token, the organisations and the driver record, but not the mutation queue — and the queue replays with whatever credentials are current. A fuel report filed by one driver, still unsent when the handset changed hands, would have been posted as the *next* driver's. Misattributed work is worse than lost work: nothing on either side says it happened. | Every queued item is stamped with the driver who created it, and the queue only sends items belonging to whoever is signed in. Someone else's work is left alone rather than dropped — it is still theirs, and still sends if they sign back in on this device. |
+| F-55 | S2 | **Sign out happened on a single tap, with no warning and no mention of unsent work** — the gap spec asks for a confirmation that names the count. | A confirmation that says how many things have not reached dispatch, and that they can only be sent by this driver on this device. |
+| F-56 | S3 | Found while verifying F-55 on the device: the confirmation rendered *below* the sign-out button, at the end of a scrolling screen, so it landed off the fold — the driver tapped Sign out and nothing appeared to happen. | The confirmation takes the button's place rather than following it. A test asserts the button is gone while the confirmation is up, since "both present" is exactly the state that failed. |
+
 ---
 
 ## The tracker is more honest than the app was using

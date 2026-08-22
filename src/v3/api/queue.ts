@@ -44,6 +44,20 @@ export interface QueuedMutation {
     lastError?: string;
     /** HTTP status of the last failure, when there was a response at all. */
     lastStatus?: number;
+    /**
+     * The driver this work belongs to.
+     *
+     * Signing out clears the token but leaves the queue on the device, so
+     * without this a fuel report filed by one driver would be sent with the
+     * *next* driver's token — the server would attribute their work to someone
+     * who never did it. Misattributed work is worse than lost work, because
+     * nobody can tell it happened.
+     *
+     * Optional because items written before this existed have no owner; those
+     * are treated as belonging to whoever is signed in, which is the behaviour
+     * they already had.
+     */
+    ownerId?: string;
 }
 
 export interface QueueSnapshot {
@@ -142,6 +156,7 @@ export class MutationQueue {
         label: string;
         labelKey?: string;
         idempotencyKey?: string;
+        ownerId?: string;
     }): QueuedMutation {
         const item: QueuedMutation = {
             id: makeId(),
@@ -154,6 +169,7 @@ export class MutationQueue {
             createdAt: Date.now(),
             attempts: 0,
             status: 'pending',
+            ownerId: input.ownerId,
         };
         this.items.push(item);
         this.persist();
@@ -164,6 +180,28 @@ export class MutationQueue {
      * Send everything pending, oldest first, stopping at the first failure.
      * Safe to call concurrently — overlapping calls collapse into one pass.
      */
+    /**
+     * Who is signed in now. Items belonging to anyone else are left alone
+     * rather than sent under the wrong credentials.
+     */
+    private ownerId: string | undefined;
+
+    setOwner(ownerId?: string): void {
+        if (this.ownerId === ownerId) return;
+        this.ownerId = ownerId;
+        this.notify();
+    }
+
+    /** Items this driver can actually send. */
+    private isMine(item: QueuedMutation): boolean {
+        return item.ownerId === undefined || item.ownerId === this.ownerId;
+    }
+
+    /** Work waiting that belongs to someone else, and so cannot be sent here. */
+    strandedCount(): number {
+        return this.items.filter((i) => !this.isMine(i)).length;
+    }
+
     async flush(): Promise<void> {
         if (this.flushing || !this.send) return;
         this.flushing = true;
@@ -173,7 +211,7 @@ export class MutationQueue {
             // Re-read `this.items` each iteration: an enqueue during a flush
             // must be picked up, not skipped by a stale snapshot.
             for (;;) {
-                const item = this.items.find((i) => i.status === 'pending');
+                const item = this.items.find((i) => i.status === 'pending' && this.isMine(i));
                 if (!item) break;
 
                 item.status = 'syncing';
