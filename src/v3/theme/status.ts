@@ -192,3 +192,39 @@ export function humanizeStatus(status: unknown): string {
 
 /** Every status string the registry knows — used by the token/registry test. */
 export const KNOWN_STATUSES = Object.keys(TONE_BY_STATUS);
+
+/**
+ * Canonical order of the FleetOps order lifecycle.
+ *
+ * The public `order-configs` payload lists a config's activities as a flat
+ * array with **no sequencing information whatsoever** — no next-step pointers,
+ * no ordinals — and the array is not in workflow order. A real config on the
+ * dev instance returns:
+ *
+ *     created, enroute, started, completed, dispatched
+ *
+ * with `completed` fourth and `dispatched` last. Anything that reads array
+ * position as progress therefore paints a dispatched order as finished. This
+ * map supplies the order the payload does not.
+ *
+ * Keys are normalised tones, so the aliases above (`enroute`/`driver_enroute`,
+ * `order_started`/`started`) all resolve to the same rung. Codes absent here —
+ * a bespoke activity in a customer's own flow — have no known position, which
+ * is a fact the renderer has to respect rather than paper over.
+ */
+const LIFECYCLE_ORDER: Record<string, number> = {
+    created: 0,
+    preparing: 1,
+    dispatched: 2,
+    driver_assigned: 3,
+    driver_enroute: 4,
+    arrived: 5,
+    started: 6,
+    completed: 7,
+};
+
+/** Position in the canonical lifecycle, or `undefined` if we do not know it. */
+export function lifecycleRank(status: unknown): number | undefined {
+    const tone = TONE_BY_STATUS[normalizeStatus(status)];
+    return tone === undefined ? undefined : LIFECYCLE_ORDER[tone];
+}

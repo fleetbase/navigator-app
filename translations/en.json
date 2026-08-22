@@ -205,7 +205,8 @@
         "notFound": "Order not found",
         "navigate": "Navigate",
         "payloadEmpty": "Nothing is recorded on this order.",
-        "flowNotConfigured": "This order has no activity flow set up, so progress cannot be updated from the app. Ask dispatch."
+        "flowNotConfigured": "This order has no activity flow set up, so progress cannot be updated from the app. Ask dispatch.",
+        "statusOffFlow": "This order is %{status}, which is not a step in its configured flow. Ask dispatch to move it on."
     },
     "editPayloadItem": {
         "title": "Editing",

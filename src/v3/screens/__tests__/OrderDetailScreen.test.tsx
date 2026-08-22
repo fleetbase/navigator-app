@@ -169,6 +169,47 @@ describe('OrderDetailScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
+    it('reads the config flow in lifecycle order, not array order', async () => {
+        /*
+         * Taken verbatim from the dev instance: the public order-configs
+         * payload carries no sequencing data, and this real config lists
+         * `completed` fourth and `dispatched` last. Reading array position as
+         * progress painted every earlier step green and declared a freshly
+         * dispatched order finished, with no way to advance it.
+         */
+        mockConfig([
+            { code: 'created', status: 'Order Created', complete: false },
+            { code: 'enroute', status: 'Driver Enroute', complete: false },
+            { code: 'started', status: 'Order Started', complete: false },
+            { code: 'completed', status: 'Order Completed', complete: true },
+            { code: 'dispatched', status: 'Order Dispatched', complete: false },
+        ]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'dispatched' })); });
+        const t = await render();
+        const ids = testIDs(t);
+
+        // Not finished, and not off-flow either — there is a real next step.
+        expect(ids).not.toContain('order-terminal');
+        expect(ids).not.toContain('order-off-flow');
+        expect(ids).toContain('advance-activity');
+        // The step after `dispatched` in the lifecycle is en route.
+        expect(textOf(t)).toContain('En route');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('does not call an order complete just because nothing follows it', async () => {
+        // `completed` is the only activity carrying the terminal flag.
+        mockConfig([
+            { code: 'created', complete: false },
+            { code: 'completed', complete: true },
+            { code: 'dispatched', complete: false },
+        ]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'completed' })); });
+        const t = await render();
+        expect(testIDs(t)).toContain('order-terminal');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
     it('says so when the config declares no flow at all', async () => {
         // A config that loads cleanly but carries an empty flow used to render
         // nothing: no stepper, no message, and no way to advance the order.

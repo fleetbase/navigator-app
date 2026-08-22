@@ -257,6 +257,30 @@ returning 502 while its container restarted, the app said "Something went wrong
 on the server" rather than showing offline. That is correct — 502 is an answer,
 and the reachability rule is about whether anything answered at all.
 
+### The order config carries no sequence, and the app assumed one
+
+This is the most serious defect found in the whole walk, and it was invisible to
+every fixture, because every fixture I wrote listed the activities in the order
+a person would naturally write them.
+
+`GET /v1/order-configs` returns a config's activities as a **flat array with no
+sequencing data at all** — no next-step pointers, no ordinals — and the array is
+not in workflow order. The real config on the dev instance returns:
+
+    created, enroute, started, completed, dispatched
+
+with `completed` fourth and `dispatched` last.
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-48 | **S1** | **A dispatched order was shown as finished, with no way to move it on.** `dispatched` is last in that array, so every earlier step painted green — including `completed` — and `nextActivity` returned `flow[i + 1]`, which is `undefined`, so the screen showed "This order is complete" and no advance button. The driver is told the job is done before they have driven anywhere, and the screen's primary action is gone. | A canonical lifecycle order in the status registry, applied by `sequenceFlow()` before anything reads position. The same real config now renders Created → **Dispatched** → En route → Started → Completed, with "Mark En route" offered. Verified on the device against that config, not a fixture. |
+| F-49 | **S2** | **"This order is complete" was shown whenever nothing followed the current activity in the array** — which is a different statement from "the current activity is terminal", and the wrong one. | Only an activity's own `complete` flag ends the flow. A status that is not in its config's flow at all now says exactly that and points at dispatch, instead of claiming success. |
+
+What this does *not* fix: a config containing a bespoke activity we have no rank
+for. `sequenceFlow` reports `ordered: false` there and the stepper stops
+claiming which steps are behind the driver, which is honest but not useful.
+**This needs your decision** — see the open items.
+
 ---
 
 ## The tracker is more honest than the app was using

@@ -18,7 +18,7 @@ import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
 import { Banner, ErrorState, Skeleton } from '../ui/Banner';
-import { ActivityStepper, ProofRequiredHint, nextActivity, type FlowActivity } from '../ui/ActivityStepper';
+import { ActivityStepper, ProofRequiredHint, nextActivity, isTerminal, type FlowActivity } from '../ui/ActivityStepper';
 import { space } from '../theme/tokens';
 import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
@@ -76,6 +76,7 @@ export function OrderDetailScreen({
     );
 
     const next = useMemo(() => nextActivity(flow, order?.status), [flow, order?.status]);
+    const finished = useMemo(() => isTerminal(flow, order?.status), [flow, order?.status]);
 
     const advance = useCallback(async () => {
         if (!next || !order) return;
@@ -262,8 +263,16 @@ export function OrderDetailScreen({
                     >
                         {t('orderDetail.advanceTo', { activity: labelFor(next) })}
                     </Button>
-                ) : flow.length ? (
+                ) : finished ? (
                     <Banner tone="success" message={t('orderDetail.terminalReached')} testID="order-terminal" />
+                ) : flow.length ? (
+                    /*
+                     * There is no next step and the current activity is not a
+                     * terminal one — which means the order's status is not in
+                     * its own config's flow. Saying "complete" here was how a
+                     * dispatched order came to be reported as finished.
+                     */
+                    <Banner tone="neutral" message={t('orderDetail.statusOffFlow', { status: labelFor({ code: order.status ?? '' }) })} testID="order-off-flow" />
                 ) : null}
             </YStack>
         </ScrollView>
