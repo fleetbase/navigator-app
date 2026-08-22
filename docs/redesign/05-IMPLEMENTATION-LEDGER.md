@@ -68,6 +68,13 @@ routes land so both ship together.
 
 ## Tier 3 — BLOCKED on backend (plan Phase 4a)
 
+> **Audited against `routes.php` — see [07-BLOCKER-AUDIT.md](07-BLOCKER-AUDIT.md).**
+> This table was written from the phase plan, not from the server, and **8 of
+> its 19 entries were wrong or overstated**: three name an endpoint that was
+> never going to be built because the capability already shipped under another
+> name. Two are now built. Six more are buildable today. Read the audit before
+> trusting a row here.
+
 Do not start these until the endpoint exists. Each names its blocker.
 
 | Slice | Design | BLOCKED — needs |
