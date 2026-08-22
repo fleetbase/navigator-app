@@ -31,6 +31,7 @@ import { useCreateIssue, type IssueRecord } from '../data';
  */
 import { IssueType } from '../../constants/Enums';
 import { getIssueCategories } from '../../constants/IssueCategory';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical'] as const;
 type Priority = (typeof PRIORITIES)[number];
@@ -45,6 +46,7 @@ export function IssueCreateScreen({
     onDone?: (created: IssueRecord | null) => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const coordinates = useDeviceLocation();
     const { create, isSaving, queued, error } = useCreateIssue(driverId);
@@ -73,7 +75,7 @@ export function IssueCreateScreen({
     }, [coordinates, create, report, typeKey, category, priority, onDone]);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="issue-create">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="issue-create">
             {!isOnline ? <Banner tone="neutral" message={t('issueCreate.offlineNotice')} testID="issue-create-offline" /> : null}
 
             {/* Said before the work, not after a rejected submit. */}

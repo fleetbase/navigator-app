@@ -26,6 +26,7 @@ import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useDriver, useCurrentOrganization, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 export interface AccountLink {
     route: string;
@@ -73,6 +74,7 @@ export function AccountScreen({
     onSignOut?: () => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { driver, isLoading, isBlocked, error, retry } = useDriver(driverId, seed, reloadToken);
     const { organization } = useCurrentOrganization(reloadToken);
@@ -100,7 +102,7 @@ export function AccountScreen({
     const licence = driver.drivers_license_number;
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="account-screen">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="account-screen">
             {!isOnline ? <Banner tone="neutral" message={t('account.offlineNotice')} testID="account-offline" /> : null}
 
             <Surface hero padded testID="account-identity">

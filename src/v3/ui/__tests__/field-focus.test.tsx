@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import { TamaguiProvider, Theme } from 'tamagui';
+import { TamaguiProvider, Theme, XStack, YStack } from 'tamagui';
 import config, { SCHEMES, type SchemeName } from '../../theme';
 import { Field } from '../Field';
 
@@ -138,5 +138,53 @@ describe('select option labels', () => {
         expect(labelOf('Low')).toBe('Low');
         expect(valueOf(3)).toBe('3');
         expect(labelOf(null)).toBe('');
+    });
+});
+
+/**
+ * Guards the theme picker collapsing into unusable slivers.
+ *
+ * Every option inside `Segmented` is `flex: 1`. The group itself had no width,
+ * so in any row that did not stretch it — Settings wrapped two groups in one
+ * `XStack` — it collapsed to zero and rendered five thin bars that could not be
+ * read or tapped. The theme could not be changed at all, and no test noticed,
+ * because the options were all still present in the tree.
+ */
+describe('Segmented layout', () => {
+    const { Segmented } = require('../Field') as {
+        Segmented: (p: Record<string, unknown>) => React.ReactElement;
+    };
+
+    function renderSegmented(wrapper: 'row' | 'column') {
+        const options = [
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+        ];
+        const inner = <Segmented options={options} value="a" onChange={() => {}} testID="seg" />;
+        let tree!: ReactTestRenderer.ReactTestRenderer;
+        ReactTestRenderer.act(() => {
+            tree = ReactTestRenderer.create(
+                <TamaguiProvider config={config} defaultTheme="dark">
+                    <Theme name="dark">
+                        {wrapper === 'row' ? <XStack flexWrap="wrap">{inner}</XStack> : <YStack>{inner}</YStack>}
+                    </Theme>
+                </TamaguiProvider>
+            );
+        });
+        // `.pop()` — the first matches are Tamagui wrappers with no style; the
+        // host view is last.
+        const node = tree.root.findAll((n) => n.props?.testID === 'seg').pop();
+        const style = node?.props?.style;
+        const flat = Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean)) : style;
+        ReactTestRenderer.act(() => tree.unmount());
+        return (flat ?? {}) as Record<string, unknown>;
+    }
+
+    it('claims a width of its own, so it cannot collapse in a wrapping row', () => {
+        expect(renderSegmented('row').width).toBe('100%');
+    });
+
+    it('does the same inside a column', () => {
+        expect(renderSegmented('column').width).toBe('100%');
     });
 });

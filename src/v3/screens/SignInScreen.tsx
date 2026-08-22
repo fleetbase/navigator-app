@@ -22,6 +22,7 @@ import { space } from '../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 export type AuthMethod = 'phone' | 'sso' | 'qr';
 
@@ -55,6 +56,7 @@ export function SignInScreen({
     onChangeServer,
 }: SignInScreenProps) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     // Same reason as the connection screen: no DriverShell above this one.
     const insets = useSafeAreaInsets();
@@ -84,7 +86,7 @@ export function SignInScreen({
 
     return (
         <ScrollView
-            style={{ flex: 1 }}
+            style={screen}
             contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[5], gap: space[5], flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             testID="sign-in-screen"

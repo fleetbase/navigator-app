@@ -19,6 +19,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useEditableEntityFields, entityIdOf, entityNameOf, entityTrackingNumberOf } from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 /** Every field the screen knows how to show, in display order. */
 const FIELDS = [
@@ -55,6 +56,7 @@ export function EditPayloadItemScreen({
     onDone?: () => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { adapter } = useFleetbase();
     const { isEditable, configName, failed } = useEditableEntityFields(orderId);
 
@@ -100,7 +102,7 @@ export function EditPayloadItemScreen({
     }, [adapter, draft, damaged, entity, entityId, isEditable, onDone, t]);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="edit-payload-item">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="edit-payload-item">
             <YStack gap={space[2]}>
                 <XStack justifyContent="space-between" alignItems="center">
                     <Body fontSize={17} fontWeight="800">

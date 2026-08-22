@@ -24,6 +24,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useOtpSignIn, looksLikePhone, normalizePhone, type OtpChannel } from '../data';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 const CODE_LENGTH = 6;
 
@@ -38,6 +39,7 @@ export function OtpSignInScreen({
     organizationName?: string;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const insets = useSafeAreaInsets();
     const { requestCode, verifyCode, isRequesting, isVerifying } = useOtpSignIn();
@@ -80,7 +82,7 @@ export function OtpSignInScreen({
 
     return (
         <ScrollView
-            style={{ flex: 1 }}
+            style={screen}
             contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[5], gap: space[4], flexGrow: 1 }}
             testID="otp-sign-in"
         >

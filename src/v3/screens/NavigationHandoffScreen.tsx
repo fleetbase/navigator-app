@@ -25,6 +25,7 @@ import {
     type Destination,
     type NavigationAppId,
 } from '../navigate/handoff';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 export function NavigationHandoffScreen({
     destination,
@@ -39,6 +40,7 @@ export function NavigationHandoffScreen({
     open?: (url: string) => Promise<unknown>;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { navigationApp } = useSettings();
 
     const [installed, setInstalled] = useState<NavigationAppId[] | null>(null);
@@ -89,7 +91,7 @@ export function NavigationHandoffScreen({
     const nothingInstalled = installed !== null && installed.length === 0;
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="handoff">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="handoff">
             <YStack gap={space[1]}>
                 <Caption>{t('handoff.title')}</Caption>
                 <Body fontSize={15} fontWeight="700">

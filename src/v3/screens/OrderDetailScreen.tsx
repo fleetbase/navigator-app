@@ -38,6 +38,7 @@ import { useSync } from '../shell';
 import { useSettings } from '../settings';
 import { formatClock, formatMeters } from '../format';
 import { fromGeoPoint } from '../navigate/handoff';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 export function OrderDetailScreen({
     orderId,
@@ -54,6 +55,7 @@ export function OrderDetailScreen({
     onNavigate?: (destination: { latitude: number; longitude: number; label?: string }) => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { units } = useSettings();
     const { isOnline } = useSync();
     const { adapter } = useFleetbase();
@@ -119,7 +121,7 @@ export function OrderDetailScreen({
     const tracker = order.tracker_data as { eta_seconds?: number; distance_m?: number } | undefined;
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="order-detail">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="order-detail">
             {/* The identifier leads, in full, on its own line. */}
             <Surface hero padded>
                 <YStack gap={space[2]}>

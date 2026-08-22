@@ -27,6 +27,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useQueue, mutationQueue, type MutationQueue, type QueuedMutation } from '../api';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 function relativeAge(createdAt: number, now: number, t: (k: string, o?: Record<string, unknown>) => string): string {
     const minutes = Math.max(0, Math.round((now - createdAt) / 60000));
@@ -96,6 +97,7 @@ function QueueRow({
 
 export function SyncQueueScreen({ queue = mutationQueue }: { queue?: MutationQueue }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const snapshot = useQueue(queue);
     const [confirming, setConfirming] = useState<QueuedMutation | null>(null);
@@ -131,7 +133,7 @@ export function SyncQueueScreen({ queue = mutationQueue }: { queue?: MutationQue
     }
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="sync-queue">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="sync-queue">
             {!isOnline ? <Banner tone="neutral" message={t('sync.offlineNotice')} testID="sync-offline" /> : null}
 
             <YStack gap={space[1]}>

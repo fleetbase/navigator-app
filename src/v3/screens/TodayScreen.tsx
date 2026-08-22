@@ -36,6 +36,7 @@ import { useSettings } from '../settings';
 import { useSync } from '../shell';
 import { useActiveOrders, useOrderQuery, useTracker, chooseEta, currentStop, displayIdOf, type OrderRecord } from '../data';
 import { formatDuration, formatMeters, formatClock } from '../format';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 /** Blocked on Phase 4a. Named individually so the gap is legible, not vague. */
 const NOT_ENABLED = ['today.hos', 'today.driveTime', 'today.break', 'today.inspection'] as const;
@@ -151,6 +152,7 @@ export function TodayScreen({
     onNavigate?: (destination: { latitude: number; longitude: number; label?: string }) => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { units } = useSettings();
     const { isOnline } = useSync();
 
@@ -181,7 +183,7 @@ export function TodayScreen({
     }
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="today">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="today">
             {!isOnline ? <Banner tone="neutral" message={t('today.offlineNotice')} testID="today-offline" /> : null}
 
             {!current ? (

@@ -24,6 +24,7 @@ import { useSettings } from '../settings';
 import { formatVolume, formatOdometer, formatEconomy, computeEconomy, type FuelReportRecord } from '../data';
 import { isRealPoint } from '../data/useOrderTimeline';
 import { formatMoney } from '../format';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 /** Rejection reasons are internal-only; the status alone is what we may show. */
 const REJECTED = new Set(['rejected', 'canceled', 'cancelled']);
@@ -37,6 +38,7 @@ export function FuelReportScreen({
     previous?: FuelReportRecord | null;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { units } = useSettings();
 
     const economy = formatEconomy(computeEconomy(previous, report));
@@ -60,7 +62,7 @@ export function FuelReportScreen({
     }
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="fuel-report">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="fuel-report">
             <Surface hero padded>
                 <YStack gap={space[2]}>
                     <XStack justifyContent="space-between" alignItems="center">

@@ -22,6 +22,7 @@ import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
 import { useOrder, useOrderTimeline, placeOf, displayIdOf, type TrackingStatusEvent } from '../data';
 import { useSync } from '../shell';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 /** Absolute date + time — a timeline entry needs the day, not just the clock. */
 function formatStamp(iso?: string): string {
@@ -97,6 +98,7 @@ function TimelineEntry({
 
 export function OrderTimelineScreen({ orderId }: { orderId: string }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const order = useOrder(orderId);
     const { events, isLoading, isRefreshing, failed, isEmpty, refresh, error } = useOrderTimeline(orderId);
@@ -123,7 +125,7 @@ export function OrderTimelineScreen({ orderId }: { orderId: string }) {
 
     return (
         <ScrollView
-            style={{ flex: 1 }}
+            style={screen}
             contentContainerStyle={{ padding: space[4], gap: space[4] }}
             testID="order-timeline"
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} />}

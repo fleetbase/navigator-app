@@ -26,6 +26,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useUpdateDriver, type DriverRecord, type DriverProfileDraft } from '../data';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 /** Deliberately not `status`, `vehicle`, `vendor` or `job` — dispatch owns those. */
 const FIELDS = [
@@ -52,6 +53,7 @@ export function ProfileEditScreen({
     onCancel?: () => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { save, isSaving, queued, error, clearError } = useUpdateDriver(driverId);
 
@@ -103,7 +105,7 @@ export function ProfileEditScreen({
     }, [changed, draft, save, onSaved]);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="profile-edit">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="profile-edit">
             {!isOnline ? <Banner tone="neutral" message={t('profile.offlineNotice')} testID="profile-offline" /> : null}
 
             <Surface padded>

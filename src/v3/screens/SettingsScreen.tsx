@@ -20,22 +20,32 @@ import { Segmented } from '../ui/Field';
 import { ListRow } from '../ui/Rows';
 import { space } from '../theme/tokens';
 import { useSettings, useSetSetting } from '../settings';
+import { useTranslation } from '../i18n/useTranslation';
 import type { ThemePreference, UnitPreference } from '../settings';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
-const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
-    { value: 'system', label: 'System' },
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-    { value: 'night', label: 'Night' },
-    { value: 'sunlight', label: 'Sunlight' },
+/** Keys, not words — these tables are module-level and outlive a language change. */
+const THEME_OPTIONS: { value: ThemePreference; labelKey: string }[] = [
+    { value: 'system', labelKey: 'settings.themeSystem' },
+    { value: 'light', labelKey: 'settings.themeLight' },
+    { value: 'dark', labelKey: 'settings.themeDark' },
+    { value: 'night', labelKey: 'settings.themeNight' },
+    { value: 'sunlight', labelKey: 'settings.themeSunlight' },
 ];
 
-const UNIT_OPTIONS: { value: UnitPreference; label: string }[] = [
-    { value: 'metric', label: 'Metric' },
-    { value: 'imperial', label: 'Imperial' },
+const UNIT_OPTIONS: { value: UnitPreference; labelKey: string }[] = [
+    { value: 'metric', labelKey: 'settings.unitsMetric' },
+    { value: 'imperial', labelKey: 'settings.unitsImperial' },
 ];
 
-const NAV_APPS: Record<string, string> = { apple: 'Apple Maps', google: 'Google Maps', waze: 'Waze' };
+/** Uber was added to the navigation hand-off but never here, so a driver whose
+ *  default was Uber saw a blank row. Sourced from the hand-off's own list. */
+const NAV_APP_LABEL_KEYS: Record<string, string> = {
+    apple: 'handoff.apple',
+    google: 'handoff.google',
+    waze: 'handoff.waze',
+    uber: 'handoff.uber',
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
@@ -104,92 +114,105 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
     const settings = useSettings();
     const set = useSetSetting();
+    const { t } = useTranslation();
+    const screen = useScreenStyle();
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[5] }} testID="settings-screen">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[5] }} testID="settings-screen">
             {!trackingEnabled ? (
                 <Banner
                     tone="warning"
-                    message="Background tracking is off"
-                    action={onEnableTracking ? { label: 'Turn on', onPress: onEnableTracking } : undefined}
+                    message={t('settings.trackingOff')}
+                    action={onEnableTracking ? { label: t('settings.turnOn'), onPress: onEnableTracking } : undefined}
                     testID="tracking-warning"
                 />
             ) : null}
             {!trackingEnabled ? (
                 <Micro paddingHorizontal={space[1]} marginTop={-space[4]}>
-                    Dispatch can&apos;t see your progress · required on duty
+                    {t('settings.trackingOffHint')}
                 </Micro>
             ) : null}
 
-            <Section title="APPEARANCE">
+            <Section title={t('settings.appearance')}>
                 <YStack padding={space[4]} gap={space[3]}>
                     <XStack justifyContent="space-between" alignItems="center">
-                        <Body fontSize={15}>Theme</Body>
-                        <Secondary fontSize={13}>{THEME_OPTIONS.find((o) => o.value === settings.theme)?.label}</Secondary>
+                        <Body fontSize={15}>{t('settings.theme')}</Body>
+                        <Secondary fontSize={13}>{t(THEME_OPTIONS.find((o) => o.value === settings.theme)?.labelKey ?? 'settings.themeSystem')}</Secondary>
                     </XStack>
-                    {/* Five options wrap on narrow devices rather than shrinking below the tap target. */}
-                    <XStack flexWrap="wrap" gap={space[2]}>
+                    {/* Stacked, not wrapped: five options across one row are
+                        below the legible width on a phone. */}
+                    <YStack gap={space[2]}>
+                        {/*
+                          * Each group shows a selection only when the current
+                          * theme is one of *its* options. Coercing the other
+                          * group's value to 'system' made picking Night or
+                          * Sunlight light up System instead, so the choice
+                          * looked like it had not taken.
+                          */}
                         <Segmented
-                            options={THEME_OPTIONS.slice(0, 3)}
-                            value={(settings.theme === 'night' || settings.theme === 'sunlight' ? 'system' : settings.theme) as ThemePreference}
+                            options={THEME_OPTIONS.slice(0, 3).map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+                            value={settings.theme}
                             onChange={(v) => set('theme', v)}
                             testID="theme-primary"
                         />
                         <Segmented
-                            options={THEME_OPTIONS.slice(3)}
+                            options={THEME_OPTIONS.slice(3).map((o) => ({ value: o.value, label: t(o.labelKey) }))}
                             value={settings.theme}
                             onChange={(v) => set('theme', v)}
                             testID="theme-driving"
                         />
-                    </XStack>
+                    </YStack>
                 </YStack>
                 <Divider />
-                <ListRow name="Language" meta={settings.language} />
+                <ListRow name={t('settings.language')} meta={settings.language} />
                 <Divider />
                 <YStack padding={space[4]} gap={space[3]}>
-                    <Body fontSize={15}>Units</Body>
-                    <Segmented options={UNIT_OPTIONS} value={settings.units} onChange={(v) => set('units', v)} testID="units" />
+                    <Body fontSize={15}>{t('settings.units')}</Body>
+                    <Segmented options={UNIT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))} value={settings.units} onChange={(v) => set('units', v)} testID="units" />
                 </YStack>
                 <Divider />
-                <ListRow name="Navigation app" meta={NAV_APPS[settings.navigationApp]} />
+                <ListRow
+                    name={t('settings.navigationApp')}
+                    meta={t(NAV_APP_LABEL_KEYS[settings.navigationApp] ?? 'handoff.apple')}
+                />
             </Section>
 
-            <Section title="NOTIFICATIONS">
+            <Section title={t('settings.notifications')}>
                 <ToggleRow
-                    label="New work assigned"
+                    label={t('settings.notifyNewWork')}
                     value={settings.notifyNewWork}
                     onChange={(v) => set('notifyNewWork', v)}
                     testID="notify-new-work"
                 />
                 <Divider />
                 <ToggleRow
-                    label="Dispatch messages"
+                    label={t('settings.notifyDispatch')}
                     value={settings.notifyDispatchMessages}
                     onChange={(v) => set('notifyDispatchMessages', v)}
                     testID="notify-dispatch"
                 />
                 <Divider />
                 <ToggleRow
-                    label="Nearby offers"
-                    hint="Interrupts even in Do Not Disturb"
+                    label={t('settings.notifyOffers')}
+                    hint={t('settings.notifyOffersHint')}
                     value={settings.notifyNearbyOffers}
                     onChange={(v) => set('notifyNearbyOffers', v)}
                     testID="notify-offers"
                 />
             </Section>
 
-            <Section title="STORAGE & DIAGNOSTICS">
+            <Section title={t('settings.storage')}>
                 <XStack alignItems="center" gap={space[3]} padding={space[4]}>
                     <YStack flex={1} gap={2}>
-                        <Body fontSize={15}>Offline cache</Body>
+                        <Body fontSize={15}>{t('settings.offlineCache')}</Body>
                         {cacheSummary ? <Micro tabular>{cacheSummary}</Micro> : null}
                     </YStack>
                     <Button variant="secondary" height={38} onPress={onManageStorage}>
-                        Manage
+                        {t('settings.manage')}
                     </Button>
                 </XStack>
                 <Divider />
-                <ListRow name="Send diagnostics" onPress={onSendDiagnostics} />
+                <ListRow name={t('settings.sendDiagnostics')} onPress={onSendDiagnostics} />
             </Section>
 
             <Micro center paddingBottom={space[6]}>

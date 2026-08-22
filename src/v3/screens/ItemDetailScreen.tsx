@@ -39,6 +39,7 @@ import {
 } from '../data';
 import { useSync } from '../shell';
 import { formatMoney, formatWeight, formatDimensions, formatClock } from '../format';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 /** The API returns bare base64; <Image> needs the data URI. */
 function pngSource(base64?: unknown) {
@@ -81,6 +82,7 @@ export function ItemDetailScreen({
     onBack?: () => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
 
     const { entity, isLoading, isBlocked, error, retry } = useEntity(entityId, seed);
@@ -175,7 +177,7 @@ export function ItemDetailScreen({
     const description = str(entity.description);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="item-detail">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="item-detail">
             {!isOnline ? <Banner tone="neutral" message={t('itemDetail.offlineCached')} testID="item-offline" /> : null}
 
             {damaged ? (

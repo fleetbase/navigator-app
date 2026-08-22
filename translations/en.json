@@ -715,5 +715,31 @@
             "one": "%{count} item",
             "other": "%{count} items"
         }
+    },
+    "settings": {
+        "appearance": "APPEARANCE",
+        "notifications": "NOTIFICATIONS",
+        "storage": "STORAGE & DIAGNOSTICS",
+        "theme": "Theme",
+        "themeSystem": "System",
+        "themeLight": "Light",
+        "themeDark": "Dark",
+        "themeNight": "Night",
+        "themeSunlight": "Sunlight",
+        "language": "Language",
+        "units": "Units",
+        "unitsMetric": "Metric",
+        "unitsImperial": "Imperial",
+        "navigationApp": "Navigation app",
+        "trackingOff": "Background tracking is off",
+        "trackingOffHint": "Dispatch cannot see your progress. It is required while on duty.",
+        "turnOn": "Turn on",
+        "notifyNewWork": "New work assigned",
+        "notifyDispatch": "Dispatch messages",
+        "notifyOffers": "Nearby offers",
+        "notifyOffersHint": "Interrupts even in Do Not Disturb",
+        "offlineCache": "Offline cache",
+        "manage": "Manage",
+        "sendDiagnostics": "Send diagnostics"
     }
 }

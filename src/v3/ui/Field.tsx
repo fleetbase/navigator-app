@@ -242,7 +242,11 @@ export function Segmented<T extends string>({
     testID?: string;
 }) {
     return (
-        <XStack gap={space[2]} testID={testID} accessibilityRole="radiogroup">
+        // `width: 100%` because every option inside is `flex: 1`. Without a
+        // width of its own the group collapses to zero in any row that does not
+        // stretch it, and the options render as slivers — which is exactly what
+        // happened to the theme picker in Settings, leaving it untappable.
+        <XStack width="100%" gap={space[2]} testID={testID} accessibilityRole="radiogroup">
             {options.map((o) => {
                 const selected = o.value === value;
                 return (

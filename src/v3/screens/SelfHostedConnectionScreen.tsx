@@ -26,6 +26,7 @@ import { Banner, ErrorState } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { probeHost, type HostIdentity, type ProbeFailure } from '../connection/probeHost';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 const FAILURE_KEY: Record<ProbeFailure, string> = {
     'invalid-url': 'connect.invalidUrl',
@@ -47,6 +48,7 @@ export function SelfHostedConnectionScreen({
     probe?: typeof probeHost;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     // Pre-auth screens render outside DriverShell, which is what supplies the
     // top inset everywhere else — without this the title sits under the notch.
     const insets = useSafeAreaInsets();
@@ -69,7 +71,7 @@ export function SelfHostedConnectionScreen({
     }, [host, probe]);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[4], gap: space[4] }}
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[4], gap: space[4] }}
             testID="self-hosted-connection"
         >
             <YStack gap={space[2]}>

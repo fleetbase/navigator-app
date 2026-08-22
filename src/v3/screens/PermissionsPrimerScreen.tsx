@@ -29,6 +29,7 @@ import {
     type PermissionKey,
     type PermissionState,
 } from '../permissions/permissions';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 type States = Partial<Record<PermissionKey, PermissionState>>;
 
@@ -45,6 +46,7 @@ export function PermissionsPrimerScreen({
     openSettings?: () => Promise<void> | void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const [states, setStates] = useState<States>({});
     const [partial, setPartial] = useState<Partial<Record<PermissionKey, boolean>>>({});
     const [busy, setBusy] = useState<PermissionKey | null>(null);
@@ -77,7 +79,7 @@ export function PermissionsPrimerScreen({
     const satisfied = isSatisfied(states);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="permissions-primer">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="permissions-primer">
             <YStack gap={space[2]}>
                 <Body fontSize={17} fontWeight="800">
                     {t('permissions.title')}

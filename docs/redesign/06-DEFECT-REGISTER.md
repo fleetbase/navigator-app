@@ -96,6 +96,34 @@ Both were misdiagnosed first — see *How these were found*, below.
 | F-30 | S3 | **The component library shipped fourteen English strings that no locale could change** — the offline and synced banners, the offer card's Accept/Decline and PAYOUT, TRACKING NUMBER, the HOS gauge's DRIVE LEFT / Shift / Week, the scanner's Manual entry, and the PICKUP/DROP-OFF/RETURN chips. Invisible in every test, because the tests asserted the same English back. | All routed through `t()` under `ui.*`. `no-hardcoded-copy.test.js` parses the sources rather than rendering — a string only reachable in a state no test exercises is exactly the one that survives. |
 | F-31 | S3 | **Two plurals were built by hand** — `` `${n} ${n === 1 ? 'item' : 'items'}` `` in `OrderCard` and `StopRow`. That construction cannot be translated at all: languages with more than two plural forms have no way to express it. The guard above caught the second one, which my own grep had missed. | `t('ui.itemCount', { count })`, with the catalogue owning pluralisation. |
 
+### Design fidelity — found by the four-scheme pass
+
+The plan's verification gate asks for every screen in all four schemes. Doing it
+found three things that had survived the entire build, because the simulator's
+system scheme is light: **every screenshot I had called "dark" was of a light
+app.**
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-34 | **S2** | **Every one of the twenty screens painted the platform background, not the theme's.** A bare `<ScrollView style={{ flex: 1 }}>` shows the default behind its content, so in dark, night and sunlight the page stayed light wherever content did not cover it — section headers, the space under a short list, beside a card. | `useScreenStyle()` reads the token; a source-parsing guard keeps new screens honest. |
+| F-35 | **S2** | **The theme picker had collapsed into unusable slivers**, so the theme could not be changed at all. Every option inside `Segmented` is `flex: 1`, but the group had no width of its own, and Settings wrapped two groups in one row. No test noticed, because all the options were still present in the tree. | `width: 100%` on the group, and the two groups stacked rather than wrapped. |
+| F-36 | S3 | **Picking Night or Sunlight lit up "System" instead.** Settings coerced both to `'system'` before handing the value to the control, so the choice looked like it had not taken. | Each group shows a selection only when the current theme is one of its own options. |
+| F-37 | S3 | Settings was almost entirely **untranslated** — every section header, row label, theme and unit option — and `NAV_APPS` never gained `uber` after it was added to the hand-off, so a driver whose default was Uber saw a blank row. | Routed through `t()`; the labels now come from the hand-off's own list. |
+
+### Open design question — status hues in night mode
+
+`feedbackFamily(scheme)` night-tunes its colours, and the palette says why:
+*"night swaps success to amber because saturated green reads as a light source at
+night."* But `statusFamily()` takes **no scheme argument**, so all eleven status
+hues stay fully saturated in every scheme — a completed order's pill is the same
+saturated green at night that the palette explicitly warns against, and
+"Dispatched" is a bright blue on near-black.
+
+The current comment justifies it on contrast grounds (one full-strength hue
+clears AA on every scheme background). Both concerns are real and they conflict.
+**Which wins is a design decision, not a code fix** — night-tuning eleven hues
+means choosing eleven new values, so it is recorded here rather than invented.
+
 ### Design fidelity
 
 | # | Sev | What | Fix |

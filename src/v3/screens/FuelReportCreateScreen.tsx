@@ -26,6 +26,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useSettings } from '../settings';
 import { useSync } from '../shell';
 import { useCreateFuelReport, computeEconomy, formatEconomy, type FuelReportRecord } from '../data';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 const VOLUME_UNITS = ['L', 'gal'] as const;
 type VolumeUnit = (typeof VOLUME_UNITS)[number];
@@ -50,6 +51,7 @@ export function FuelReportCreateScreen({
     onDone?: (created: FuelReportRecord | null) => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { units } = useSettings();
     const { isOnline } = useSync();
     const { create, isSaving, queued, error } = useCreateFuelReport(driverId);
@@ -105,7 +107,7 @@ export function FuelReportCreateScreen({
     }, [create, odometer, volume, unit, amount, currency, location, onDone]);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="fuel-create">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="fuel-create">
             {!isOnline ? <Banner tone="neutral" message={t('fuelCreate.offlineNotice')} testID="create-offline" /> : null}
 
             <Surface padded>

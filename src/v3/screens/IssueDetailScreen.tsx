@@ -18,9 +18,11 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { headingOf, humanizeTerm, type IssueRecord } from '../data';
 import { isRealPoint } from '../data/useOrderTimeline';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const point = isRealPoint(issue.location) ? (issue.location!.coordinates as number[]) : undefined;
 
     const rows: { key: string; labelKey: string; value: string }[] = [];
@@ -35,7 +37,7 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
     if (point) push('location', 'issueDetail.location', `${point[1].toFixed(4)}, ${point[0].toFixed(4)}`);
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="issue-detail">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="issue-detail">
             <Surface hero padded>
                 <YStack gap={space[2]}>
                     <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>

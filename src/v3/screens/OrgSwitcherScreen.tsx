@@ -19,6 +19,7 @@ import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useDriverOrganizations, useSwitchOrganization, type DriverRecord, type OrganizationRecord } from '../data';
+import { useScreenStyle } from '../ui/useScreenStyle';
 
 function Logo({ url, name }: { url?: string | null; name?: string }) {
     if (url) return <Image source={{ uri: url }} style={{ width: 36, height: 36, borderRadius: radius.compact }} />;
@@ -45,6 +46,7 @@ export function OrgSwitcherScreen({
     onDone?: () => void;
 }) {
     const { t } = useTranslation();
+    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { organizations, isLoading, failed, error, retry } = useDriverOrganizations(driverId);
     const { switchTo, switchingTo, error: switchError, clearError } = useSwitchOrganization(driverId);
@@ -75,7 +77,7 @@ export function OrgSwitcherScreen({
     const only = list.length === 1;
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="org-switcher">
+        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="org-switcher">
             {switchError ? (
                 <ErrorState title={t('orgSwitcher.switchFailed')} body={switchError} onRetry={clearError} retryLabel={t('common.dismiss')} testID="switch-error" />
             ) : null}
