@@ -16,9 +16,23 @@ cannot tell you a text field focused and was blurred again in the same tap.
 
 ## Open — needs your decision
 
+**Three PRs are open against fleetops** for the items that were mine to fix:
+
+| PR | Item | What it does |
+|---|---|---|
+| [#300](https://github.com/fleetbase/fleetops/pull/300) | O-17 | Publishes `activities`, `sequence` and `logic` on the public order-config flow, so consumers can sequence it. **Linked locally and verified working.** |
+| [#301](https://github.com/fleetbase/fleetops/pull/301) | O-19 | Stops `PUT /v1/vehicles/{id}` silently discarding the odometer. |
+| [#302](https://github.com/fleetbase/fleetops/pull/302) | O-1 | Scopes issue and fuel-report lists by `driver_uuid` instead of silently by nothing. |
+
+The remaining open items are policy or product decisions rather than defects
+with an obvious patch — O-13 in particular changes authentication behaviour and
+should be your call, not a surprise PR.
+
+
+
 | # | Sev | What | Where |
 |---|---|---|---|
-| O-1 | **S1** | `driver_uuid` and `driver_assigned` are **silently ignored** as filters on `fuel-reports` and `issues`, returning *every driver's* records in the company. Only `driver=` filters. An unrecognised filter should 400, not fall through to the whole table — one plausible-looking parameter name is a cross-driver data leak. | fleetops API |
+| O-1 | **S1** | **PR OPEN — [fleetops#302](https://github.com/fleetbase/fleetops/pull/302).** `driver_uuid` and `driver_assigned` are **silently ignored** as filters on `fuel-reports` and `issues`, returning *every driver's* records in the company. Only `driver=` filters. An unrecognised filter should 400, not fall through to the whole table — one plausible-looking parameter name is a cross-driver data leak. | fleetops API |
 | O-13 | **S1** | `PUT /v1/drivers/{id}` accepts `password` and **sets it without verifying the current one**. Anyone holding an unlocked handset — or any client that can reach the endpoint with the driver's token — can take the account. The app therefore offers no password change at all; it needs a server-side current-password check first. | `DriverController@update` |
 | O-14 | S3 | Email uniqueness is enforced **only on create**: `Rule::when($isCreating, [Rule::unique('users')…])`. A profile update can therefore set an email that already belongs to another user. | `CreateDriverRequest` |
 | O-15 | S2 | **`NSContactsUsageDescription` is declared, and `Contacts` is in the Podfile's `setup_permissions`, but the driver app has no contacts feature.** Shipping an unused permission with a vague reason ("for sharing") is an App Store rejection risk and an unnecessary privacy ask. Removing it needs a `pod install` and a native rebuild, so it is left for a deliberate pass. | `ios/Podfile`, `Info.plist` |
@@ -33,7 +47,7 @@ cannot tell you a text field focused and was blurred again in the same tap.
 | O-8 | S3 | A chat channel carries **no order reference**, so G1's order-context header has nothing to link to. | core-api |
 | O-9 | S2 | `linkApp` finds the first admin user, gets-or-creates an `ApiCredential`, and ships it in a deep link — one shared, org-wide, unrevocable key on every handset. Phase 5 replaces this. | `NavigatorController@linkApp` |
 | O-17 | **S2** | ~~The public `order-configs` resource discards the flow's graph.~~ **PR OPEN — [fleetbase/fleetops#300](https://github.com/fleetbase/fleetops/pull/300).** The stored flow is a directed graph: `activities` names the codes an activity can transition to, `sequence` orders activities reachable from the same parent, and `logic` gates availability. `Http/Resources/v1/OrderConfig::projectFlow()` dropped all three, so the public API emitted an unordered set while the console's internal resource returned the flow whole. The PR publishes them, normalises transitions written as objects to plain codes, and keeps the fields present-but-null for legacy activities. The app's sequencer already prefers the graph when it is there, so nothing further is needed here once it merges. | `Http/Resources/v1/OrderConfig.php` |
-| O-19 | **S2** | **`PUT /v1/vehicles/{id}` accepts an odometer and silently discards it.** `odometer` is in the model's `$fillable` and the request rules do not forbid it, but `VehicleController::vehicleInputFromRequest()` builds its input with `$request->only([...])` and that list omits `odometer`. The write returns 200, the response looks correct, and nothing changed. Same shape as O-1: an input the API accepts, ignores, and reports success for. Either accept it or reject it — reporting success for a discarded field is the one option that cannot be right. | `VehicleController` |
+| O-19 | **S2** | **PR OPEN — [fleetops#301](https://github.com/fleetbase/fleetops/pull/301).** **`PUT /v1/vehicles/{id}` accepts an odometer and silently discards it.** `odometer` is in the model's `$fillable` and the request rules do not forbid it, but `VehicleController::vehicleInputFromRequest()` builds its input with `$request->only([...])` and that list omits `odometer`. The write returns 200, the response looks correct, and nothing changed. Same shape as O-1: an input the API accepts, ignores, and reports success for. Either accept it or reject it — reporting success for a discarded field is the one option that cannot be right. | `VehicleController` |
 | O-18 | S3 | An order whose stops have unresolved coordinates reports **"11547.4 km · 230 h 56 m"** for a local Singapore drop. The app renders the tracker faithfully; the tracker is computing from a null island. Worth deciding whether the app should suppress implausible legs or the server should stop emitting them. | fleetops API |
 | O-11 | S4 | `isConnected` still proxies off the SocketCluster connection; there is no netinfo dependency, so "offline" means "socket dropped". | `src/v3` bridge |
 
