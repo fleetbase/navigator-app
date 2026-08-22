@@ -179,6 +179,17 @@ describe('FuelLogScreen', () => {
         expect(testIDs(t)).toContain('fuel-error');
         ReactTestRenderer.act(() => t.unmount());
     });
+
+    it('still lets the driver record a fill when the list fails', async () => {
+        // A failed read must not remove a write the queue can hold.
+        mockList('fail');
+        const onCreate = jest.fn();
+        const t = await mount(<FuelLogScreen driverId="driver_1" onCreate={onCreate} />);
+        const ids = testIDs(t);
+        expect(ids).toContain('fuel-error');
+        expect(ids).toContain('fuel-add');
+        ReactTestRenderer.act(() => t.unmount());
+    });
 });
 
 describe('FuelReportScreen', () => {

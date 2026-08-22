@@ -235,6 +235,17 @@ firing on every launch and that nobody had looked at.
 |---|---|---|---|
 | F-44 | **S2** | **A failed driver fetch replaced the whole Account tab with one error state** — settings, the sync queue, the fuel log, the issue list, permissions and *sign out* all disappeared. None of them need the driver record, and they are exactly what a driver reaches for when the server is misbehaving: check what is queued, change a setting, sign out and back in. Found the moment the dev instance started returning empty 500s. | Only the driver's own details are hidden, as a card rather than a takeover. The links and sign-out always render. |
 
+### No way back, and no idea where you were
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-45 | **S2** | **Every route in the v3 stack was `headerShown: false`, so no pushed screen had a title or a back control** — fuel report, issue, item, timeline, conversation, profile, sync queue, permissions, settings, the lot. The only way back was the iOS edge-swipe: invisible, undiscoverable, and not usable with gloves on. A driver two screens deep had nothing on screen telling them where they were or how to leave. Every screenshot in every prior pass showed this, and none of them made it register — the eye reads the content and supplies the missing chrome. | A `ScreenHeader` with a 44pt back target and the screen's name, applied to all 24 pushed routes. |
+| F-46 | S3 | The first attempt passed the header through the navigator's `header` option, which **threw "No theme and no parent?"** and left the app white. `react-native-screens` hosts a custom header in its own native subtree, outside the Tamagui provider, so every themed component in it failed. | The header is composed inside the screen instead, by a `withHeader` wrapper declared once per route at module scope — same tree as the screen, and a stable component identity so the screen does not remount on every render. |
+
+The second of these is the more useful lesson: a component tree is not always
+the tree it appears to be, and the console said so immediately. Reading it took
+one launch; guessing would have taken several.
+
 ---
 
 ## The tracker is more honest than the app was using

@@ -4,6 +4,7 @@ export * from './Identifier';
 export * from './StatusPill';
 export * from './Button';
 export * from './Surface';
+export * from './ScreenHeader';
 export * from './Banner';
 export * from './FailureState';
 export * from './useScreenStyle';

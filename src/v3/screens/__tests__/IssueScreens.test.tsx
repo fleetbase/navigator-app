@@ -193,6 +193,17 @@ describe('IssuesScreen', () => {
         expect(testIDs(t)).toContain('issues-error');
         ReactTestRenderer.act(() => t.unmount());
     });
+
+    it('still lets the driver record an issue when the list fails', async () => {
+        // A failed read must not remove a write the queue can hold.
+        mockList('fail');
+        const onCreate = jest.fn();
+        const t = await mount(<IssuesScreen driverId="driver_1" onCreate={onCreate} />);
+        const ids = testIDs(t);
+        expect(ids).toContain('issues-error');
+        expect(ids).toContain('issue-add');
+        ReactTestRenderer.act(() => t.unmount());
+    });
 });
 
 describe('IssueDetailScreen', () => {

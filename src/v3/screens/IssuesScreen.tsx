@@ -106,9 +106,20 @@ export function IssuesScreen({
     }
 
     if (failed && !issues) {
+        /*
+         * A failed *read* must not take away an unrelated *write*. Filing this
+         * is queueable — that is the whole point of the offline layer — and a
+         * driver who cannot see the list is often exactly the one who needs to
+         * record something now and let it send later.
+         */
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="issues-error">
+            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[4]} justifyContent="center" testID="issues-error">
                 <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="issues-error" />
+                {onCreate ? (
+                    <Button fullWidth onPress={onCreate} testID="issue-add">
+                        {t('issues.report')}
+                    </Button>
+                ) : null}
             </YStack>
         );
     }

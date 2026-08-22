@@ -28,6 +28,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { YStack } from 'tamagui';
+import { ScreenHeader } from '../ui/ScreenHeader';
+import { useTranslation } from '../i18n/useTranslation';
 import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
@@ -64,6 +67,37 @@ const MANIFESTS = 'driver-scoped manifest endpoints (Phase 4a)';
 
 const screenOptions = { headerShown: false } as const;
 const modalOptions = { presentation: 'modal' } as const;
+
+/**
+ * Wraps a pushed screen with our own title bar and back control.
+ *
+ * Every route was `headerShown: false`, so a driver who tapped into a fuel
+ * report, an issue, an item or the sync queue had no title telling them where
+ * they were and no visible way back — only the iOS edge-swipe, which is
+ * invisible and unusable with gloves on.
+ *
+ * The header is composed *inside* the screen rather than passed as the
+ * navigator's `header` option, which was the first attempt: react-native-screens
+ * hosts a custom header in its own native subtree, outside the Tamagui
+ * provider, and every themed component in it threw "No theme and no parent?".
+ * A wrapper keeps the header in the same tree as the screen it belongs to, and
+ * the shell's own header stays where it is, above the navigator.
+ */
+function withHeader<P extends object>(titleKey: string, Screen: React.ComponentType<P>) {
+    function Headered(props: P & { navigation?: { goBack: () => void; canGoBack?: () => boolean } }) {
+        const { t } = useTranslation();
+        const nav = props.navigation;
+        const canGoBack = nav?.canGoBack ? nav.canGoBack() : Boolean(nav);
+        return (
+            <YStack flex={1} backgroundColor="$background">
+                <ScreenHeader title={t(titleKey)} onBack={canGoBack && nav ? () => nav.goBack() : undefined} />
+                <Screen {...(props as P)} />
+            </YStack>
+        );
+    }
+    Headered.displayName = `withHeader(${titleKey})`;
+    return Headered;
+}
 
 /** The signed-in driver's public id, for screens that scope a query by it. */
 const DriverIdContext = createContext<string | undefined>(undefined);
@@ -327,13 +361,40 @@ function NewConversation({ navigation }: { navigation: Nav }) {
 
 /* -- Stacks. -------------------------------------------------------------- */
 
+/* Header-wrapped screens. Declared once at module scope so the component
+   identity is stable — an inline wrapper would remount on every render. */
+const NavigationHandoffH = withHeader('nav.navigationHandoff', NavigationHandoff);
+const StopDetailH = withHeader('nav.stopDetail', StopDetail);
+const StopExecutionH = withHeader('nav.stopExecution', StopExecution);
+const OptimisePreviewH = withHeader('nav.optimisePreview', OptimisePreview);
+const OrderDetailH = withHeader('nav.orderDetail', OrderDetail);
+const EntityDetailH = withHeader('nav.itemDetail', EntityDetail);
+const OrderTimelineH = withHeader('nav.orderTimeline', OrderTimeline);
+const ConversationH = withHeader('nav.conversation', Conversation);
+const NewConversationH = withHeader('nav.newConversation', NewConversation);
+const FuelLogH = withHeader('nav.fuelLog', FuelLog);
+const FuelReportH = withHeader('nav.fuelReport', FuelReport);
+const IssuesH = withHeader('nav.issues', Issues);
+const IssueDetailH = withHeader('nav.issueDetail', IssueDetail);
+const IssueCreateH = withHeader('nav.issueCreate', IssueCreate);
+const MyVehicleH = withHeader('nav.myVehicle', MyVehicle);
+const InspectionH = withHeader('nav.inspection', Inspection);
+const DocumentsH = withHeader('nav.documents', Documents);
+const ProfileEditH = withHeader('nav.profileEdit', ProfileEdit);
+const PermissionsPrimerH = withHeader('nav.permissions', PermissionsPrimer);
+const OrgSwitcherH = withHeader('nav.orgSwitcher', OrgSwitcher);
+const SettingsScreenH = withHeader('nav.settings', SettingsScreen);
+const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
+const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
+const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
+
 function TodayStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="TodayHome" component={TodayHome} />
             {/* Registered here as well as under Orders — `navigate` resolves
                 within the current stack, so a shared route needs both. */}
-            <Stack.Screen name="NavigationHandoff" component={NavigationHandoff} />
+            <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
         </Stack.Navigator>
     );
 }
@@ -342,9 +403,9 @@ function RouteStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="RouteHome" component={RouteHome} />
-            <Stack.Screen name="StopDetail" component={StopDetail} />
-            <Stack.Screen name="StopExecution" component={StopExecution} />
-            <Stack.Screen name="OptimisePreview" component={OptimisePreview} />
+            <Stack.Screen name="StopDetail" component={StopDetailH} />
+            <Stack.Screen name="StopExecution" component={StopExecutionH} />
+            <Stack.Screen name="OptimisePreview" component={OptimisePreviewH} />
         </Stack.Navigator>
     );
 }
@@ -353,11 +414,11 @@ function OrdersStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="OrdersHome" component={OrdersHome} />
-            <Stack.Screen name="OrderDetail" component={OrderDetail} />
-            <Stack.Screen name="EditPayloadItem" component={EditPayloadItem} options={modalOptions} />
-            <Stack.Screen name="EntityDetail" component={EntityDetail} />
-            <Stack.Screen name="NavigationHandoff" component={NavigationHandoff} />
-            <Stack.Screen name="OrderTimeline" component={OrderTimeline} />
+            <Stack.Screen name="OrderDetail" component={OrderDetailH} />
+            <Stack.Screen name="EditPayloadItem" component={EditPayloadItemH} options={modalOptions} />
+            <Stack.Screen name="EntityDetail" component={EntityDetailH} />
+            <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
+            <Stack.Screen name="OrderTimeline" component={OrderTimelineH} />
         </Stack.Navigator>
     );
 }
@@ -366,8 +427,8 @@ function InboxStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="InboxHome" component={InboxHome} />
-            <Stack.Screen name="Conversation" component={Conversation} />
-            <Stack.Screen name="NewConversation" component={NewConversation} />
+            <Stack.Screen name="Conversation" component={ConversationH} />
+            <Stack.Screen name="NewConversation" component={NewConversationH} />
         </Stack.Navigator>
     );
 }
@@ -377,26 +438,26 @@ function AccountStack() {
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="AccountHome" component={AccountHome} />
             {/* Reports moved here from their own tab. */}
-            <Stack.Screen name="FuelLog" component={FuelLog} />
-            <Stack.Screen name="FuelReport" component={FuelReport} />
-            <Stack.Screen name="FuelReportCreate" component={FuelReportCreate} options={modalOptions} />
-            <Stack.Screen name="Issues" component={Issues} />
-            <Stack.Screen name="IssueDetail" component={IssueDetail} />
+            <Stack.Screen name="FuelLog" component={FuelLogH} />
+            <Stack.Screen name="FuelReport" component={FuelReportH} />
+            <Stack.Screen name="FuelReportCreate" component={FuelReportCreateH} options={modalOptions} />
+            <Stack.Screen name="Issues" component={IssuesH} />
+            <Stack.Screen name="IssueDetail" component={IssueDetailH} />
             {/*
               * Pushed, not presented as a native modal. This screen's selects
               * open a bottom sheet through `MainPortal`, and that host lives
               * beside NavigationContainer — a native modal sits *above* it, so
               * the sheet would render behind the form and never be seen.
               */}
-            <Stack.Screen name="IssueCreate" component={IssueCreate} />
-            <Stack.Screen name="MyVehicle" component={MyVehicle} />
-            <Stack.Screen name="Inspection" component={Inspection} />
-            <Stack.Screen name="Documents" component={Documents} />
-            <Stack.Screen name="ProfileEdit" component={ProfileEdit} />
-            <Stack.Screen name="Permissions" component={PermissionsPrimer} />
-            <Stack.Screen name="OrgSwitcher" component={OrgSwitcher} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="SyncQueue" component={SyncQueue} />
+            <Stack.Screen name="IssueCreate" component={IssueCreateH} />
+            <Stack.Screen name="MyVehicle" component={MyVehicleH} />
+            <Stack.Screen name="Inspection" component={InspectionH} />
+            <Stack.Screen name="Documents" component={DocumentsH} />
+            <Stack.Screen name="ProfileEdit" component={ProfileEditH} />
+            <Stack.Screen name="Permissions" component={PermissionsPrimerH} />
+            <Stack.Screen name="OrgSwitcher" component={OrgSwitcherH} />
+            <Stack.Screen name="Settings" component={SettingsScreenH} />
+            <Stack.Screen name="SyncQueue" component={SyncQueueH} />
         </Stack.Navigator>
     );
 }

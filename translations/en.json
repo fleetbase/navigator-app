@@ -734,5 +734,31 @@
         "offlineCache": "Offline cache",
         "manage": "Manage",
         "sendDiagnostics": "Send diagnostics"
+    },
+    "nav": {
+        "stopDetail": "Stop",
+        "stopExecution": "Complete stop",
+        "optimisePreview": "Optimise route",
+        "orderDetail": "Order",
+        "itemDetail": "Item",
+        "orderTimeline": "Timeline",
+        "navigationHandoff": "Navigate",
+        "conversation": "Conversation",
+        "newConversation": "New message",
+        "fuelLog": "Fuel log",
+        "fuelReport": "Fill",
+        "fuelReportCreate": "Log a fill",
+        "issues": "Issues & defects",
+        "issueDetail": "Issue",
+        "issueCreate": "Report an issue",
+        "myVehicle": "My vehicle",
+        "inspection": "Vehicle inspection",
+        "documents": "My documents",
+        "profileEdit": "Your details",
+        "permissions": "Permissions",
+        "orgSwitcher": "Organisation",
+        "settings": "Settings",
+        "syncQueue": "Sync queue",
+        "editItem": "Edit item"
     }
 }
