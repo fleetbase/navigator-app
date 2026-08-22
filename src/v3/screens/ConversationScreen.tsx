@@ -32,6 +32,7 @@ import {
     useSendMessage,
     myParticipant,
     channelTitle,
+    headingNamesEveryone,
     otherParticipants,
     type ChatChannelRecord,
     type FeedEntry,
@@ -174,16 +175,34 @@ export function ConversationScreen({
     }
 
     const others = otherParticipants(channel, userId);
+    /*
+     * When the heading already names everyone, a "3 other people" line beneath
+     * spends a row restating it. Containment rather than equality, because the
+     * server's own channel titles sometimes include the viewer and sometimes
+     * do not — "Ron, Charlotte Thomas" and "Charlotte Thomas" should both
+     * count as already having said who is here.
+     */
+    const heading = channelTitle(channel, userId, t('inbox.untitled'));
+    const alreadyNamed = headingNamesEveryone(heading, others);
     const canSend = !!me && draft.trim().length > 0;
 
     return (
         <YStack flex={1} backgroundColor="$background" testID="conversation">
             <YStack paddingHorizontal={space[4]} paddingTop={space[2]} gap={space[2]}>
                 <Body fontSize={15} fontWeight="800" numberOfLines={1}>
-                    {channelTitle(channel, userId, t('inbox.untitled'))}
+                    {heading}
                 </Body>
                 <XStack gap={space[2]} alignItems="center">
-                    <Caption testID="participant-summary">{t('conversation.participants', { count: others.length })}</Caption>
+                    {/*
+                     * The heading already lists everyone by name when the
+                     * channel has no title of its own, so counting them again
+                     * underneath ("Emma, Daniel, Olivia" / "3 other people")
+                     * spends a line saying nothing new. The count earns its
+                     * place only when the heading is a title instead.
+                     */}
+                    {alreadyNamed ? null : (
+                        <Caption testID="participant-summary">{t('conversation.participants', { count: others.length })}</Caption>
+                    )}
                     {others.some((p) => p.is_online) ? <Micro tone="success">{t('conversation.someoneOnline')}</Micro> : null}
                 </XStack>
                 {!isOnline ? <Banner tone="neutral" message={t('conversation.offlineNotice')} testID="conversation-offline" /> : null}

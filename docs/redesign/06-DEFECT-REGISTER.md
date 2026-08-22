@@ -291,6 +291,16 @@ claiming which steps are behind the driver, which is honest but not useful.
 | F-51 | S3 | **A pair of raw coordinates sat under the label "Reported at"** — which a driver reads as a *time*, above two numbers no one can place. | There is no reverse-geocode on this payload, so the value is named for what it is: "Coordinates". Dressing it up would have been worse than admitting it. |
 | F-52 | S4 | **The issue's own words were printed twice** — once as the heading, once again under "What you reported" — whenever the issue had no title and no category. `headingOf` already returns `usedReport` saying exactly this had happened; the list screen honoured it and the detail screen did not. | The report block is skipped when the heading is the report. |
 
+### Conversation header
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-53 | S4 | **The heading listed the people, and the line beneath counted them again** — "Emma Johnson, Daniel Martin, Olivia Smith" over "3 other people". A whole row saying nothing the eye had not already read. | The count appears only when the heading has *not* already named everyone. The rule is containment, not equality, because the server's channel titles sometimes include the viewer and sometimes do not — naming Emma is naming Emma either way. |
+
+The rule lives in `useChat` as a pure function with its own tests, because the
+screen's channel comes from a fetch the test cannot easily steer: driving it
+through the seed prop proved nothing, since the loaded channel replaced it.
+
 ---
 
 ## The tracker is more honest than the app was using

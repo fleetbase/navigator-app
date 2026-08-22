@@ -9,7 +9,7 @@ import { FleetbaseProvider, MutationQueue } from '../../api';
 import { SyncProvider } from '../../shell';
 import { clearV3 } from '../../api/storage';
 import { settingsStore } from '../../settings';
-import { myParticipant, otherParticipants, channelTitle, personUserId, type ChatChannelRecord } from '../../data';
+import { myParticipant, otherParticipants, channelTitle, headingNamesEveryone, personUserId, type ChatChannelRecord } from '../../data';
 
 const ME = 'user_gkASIhJU3V';
 
@@ -159,6 +159,31 @@ describe('participant helpers', () => {
     });
 });
 
+describe('headingNamesEveryone', () => {
+    const others = [{ name: 'Emma Johnson' }, { name: 'Daniel Martin' }];
+
+    it('is true when the heading is the participant list', () => {
+        expect(headingNamesEveryone('Emma Johnson, Daniel Martin', others)).toBe(true);
+    });
+
+    it('is true when the server title also includes the viewer', () => {
+        // Real titles come back both ways; naming Emma is naming Emma.
+        expect(headingNamesEveryone('Ron, Emma Johnson, Daniel Martin', others)).toBe(true);
+    });
+
+    it('is false for a title of its own, where the count is the only headcount', () => {
+        expect(headingNamesEveryone('Depot dispatch', others)).toBe(false);
+    });
+
+    it('is false when only some of them are named', () => {
+        expect(headingNamesEveryone('Emma Johnson', others)).toBe(false);
+    });
+
+    it('is false with nobody else in the room, so an empty count is never shown', () => {
+        expect(headingNamesEveryone('Just me', [])).toBe(false);
+    });
+});
+
 describe('personUserId', () => {
     it('reads `user` on a channel participant', () => {
         expect(personUserId({ id: 'chat_participant_me', user: ME })).toBe(ME);
@@ -221,6 +246,15 @@ describe('ConversationScreen', () => {
     it.each(SCHEMES)('renders in the %s scheme', async (scheme) => {
         const t = await mount(<ConversationScreen channelId={channel.id} channel={channel} userId={ME} />, scheme);
         expect(t.toJSON()).toBeTruthy();
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('does not count the others when the heading has already named them', async () => {
+        // The heading lists the participants when the channel has no title of
+        // its own; a "3 other people" line beneath restates it.
+        const t = await mount(<ConversationScreen channelId={channel.id} channel={channel} userId={ME} />);
+        expect(testIDs(t)).not.toContain('participant-summary');
+        expect(textOf(t)).toContain('Charlotte Thomas');
         ReactTestRenderer.act(() => t.unmount());
     });
 

@@ -122,6 +122,23 @@ export function channelTitle(channel: ChatChannelRecord | undefined, userId: str
     return channel?.name || fallback;
 }
 
+/**
+ * Whether a heading has already named everyone in the room.
+ *
+ * The conversation screen heads itself with the channel's title, and
+ * `channelTitle` falls back to the participants' names when there is none — at
+ * which point a "3 other people" line underneath spends a row restating what
+ * the heading just said.
+ *
+ * Containment rather than equality: the server's own titles sometimes include
+ * the viewer and sometimes do not, and "Ron, Charlotte Thomas" has named
+ * Charlotte just as surely as "Charlotte Thomas" has.
+ */
+export function headingNamesEveryone(heading: string, others: { name?: string | null }[]): boolean {
+    if (!others.length) return false;
+    return others.every((p) => typeof p.name === 'string' && p.name.trim().length > 0 && heading.includes(p.name));
+}
+
 export type ChatLoadState = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error';
 
 function unwrap(raw: unknown): unknown[] {
