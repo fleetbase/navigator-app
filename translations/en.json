@@ -770,7 +770,8 @@
         "settings": "Settings",
         "syncQueue": "Sync queue",
         "editItem": "Edit item",
-        "help": "Help and support"
+        "help": "Help and support",
+        "proofCapture": "Proof of delivery"
     },
     "help": {
         "messageDispatch": "Message dispatch",
@@ -786,5 +787,29 @@
         "reportSent": "Thanks — your report was sent.",
         "reportQueued": "Saved on this device. It will send when you are back online.",
         "reportFailed": "Could not send that report"
+    },
+    "proof": {
+        "forActivity": "Proof needed for",
+        "method": {
+            "scan": "Scan the code on each item.",
+            "photo": "Take a photo as proof.",
+            "signature": "Ask for a signature."
+        },
+        "submitScan": {
+            "one": "Send %{count} scan",
+            "other": "Send %{count} scans"
+        },
+        "submitPhoto": "Send photos",
+        "submitSignature": "Send signature",
+        "photoCount": {
+            "zero": "No photos yet",
+            "one": "%{count} photo ready",
+            "other": "%{count} photos ready"
+        },
+        "signHere": "Sign above",
+        "clear": "Clear",
+        "confirm": "Done",
+        "failed": "Could not send that proof. It stays on this phone until it does.",
+        "queued": "Saved on this device. It will send when you are back online."
     }
 }

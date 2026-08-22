@@ -18,6 +18,11 @@
 import NavigatorConfig from '../../navigator.config';
 import { get } from './index';
 
+/**
+ * @param {string} key
+ * @param {*} [defaultValue]
+ * @returns {*}
+ */
 export function navigatorConfig(key, defaultValue = null) {
     return get(NavigatorConfig, key, defaultValue);
 }

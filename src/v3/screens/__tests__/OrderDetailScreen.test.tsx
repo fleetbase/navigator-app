@@ -84,6 +84,27 @@ async function render(scheme: SchemeName = 'dark', sync: { isOnline?: boolean } 
     return tree;
 }
 
+/** Same tree as `render`, with props the default helper does not take. */
+async function renderWith(props: Partial<React.ComponentProps<typeof OrderDetailScreen>>, scheme: SchemeName = 'dark') {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+        tree = ReactTestRenderer.create(
+            <TamaguiProvider config={config} defaultTheme={scheme}>
+                <Theme name={scheme}>
+                    <SyncProvider isOnline>
+                        <FleetbaseProvider host="https://x.test" queue={new MutationQueue()}>
+                            <OrderDetailScreen orderId="order_1" {...props} />
+                        </FleetbaseProvider>
+                    </SyncProvider>
+                </Theme>
+            </TamaguiProvider>
+        );
+        await Promise.resolve();
+    });
+    // @ts-expect-error assigned inside act
+    return tree;
+}
+
 type N = { children?: unknown[]; props?: Record<string, unknown> };
 function walk(node: unknown, visit: (n: N) => void): void {
     if (!node || typeof node === 'string') return;
@@ -96,6 +117,7 @@ const textOf = (t: ReactTestRenderer.ReactTestRenderer) => {
     walk(t.toJSON(), (n) => n.children?.forEach((c) => typeof c === 'string' && out.push(c)));
     return out.join(' ');
 };
+const byID = (t: ReactTestRenderer.ReactTestRenderer, id: string) => t.root.findAll((n) => n.props?.testID === id)[0];
 const testIDs = (t: ReactTestRenderer.ReactTestRenderer) => {
     const out: string[] = [];
     walk(t.toJSON(), (n) => typeof n.props?.testID === 'string' && out.push(n.props.testID as string));
@@ -246,6 +268,54 @@ describe('OrderDetailScreen', () => {
         const ids = testIDs(t);
         expect(ids).toContain('next-ambiguous');
         expect(ids).not.toContain('advance-activity');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('captures proof before advancing, never after', async () => {
+        /*
+         * The config decides. An activity with require_pod must not be fired
+         * until the proof exists — otherwise an order reads as delivered with
+         * nothing attached, and afterwards nobody can tell whether the driver
+         * was even asked.
+         */
+        mockConfig([
+            { code: 'dispatched', status: 'Order Dispatched', activities: ['completed'] },
+            { code: 'completed', status: 'Order Completed', complete: true, require_pod: true, pod_method: 'signature' },
+        ]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'dispatched' })); });
+
+        const onCaptureProof = jest.fn();
+        const t = await renderWith({ onCaptureProof });
+        const before = fetchMock.mock.calls.length;
+
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'advance-activity').props as { onPress?: () => void }).onPress?.();
+        });
+
+        expect(onCaptureProof).toHaveBeenCalledWith(
+            expect.objectContaining({ activityCode: 'completed', podMethod: 'signature' })
+        );
+        // And crucially: the activity update has NOT been sent.
+        const activityCalls = fetchMock.mock.calls.slice(before).filter(([url]) => String(url).includes('update-activity'));
+        expect(activityCalls).toHaveLength(0);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('advances straight away when the activity asks for no proof', async () => {
+        mockConfig([
+            { code: 'dispatched', status: 'Order Dispatched', activities: ['enroute'] },
+            { code: 'enroute', status: 'Driver Enroute', require_pod: false },
+        ]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'dispatched' })); });
+
+        const onCaptureProof = jest.fn();
+        const t = await renderWith({ onCaptureProof });
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'advance-activity').props as { onPress?: () => void }).onPress?.();
+        });
+
+        expect(onCaptureProof).not.toHaveBeenCalled();
+        expect(fetchMock.mock.calls.some(([url]) => String(url).includes('update-activity'))).toBe(true);
         ReactTestRenderer.act(() => t.unmount());
     });
 

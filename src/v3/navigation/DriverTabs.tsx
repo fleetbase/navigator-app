@@ -34,6 +34,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
 import HelpScreen from '../screens/HelpScreen';
+import ProofCaptureScreen from '../screens/ProofCaptureScreen';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
 import OrdersScreen from '../screens/OrdersScreen';
@@ -145,6 +146,7 @@ function OrderDetail({ route, navigation }: { route: { params?: { orderId?: stri
             }
             onNavigate={(destination: object) => navigation.navigate('NavigationHandoff', { destination })}
             onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId: route.params?.orderId })}
+            onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
         />
     );
 }
@@ -383,6 +385,23 @@ function Help({ navigation }: { navigation: Nav }) {
     );
 }
 
+function ProofCapture({ route, navigation }: { route: { params?: { orderId?: string; activityCode?: string; activityLabel?: string; podMethod?: string | null; expected?: string[] } }; navigation: Nav }) {
+    const p = route.params ?? {};
+    return (
+        <ProofCaptureScreen
+            orderId={p.orderId ?? ''}
+            activityCode={p.activityCode ?? ''}
+            activityLabel={p.activityLabel ?? ''}
+            podMethod={p.podMethod}
+            expected={p.expected}
+            // Back to the order once the proof is captured or queued — the
+            // activity advance is the driver's next tap, and it is now unblocked.
+            onCaptured={() => navigation.goBack()}
+            onCancel={() => navigation.goBack()}
+        />
+    );
+}
+
 /* Header-wrapped screens. Declared once at module scope so the component
    identity is stable — an inline wrapper would remount on every render. */
 const NavigationHandoffH = withHeader('nav.navigationHandoff', NavigationHandoff);
@@ -407,6 +426,7 @@ const PermissionsPrimerH = withHeader('nav.permissions', PermissionsPrimer);
 const OrgSwitcherH = withHeader('nav.orgSwitcher', OrgSwitcher);
 const SettingsScreenH = withHeader('nav.settings', SettingsScreen);
 const HelpH = withHeader('nav.help', Help);
+const ProofCaptureH = withHeader('nav.proofCapture', ProofCapture);
 const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
 const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
 const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
@@ -442,6 +462,7 @@ function OrdersStack() {
             <Stack.Screen name="EntityDetail" component={EntityDetailH} />
             <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
             <Stack.Screen name="OrderTimeline" component={OrderTimelineH} />
+            <Stack.Screen name="ProofCapture" component={ProofCaptureH} />
         </Stack.Navigator>
     );
 }

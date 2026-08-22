@@ -44,6 +44,7 @@ export function OrderDetailScreen({
     onOpenEntity,
     onOpenTimeline,
     onNavigate,
+    onCaptureProof,
 }: {
     orderId: string;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
@@ -52,6 +53,8 @@ export function OrderDetailScreen({
     onOpenTimeline?: () => void;
     /** Opens the navigation hand-off for the current destination (R2 D6). */
     onNavigate?: (destination: { latitude: number; longitude: number; label?: string }) => void;
+    /** Opens proof capture for an activity whose config demands it. */
+    onCaptureProof?: (request: { orderId: string; activityCode: string; activityLabel: string; podMethod?: string | null }) => void;
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
@@ -86,6 +89,16 @@ export function OrderDetailScreen({
 
     const advance = useCallback(async () => {
         if (!next || !order) return;
+        /*
+         * Proof first, always. The config says which activities demand it and
+         * what kind; advancing without capturing would leave an order marked
+         * delivered with nothing attached to it, and no way to tell after the
+         * fact whether the driver was asked.
+         */
+        if (next.require_pod && onCaptureProof) {
+            onCaptureProof({ orderId: order.id, activityCode: next.code, activityLabel: labelFor(next), podMethod: next.pod_method });
+            return;
+        }
         setIsAdvancing(true);
         setAdvanceError(null);
         try {
@@ -104,7 +117,7 @@ export function OrderDetailScreen({
         } finally {
             setIsAdvancing(false);
         }
-    }, [adapter, next, order]);
+    }, [adapter, next, onCaptureProof, order, labelFor]);
 
     if (!order) {
         return (

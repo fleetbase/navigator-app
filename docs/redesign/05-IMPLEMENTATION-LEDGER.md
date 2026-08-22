@@ -77,7 +77,7 @@ Do not start these until the endpoint exists. Each names its blocker.
 | Stop detail | R2 B2 | manifest stops |
 | Optimise preview | R2 B3 | `POST /v1/drivers/{id}/optimize-route` |
 | Manual resequencing | R2 B4 | `PATCH /v1/manifests/{id}/resequence` |
-| Stop execution (dynamic steps) | R1 s08/s19 | per-activity required-proof in `order-configs` |
+| ~~Stop execution (dynamic steps)~~ | R1 s08/s19 | **NOT BLOCKED — the blocker was stale.** See below. |
 | Failed delivery / exception | R2 C1 | `POST /v1/orders/{id}/exception` + reason codes |
 | ID / age verification | R2 C2 | proof type extension |
 | Complete stop review | R2 C4 | required-proof declarations |
@@ -437,3 +437,49 @@ instinct was wrong: the Send button looked disabled to me on device even with
 text in the field. Rather than log it from a screenshot, I measured the resolved
 opacity — enabled is above 0.9, disabled below 0.6. The distinction is real and
 I had misread a PNG. The measurement stayed as a test.
+
+---
+
+## Stop execution was not blocked, and had not been for a while
+
+The ledger listed R1 s08/s19 as blocked on "per-activity required-proof in
+`order-configs`". Reading the server rather than the ledger, none of it was
+missing:
+
+- `require_pod` and `pod_method` were **already** published by the public
+  order-config resource — they were never among the fields `projectFlow()`
+  dropped.
+- All three capture endpoints are on the public `v1` namespace:
+  `POST orders/{id}/capture-qr|capture-photo|capture-signature/{subjectId?}`,
+  alongside `GET {id}/proofs` and `GET {id}/next-activity`.
+- Every one accepts base64 rather than only multipart, which is what makes proof
+  **queueable**: a signature captured in a basement is a string the queue can
+  hold, not a file handle that has to be re-read after a restart.
+
+So the slice was buildable, and is now built:
+
+- `useProofCapture` maps the config's `pod_method` to the right endpoint and
+  body, strips the data-URL prefix the signature pad emits (the endpoint runs a
+  strict base64 decode that the prefix fails), and sends one request per scanned
+  code because `capture-qr` takes a single `code`.
+- `ProofCaptureScreen` renders only the method the config named — not the
+  mockup's fixed scan → photo → sign sequence.
+- Order detail routes through capture **before** the activity update, so an
+  order is never marked delivered with nothing attached. A test asserts the
+  update is not sent when proof is outstanding.
+
+**Verification status, precisely.** 23 tests, all passing. **Not verified on
+device**, for two independent reasons: no activity in the instance's own config
+sets `require_pod`, so the screen is unreachable through real data; and the iOS
+simulator has no camera, so the scan and photo methods could not be exercised
+there even if it were. The signature method would be verifiable on a simulator
+against a config that demanded it — say the word and I will set `require_pod` on
+one activity to check it.
+
+**A design note worth keeping:** the capture dependencies are `require`d inside
+their branches rather than imported at module scope. VisionCamera initialises
+its native module on import and the signature pad drags in a WebView, so a
+module-scope import made the *entire navigator* depend on three native binaries
+— which is what first showed up as three test suites failing to load. A driver
+whose flow needs no proof should not pay for a camera, and a test of the tab bar
+should not need one either.
