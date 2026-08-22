@@ -48,6 +48,7 @@ const LINKS: AccountLink[] = [
     { route: 'Permissions', labelKey: 'account.permissions' },
     { route: 'SyncQueue', labelKey: 'account.syncQueue' },
     { route: 'Settings', labelKey: 'account.settings' },
+    { route: 'Help', labelKey: 'account.help' },
 ];
 
 function Avatar({ url, name }: { url?: string | null; name?: string }) {

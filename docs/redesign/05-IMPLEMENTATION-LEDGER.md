@@ -411,3 +411,29 @@ The pattern worth keeping: **a fixture agrees with whoever wrote it.** F-48 is
 the sharpest example in the branch — every flow fixture listed its activities in
 the order a person would naturally write them, so every test passed, and the
 real config listed `completed` fourth and `dispatched` last.
+
+---
+
+## Gap spec H3 — Help and support
+
+Built, with one part deliberately not built.
+
+- **Contact dispatch** hands off to the Inbox. FleetOps has no separate support
+  channel, and inventing one would put driver questions somewhere nobody reads.
+- **Report a problem** files an `issue` under the organisation's own taxonomy
+  (`Software Technical` → `Bugs`), so an app bug lands in the same queue as
+  every other defect a driver reports, shows in the console, and queues offline
+  like anything else. Verified end to end against the live instance.
+- **Diagnostics** — build, platform, instance, driver id, queue depth,
+  connection — are **shown on screen before the driver sends them**, and the
+  copy says what is *not* attached. A button that quietly gathers context is a
+  button that gathers whatever a later version decides to.
+- **FAQ** is not built. No endpoint serves help content and no copy has been
+  agreed; hardcoding a few questions would be inventing product. The row says so
+  rather than being left out, so nobody wonders whether they missed it.
+
+One thing that did *not* turn out to be a defect, worth recording because the
+instinct was wrong: the Send button looked disabled to me on device even with
+text in the field. Rather than log it from a screenshot, I measured the resolved
+opacity — enabled is above 0.9, disabled below 0.6. The distinction is real and
+I had misread a PNG. The measurement stayed as a test.

@@ -138,3 +138,48 @@ describe('waypoint ui', () => {
         ReactTestRenderer.act(() => tree.unmount());
     });
 });
+
+describe('Button availability is visible, not just functional', () => {
+    /*
+     * A driver has to be able to tell at a glance whether the primary action is
+     * available. Read the resolved style rather than the variant definition:
+     * what is written in `styled()` and what lands on the host view are not the
+     * same thing, and only the second one is what anybody sees.
+     */
+    const opacityOf = (node: React.ReactElement) => {
+        let tree: ReactTestRenderer.ReactTestRenderer;
+        ReactTestRenderer.act(() => {
+            tree = ReactTestRenderer.create(
+                <TamaguiProvider config={config} defaultTheme="dark">
+                    <Theme name="dark">{node}</Theme>
+                </TamaguiProvider>
+            );
+        });
+        // @ts-expect-error assigned inside act
+        const host = tree.root.findAll((n) => n.props?.testID === 'measured').pop();
+        const style = Object.assign({}, ...[host?.props?.style ?? {}].flat());
+        ReactTestRenderer.act(() => tree.unmount());
+        return style.opacity ?? 1;
+    };
+
+    it('dims a disabled button well below an enabled one', () => {
+        const enabled = opacityOf(<Button testID="measured">Send report</Button>);
+        const disabled = opacityOf(
+            <Button testID="measured" disabled>
+                Send report
+            </Button>
+        );
+        expect(enabled).toBeGreaterThan(0.9);
+        expect(disabled).toBeLessThan(0.6);
+    });
+
+    it('dims while loading too, since the action is equally unavailable', () => {
+        expect(
+            opacityOf(
+                <Button testID="measured" loading>
+                    Send report
+                </Button>
+            )
+        ).toBeLessThan(0.6);
+    });
+});

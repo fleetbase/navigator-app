@@ -33,6 +33,9 @@ import { ScreenHeader } from '../ui/ScreenHeader';
 import { useTranslation } from '../i18n/useTranslation';
 import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
+import HelpScreen from '../screens/HelpScreen';
+import { getVersion, getBuildNumber } from 'react-native-device-info';
+import { useFleetbase } from '../api';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
 import EditPayloadItemScreen from '../screens/EditPayloadItemScreen';
@@ -361,6 +364,25 @@ function NewConversation({ navigation }: { navigation: Nav }) {
 
 /* -- Stacks. -------------------------------------------------------------- */
 
+function Help({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const { adapter } = useFleetbase();
+    // The native build's version, not package.json's — a bug report has to name
+    // the binary the driver is actually running.
+    const appVersion = `${getVersion()} (${getBuildNumber()})`;
+    return (
+        <HelpScreen
+            driverId={driverId}
+            appVersion={appVersion}
+            host={adapter.host}
+            // Dispatch is reached through the Inbox — there is no separate
+            // support channel in FleetOps, and inventing one would put driver
+            // questions somewhere nobody reads.
+            onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation' })}
+        />
+    );
+}
+
 /* Header-wrapped screens. Declared once at module scope so the component
    identity is stable — an inline wrapper would remount on every render. */
 const NavigationHandoffH = withHeader('nav.navigationHandoff', NavigationHandoff);
@@ -384,6 +406,7 @@ const ProfileEditH = withHeader('nav.profileEdit', ProfileEdit);
 const PermissionsPrimerH = withHeader('nav.permissions', PermissionsPrimer);
 const OrgSwitcherH = withHeader('nav.orgSwitcher', OrgSwitcher);
 const SettingsScreenH = withHeader('nav.settings', SettingsScreen);
+const HelpH = withHeader('nav.help', Help);
 const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
 const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
 const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
@@ -457,6 +480,7 @@ function AccountStack() {
             <Stack.Screen name="Permissions" component={PermissionsPrimerH} />
             <Stack.Screen name="OrgSwitcher" component={OrgSwitcherH} />
             <Stack.Screen name="Settings" component={SettingsScreenH} />
+            <Stack.Screen name="Help" component={HelpH} />
             <Stack.Screen name="SyncQueue" component={SyncQueueH} />
         </Stack.Navigator>
     );

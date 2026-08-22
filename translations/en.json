@@ -456,7 +456,8 @@
             "one": "%{count} thing you did has not reached dispatch yet. It stays on this phone and can only be sent by you — sign back in on this device to finish sending it.",
             "other": "%{count} things you did have not reached dispatch yet. They stay on this phone and can only be sent by you — sign back in on this device to finish sending them."
         },
-        "signOutConfirm": "Sign out"
+        "signOutConfirm": "Sign out",
+        "help": "Help and support"
     },
     "orgSwitcher": {
         "title": "Organisation",
@@ -768,6 +769,22 @@
         "orgSwitcher": "Organisation",
         "settings": "Settings",
         "syncQueue": "Sync queue",
-        "editItem": "Edit item"
+        "editItem": "Edit item",
+        "help": "Help and support"
+    },
+    "help": {
+        "messageDispatch": "Message dispatch",
+        "messageDispatchBody": "Starts a conversation in your Inbox.",
+        "faq": "Common questions",
+        "faqUnavailable": "Not available yet — your organisation has no help content set up.",
+        "reportTitle": "Report a problem with the app",
+        "reportLabel": "What went wrong?",
+        "reportPlaceholder": "What you were doing, and what happened instead.",
+        "diagnostics": "Sent with your report",
+        "diagnosticsNote": "Only what is listed above is attached. No location, no order details.",
+        "send": "Send report",
+        "reportSent": "Thanks — your report was sent.",
+        "reportQueued": "Saved on this device. It will send when you are back online.",
+        "reportFailed": "Could not send that report"
     }
 }
