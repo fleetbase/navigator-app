@@ -48,6 +48,12 @@ export function FailureState({ error, isOnline = true, onRetry, onSignIn, onUpda
     return (
         <YStack gap={space[2]} testID={testID ?? `failure-${failure.kind}`}>
             <ErrorState
+                /*
+                 * Offline is not a failure of anything — the app is working
+                 * exactly as designed, and the shell already says so at the top
+                 * of the screen. Red here reads as "something broke".
+                 */
+                tone={failure.kind === 'offline' ? 'calm' : 'danger'}
                 title={t(failure.titleKey)}
                 body={t(failure.bodyKey)}
                 onRetry={handler}

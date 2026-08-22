@@ -82,6 +82,39 @@ describe('FailureState', () => {
         ReactTestRenderer.act(() => unreachable.unmount());
     });
 
+    it('does not paint being offline as an error', () => {
+        /*
+         * The design treats offline as a first-class state, not a failure —
+         * the shell says so calmly at the top of every screen. Rendering the
+         * same fact in danger red told the driver something had broken when
+         * the app was doing exactly what it was built to do.
+         *
+         * Read from the resolved style rather than the props: the tone prop is
+         * what we set, the colour is what the driver sees.
+         */
+        const colourOfTitle = (tree: ReactTestRenderer.ReactTestRenderer, text: string) => {
+            let colour: string | undefined;
+            walk(tree.toJSON(), (n) => {
+                if (!n.children?.some((c) => c === text)) return;
+                const style = Object.assign({}, ...[n.props?.style ?? {}].flat());
+                if (style.color) colour = style.color as string;
+            });
+            return colour;
+        };
+
+        const offline = render(<FailureState error={{ isTransport: true }} isOnline={false} t={t} />);
+        const calm = colourOfTitle(offline, 'failure.offline.title');
+        ReactTestRenderer.act(() => offline.unmount());
+
+        const server = render(<FailureState error={{ status: 500 }} t={t} />);
+        const danger = colourOfTitle(server, 'failure.server.title');
+        ReactTestRenderer.act(() => server.unmount());
+
+        expect(calm).toBeTruthy();
+        expect(danger).toBeTruthy();
+        expect(calm).not.toBe(danger);
+    });
+
     it("shows the server's own words when they are useful", () => {
         const tree = render(<FailureState error={{ status: 422, message: 'Location is required' }} t={t} />);
         expect(textOf(tree)).toContain('Location is required');

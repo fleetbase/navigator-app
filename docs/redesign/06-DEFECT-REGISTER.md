@@ -246,6 +246,17 @@ The second of these is the more useful lesson: a component tree is not always
 the tree it appears to be, and the console said so immediately. Reading it took
 one launch; guessing would have taken several.
 
+### Offline was painted as a failure
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-47 | S3 | **Losing signal rendered in danger red, under a heading that repeated what the shell had already said.** The design treats offline as a first-class state, not an error — the library's own comment says so: the offline banner is calm while failures are loud. `ErrorState` hard-coded `tone="danger"`, so every failure looked equally broken, and a driver who had simply driven into a tunnel was shown the same red as a 500. | `ErrorState` takes a tone; `FailureState` picks the calm one for the offline kind. The offline copy no longer restates "You are offline" — the shell says that — and says what this screen is waiting for instead. A test reads the **resolved colour** of the title for offline and for a 500 and asserts they differ, rather than trusting the prop. |
+
+Worth recording that the same walk turned up a *non*-defect: with the API
+returning 502 while its container restarted, the app said "Something went wrong
+on the server" rather than showing offline. That is correct — 502 is an answer,
+and the reachability rule is about whether anything answered at all.
+
 ---
 
 ## The tracker is more honest than the app was using

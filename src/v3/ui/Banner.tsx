@@ -154,17 +154,25 @@ export function ErrorState({
      * translator's attention.
      */
     retryLabel,
+    /**
+     * `calm` for states that are expected rather than wrong — losing signal
+     * being the one that matters. The design treats offline as a first-class
+     * state, and painting it in the same red as a 500 tells the driver
+     * something has broken when nothing has.
+     */
+    tone = 'danger',
     testID,
 }: {
     title: string;
     body?: string;
     onRetry?: () => void;
     retryLabel?: string;
+    tone?: 'danger' | 'calm';
     testID?: string;
 }) {
     return (
         <YStack testID={testID} alignItems="center" gap={space[2]} padding={space[5]}>
-            <Body fontWeight="700" tone="danger" center>
+            <Body fontWeight="700" tone={tone === 'calm' ? 'primary' : 'danger'} center>
                 {title}
             </Body>
             {body ? <Secondary center>{body}</Secondary> : null}

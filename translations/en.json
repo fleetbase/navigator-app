@@ -587,8 +587,8 @@
     },
     "failure": {
         "offline": {
-            "title": "You are offline",
-            "body": "Your work is safe on this phone. This will load as soon as you have signal."
+            "title": "Not loaded yet",
+            "body": "This needs a connection. It will load as soon as you have signal — nothing you have done is lost."
         },
         "unreachable": {
             "title": "Could not reach the server",
