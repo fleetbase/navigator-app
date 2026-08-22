@@ -198,3 +198,61 @@ export const alpha = {
 export function withAlpha(hex: string, suffix: string): string {
     return `${hex}${suffix}`;
 }
+
+/* -- Contrast ------------------------------------------------------------- */
+
+/**
+ * Relative luminance, per WCAG 2.1.
+ */
+export function luminance(hex: string): number {
+    const channel = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    const r = channel(parseInt(hex.slice(1, 3), 16) / 255);
+    const g = channel(parseInt(hex.slice(3, 5), 16) / 255);
+    const b = channel(parseInt(hex.slice(5, 7), 16) / 255);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function contrastRatio(a: string, b: string): number {
+    const la = luminance(a);
+    const lb = luminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/** Mix `hex` toward `target` by `amount` (0–1). */
+function mix(hex: string, target: string, amount: number): string {
+    const at = (s: string, i: number) => parseInt(s.slice(i, i + 2), 16);
+    const to = (v: number) => Math.round(v).toString(16).padStart(2, '0');
+    const r = at(hex, 1) + (at(target, 1) - at(hex, 1)) * amount;
+    const g = at(hex, 3) + (at(target, 3) - at(hex, 3)) * amount;
+    const b = at(hex, 5) + (at(target, 5) - at(hex, 5)) * amount;
+    return `#${to(r)}${to(g)}${to(b)}`;
+}
+
+/** WCAG AA for normal text. */
+export const AA_CONTRAST = 4.5;
+
+/**
+ * The nearest version of `hue` that is legible on `background`.
+ *
+ * The status hues were authored for dark grounds and reused unchanged on light
+ * ones, where **every one of the eleven fails WCAG AA** — from 3.91 down to
+ * 1.78 for `on_hold`. Sunlight is the worst place for that, being the scheme
+ * meant for reading in direct sun.
+ *
+ * Rather than invent eleven new colours, this walks the hue toward black (or
+ * white, on a dark ground) only as far as it must to clear the threshold. The
+ * colour identity the design chose is preserved; only its lightness moves, and
+ * only when it has to — a hue that already passes is returned untouched.
+ */
+export function legibleOn(hue: string, background: string, minimum = AA_CONTRAST): string {
+    if (contrastRatio(hue, background) >= minimum) return hue;
+
+    const target = luminance(background) > 0.5 ? '#000000' : '#FFFFFF';
+    let best = hue;
+    // 5% steps: fine enough to stay close to the hue, coarse enough to end.
+    for (let amount = 0.05; amount <= 1.0001; amount += 0.05) {
+        best = mix(hue, target, amount);
+        if (contrastRatio(best, background) >= minimum) return best;
+    }
+    return best;
+}

@@ -110,21 +110,22 @@ app.**
 | F-36 | S3 | **Picking Night or Sunlight lit up "System" instead.** Settings coerced both to `'system'` before handing the value to the control, so the choice looked like it had not taken. | Each group shows a selection only when the current theme is one of its own options. |
 | F-37 | S3 | Settings was almost entirely **untranslated** — every section header, row label, theme and unit option — and `NAV_APPS` never gained `uber` after it was added to the hand-off, so a driver whose default was Uber saw a blank row. | Routed through `t()`; the labels now come from the hand-off's own list. |
 
-### Open design question — status hues in night mode
+### Status contrast — measured, then fixed
 
-`feedbackFamily(scheme)` night-tunes its colours, and the palette says why:
-*"night swaps success to amber because saturated green reads as a light source at
-night."* But `statusFamily()` takes **no scheme argument**, so all eleven status
-hues stay fully saturated in every scheme — a completed order's pill is the same
-saturated green at night that the palette explicitly warns against, and
-"Dispatched" is a bright blue on near-black.
+The night pass raised this as a design question. Measuring it turned it into an
+accessibility defect with a number attached.
 
-The current comment justifies it on contrast grounds (one full-strength hue
-clears AA on every scheme background). Both concerns are real and they conflict.
-**Which wins is a design decision, not a code fix** — night-tuning eleven hues
-means choosing eleven new values, so it is recorded here rather than invented.
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-38 | **S2** | **Every one of the eleven status hues failed WCAG AA as text on light and sunlight backgrounds** — from 3.91 down to **1.78** for `on_hold`; six were below 3.0, which fails even the large-text threshold. The hues were authored against dark grounds, where they score 4.5–10.6, and reused unchanged everywhere else. Sunlight is the worst place to lose contrast, being the scheme meant for reading in direct sun. The code comment asserted the opposite — that the full-strength hue *"clears AA on both the tinted fill and the scheme background, which is what lets a single token serve every scheme"* — and that claim was simply untrue. | `statusFamily` now takes the scheme, and `legibleOn()` walks each hue toward black or white **only as far as the threshold demands**. The design's colour identity survives — a hue that already passes is returned untouched, and fill and border keep the original, since a 12% tint is decoration rather than text. A test asserts all 44 status/scheme combinations, reading the **resolved theme tokens** rather than the source hues, since the source hues are exactly what looked fine and was not. |
 
-### Design fidelity
+The night-vision concern from the earlier pass is now partly answered too: on the
+night ground the hues already clear AA comfortably, so `legibleOn` leaves them
+alone. Whether they should additionally be *desaturated* at night — the palette
+warns that saturated green reads as a light source — remains a design call, and
+is the only part of this still open.
+
+### Design fidelity### Design fidelity
 
 | # | Sev | What | Fix |
 |---|---|---|---|

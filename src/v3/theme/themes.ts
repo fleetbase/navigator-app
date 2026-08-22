@@ -23,6 +23,7 @@ import {
     nightPrimary,
     feedbackHues,
     statusHues,
+    legibleOn,
     stopTypeHues,
     alpha,
     withAlpha,
@@ -88,16 +89,28 @@ function feedbackFamily(scheme: SchemeName) {
 
 /**
  * One `<tone>Fill` / `<tone>Border` / `<tone>Text` triple per status.
- * Text is the full-strength hue — it clears AA on both the tinted fill and the
- * scheme background, which is what lets a single token serve every scheme.
+ *
+ * The text colour is **per scheme**, which it previously was not. The comment
+ * here used to claim the full-strength hue "clears AA on both the tinted fill
+ * and the scheme background" — measured, it does not. The eleven hues were
+ * authored against dark grounds, where they score 4.5–10.6, and reused
+ * unchanged on light and sunlight, where **every one of them fails**: 3.91 down
+ * to 1.78 for `on_hold`. Sunlight is the worst place to lose contrast, being
+ * the scheme meant for reading in direct sun.
+ *
+ * `legibleOn` walks each hue toward black or white only as far as the threshold
+ * demands, so the design's colour identity survives and only its lightness
+ * moves — and only where it has to. Fill and border keep the original hue,
+ * since a 12% tint is decoration rather than text.
  */
-function statusFamily() {
+function statusFamily(scheme: SchemeName) {
+    const surface = schemePalettes[scheme].surface;
     const out: Record<string, string> = {};
     for (const [key, { hue }] of Object.entries(statusHues)) {
         const name = camel(key);
         out[`${name}Fill`] = withAlpha(hue, alpha.fill);
         out[`${name}Border`] = withAlpha(hue, alpha.stroke);
-        out[`${name}Text`] = hue;
+        out[`${name}Text`] = legibleOn(hue, surface);
     }
     return out;
 }
@@ -157,7 +170,7 @@ function buildScheme(scheme: SchemeName) {
 
         // ── families ─────────────────────────────────────────────────────────
         ...feedbackFamily(scheme),
-        ...statusFamily(),
+        ...statusFamily(scheme),
         ...stopTypeFamily(),
 
         // ── absolutes ────────────────────────────────────────────────────────
