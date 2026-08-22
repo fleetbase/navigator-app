@@ -178,7 +178,6 @@ export function ItemDetailScreen({
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="item-detail">
-            {!isOnline ? <Banner tone="neutral" message={t('itemDetail.offlineCached')} testID="item-offline" /> : null}
 
             {damaged ? (
                 <Banner tone="danger" message={t('itemDetail.damagedFlagged')} meta={t('itemDetail.damagedHint')} testID="item-damaged" />

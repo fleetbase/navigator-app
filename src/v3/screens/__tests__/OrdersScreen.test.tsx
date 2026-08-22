@@ -147,11 +147,14 @@ describe('OrdersScreen', () => {
         ReactTestRenderer.act(() => tree.unmount());
     });
 
-    it('keeps cached rows usable offline and says so', async () => {
+    it('keeps cached rows usable offline, and leaves saying so to the shell', async () => {
+        // The app shell carries one offline banner above every tab. This screen
+        // used to render a second one directly beneath it, restating the same
+        // fact in different words; the design has one.
         ReactTestRenderer.act(() => { orderStore.upsertMany([order('a')]); });
         const t = await render('dark', {}, { isOnline: false });
         const ids = testIDs(t);
-        expect(ids).toContain('orders-offline');
+        expect(ids).not.toContain('orders-offline');
         expect(ids).toContain('order-a');
         ReactTestRenderer.act(() => t.unmount());
     });

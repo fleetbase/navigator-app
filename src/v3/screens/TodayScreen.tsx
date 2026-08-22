@@ -27,7 +27,7 @@ import { Identifier } from '../ui/Identifier';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { RouteProgress } from '../ui/Progress';
 import { space } from '../theme/tokens';
@@ -184,7 +184,6 @@ export function TodayScreen({
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="today">
-            {!isOnline ? <Banner tone="neutral" message={t('today.offlineNotice')} testID="today-offline" /> : null}
 
             {!current ? (
                 <EmptyState testID="today-empty" title={t('today.emptyTitle')} body={t('today.emptyBody')} />

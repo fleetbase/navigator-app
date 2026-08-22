@@ -1,4 +1,4 @@
-import { NavigatorAdapter, ApiError, isQueuedAck } from '../NavigatorAdapter';
+import { NavigatorAdapter, ApiError, isQueuedAck, REQUEST_TIMEOUT_MS } from '../NavigatorAdapter';
 import { MutationQueue, setIdFactory } from '../queue';
 import { clearV3 } from '../storage';
 
@@ -216,6 +216,32 @@ describe('reachability', () => {
         fetchMock.mockRejectedValue(new TypeError('Network request failed'));
         await adapter.get('orders').catch(() => {});
         expect(adapter.isReachable()).toBe(false);
+    });
+
+    it('gives up on a server that accepts the connection and never answers', async () => {
+        /*
+         * Found against a real instance: the container was up, the TCP connect
+         * succeeded, and no byte ever came back. fetch has no default timeout,
+         * so the app sat on a skeleton indefinitely and never learned it was
+         * offline. The failure must be transient so the mutation queues.
+         */
+        jest.useFakeTimers();
+        const adapter = make();
+        fetchMock.mockImplementation((_url: string, init: { signal: AbortSignal }) =>
+            new Promise((_resolve, reject) => {
+                init.signal.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })));
+            })
+        );
+
+        const pending = adapter.get('orders').catch((e: ApiError) => e);
+        expect(adapter.isReachable()).toBe(true); // still waiting, still hopeful
+        jest.advanceTimersByTime(REQUEST_TIMEOUT_MS);
+        const err = (await pending) as ApiError;
+
+        expect(err.isTransport).toBe(true);
+        expect(err.message).toBe('The server did not respond');
+        expect(adapter.isReachable()).toBe(false);
+        jest.useRealTimers();
     });
 
     it('recovers on any answer at all, including an error status', async () => {

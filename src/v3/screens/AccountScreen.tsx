@@ -20,7 +20,7 @@ import { Identifier } from '../ui/Identifier';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, Skeleton } from '../ui/Banner';
+import { Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
@@ -103,7 +103,6 @@ export function AccountScreen({
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="account-screen">
-            {!isOnline ? <Banner tone="neutral" message={t('account.offlineNotice')} testID="account-offline" /> : null}
 
             <Surface hero padded testID="account-identity">
                 <XStack gap={space[3]} alignItems="center">

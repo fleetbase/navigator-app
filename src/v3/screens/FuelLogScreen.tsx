@@ -24,7 +24,7 @@ import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
@@ -147,7 +147,6 @@ export function FuelLogScreen({
     return (
         <YStack flex={1} backgroundColor="$background" testID="fuel-log">
             <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={space[3]}>
-                {!isOnline ? <Banner tone="neutral" message={t('fuelLog.offlineNotice')} testID="fuel-offline" /> : null}
                 {onCreate ? (
                     <Button fullWidth onPress={onCreate} testID="fuel-add">
                         {t('fuelLog.add')}

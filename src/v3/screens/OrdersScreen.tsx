@@ -11,7 +11,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl } from 'react-native';
 import { YStack, useTheme } from 'tamagui';
-import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { OrderCard, type OrderCardStop } from '../ui/Cards';
 import { Field } from '../ui/Field';
@@ -186,7 +186,6 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
                     testID="orders-search"
                 />
                 {/* Offline is a state, not an error: cached rows stay usable. */}
-                {!isOnline ? <Banner tone="neutral" message={t('ordersScreen.offlineNotice')} testID="orders-offline" /> : null}
             </YStack>
 
             <FlatList

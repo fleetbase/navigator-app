@@ -130,7 +130,6 @@ export function OrderTimelineScreen({ orderId }: { orderId: string }) {
             testID="order-timeline"
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} />}
         >
-            {!isOnline ? <Banner tone="neutral" message={t('orderTimeline.offlineCached')} testID="timeline-offline" /> : null}
             {failed && events ? (
                 <Banner
                     tone="warning"

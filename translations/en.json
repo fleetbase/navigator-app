@@ -20,7 +20,6 @@
         "tryAgain": "Try Again",
         "search": "Search",
         "clear": "Clear",
-        "offline": "You're offline",
         "close": "Close",
         "notAvailable": "Not available",
         "saving": "Saving…",
@@ -176,8 +175,7 @@
         "emptyCompletedTitle": "No completed orders yet",
         "emptyCompletedBody": "Orders you finish will be listed here.",
         "noSearchResultsTitle": "No matches",
-        "noSearchResultsBody": "Nothing matches “%{query}”.",
-        "offlineNotice": "Showing saved orders — reconnect to refresh"
+        "noSearchResultsBody": "Nothing matches “%{query}”."
     },
     "orderDetail": {
         "trackingNumberLabel": "TRACKING NUMBER",
@@ -281,7 +279,6 @@
         "damagedFlagged": "Flagged as damaged",
         "damagedHint": "Dispatch has been notified. Handle with care and note the condition at delivery.",
         "damagedPill": "Damaged",
-        "offlineCached": "Offline — showing the last details saved on this device.",
         "edit": "Edit item details"
     },
     "orderTimeline": {
@@ -292,7 +289,6 @@
         "emptyBody": "Status changes for this order will appear here.",
         "sparseNote": "Only the first status has been recorded so far.",
         "actorUnavailable": "Status changes do not record who made them.",
-        "offlineCached": "Offline — showing the history saved on this device.",
         "refreshFailed": "Could not refresh the timeline. Showing the last known history.",
         "viewTimeline": "View full timeline"
     },
@@ -303,8 +299,7 @@
         "noVehicle": "No vehicle",
         "emptyTitle": "No fills logged",
         "emptyBody": "Fuel you log appears here, with economy once there are two fills on the same vehicle.",
-        "economyNote": "Economy is worked out from the distance since your previous fill on the same vehicle.",
-        "offlineNotice": "Offline — showing the fills saved on this device."
+        "economyNote": "Economy is worked out from the distance since your previous fill on the same vehicle."
     },
     "fuelReport": {
         "title": "Fuel report",
@@ -343,7 +338,6 @@
         "untitled": "Issue",
         "emptyTitle": "Nothing reported",
         "emptyBody": "Issues you report appear here so you can follow what happens to them.",
-        "offlineNotice": "Offline — showing the issues saved on this device.",
         "untriaged": "Not yet triaged"
     },
     "issueDetail": {
@@ -390,8 +384,7 @@
             "other": "%{count} people"
         },
         "emptyTitle": "No conversations",
-        "emptyBody": "Messages from dispatch and your team appear here.",
-        "offlineNotice": "Offline — showing the conversations saved on this device."
+        "emptyBody": "Messages from dispatch and your team appear here."
     },
     "conversation": {
         "participants": {
@@ -453,7 +446,6 @@
         "settings": "Settings",
         "laterPhase": "Coming soon",
         "signOut": "Sign out",
-        "offlineNotice": "Offline — showing the details saved on this device.",
         "profile": "Your details",
         "permissions": "Permissions"
     },
@@ -662,7 +654,6 @@
         "trackerUnavailable": "Live progress is unavailable for this job right now.",
         "emptyTitle": "Nothing assigned",
         "emptyBody": "When dispatch assigns you work, it appears here.",
-        "offlineNotice": "Offline — showing the last update saved on this device.",
         "notEnabledTitle": "Not switched on yet",
         "notEnabledBody": "These need your organisation to enable driver shifts and hours-of-service on the server.",
         "notEnabled": "Not enabled",

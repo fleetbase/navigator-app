@@ -34,7 +34,6 @@ import {
     payloadOf,
 } from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
-import { useSync } from '../shell';
 import { useSettings } from '../settings';
 import { formatClock, formatMeters } from '../format';
 import { fromGeoPoint } from '../navigate/handoff';
@@ -57,7 +56,6 @@ export function OrderDetailScreen({
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const { units } = useSettings();
-    const { isOnline } = useSync();
     const { adapter } = useFleetbase();
 
     const order = useOrder(orderId);
@@ -250,7 +248,6 @@ export function OrderDetailScreen({
                 {next?.require_pod ? <ProofRequiredHint label={t('orderDetail.proofRequired')} testID="proof-required" /> : null}
 
                 {queued ? <Banner tone="neutral" message={t('orderDetail.queuedOffline')} testID="advance-queued" /> : null}
-                {!isOnline && !queued ? <Banner tone="neutral" message={t('common.offline')} testID="detail-offline" /> : null}
                 {advanceError ? (
                     <ErrorState title={t('orderDetail.updateFailed')} body={advanceError} testID="advance-error" />
                 ) : null}

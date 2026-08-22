@@ -11,7 +11,7 @@ import { XStack, YStack } from 'tamagui';
 import { Body, Micro, Secondary } from '../ui/Text';
 import { Surface } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
@@ -123,7 +123,6 @@ export function InboxScreen({
     return (
         <YStack flex={1} backgroundColor="$background" testID="inbox-screen">
             <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={space[3]}>
-                {!isOnline ? <Banner tone="neutral" message={t('inbox.offlineNotice')} testID="inbox-offline" /> : null}
                 {onCompose ? (
                     <Button fullWidth onPress={onCompose} testID="inbox-compose">
                         {t('inbox.newConversation')}

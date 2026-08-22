@@ -80,6 +80,13 @@ export interface NavigatorAdapterConfig {
     describe?: (method: string, path: string) => string;
 }
 
+/**
+ * How long we wait for the API before calling it unreachable. Long enough to
+ * survive a slow first byte on a poor connection, short enough that a driver
+ * standing at a door is not staring at a spinner.
+ */
+export const REQUEST_TIMEOUT_MS = 20_000;
+
 export class NavigatorAdapter extends BrowserAdapter {
     private platformToken?: string;
     private userToken?: string;
@@ -183,10 +190,22 @@ export class NavigatorAdapter extends BrowserAdapter {
 
     private async dispatch(req: { url: string; method: string; body?: string; headers: Record<string, string>; mode?: RequestInit['mode'] }): Promise<unknown> {
         let response: Response;
+        const abort = new AbortController();
+        /*
+         * A server that accepts the connection and then says nothing is not a
+         * hypothetical: it is what a container under load, a stalled PHP-FPM
+         * pool or a half-open cellular NAT all look like. fetch has no default
+         * timeout, so without this the request never settles — the caller's
+         * skeleton spins forever, nothing throws, and reachability stays true,
+         * so the driver is not even told they are offline. A dead wait is worse
+         * than a failure, because a failure can be queued and retried.
+         */
+        const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
         try {
             response = await fetch(req.url, {
                 method: req.method,
                 mode: req.mode ?? 'cors',
+                signal: abort.signal,
                 headers: new Headers({ 'Content-Type': 'application/json', ...req.headers }),
                 ...(req.body === undefined ? {} : { body: req.body }),
             });
@@ -195,7 +214,10 @@ export class NavigatorAdapter extends BrowserAdapter {
             // aborted. This is the branch that means "queue it", and the only
             // honest evidence that the API cannot currently be reached.
             this.setReachable(false);
-            throw new ApiError((err as Error)?.message ?? 'Network request failed', undefined, true);
+            const timedOut = abort.signal.aborted;
+            throw new ApiError(timedOut ? 'The server did not respond' : ((err as Error)?.message ?? 'Network request failed'), undefined, true);
+        } finally {
+            clearTimeout(timer);
         }
 
         // The server answered. Even a 500 proves the round trip works, so

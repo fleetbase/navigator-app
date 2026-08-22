@@ -201,6 +201,24 @@ Both were invisible to the existing suite, which only ever mocked a config with 
 flow in it. The tests added alongside cover the empty-flow config and assert the
 count string appears exactly once.
 
+### A server that answers nothing at all
+
+The dev instance stopped responding mid-session — the container accepted the TCP
+connection and then sent no byte, ever. That is not an exotic state; it is what a
+stalled worker pool, an overloaded box or a half-open cellular NAT all look like
+from the handset. It exposed two defects that a server which is cleanly *down*
+would never have surfaced.
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-41 | **S1** | **No request in the app had a timeout, so an unresponsive server hung it indefinitely.** `fetch` has no default timeout. The promise never settled, so nothing threw, reachability never flipped, and the driver sat in front of a skeleton that would spin until the app was killed — with no offline banner, no error, and no queueing, because the code path that decides "queue it" is the one that never ran. Every offline affordance built in this branch was dead in exactly the case a driver is most likely to meet. | A 20s `AbortController` deadline on every request. A timeout is reported as a **transport** failure, so it flips reachability, raises the banner and queues the mutation — the same path as a hard network failure, which is what it is. Verified on the live hung instance: skeleton → offline banner → cached content, and the test drives an abort under fake timers rather than trusting the shape. |
+| F-42 | S3 | **Two offline banners, stacked, saying the same thing in different words** — the shell's "You are offline — work is saved on this device" and directly beneath it the screen's "Offline — showing the last update saved on this device." Nine screens did this. The design has one banner, in the shell. | The shell states the fact; a screen may only add what happens to work *started there*. The nine read-screen restatements are gone (and their strings with them); the write screens keep theirs, because "your message will be sent when you're back online" is not something the shell can say, and the two pre-auth screens keep theirs because the shell is not mounted yet. |
+
+The timeout is the more serious of the two by a wide margin, and it was found
+only because the server misbehaved rather than failing. A test suite mocking
+`fetch` rejection proves the offline path works; it cannot prove the offline path
+is ever *reached*.
+
 ---
 
 ## The tracker is more honest than the app was using
