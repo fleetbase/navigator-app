@@ -368,6 +368,10 @@ stop sequence.
   `src/v3/__tests__/shared-formatters.test.ts`. `src/v3/format.ts` keeps only
   what is genuinely different: the unit-aware `formatMeters`, and the money,
   weight and dimension formatters v2 has no equivalent for.
-- Gemfile pins CocoaPods 1.14.3, which cannot install on this machine (`nkf`
-  will not build on Ruby 2.7.4) and is below RN 0.86's floor. Update the
-  Gemfile and add a `.ruby-version`.
+- ~~Gemfile pins CocoaPods 1.14.3~~ **DONE**, and the cause was worse than a
+  stale pin: `cocoapods >= 1.13` and `xcodeproj < 1.26.0` are **mutually
+  unsatisfiable**, because a CocoaPods new enough for RN 0.86 requires
+  xcodeproj >= 1.28.1. `bundle install` therefore could not produce a working
+  CocoaPods at all — which is why the toolchain had to be installed outside
+  bundler to get the app building. Fixed, `.ruby-version` added, and
+  `bundle exec pod --version` now answers 1.17.0.

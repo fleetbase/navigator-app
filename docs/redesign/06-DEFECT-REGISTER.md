@@ -32,7 +32,6 @@ cannot tell you a text field focused and was blurred again in the same tap.
 | O-7 | S2 | Chat **attachments** need `POST /v1/files` plus a picker; not built, so the composer is text-only. Camera / file / location share from G2 are all outstanding. | app + core-api |
 | O-8 | S3 | A chat channel carries **no order reference**, so G1's order-context header has nothing to link to. | core-api |
 | O-9 | S2 | `linkApp` finds the first admin user, gets-or-creates an `ApiCredential`, and ships it in a deep link — one shared, org-wide, unrevocable key on every handset. Phase 5 replaces this. | `NavigatorController@linkApp` |
-| O-10 | S4 | The Gemfile pins CocoaPods 1.14.3, which cannot install here (`nkf` will not build on Ruby 2.7.4) and is below RN 0.86's floor. No `.ruby-version`. | repo |
 | O-11 | S4 | `isConnected` still proxies off the SocketCluster connection; there is no netinfo dependency, so "offline" means "socket dropped". | `src/v3` bridge |
 
 ---
@@ -65,6 +64,12 @@ Both were misdiagnosed first — see *How these were found*, below.
 | # | Sev | What | Fix |
 |---|---|---|---|
 | F-21 | **S1** | `App.tsx` passed **`FLEETBASE_KEY` — the organisation's admin-scoped API key — into the adapter's `platformToken` slot**. That is the credential the audit flagged as the security hole, being handed to the pre-auth code path. | Passes `FLEETBASE_PLATFORM_TOKEN`. `ConfigContext` now resolves it. |
+
+### Toolchain
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-33 | S2 | **`bundle install` could not produce a CocoaPods capable of building this app.** The Gemfile asked for `cocoapods >= 1.13` while pinning `xcodeproj < 1.26.0`, and a CocoaPods new enough for RN 0.86 requires `xcodeproj >= 1.28.1` — the two constraints had no common solution. Resolution fell back to CocoaPods 1.14.3, which predates `visionos` platform support, and **13 podspecs in node_modules declare a visionos target**, so `pod install` died on "Unsupported platform". This is why the working toolchain had to be installed outside bundler entirely. Compounded by `ruby '>= 2.6.10'`, which permits 2.7.4 — where CocoaPods' `nkf` C extension will not build, failing with an error that never mentions Ruby. | Floors raised to `ruby >= 3.1` and `cocoapods >= 1.16`; the contradictory xcodeproj pin removed and its version left to CocoaPods; `.ruby-version` added. Verified: the lock resolves to CocoaPods 1.17.0 with xcodeproj 1.28.1, `bundle check` passes, and `bundle exec pod ipc spec` parses the visionos podspec that used to fail. |
 
 ### iOS permission strings
 
