@@ -336,6 +336,19 @@ through the seed prop proved nothing, since the loaded channel replaced it.
 | F-55 | S2 | **Sign out happened on a single tap, with no warning and no mention of unsent work** — the gap spec asks for a confirmation that names the count. | A confirmation that says how many things have not reached dispatch, and that they can only be sent by this driver on this device. |
 | F-56 | S3 | Found while verifying F-55 on the device: the confirmation rendered *below* the sign-out button, at the end of a scrolling screen, so it landed off the fold — the driver tapped Sign out and nothing appeared to happen. | The confirmation takes the button's place rather than following it. A test asserts the button is gone while the confirmation is up, since "both present" is exactly the state that failed. |
 
+### My vehicle, found on the device
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-57 | S2 | **The plate rendered as an empty row** — present in the data, invisible on screen. `Identifier` lays its value out in a `flex: 1` child, which needs a parent that gives it width; beside a label in a `space-between` row it collapsed to zero. The test asserted the *row* existed, which it did. | Identifiers get their own line under the label, which is the design's rule for them anyway — they are never to be truncated. The test now asserts the plate's **value** appears, not the row. |
+| F-58 | S3 | **"Payload 160.00"** — a bare number with no unit. The vehicle resource carries no `payload_capacity_unit`, and `measurement_system` is null too. 160 kg and 160 lb are different vehicles. | Omitted until the server says which. A number nobody can act on is worse than a missing row, because it looks like an answer. |
+
+The odometer is worth a note of its own. A vehicle's `odometer` column is often
+null while a telematics box reports one every few minutes. The screen shows the
+telemetry figure when that is all there is — it is the true number — but says
+which it is, because a driver copying it into a fuel report needs to know
+whether they are reading a live feed or a months-old manual entry.
+
 ---
 
 ## The tracker is more honest than the app was using

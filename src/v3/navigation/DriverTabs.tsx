@@ -35,6 +35,8 @@ import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
 import HelpScreen from '../screens/HelpScreen';
 import ProofCaptureScreen from '../screens/ProofCaptureScreen';
+import MyVehicleScreen from '../screens/MyVehicleScreen';
+import { vehicleOf } from '../data';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
 import OrdersScreen from '../screens/OrdersScreen';
@@ -124,7 +126,6 @@ const RouteHome = placeholder('Route', P4, MANIFESTS);
 const StopDetail = placeholder('Stop detail', P4, MANIFESTS);
 const StopExecution = placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)');
 const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimise endpoint (Phase 4a)');
-const MyVehicle = placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)');
 const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
 const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
 
@@ -400,6 +401,15 @@ function ProofCapture({ route, navigation }: { route: { params?: { orderId?: str
             onCancel={() => navigation.goBack()}
         />
     );
+}
+
+function MyVehicle() {
+    const driverId = useDriverId();
+    const { driver } = useDriver(driverId);
+    // The driver record already carries the assignment; the screen fetches the
+    // full vehicle from it rather than asking dispatch what is assigned.
+    const vehicle = vehicleOf(driver);
+    return <MyVehicleScreen vehicleId={vehicle?.id} />;
 }
 
 /* Header-wrapped screens. Declared once at module scope so the component

@@ -84,7 +84,7 @@ Do not start these until the endpoint exists. Each names its blocker.
 | Proof of delivery record | R2 C5 | `orders/{id}/proofs` shape |
 | Arrive out-of-geofence | R2 C6 | geofence events surfaced to the app |
 | Duty: break + HOS card | R2, shell | `drivers/{id}/shift/*`, `hos-status` public |
-| My vehicle | R2 E1 | `assign-vehicle` public, odometer |
+| ~~My vehicle~~ | R2 E1 | **PARTLY STALE — viewing built.** `GET /v1/vehicles/{id}` is public and always was; only *changing* the vehicle and posting an odometer still need endpoints. |
 | Change vehicle | R2 E2 | `GET /v1/vehicles?available=1` |
 | DVIR E3a–E3d | R2 E3a-d | `inspection-templates`, `POST /v1/inspections` |
 | Inspection history | R2 E4 | `GET /v1/vehicles/{id}/inspections` |
@@ -492,3 +492,22 @@ module-scope import made the *entire navigator* depend on three native binaries
 — which is what first showed up as three test suites failing to load. A driver
 whose flow needs no proof should not pay for a camera, and a test of the tab bar
 should not need one either.
+
+---
+
+## My vehicle — the read half was never blocked either
+
+Second stale blocker in a row, found the same way: by reading the routes rather
+than the ledger. `GET /v1/vehicles/{id}` is public, and the driver record
+already names the assignment, so a read-only vehicle screen needed nothing new.
+What genuinely remains blocked is *changing* the assigned vehicle
+(`assign-vehicle` is console-only) and entering an odometer reading — the screen
+says both plainly instead of offering controls that would fail.
+
+The resource returns about a hundred fields and a stock instance leaves most of
+them null, so the screen asks for the handful a driver uses and drops the rest.
+Two defects came out of putting it on a device — see F-57 and F-58 — and one
+piece of design worth keeping: the odometer names its own source, because the
+vehicle's recorded column is frequently null while a telematics box reports a
+live figure, and a driver copying that number into a fuel report should know
+which of the two they are looking at.

@@ -811,5 +811,23 @@
         "confirm": "Done",
         "failed": "Could not send that proof. It stays on this phone until it does.",
         "queued": "Saved on this device. It will send when you are back online."
+    },
+    "vehicle": {
+        "unnamed": "Vehicle",
+        "plate": "Plate",
+        "vin": "VIN",
+        "internalId": "Fleet number",
+        "colour": "Colour",
+        "fuelType": "Fuel",
+        "fuelCapacity": "Tank",
+        "seats": "Seats",
+        "payload": "Payload",
+        "odometer": "Odometer",
+        "odometerRecorded": "Last recorded reading.",
+        "odometerFromTelematics": "Live from the vehicle tracker, %{when}.",
+        "recently": "recently",
+        "noneAssigned": "No vehicle is assigned to you. Dispatch assigns vehicles.",
+        "sparse": "Nothing else is recorded for this vehicle.",
+        "readOnly": "Changing your vehicle and entering an odometer reading are not available in the app yet."
     }
 }

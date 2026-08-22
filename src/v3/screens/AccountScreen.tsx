@@ -42,7 +42,7 @@ const LINKS: AccountLink[] = [
     { route: 'ProfileEdit', labelKey: 'account.profile' },
     { route: 'FuelLog', labelKey: 'account.fuelLog' },
     { route: 'Issues', labelKey: 'account.issues' },
-    { route: 'MyVehicle', labelKey: 'account.myVehicle', blockedKey: 'account.laterPhase' },
+    { route: 'MyVehicle', labelKey: 'account.myVehicle' },
     { route: 'Inspection', labelKey: 'account.inspection', blockedKey: 'account.laterPhase' },
     { route: 'Documents', labelKey: 'account.documents', blockedKey: 'account.laterPhase' },
     { route: 'Permissions', labelKey: 'account.permissions' },
