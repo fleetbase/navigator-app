@@ -93,7 +93,9 @@ describe('app shell', () => {
     it('reports the queued count when offline', () => {
         const t = render(<SyncProvider isOnline={false} queuedCount={2}><OfflineBar /></SyncProvider>);
         const s = json(t);
-        expect(s).toContain('saved on device');
+        // Assert the banner and its count, not the wording — the copy is
+        // translated now, so pinning the exact sentence pins the language.
+        expect(s).toContain('offline-banner');
         expect(s).toContain('2 queued');
         ReactTestRenderer.act(() => t.unmount());
     });

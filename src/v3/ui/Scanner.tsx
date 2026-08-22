@@ -12,6 +12,7 @@ import { XStack, YStack } from 'tamagui';
 import { Body, Micro } from './Text';
 import { Button } from './Button';
 import { radius, space } from '../theme/tokens';
+import { useTranslation } from '../i18n/useTranslation';
 
 export type ScanFeedback = 'idle' | 'accepted' | 'duplicate' | 'unexpected';
 
@@ -39,6 +40,7 @@ export function ScannerOverlay({
     onManualEntry?: () => void;
     testID?: string;
 }) {
+    const { t } = useTranslation();
     const frameColor = feedback === 'unexpected' ? '$danger' : feedback === 'duplicate' ? '$warning' : '$successText';
     const fb = feedback !== 'idle' ? feedbackCopy[feedback] : null;
 
@@ -89,7 +91,7 @@ export function ScannerOverlay({
                     </Body>
                     {onManualEntry ? (
                         <Button variant="ghost" height={38} onPress={onManualEntry}>
-                            Manual entry
+                            {t('ui.manualEntry')}
                         </Button>
                     ) : null}
                 </XStack>

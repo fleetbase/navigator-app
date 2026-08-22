@@ -345,11 +345,10 @@ stop sequence.
   labels.** It said "Driver en-route" where the design says "En route", and the
   catalogue silently won over the registry. If a status label changes, change it
   in `palette.ts` and re-sync the catalogue — not the other way round.
-- **The component library still carries English literals.** `OfflineBanner`
-  ("You're offline — work is saved on device"), `SyncedBanner`, and the queue's
-  `describeMutation` labels predate the i18n layer. `ErrorState` was fixed while
-  building Orders (it now takes `retryLabel`); do the rest the next time a slice
-  touches them, or as a dedicated pass before cutover.
+- ~~**The component library still carries English literals.**~~ **DONE.** Every
+  string in `src/v3/ui` now goes through `t()` under a `ui.*` namespace, and
+  `ui/__tests__/no-hardcoded-copy.test.js` parses the sources to keep it that
+  way. The queue's labels were fixed with the sync-queue slice (F-28).
 
 - `isConnected` still proxies off the SocketCluster connection; there is no
   netinfo dependency. Decide whether to add one before Tier 1 lands.

@@ -8,6 +8,7 @@ import { Circle, Svg } from 'react-native-svg';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Micro, Secondary } from './Text';
 import { radius, space } from '../theme/tokens';
+import { useTranslation } from '../i18n/useTranslation';
 
 /**
  * Segmented route progress. One segment per stop rather than a continuous bar —
@@ -137,11 +138,12 @@ export function HosGauge({
     testID?: string;
 }) {
     const theme = useTheme();
+    const { t } = useTranslation();
 
     if (!enabled) {
         return (
             <XStack testID={testID} alignItems="center" gap={space[3]} padding={space[4]}>
-                <Secondary>Hours of service not required for this driver</Secondary>
+                <Secondary>{t('ui.hosNotRequired')}</Secondary>
             </XStack>
         );
     }
@@ -162,12 +164,12 @@ export function HosGauge({
                     <Body fontSize={15} fontWeight="800" tabular>
                         {hrs}:{String(mins).padStart(2, '0')}
                     </Body>
-                    <Micro fontSize={8.5}>DRIVE LEFT</Micro>
+                    <Micro fontSize={8.5}>{t('ui.driveLeft')}</Micro>
                 </YStack>
             </YStack>
             <YStack flex={1} gap={space[2]}>
-                <LimitBar label="Shift" used={dailyHours} limit={dailyLimit} />
-                <LimitBar label="Week" used={weeklyHours} limit={weeklyLimit} />
+                <LimitBar label={t('ui.shift')} used={dailyHours} limit={dailyLimit} />
+                <LimitBar label={t('ui.week')} used={weeklyHours} limit={weeklyLimit} />
             </YStack>
         </XStack>
     );

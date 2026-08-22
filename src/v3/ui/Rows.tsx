@@ -12,6 +12,7 @@ import { Identifier } from './Identifier';
 import { Surface } from './Surface';
 import { radius, space } from '../theme/tokens';
 import { formatDuration, formatMeters, type DistanceUnit } from '../format';
+import { useTranslation } from '../i18n/useTranslation';
 
 export type StopState = 'current' | 'pending' | 'completed' | 'failed';
 
@@ -40,10 +41,11 @@ export interface StopRowProps {
     testID?: string;
 }
 
-const typeLabel: Record<NonNullable<StopRowProps['type']>, string> = {
-    pickup: 'PICKUP',
-    dropoff: 'DROP-OFF',
-    return: 'RETURN',
+/** Keys, not words: the map is module-level and outlives a language change. */
+const typeLabelKey: Record<NonNullable<StopRowProps['type']>, string> = {
+    pickup: 'ui.stopPickup',
+    dropoff: 'ui.stopDropoff',
+    return: 'ui.stopReturn',
 };
 
 const typeToken: Record<NonNullable<StopRowProps['type']>, string> = {
@@ -86,6 +88,7 @@ export function StopRow({
     onPress,
     testID,
 }: StopRowProps) {
+    const { t } = useTranslation();
     // Completed stops recede — legible, but out of the way of the next action.
     if (state === 'completed') {
         return (
@@ -165,8 +168,8 @@ export function StopRow({
                     {trackingNumber ? <Identifier value={trackingNumber} boxed={false} /> : null}
 
                     <XStack gap={space[2]} alignItems="center" flexWrap="wrap">
-                        <Chip label={typeLabel[type]} color={typeToken[type]} border={`${typeToken[type]}Border`} />
-                        {itemCount != null ? <Chip label={`${itemCount} ${itemCount === 1 ? 'item' : 'items'}`} /> : null}
+                        <Chip label={t(typeLabelKey[type])} color={typeToken[type]} border={`${typeToken[type]}Border`} />
+                        {itemCount != null ? <Chip label={t('ui.itemCount', { count: itemCount })} /> : null}
                         {window ? <Chip label={`Window ${window}`} /> : null}
                         {leg ? (
                             <Micro marginLeft="auto" tabular>

@@ -687,5 +687,33 @@
         "usePassword": "Use a password instead",
         "note": "Codes expire after a few minutes. Ask dispatch if your number has changed.",
         "offlineNotice": "You need a connection to receive a code."
+    },
+    "ui": {
+        "offline": "You are offline — work is saved on this device",
+        "offlineQueued": {
+            "one": "%{count} queued",
+            "other": "%{count} queued"
+        },
+        "backOnline": {
+            "one": "Back online — %{count} action synced",
+            "other": "Back online — %{count} actions synced"
+        },
+        "trackingNumber": "TRACKING NUMBER",
+        "newOfferNearby": "NEW OFFER NEARBY",
+        "payout": "PAYOUT",
+        "decline": "Decline",
+        "accept": "Accept",
+        "hosNotRequired": "Hours of service not required for this driver",
+        "driveLeft": "DRIVE LEFT",
+        "shift": "Shift",
+        "week": "Week",
+        "manualEntry": "Manual entry",
+        "stopPickup": "PICKUP",
+        "stopDropoff": "DROP-OFF",
+        "stopReturn": "RETURN",
+        "itemCount": {
+            "one": "%{count} item",
+            "other": "%{count} items"
+        }
     }
 }

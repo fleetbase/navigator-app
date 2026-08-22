@@ -58,7 +58,9 @@ describe('V3App', () => {
 
         const t = mount({ isConnected: false, queue });
         const s = JSON.stringify(t.toJSON());
-        expect(s).toContain('saved on device');
+        // Assert the banner and its count, not the wording — the copy is
+        // translated now, so pinning the exact sentence pins the language.
+        expect(s).toContain('offline-banner');
         expect(s).toContain('3 queued');
         ReactTestRenderer.act(() => t.unmount());
     });

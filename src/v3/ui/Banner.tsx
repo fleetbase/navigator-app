@@ -10,6 +10,7 @@ import { XStack, YStack, styled } from 'tamagui';
 import { Body, Micro, Secondary } from './Text';
 import { Button } from './Button';
 import { radius, space } from '../theme/tokens';
+import { useTranslation } from '../i18n/useTranslation';
 
 const Frame = styled(XStack, {
     name: 'Banner',
@@ -91,18 +92,20 @@ export function Banner({ tone = 'neutral', message, meta, action, testID }: Bann
  * basement or a loading dock, and alarming the driver about it is wrong.
  */
 export function OfflineBanner({ queued }: { queued: number }) {
+    const { t } = useTranslation();
     return (
         <Banner
             tone="neutral"
-            message="You're offline — work is saved on device"
-            meta={queued > 0 ? `${queued} queued` : undefined}
+            message={t('ui.offline')}
+            meta={queued > 0 ? t('ui.offlineQueued', { count: queued }) : undefined}
             testID="offline-banner"
         />
     );
 }
 
 export function SyncedBanner({ count }: { count: number }) {
-    return <Banner tone="success" message={`Back online — ${count} ${count === 1 ? 'action' : 'actions'} synced`} testID="synced-banner" />;
+    const { t } = useTranslation();
+    return <Banner tone="success" message={t('ui.backOnline', { count })} testID="synced-banner" />;
 }
 
 export function EmptyState({

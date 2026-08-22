@@ -84,6 +84,13 @@ Both were misdiagnosed first — see *How these were found*, below.
 |---|---|---|---|
 | F-25 | S3 | **Pre-auth screens rendered under the notch.** Everything else sits inside `DriverShell`, which supplies the top safe-area inset — sign-in and the new connection screen do not, and the connection screen's title collided with the Dynamic Island. Sign-in had been papering over it with a hardcoded `paddingTop`, which happens to clear the island on this device and would not on others. | Both now read `useSafeAreaInsets()`. Seen on device; no test would have caught it. |
 
+### Localisation
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-30 | S3 | **The component library shipped fourteen English strings that no locale could change** — the offline and synced banners, the offer card's Accept/Decline and PAYOUT, TRACKING NUMBER, the HOS gauge's DRIVE LEFT / Shift / Week, the scanner's Manual entry, and the PICKUP/DROP-OFF/RETURN chips. Invisible in every test, because the tests asserted the same English back. | All routed through `t()` under `ui.*`. `no-hardcoded-copy.test.js` parses the sources rather than rendering — a string only reachable in a state no test exercises is exactly the one that survives. |
+| F-31 | S3 | **Two plurals were built by hand** — `` `${n} ${n === 1 ? 'item' : 'items'}` `` in `OrderCard` and `StopRow`. That construction cannot be translated at all: languages with more than two plural forms have no way to express it. The guard above caught the second one, which my own grep had missed. | `t('ui.itemCount', { count })`, with the catalogue owning pluralisation. |
+
 ### Design fidelity
 
 | # | Sev | What | Fix |

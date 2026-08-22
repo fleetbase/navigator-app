@@ -14,6 +14,7 @@ import { Surface, Divider } from './Surface';
 import { Button } from './Button';
 import { radius, space } from '../theme/tokens';
 import { formatDuration, formatMeters, type DistanceUnit } from '../format';
+import { useTranslation } from '../i18n/useTranslation';
 
 export interface OrderCardStop {
     name: string;
@@ -57,11 +58,12 @@ export function OrderCard({
     onPress,
     testID,
 }: OrderCardProps) {
+    const { t } = useTranslation();
     const meta = [
         distanceM != null || durationS != null
             ? [distanceM != null ? formatMeters(distanceM, units) : null, durationS != null ? formatDuration(durationS) : null].filter(Boolean).join(' · ')
             : null,
-        itemCount != null ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}` : null,
+        itemCount != null ? t('ui.itemCount', { count: itemCount }) : null,
         customerName ?? null,
     ].filter(Boolean) as string[];
 
@@ -72,7 +74,7 @@ export function OrderCard({
             {/* The identifier leads, on its own line, in full — the design's core rule. */}
             <YStack padding={space[4]} gap={space[2]}>
                 <XStack alignItems="center" justifyContent="space-between" gap={space[2]}>
-                    <Caption>TRACKING NUMBER</Caption>
+                    <Caption>{t('ui.trackingNumber')}</Caption>
                     {status ? <StatusPill status={status} size="sm" /> : null}
                 </XStack>
                 <Identifier value={trackingNumber} boxed={false} />
@@ -154,11 +156,12 @@ export function OfferCard({
     onDecline?: () => void;
     testID?: string;
 }) {
+    const { t } = useTranslation();
     return (
         <Surface testID={testID} hero level="card" borderColor="$primaryBorder" backgroundColor="$primaryFill">
             <YStack padding={space[4]} gap={space[3]}>
                 <XStack alignItems="center" justifyContent="space-between">
-                    <Caption tone="brand">NEW OFFER NEARBY</Caption>
+                    <Caption tone="brand">{t('ui.newOfferNearby')}</Caption>
                     {expiresIn ? (
                         <Micro tone="brand" tabular>
                             expires in {expiresIn}
@@ -186,7 +189,7 @@ export function OfferCard({
                     ) : null}
                     {payout ? (
                         <YStack>
-                            <Micro>PAYOUT</Micro>
+                            <Micro>{t('ui.payout')}</Micro>
                             <Body fontWeight="800" tabular>
                                 {payout}
                             </Body>
@@ -195,12 +198,8 @@ export function OfferCard({
                 </XStack>
 
                 <XStack gap={space[2]}>
-                    <Button flex={1} variant="ghost" onPress={onDecline}>
-                        Decline
-                    </Button>
-                    <Button flex={2} onPress={onAccept}>
-                        Accept
-                    </Button>
+                    <Button flex={1} variant="ghost" onPress={onDecline}>{t('ui.decline')}</Button>
+                    <Button flex={2} onPress={onAccept}>{t('ui.accept')}</Button>
                 </XStack>
             </YStack>
         </Surface>
