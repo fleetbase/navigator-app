@@ -195,6 +195,7 @@ if v2 ships again before cutover.
 | N-6 | S3 | Hooks are called inside navigator `options` callbacks in five places, re-running on every navigation state change. |
 | N-7 | S3 | `DriverLayout` navigates to a `ChatList` route that does not exist (`ChatHome` does). |
 | N-8 | S3 | `tabBarLabelStyle` is a function where a style object is expected and references an undefined `focued`; it silently never runs. |
+| N-14 | S4 | `use-storage.ts` had a real type error — `typeof x === 'function'` cannot narrow its setter union, because `T` may itself be a function type. It had never been caught because v2 is not typechecked; it surfaced the moment v3 imported far enough to pull the file into the graph. Fixed, since it was blocking. |
 | N-13 | S2 | v2's `switchOrganization` swallows every failure into a `console.warn`, so a driver whose switch failed is never told. It also `console.log`s the new driver **and its token** — a credential in the device log. |
 | N-9 | S4 | `src/hooks/use-locale.ts` imports a `setLanguage` that `localize.js` does not export. |
 | N-10 | S4 | v2 lint reports **595 errors** (pre-existing; v3 is clean). |

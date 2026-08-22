@@ -1,7 +1,7 @@
 import BootScreen from '../../screens/BootScreen';
 import LocationPermissionScreen from '../../screens/LocationPermissionScreen';
 import InstanceLinkScreen from '../../screens/InstanceLinkScreen';
-import { getTheme } from '../../utils';
+import { getTheme } from '../../utils/theme';
 import { Text } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';

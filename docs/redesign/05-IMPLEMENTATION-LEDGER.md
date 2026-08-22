@@ -352,8 +352,12 @@ stop sequence.
 
 - `isConnected` still proxies off the SocketCluster connection; there is no
   netinfo dependency. Decide whether to add one before Tier 1 lands.
-- `getTheme` should be lifted out of `src/utils/index.js` so v3 can share the
-  v2 formatters instead of `src/v3/format.ts` duplicating two of them.
+- ~~`getTheme` should be lifted out of `src/utils/index.js`~~ **DONE.** It lives
+  in `src/utils/theme.js`, so the barrel no longer imports `tamagui.config` and
+  v3 can import the v2 formatters — proved by
+  `src/v3/__tests__/shared-formatters.test.ts`. `src/v3/format.ts` keeps only
+  what is genuinely different: the unit-aware `formatMeters`, and the money,
+  weight and dimension formatters v2 has no equivalent for.
 - Gemfile pins CocoaPods 1.14.3, which cannot install on this machine (`nkf`
   will not build on Ruby 2.7.4) and is below RN 0.86's floor. Update the
   Gemfile and add a `.ruby-version`.

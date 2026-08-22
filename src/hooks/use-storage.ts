@@ -110,7 +110,13 @@ function useStorage<T = StorageValue>(key: string, defaultValue?: T): [T | undef
 
     const setValue = useCallback<StorageSetter<T>>(
         (nextValue) => {
-            const valueToStore = typeof nextValue === 'function' ? nextValue(getStoredValue<T>(key) ?? defaultValueRef.current) : nextValue;
+            // `typeof x === 'function'` cannot narrow this union, because `T`
+            // may itself be a function type — so the updater form needs saying
+            // explicitly rather than inferring.
+            const valueToStore =
+                typeof nextValue === 'function'
+                    ? (nextValue as (current: T | undefined) => T | undefined)(getStoredValue<T>(key) ?? defaultValueRef.current)
+                    : nextValue;
             setStoredValue(key, valueToStore as StorageValue);
         },
         [key]

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useColorScheme, Appearance } from 'react-native';
 import useStorage, { getString, setString } from './use-storage';
-import { navigatorConfig, getTheme } from '../utils';
+import { navigatorConfig } from '../utils';
+import { getTheme } from '../utils/theme';
 import { capitalize } from '../utils/format';
 
 export const USER_COLOR_SCHEME_KEY = 'user_color_scheme';

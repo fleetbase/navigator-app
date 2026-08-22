@@ -1,19 +1,26 @@
 /**
  * Formatters for the v3 tree.
  *
- * The plan intended v3 to share src/utils/format.js rather than fork it, but
- * that module imports src/utils/index.js, which imports the **v2 tamagui.config**
- * for its non-reactive `getTheme` helper. Pulling it into v3 therefore loads a
- * second Tamagui config ("duplicate Tamagui dependencies") and drags the whole
- * v2 provider stack into any test that touches a card.
+ * These were duplicated because `src/utils/format.js` imports the
+ * `src/utils/index.js` barrel, and that barrel imported the **v2 tamagui.config**
+ * for one non-reactive `getTheme` helper — so any v3 file touching a v2
+ * formatter loaded a second Tamagui config and dragged the v2 provider stack
+ * into its tests.
  *
- * These are re-implemented rather than re-exported for that reason. They are
- * small and pure; the sharing can be restored once `getTheme` is lifted out of
- * the utils barrel (tracked as a Phase 1 task).
+ * That blocker is gone: `getTheme` now lives in `src/utils/theme.js`, and
+ * `__tests__/shared-formatters.test.ts` imports the v2 formatters from v3 to
+ * prove it stays gone.
  *
- * Behaviour matches src/utils/format.js so v2 and v3 read identically during the
- * parallel period — except that formatMeters now honours the unit preference,
- * which the design's imperial/metric toggle requires.
+ * What remains here is deliberate rather than accidental:
+ *
+ *   - `formatMeters` honours the driver's metric/imperial preference. v2's is
+ *     metric-only, and the design's unit toggle needs this one.
+ *   - `formatMoney`, `formatWeight` and `formatDimensions` have no v2
+ *     equivalent — they were written for the payload and fuel screens.
+ *   - `formatDuration` and `formatClock` are small and pure, and v2's variants
+ *     hard-code English ("2 hours ago"), which the i18n pass would have to undo.
+ *
+ * Anything that genuinely duplicates v2 should now be imported from it instead.
  */
 
 export type DistanceUnit = 'metric' | 'imperial';

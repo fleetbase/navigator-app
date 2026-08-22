@@ -18,7 +18,8 @@ import {
     faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme, Text, View, XStack, Image } from 'tamagui';
-import { navigatorConfig, get, config, toArray, getTheme } from '../utils';
+import { navigatorConfig, get, config, toArray } from '../utils';
+import { getTheme } from '../utils/theme';
 import { configCase } from '../utils/format';
 import { format } from 'date-fns';
 import { PortalHost } from '@gorhom/portal';

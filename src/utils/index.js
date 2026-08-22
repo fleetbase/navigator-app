@@ -3,8 +3,6 @@ import { Platform, ActionSheetIOS, Alert, Dimensions } from 'react-native';
 import { Collection, lookup } from '@fleetbase/sdk';
 import storage, { getString } from './storage';
 import { capitalize } from './format';
-import { themes } from '../../tamagui.config';
-import { APP_THEME_KEY } from '../hooks/use-app-theme';
 import { pluralize } from 'inflected';
 import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
@@ -181,17 +179,6 @@ export function config(key, defaultValue) {
 
 export function uniqueArray(array) {
     return [...new Set(array)];
-}
-
-export function getTheme(key = null) {
-    const themeName = getString(APP_THEME_KEY);
-    if (themeName) {
-        const targetTheme = themes[themeName];
-        if (targetTheme) {
-            return key ? targetTheme[key] : targetTheme;
-        }
-    }
-    return {};
 }
 
 export function defaults(object, defs) {
