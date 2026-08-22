@@ -283,6 +283,14 @@ for. `sequenceFlow` reports `ordered: false` there and the stepper stops
 claiming which steps are behind the driver, which is honest but not useful.
 **This needs your decision** — see the open items.
 
+### Issue detail, walked in dark
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-50 | S3 | **The filing date read "8/21/2026, 12:08:20 PM"** on a device set to en-GB — `toLocaleString()` with no arguments. Month-first is ambiguous to most of the world, and the seconds are noise on a filing timestamp. | A `formatDateTime` helper with an explicit short month name, which cannot be misread whatever the locale: "Filed Aug 21, 2026 at 12:08". |
+| F-51 | S3 | **A pair of raw coordinates sat under the label "Reported at"** — which a driver reads as a *time*, above two numbers no one can place. | There is no reverse-geocode on this payload, so the value is named for what it is: "Coordinates". Dressing it up would have been worse than admitting it. |
+| F-52 | S4 | **The issue's own words were printed twice** — once as the heading, once again under "What you reported" — whenever the issue had no title and no category. `headingOf` already returns `usedReport` saying exactly this had happened; the list screen honoured it and the detail screen did not. | The report block is skipped when the heading is the report. |
+
 ---
 
 ## The tracker is more honest than the app was using

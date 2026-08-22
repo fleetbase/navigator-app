@@ -17,6 +17,7 @@ import { Banner } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { headingOf, humanizeTerm, type IssueRecord } from '../data';
+import { formatDateTime } from '../format';
 import { isRealPoint } from '../data/useOrderTimeline';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
@@ -24,6 +25,12 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const point = isRealPoint(issue.location) ? (issue.location!.coordinates as number[]) : undefined;
+    /*
+     * `headingOf` already tells us when it fell back to the report text for the
+     * heading. Ignoring that printed the same sentence twice — once as the
+     * title, once under "What you reported".
+     */
+    const { heading, usedReport } = headingOf(issue);
 
     const rows: { key: string; labelKey: string; value: string }[] = [];
     const push = (key: string, labelKey: string, value?: string) => {
@@ -34,6 +41,12 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
     push('vehicle', 'issueDetail.vehicle', issue.vehicle_name ?? undefined);
     push('reporter', 'issueDetail.reporter', issue.reporter_name ?? undefined);
     push('assignee', 'issueDetail.assignee', issue.assignee_name ?? undefined);
+    /*
+     * Raw coordinates, presented as coordinates. The label used to read
+     * "Reported at", which a driver reads as a *time*, above a pair of numbers
+     * no one can place. There is no reverse-geocode on this payload, so the
+     * honest move is to name the value for what it is rather than dress it up.
+     */
     if (point) push('location', 'issueDetail.location', `${point[1].toFixed(4)}, ${point[0].toFixed(4)}`);
 
     return (
@@ -54,13 +67,13 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
                         </XStack>
                     </XStack>
                     <Body fontSize={17} fontWeight="800">
-                        {headingOf(issue).heading || t('issues.untitled')}
+                        {heading || t('issues.untitled')}
                     </Body>
                     {issue.issue_id ? <Identifier value={issue.issue_id} boxed={false} /> : null}
                 </YStack>
             </Surface>
 
-            {issue.report ? (
+            {issue.report && !usedReport ? (
                 <YStack gap={space[2]}>
                     <Caption>{t('issueDetail.report')}</Caption>
                     <Surface padded="compact">
@@ -88,10 +101,10 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
             <YStack gap={space[2]}>
                 <Caption>{t('issueDetail.history')}</Caption>
                 <Micro testID="issue-filed">
-                    {issue.created_at ? t('issueDetail.filed', { when: new Date(issue.created_at).toLocaleString() }) : t('issueDetail.filedUnknown')}
+                    {issue.created_at ? t('issueDetail.filed', { when: formatDateTime(issue.created_at) }) : t('issueDetail.filedUnknown')}
                 </Micro>
                 {issue.resolved_at ? (
-                    <Micro testID="issue-resolved">{t('issueDetail.resolved', { when: new Date(issue.resolved_at).toLocaleString() })}</Micro>
+                    <Micro testID="issue-resolved">{t('issueDetail.resolved', { when: formatDateTime(issue.resolved_at) })}</Micro>
                 ) : null}
                 <Banner tone="neutral" message={t('issueDetail.timelineUnavailable')} testID="issue-timeline-unavailable" />
             </YStack>

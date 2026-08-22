@@ -69,6 +69,28 @@ export function formatClock(iso?: string | null): string {
 }
 
 /**
+ * Date and time together, for a record's history. "21 Aug 2026, 12:08"
+ *
+ * `toLocaleString()` with no arguments was rendering "8/21/2026, 12:08:20 PM"
+ * on a device set to en-GB — the seconds are noise on a filing timestamp, and
+ * the month/day order is ambiguous to most of the world. An explicit month name
+ * cannot be misread whatever the locale.
+ */
+export function formatDateTime(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+}
+
+/**
  * Money.
  *
  * Fleetbase stores amounts in **minor units**, as a string — a live entity

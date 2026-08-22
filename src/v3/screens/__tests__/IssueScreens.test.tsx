@@ -207,6 +207,25 @@ describe('IssuesScreen', () => {
 });
 
 describe('IssueDetailScreen', () => {
+    it('does not print the report twice when it is also the heading', async () => {
+        // An issue with no title and no category falls back to its report text
+        // for a heading; the detail screen then repeated it verbatim below.
+        const bare = { ...issue, title: null, category: null, report: 'Amber brake warning light on since this morning.' } as typeof issue;
+        const t = await mount(<IssueDetailScreen issue={bare} />);
+        const said = textOf(t).split('Amber brake warning light on since this morning.').length - 1;
+        expect(said).toBe(1);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('writes the filing date unambiguously, not in US order with seconds', async () => {
+        const t = await mount(<IssueDetailScreen issue={{ ...issue, created_at: '2026-08-21T12:08:20Z' } as typeof issue} />);
+        const text = textOf(t);
+        expect(text).not.toMatch(/8\/21\/2026/);
+        expect(text).not.toMatch(/12:08:20/);
+        expect(text).toMatch(/Aug/);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
     it.each(SCHEMES)('renders in the %s scheme', async (scheme) => {
         const t = await mount(<IssueDetailScreen issue={issue} />, scheme);
         expect(t.toJSON()).toBeTruthy();

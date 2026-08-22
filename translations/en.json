@@ -349,7 +349,7 @@
         "vehicle": "Vehicle",
         "reporter": "Reported by",
         "assignee": "Assigned to",
-        "location": "Reported at",
+        "location": "Coordinates",
         "history": "History",
         "filed": "Filed %{when}",
         "filedUnknown": "Filed date not recorded.",
