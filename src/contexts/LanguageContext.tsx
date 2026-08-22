@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, ReactNode } from 'react';
 import { getLangNameFromCode } from 'language-name-map';
-import { navigatorConfig } from '../utils';
+import { navigatorConfig } from '../utils/navigator-config';
 import { getAvailableLocales } from '../utils/localize';
 import localeEmoji from 'locale-emoji';
 import useStorage from '../hooks/use-storage';

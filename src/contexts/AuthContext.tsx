@@ -2,7 +2,8 @@ import React, { createContext, useContext, useReducer, useMemo, useEffect, useCa
 import { Platform } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
 import { Driver } from '@fleetbase/sdk';
-import { later, isArray, navigatorConfig } from '../utils';
+import { later, isArray } from '../utils';
+import { navigatorConfig } from '../utils/navigator-config';
 import useStorage, { storage } from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useLanguage } from './LanguageContext';

@@ -6,8 +6,8 @@ import { capitalize } from './format';
 import { pluralize } from 'inflected';
 import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
-import NavigatorConfig from '../../navigator.config';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
+import { isArray, toArray } from './array';
 
 /**
  * @param {string} uri
@@ -37,10 +37,6 @@ export async function resizePhoto(uri, maxSize = 1024) {
     );
 
     return resized.uri;
-}
-
-export function navigatorConfig(key, defaultValue = null) {
-    return get(NavigatorConfig, key, defaultValue);
 }
 
 export function get(target, path, defaultValue = null) {
@@ -96,21 +92,7 @@ export function last(array = []) {
     return array[array.length - 1];
 }
 
-export function isArray(target) {
-    return Array.isArray(target);
-}
-
-export function toArray(target, delimiter = ',') {
-    if (isArray(target)) {
-        return target;
-    }
-
-    if (typeof target === 'string') {
-        return target.split(delimiter);
-    }
-
-    return Array.from(target);
-}
+export { isArray, toArray };
 
 export function isObject(target) {
     return target && typeof target === 'object' && Object.prototype.toString.call(target) === '[object Object]';

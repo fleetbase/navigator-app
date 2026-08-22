@@ -219,6 +219,16 @@ only because the server misbehaved rather than failing. A test suite mocking
 `fetch` rejection proves the offline path works; it cannot prove the offline path
 is ever *reached*.
 
+### A require cycle at the root of the config
+
+Reading the app's own console — over the Metro inspector, since the on-screen
+LogBox notice only says "open the debugger" — turned up a warning that had been
+firing on every launch and that nobody had looked at.
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-43 | S3 | **`navigator.config.ts → config/default.js → utils/config.js → utils/index.js → navigator.config.ts`.** The barrel imported the config file and the config file's dependencies led back to the barrel, so whichever module evaluated second received a half-initialised namespace. It worked only because every value in the ring is read inside a function body rather than at module scope — one top-level read added anywhere in it would have produced an `undefined` at start-up with no obvious culprit. | Two leaf modules with no imports back into the ring: `utils/array.js` for the coercion helpers `config/default.js` needed, and `utils/navigator-config.js` for the config reader. Neither is re-exported from the barrel, since that would restore the import. Ten call sites updated; the warning is gone from the console at launch. |
+
 ---
 
 ## The tracker is more honest than the app was using

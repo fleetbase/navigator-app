@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useColorScheme, Appearance } from 'react-native';
 import useStorage, { getString, setString } from './use-storage';
-import { navigatorConfig } from '../utils';
+import { navigatorConfig } from '../utils/navigator-config';
 import { getTheme } from '../utils/theme';
 import { capitalize } from '../utils/format';
 

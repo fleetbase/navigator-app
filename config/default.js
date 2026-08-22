@@ -1,5 +1,5 @@
 import { mergeConfigs, config, toBoolean } from '../src/utils/config';
-import { toArray } from '../src/utils';
+import { toArray } from '../src/utils/array';
 
 export const DefaultConfig = {
     theme: config('APP_THEME', 'blue'),

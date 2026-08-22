@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCheck, faArrowRotateRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { OtpInput } from 'react-native-otp-entry';
 import { useAuth } from '../contexts/AuthContext';
-import { navigatorConfig } from '../utils';
+import { navigatorConfig } from '../utils/navigator-config';
 import LinearGradient from 'react-native-linear-gradient';
 
 const PhoneLoginVerifyScreen = () => {

@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import Env from 'react-native-config';
 import Config from '../../navigator.config';
-import { navigatorConfig, config, toBoolean, get } from '../utils';
+import { config, toBoolean, get } from '../utils';
+import { navigatorConfig } from '../utils/navigator-config';
 import useStorage from '../hooks/use-storage';
 
 const ConfigContext = createContext();
