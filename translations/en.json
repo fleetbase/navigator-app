@@ -205,7 +205,9 @@
         "updateFailed": "Couldn't update this order",
         "loadFailed": "Couldn't load this order",
         "notFound": "Order not found",
-        "navigate": "Navigate"
+        "navigate": "Navigate",
+        "payloadEmpty": "Nothing is recorded on this order.",
+        "flowNotConfigured": "This order has no activity flow set up, so progress cannot be updated from the app. Ask dispatch."
     },
     "editPayloadItem": {
         "title": "Editing",

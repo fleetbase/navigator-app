@@ -190,6 +190,17 @@ queue's populated states in the plan's offline pass.
 | F-19 | S3 | The issue create screen was a **native modal**, which sits above the app's portal hosts, so its select's bottom sheet rendered *behind* the form and never appeared. | Pushed, not presented. `02e7a13` |
 | F-20 | S4 | A freshly filed issue has `status: null`, which rendered an **empty status pill**. | Says "Not yet triaged". `02e7a13` |
 
+### Order detail — found walking the screen, not reading it
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-39 | **S2** | **An order whose config declares no activity flow rendered no stepper, no explanation and no advance button** — the screen's entire purpose disappeared into blank space. The render had three branches for two conditions: a flow, or a failed config. Config *loaded but empty*, and config *still loading*, both fell through to `null`. A driver on such an order cannot progress it and is told nothing about why. | The two silent cases are now distinct and visible: a skeleton while the config is in flight, and a warning naming the cause and the remedy ("ask dispatch") when the config carries no flow. |
+| F-40 | S3 | **"0 items" appeared twice on an empty order** — once as the section's meta and again as the empty state, because both used the count string. | The empty state says what is true rather than repeating the number. |
+
+Both were invisible to the existing suite, which only ever mocked a config with a
+flow in it. The tests added alongside cover the empty-flow config and assert the
+count string appears exactly once.
+
 ---
 
 ## The tracker is more honest than the app was using

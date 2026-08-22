@@ -169,6 +169,29 @@ describe('OrderDetailScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
+    it('says so when the config declares no flow at all', async () => {
+        // A config that loads cleanly but carries an empty flow used to render
+        // nothing: no stepper, no message, and no way to advance the order.
+        mockConfig([]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render();
+        const ids = testIDs(t);
+        expect(ids).toContain('flow-not-configured');
+        expect(ids).not.toContain('flow-unavailable');
+        expect(ids.filter((i) => i.startsWith('step-'))).toHaveLength(0);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('does not say "0 items" twice on an empty payload', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { dropoff: { name: 'Harbour View Pharmacy' }, entities: [] } }));
+        });
+        const t = await render();
+        const zeroes = textOf(t).match(/0 items/g) ?? [];
+        expect(zeroes).toHaveLength(1);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
     it('renders identifiers in full', async () => {
         ReactTestRenderer.act(() => { orderStore.upsert(order()); });
         const t = await render();

@@ -62,7 +62,7 @@ export function OrderDetailScreen({
 
     const order = useOrder(orderId);
     const configId = orderConfigIdOf(order);
-    const { flow, failed: configFailed } = useOrderConfig(configId);
+    const { flow, isLoading: configLoading, failed: configFailed } = useOrderConfig(configId);
 
     const [isAdvancing, setIsAdvancing] = useState(false);
     const [queued, setQueued] = useState(false);
@@ -209,7 +209,8 @@ export function OrderDetailScreen({
                         })
                     ) : (
                         <YStack padding={space[3]}>
-                            <Secondary>{t('orderDetail.payloadCount', { count: 0 })}</Secondary>
+                            {/* Not the count again — the heading already says 0. */}
+                            <Secondary>{t('orderDetail.payloadEmpty')}</Secondary>
                         </YStack>
                     )}
                 </Surface>
@@ -232,9 +233,19 @@ export function OrderDetailScreen({
             <YStack gap={space[3]}>
                 {flow.length ? (
                     <ActivityStepper flow={flow} currentCode={order.status} labelFor={labelFor} testID="order-stepper" />
+                ) : configLoading ? (
+                    <Skeleton height={56} testID="flow-loading" />
                 ) : configFailed ? (
                     <Banner tone="neutral" message={t('orderDetail.flowUnavailable')} testID="flow-unavailable" />
-                ) : null}
+                ) : (
+                    /*
+                     * Config loaded, but declares no activity flow. Previously
+                     * this rendered nothing at all: no stepper, no explanation,
+                     * and no advance button — the screen's whole purpose
+                     * vanished silently and looked like a blank area.
+                     */
+                    <Banner tone="warning" message={t('orderDetail.flowNotConfigured')} testID="flow-not-configured" />
+                )}
 
                 {next?.require_pod ? <ProofRequiredHint label={t('orderDetail.proofRequired')} testID="proof-required" /> : null}
 
