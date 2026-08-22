@@ -11,7 +11,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl } from 'react-native';
 import { YStack, useTheme } from 'tamagui';
-import { Banner, EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { OrderCard, type OrderCardStop } from '../ui/Cards';
 import { Field } from '../ui/Field';
 import { Segmented } from '../ui/Field';
@@ -146,13 +147,7 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
         }
         if (state === 'error') {
             return (
-                <ErrorState
-                    testID="orders-error"
-                    title={t('ordersScreen.errorTitle')}
-                    body={error?.isTransport ? t('ordersScreen.errorBody') : error?.message}
-                    onRetry={retry}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="orders-error" />
             );
         }
         if (query) {
@@ -177,7 +172,7 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
                 />
             </YStack>
         );
-    }, [state, error, query, segment, t, retry]);
+    }, [state, error, query, segment, t, retry, isOnline]);
 
     return (
         <YStack flex={1} backgroundColor="$background" testID="orders-screen">

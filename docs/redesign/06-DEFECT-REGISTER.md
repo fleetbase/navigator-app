@@ -72,6 +72,12 @@ Both were misdiagnosed first — see *How these were found*, below.
 |---|---|---|---|
 | F-24 | S2 | **The camera prompt told drivers the wrong reason.** `NSCameraUsageDescription` read *"This app may need to use your camera for your profile picture"* — the camera is for proof-of-delivery photos and barcode scanning. Seen on device while verifying the primer. Both photo-library strings were equally vague. Purpose strings are what the driver reads at the one moment they decide, and App Review requires them to be accurate. | All three rewritten to say what the app actually does. **Needs a native rebuild to take effect.** |
 
+### Error handling
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-29 | S2 | **Ten screens told the driver "Check your connection and try again" for every failure**, whatever had gone wrong. That is right for a dropped request and actively misleading for the rest: after a 403 it sends someone to retry what can never succeed, and after a 401 it hides the one action that would fix it. Each screen also offered a Retry button regardless, including where retrying is pointless. | `describeError` classifies ten kinds by *what the driver should do*, and `FailureState` renders the wording and the matching recovery. No button is offered where retrying cannot help — a dead Retry teaches drivers to distrust the ones that work. 20 near-duplicate strings removed. |
+
 ### Layout
 
 | # | Sev | What | Fix |

@@ -23,6 +23,7 @@ import { Body, Caption, Micro } from '../ui/Text';
 import { Field } from '../ui/Field';
 import { Button } from '../ui/Button';
 import { Banner, ErrorState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
@@ -167,12 +168,7 @@ export function ConversationScreen({
     if (isBlocked || !channel) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="conversation-error">
-                <ErrorState
-                    title={t('conversation.loadFailed')}
-                    body={error?.message ?? t('conversation.loadFailedBody')}
-                    onRetry={reload}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={reload} t={t} testID="conversation-error" />
             </YStack>
         );
     }

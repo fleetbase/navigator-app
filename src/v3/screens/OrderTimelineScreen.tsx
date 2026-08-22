@@ -15,7 +15,8 @@ import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface } from '../ui/Surface';
-import { Banner, EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
@@ -113,12 +114,7 @@ export function OrderTimelineScreen({ orderId }: { orderId: string }) {
     if (failed && !events) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="timeline-error">
-                <ErrorState
-                    title={t('orderTimeline.loadFailed')}
-                    body={t('orderTimeline.loadFailedBody')}
-                    onRetry={refresh}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={{ isTransport: true, message: error ?? undefined }} isOnline={isOnline} onRetry={refresh} t={t} testID="timeline-error" />
             </YStack>
         );
     }

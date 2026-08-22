@@ -9,11 +9,13 @@
  * being shown a one-item list that looks like a choice.
  */
 import { ScrollView, Image } from 'react-native';
+import { useSync } from '../shell';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
 import { EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useDriverOrganizations, useSwitchOrganization, type DriverRecord, type OrganizationRecord } from '../data';
@@ -43,6 +45,7 @@ export function OrgSwitcherScreen({
     onDone?: () => void;
 }) {
     const { t } = useTranslation();
+    const { isOnline } = useSync();
     const { organizations, isLoading, failed, error, retry } = useDriverOrganizations(driverId);
     const { switchTo, switchingTo, error: switchError, clearError } = useSwitchOrganization(driverId);
 
@@ -63,12 +66,7 @@ export function OrgSwitcherScreen({
     if (failed) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="orgs-error">
-                <ErrorState
-                    title={t('orgSwitcher.loadFailed')}
-                    body={error?.isTransport ? t('orgSwitcher.loadFailedBody') : error?.message}
-                    onRetry={retry}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="orgs-error" />
             </YStack>
         );
     }

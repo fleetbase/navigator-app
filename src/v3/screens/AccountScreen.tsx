@@ -20,7 +20,8 @@ import { Identifier } from '../ui/Identifier';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, ErrorState, Skeleton } from '../ui/Banner';
+import { Banner, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
@@ -89,12 +90,7 @@ export function AccountScreen({
     if (isBlocked || !driver) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="account-error">
-                <ErrorState
-                    title={t('account.loadFailed')}
-                    body={error?.isTransport ? t('account.loadFailedBody') : error?.message}
-                    onRetry={retry}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="account-error" />
             </YStack>
         );
     }

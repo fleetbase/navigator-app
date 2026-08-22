@@ -140,7 +140,10 @@ describe('OrdersScreen', () => {
         fetchMock.mockRejectedValue(new TypeError('Network request failed'));
         const tree = await render();
         expect(testIDs(tree)).toContain('orders-error');
-        expect(textOf(tree)).toContain('Retry');
+        // Copy comes from the shared failure describer now; assert the
+        // affordance rather than a particular word.
+        expect(textOf(tree)).toContain('Try again');
+        expect(textOf(tree)).toContain('Could not reach the server');
         ReactTestRenderer.act(() => tree.unmount());
     });
 

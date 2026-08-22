@@ -23,6 +23,7 @@ import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
 import { Banner, EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import {
@@ -158,12 +159,7 @@ export function ItemDetailScreen({
     if (isBlocked || !entity) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="item-detail-error">
-                <ErrorState
-                    title={t('itemDetail.loadFailed')}
-                    body={error?.message ?? t('itemDetail.loadFailedBody')}
-                    onRetry={retry}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="item-detail-error" />
             </YStack>
         );
     }

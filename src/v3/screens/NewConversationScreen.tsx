@@ -8,6 +8,7 @@
  * screen reports that honestly rather than pretending the whole thing failed.
  */
 import { useCallback, useMemo, useState } from 'react';
+import { useSync } from '../shell';
 import { FlatList } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';
@@ -15,6 +16,7 @@ import { Surface, Divider } from '../ui/Surface';
 import { Field } from '../ui/Field';
 import { Button } from '../ui/Button';
 import { EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { humanizeTerm } from '../data';
@@ -41,6 +43,7 @@ export function NewConversationScreen({
     onCancel?: () => void;
 }) {
     const { t } = useTranslation();
+    const { isOnline } = useSync();
     const { people, isLoading, failed, retry } = useAvailableParticipants();
     const { create, isCreating, error } = useCreateChannel();
 
@@ -127,7 +130,7 @@ export function NewConversationScreen({
     if (failed) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="people-error">
-                <ErrorState title={t('newConversation.loadFailed')} body={t('newConversation.loadFailedBody')} onRetry={retry} retryLabel={t('common.retry')} />
+                <FailureState error={{ isTransport: true }} isOnline={isOnline} onRetry={retry} t={t} testID="people-error" />
             </YStack>
         );
     }

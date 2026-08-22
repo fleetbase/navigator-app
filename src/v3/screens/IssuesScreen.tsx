@@ -13,7 +13,8 @@ import { Body, Micro, Secondary } from '../ui/Text';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
@@ -107,12 +108,7 @@ export function IssuesScreen({
     if (failed && !issues) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="issues-error">
-                <ErrorState
-                    title={t('issues.loadFailed')}
-                    body={error?.isTransport ? t('issues.loadFailedBody') : error?.message}
-                    onRetry={retry}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="issues-error" />
             </YStack>
         );
     }

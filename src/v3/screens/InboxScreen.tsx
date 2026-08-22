@@ -11,7 +11,8 @@ import { XStack, YStack } from 'tamagui';
 import { Body, Micro, Secondary } from '../ui/Text';
 import { Surface } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { Banner, EmptyState, ErrorState, Skeleton } from '../ui/Banner';
+import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
@@ -114,12 +115,7 @@ export function InboxScreen({
     if (failed && !channels) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="inbox-error">
-                <ErrorState
-                    title={t('inbox.loadFailed')}
-                    body={error?.isTransport ? t('inbox.loadFailedBody') : error?.message}
-                    onRetry={retry}
-                    retryLabel={t('common.retry')}
-                />
+                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="inbox-error" />
             </YStack>
         );
     }

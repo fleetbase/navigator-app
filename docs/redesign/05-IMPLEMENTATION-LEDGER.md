@@ -47,7 +47,7 @@ Endpoints all exist. No backend work required.
 | ~~14~~ | ~~**Permissions primer**~~ — DONE: location/notifications/camera, denied vs blocked kept apart, partial-location state, Settings hand-off; verified on device | R2 A2 | client only |
 | ~~15~~ | ~~**Self-hosted connection**~~ — DONE: host verified unauthenticated via the root endpoint, no API key field, https enforced for remote hosts | R2 A4 | client only |
 | ~~16~~ | ~~**Sync queue screen**~~ — DONE: failed-first ordering, reason shown, confirmed discard, retry; driver-facing labels replace "POST issues". Empty state verified on device; populated states are test-covered (see below) | gap I1 (undesigned) | client only — reads `useQueue()` |
-| 17 | **Error states set** | gap I2 (undesigned) | client only |
+| ~~17~~ | ~~**Error states set**~~ — DONE: ten failure kinds classified by what the driver should do, one `FailureState` used by all ten screens, 20 duplicate strings removed | gap I2 (undesigned) | client only |
 
 **Today (R1 s01/s12)** — build after 1–2. Ships degraded: next-stop, progress
 and ETA work from tracker data; the drive-time, break and inspection strips are

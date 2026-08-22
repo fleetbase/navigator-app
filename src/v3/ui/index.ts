@@ -5,6 +5,7 @@ export * from './StatusPill';
 export * from './Button';
 export * from './Surface';
 export * from './Banner';
+export * from './FailureState';
 export * from './Field';
 export * from './Progress';
 export * from './Rows';

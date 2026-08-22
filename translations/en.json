@@ -177,8 +177,6 @@
         "emptyCompletedBody": "Orders you finish will be listed here.",
         "noSearchResultsTitle": "No matches",
         "noSearchResultsBody": "Nothing matches “%{query}”.",
-        "errorTitle": "Couldn't load orders",
-        "errorBody": "Check your connection and try again.",
         "offlineNotice": "Showing saved orders — reconnect to refresh"
     },
     "orderDetail": {
@@ -282,8 +280,6 @@
         "damagedHint": "Dispatch has been notified. Handle with care and note the condition at delivery.",
         "damagedPill": "Damaged",
         "offlineCached": "Offline — showing the last details saved on this device.",
-        "loadFailed": "Could not load this item",
-        "loadFailedBody": "Check your connection and try again.",
         "edit": "Edit item details"
     },
     "orderTimeline": {
@@ -296,8 +292,6 @@
         "actorUnavailable": "Status changes do not record who made them.",
         "offlineCached": "Offline — showing the history saved on this device.",
         "refreshFailed": "Could not refresh the timeline. Showing the last known history.",
-        "loadFailed": "Could not load the timeline",
-        "loadFailedBody": "Check your connection and try again.",
         "viewTimeline": "View full timeline"
     },
     "fuelLog": {
@@ -308,9 +302,7 @@
         "emptyTitle": "No fills logged",
         "emptyBody": "Fuel you log appears here, with economy once there are two fills on the same vehicle.",
         "economyNote": "Economy is worked out from the distance since your previous fill on the same vehicle.",
-        "offlineNotice": "Offline — showing the fills saved on this device.",
-        "loadFailed": "Could not load your fuel log",
-        "loadFailedBody": "Check your connection and try again."
+        "offlineNotice": "Offline — showing the fills saved on this device."
     },
     "fuelReport": {
         "title": "Fuel report",
@@ -350,8 +342,6 @@
         "emptyTitle": "Nothing reported",
         "emptyBody": "Issues you report appear here so you can follow what happens to them.",
         "offlineNotice": "Offline — showing the issues saved on this device.",
-        "loadFailed": "Could not load your issues",
-        "loadFailedBody": "Check your connection and try again.",
         "untriaged": "Not yet triaged"
     },
     "issueDetail": {
@@ -399,9 +389,7 @@
         },
         "emptyTitle": "No conversations",
         "emptyBody": "Messages from dispatch and your team appear here.",
-        "offlineNotice": "Offline — showing the conversations saved on this device.",
-        "loadFailed": "Could not load your inbox",
-        "loadFailedBody": "Check your connection and try again."
+        "offlineNotice": "Offline — showing the conversations saved on this device."
     },
     "conversation": {
         "participants": {
@@ -420,8 +408,6 @@
         "queued": "Saved on this device. It will send when you are back online.",
         "sendFailed": "Could not send that message",
         "notAParticipant": "You are not a participant in this conversation, so you cannot post to it.",
-        "loadFailed": "Could not open this conversation",
-        "loadFailedBody": "Check your connection and try again.",
         "quick": {
             "onMyWay": "On my way",
             "runningLate": "Running 10 min late",
@@ -443,8 +429,6 @@
         "noMatchesBody": "Nobody matches “%{query}”.",
         "noneTitle": "Nobody available",
         "noneBody": "There is nobody in your organisation to start a conversation with.",
-        "loadFailed": "Could not load people",
-        "loadFailedBody": "Check your connection and try again.",
         "createFailed": "Could not start the conversation"
     },
     "account": {
@@ -468,8 +452,6 @@
         "laterPhase": "Coming soon",
         "signOut": "Sign out",
         "offlineNotice": "Offline — showing the details saved on this device.",
-        "loadFailed": "Could not load your account",
-        "loadFailedBody": "Check your connection and try again.",
         "profile": "Your details",
         "permissions": "Permissions"
     },
@@ -482,9 +464,7 @@
         "warning": "Switching signs you in again for the new organisation. Anything not yet synced is sent first.",
         "noneTitle": "No organisations",
         "noneBody": "This driver is not attached to an organisation. Ask dispatch to add you to one.",
-        "switchFailed": "Could not switch organisation",
-        "loadFailed": "Could not load your organisations",
-        "loadFailedBody": "Check your connection and try again."
+        "switchFailed": "Could not switch organisation"
     },
     "profile": {
         "title": "Your details",
@@ -609,6 +589,54 @@
             "newConversation": "New conversation",
             "profile": "Your details",
             "other": "Saved work"
+        }
+    },
+    "failure": {
+        "offline": {
+            "title": "You are offline",
+            "body": "Your work is safe on this phone. This will load as soon as you have signal."
+        },
+        "unreachable": {
+            "title": "Could not reach the server",
+            "body": "Your phone has signal but the server did not answer. It may be busy or briefly down."
+        },
+        "sessionExpired": {
+            "title": "You have been signed out",
+            "body": "Your session expired. Sign in again to carry on — nothing you have done is lost."
+        },
+        "notPermitted": {
+            "title": "You do not have access to this",
+            "body": "Your account is not allowed to see this. Retrying will not change it."
+        },
+        "notFound": {
+            "title": "This is no longer here",
+            "body": "It may have been reassigned or removed since you last looked."
+        },
+        "rejected": {
+            "title": "The server would not accept that",
+            "body": "Something in the request was not valid. Check what you entered and try again."
+        },
+        "rateLimited": {
+            "title": "Too many requests",
+            "body": "The server asked the app to slow down. Wait a moment, then try again."
+        },
+        "server": {
+            "title": "Something went wrong on the server",
+            "body": "This is not your phone or your connection. Try again shortly."
+        },
+        "outdated": {
+            "title": "This version of the app is too old",
+            "body": "The server no longer supports it. Update the app to carry on."
+        },
+        "unknown": {
+            "title": "Something went wrong",
+            "body": "That did not work, and the app is not sure why."
+        },
+        "action": {
+            "retry": "Try again",
+            "signIn": "Sign in",
+            "update": "Update the app",
+            "contactDispatch": "Ask dispatch to give you access."
         }
     }
 }
