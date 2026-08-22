@@ -146,3 +146,64 @@ describe('mutation queue', () => {
         expect(counts[counts.length - 1]).toBe(2);
     });
 });
+
+/**
+ * Guards the staleness the sync-queue screen would have shown: a retry changes
+ * an item in place — attempts 1→2, lastError set — while pendingCount,
+ * failedCount, isFlushing and items.length all stay exactly the same.
+ */
+describe('snapshot immutability', () => {
+    it('does not let a later change rewrite a snapshot already handed out', async () => {
+        // `[...items]` shared every object, so an old snapshot mutated under
+        // whoever was holding it — including React.
+        const queue = new MutationQueue();
+        queue.setSender(async () => ({ ok: false as const, message: 'offline' }));
+        queue.enqueue({ method: 'POST', path: 'issues', label: 'Report an issue', idempotencyKey: 'k1' });
+
+        const before = queue.snapshot();
+        const attemptsAtCapture = before.items[0].attempts;
+        await queue.flush();
+
+        expect(before.items[0].attempts).toBe(attemptsAtCapture);
+        expect(queue.snapshot().items[0].attempts).toBeGreaterThan(attemptsAtCapture);
+    });
+});
+
+describe('snapshot revision', () => {
+    it('advances when an item changes in place, not just when counts do', async () => {
+        const queue = new MutationQueue();
+        queue.setSender(async () => ({ ok: false as const, message: 'offline' }));
+        queue.enqueue({ method: 'POST', path: 'issues', label: 'Report an issue', idempotencyKey: 'k1' });
+
+        const before = queue.snapshot();
+        await queue.flush();
+        const after = queue.snapshot();
+
+        // The thing a naive comparison would have looked at is unchanged...
+        expect(after.items.length).toBe(before.items.length);
+        expect(after.pendingCount).toBe(before.pendingCount);
+        // ...but the item did change, and the revision says so.
+        expect(after.items[0].attempts).toBeGreaterThan(before.items[0].attempts);
+        expect(after.revision).toBeGreaterThan(before.revision);
+    });
+
+    it('is monotonic across enqueue, retry and discard', async () => {
+        const queue = new MutationQueue();
+        const seen: number[] = [];
+        queue.setSender(async () => ({ ok: false as const, message: 'offline' }));
+
+        const item = queue.enqueue({ method: 'POST', path: 'a', label: 'A', idempotencyKey: 'k' });
+        seen.push(queue.snapshot().revision);
+        await queue.flush();
+        seen.push(queue.snapshot().revision);
+        queue.retryFailed();
+        seen.push(queue.snapshot().revision);
+        queue.discard(item.id);
+        seen.push(queue.snapshot().revision);
+
+        for (let i = 1; i < seen.length; i++) {
+            expect(seen[i]).toBeGreaterThanOrEqual(seen[i - 1]);
+        }
+        expect(seen[seen.length - 1]).toBeGreaterThan(seen[0]);
+    });
+});

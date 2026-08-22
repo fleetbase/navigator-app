@@ -561,5 +561,54 @@
         "version": "Version %{version}",
         "use": "Use this server",
         "signInNext": "Next you will sign in with your own email and password."
+    },
+    "sync": {
+        "title": "Sync queue",
+        "summary": "%{pending} waiting, %{failed} failed",
+        "waiting": "Waiting",
+        "sending": "Sending",
+        "sendingNow": "Sending now…",
+        "failed": "Failed",
+        "attempts": {
+            "one": "%{count} attempt",
+            "other": "%{count} attempts"
+        },
+        "rejected": "Rejected by the server (%{status}): %{message}",
+        "justNow": "Just now",
+        "minutesAgo": {
+            "one": "%{count} minute ago",
+            "other": "%{count} minutes ago"
+        },
+        "hoursAgo": {
+            "one": "%{count} hour ago",
+            "other": "%{count} hours ago"
+        },
+        "daysAgo": {
+            "one": "%{count} day ago",
+            "other": "%{count} days ago"
+        },
+        "retryAll": "Try again now",
+        "discard": "Discard",
+        "discardTitle": "Discard this work?",
+        "discardBody": "“%{label}” will be deleted from this phone and never reaches dispatch. This cannot be undone.",
+        "discardConfirm": "Discard it",
+        "emptyTitle": "Everything is synced",
+        "emptyBody": "Work you do without signal waits here until it reaches dispatch.",
+        "offlineNotice": "Offline — this will send itself when you have signal again.",
+        "explainer": "Anything here is saved on this phone. It sends automatically when you have signal.",
+        "work": {
+            "advanceOrder": "Order progress",
+            "scan": "Scan",
+            "editItem": "Item details",
+            "fuelReport": "Fuel report",
+            "editFuelReport": "Fuel report change",
+            "issue": "Reported issue",
+            "editIssue": "Issue change",
+            "message": "Message",
+            "addParticipant": "Added someone to a conversation",
+            "newConversation": "New conversation",
+            "profile": "Your details",
+            "other": "Saved work"
+        }
     }
 }

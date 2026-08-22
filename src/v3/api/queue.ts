@@ -32,6 +32,12 @@ export interface QueuedMutation {
     body?: unknown;
     /** Driver-facing description for the sync-queue screen. */
     label: string;
+    /**
+     * Translation key for `label`. Stored rather than a translated string
+     * because the label is written at enqueue and read much later — freezing
+     * English here would survive a language change.
+     */
+    labelKey?: string;
     createdAt: number;
     attempts: number;
     status: QueueStatus;
@@ -45,6 +51,17 @@ export interface QueueSnapshot {
     pendingCount: number;
     failedCount: number;
     isFlushing: boolean;
+    /**
+     * Bumped on every change, including ones that alter an item *in place*.
+     *
+     * Counts alone are not enough to tell whether anything moved: a retry takes
+     * `attempts` from 1 to 2 and sets `lastError` while the item stays pending,
+     * so pendingCount, failedCount, isFlushing and items.length are all
+     * unchanged. A subscriber comparing only those would keep serving a stale
+     * snapshot and never show the attempt climbing — which is precisely what the
+     * sync-queue screen exists to display.
+     */
+    revision: number;
 }
 
 const STORAGE_KEY = 'api.queue';
@@ -74,6 +91,8 @@ export class MutationQueue {
     private items: QueuedMutation[];
     private listeners = new Set<(s: QueueSnapshot) => void>();
     private flushing = false;
+    /** Monotonic; see QueueSnapshot.revision. */
+    private revision = 0;
     private send: SendFn | null = null;
 
     constructor() {
@@ -97,10 +116,15 @@ export class MutationQueue {
 
     snapshot(): QueueSnapshot {
         return {
-            items: [...this.items],
+            // Copy the *items*, not just the array. `[...this.items]` shares
+            // every object, so a retry mutating `attempts` in place changed
+            // snapshots already handed out — including the one React is
+            // rendering from, which useSyncExternalStore requires to be stable.
+            items: this.items.map((item) => ({ ...item })),
             pendingCount: this.items.filter((i) => i.status !== 'failed').length,
             failedCount: this.items.filter((i) => i.status === 'failed').length,
             isFlushing: this.flushing,
+            revision: this.revision,
         };
     }
 
@@ -116,6 +140,7 @@ export class MutationQueue {
         path: string;
         body?: unknown;
         label: string;
+        labelKey?: string;
         idempotencyKey?: string;
     }): QueuedMutation {
         const item: QueuedMutation = {
@@ -125,6 +150,7 @@ export class MutationQueue {
             path: input.path,
             body: input.body,
             label: input.label,
+            labelKey: input.labelKey,
             createdAt: Date.now(),
             attempts: 0,
             status: 'pending',
@@ -217,6 +243,7 @@ export class MutationQueue {
     }
 
     private notify() {
+        this.revision += 1;
         const snap = this.snapshot();
         for (const fn of this.listeners) fn(snap);
     }

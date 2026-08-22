@@ -22,6 +22,7 @@
  */
 import { BrowserAdapter } from '@fleetbase/sdk';
 import { mutationQueue, type MutationQueue, type QueuedMutation } from './queue';
+import { describeMutation } from './describeMutation';
 
 export class ApiError extends Error {
     readonly status?: number;
@@ -95,7 +96,9 @@ export class NavigatorAdapter extends BrowserAdapter {
         this.userToken = config.userToken;
         this.queue = config.queue ?? mutationQueue;
         this.onUnauthorized = config.onUnauthorized;
-        this.describe = config.describe ?? ((m, p) => `${m} ${p}`);
+        // Default to a driver-facing description rather than "POST issues",
+        // which is what the sync-queue screen would otherwise show.
+        this.describe = config.describe ?? ((m, p) => describeMutation(m, p).fallback);
 
         this.queue.setSender((item) => this.sendQueued(item));
     }
@@ -150,6 +153,7 @@ export class NavigatorAdapter extends BrowserAdapter {
                         path,
                         body: data.body ? safeParse(data.body) : undefined,
                         label: this.describe(upper, path),
+                        labelKey: describeMutation(upper, path).labelKey,
                         idempotencyKey,
                     });
                     const ack: QueuedAck = { __queued: true, id: item.id, idempotencyKey: item.idempotencyKey };

@@ -98,6 +98,12 @@ than re-adding the key.
 
 | # | Sev | What | Fix |
 |---|---|---|---|
+| F-26 | S3 | **`useQueue` served a stale snapshot whenever an item changed in place.** Its stability check compared `pendingCount`, `failedCount`, `isFlushing` and `items.length` — none of which move when a retry takes `attempts` from 1 to 2 and sets `lastError` while the item stays pending. The sync-queue screen exists to show exactly that, and would have shown it frozen. | A monotonic `revision` on the snapshot; `useQueue` compares that alone. |
+| F-27 | S3 | **Snapshots were not immutable.** `items: [...this.items]` copies the array but shares every object, so a later retry rewrote a snapshot already handed out — including the one React was rendering from, which `useSyncExternalStore` requires to be stable. | Items are copied, not just the array. |
+| F-28 | S3 | **Queued work was labelled `"POST issues"`.** The adapter's default describer was `` `${method} ${path}` ``, which is fine in a log and useless on the screen a driver reads to decide whether to wait for signal or discard something. | `describeMutation` maps paths to driver-facing names, and stores a *key* rather than a translated string — the label is written at enqueue and read much later, so freezing English would survive a language change. |
+
+| # | Sev | What | Fix |
+|---|---|---|---|
 | F-23 | **S1** | **An organisation switch that failed on transport was queued and replayed later.** The queue exists so work done in a basement survives, which is right for a stop completion — but replaying a *session* change moves the driver between organisations twenty minutes later, unasked, possibly mid-job somewhere else. Sign-in had the same exposure: a queued credential replayed after the fact. | `NEVER_QUEUE` in the adapter covers switch-organization, login, logout, verify-code and switch-vehicle; they fail loudly so the screen can say so. Found by a test asserting a failure was *reported*, which instead found it silently queued. |
 
 ### Status registry

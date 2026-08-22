@@ -46,6 +46,7 @@ import OrgSwitcherScreen from '../screens/OrgSwitcherScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import NavigationHandoffScreen from '../screens/NavigationHandoffScreen';
 import PermissionsPrimerScreen from '../screens/PermissionsPrimerScreen';
+import SyncQueueScreen from '../screens/SyncQueueScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -91,7 +92,6 @@ const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimis
 const MyVehicle = placeholder('My vehicle', P4, 'assign-vehicle + odometer endpoints (Phase 4a)');
 const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
 const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
-const SyncQueue = placeholder('Sync queue', P3, 'design round 2');
 
 /* -- Orders tab. ---------------------------------------------------------- */
 
@@ -249,6 +249,10 @@ function AccountHome({ navigation }: { navigation: Nav }) {
             onSignOut={signOut}
         />
     );
+}
+
+function SyncQueue() {
+    return <SyncQueueScreen />;
 }
 
 function PermissionsPrimer({ navigation }: { navigation: Nav }) {

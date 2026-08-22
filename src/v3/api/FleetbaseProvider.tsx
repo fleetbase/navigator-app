@@ -111,15 +111,11 @@ export function useQueue(queue: MutationQueue = mutationQueue): QueueSnapshot {
         const next = queue.snapshot();
         // Snapshot must be referentially stable when nothing changed, or
         // useSyncExternalStore re-renders forever.
+        // Compare the revision, not the counts: a retry changes `attempts` and
+        // `lastError` in place while every count stays the same, and comparing
+        // counts would pin the screen to a stale snapshot.
         const prev = cached.current;
-        if (
-            prev.pendingCount === next.pendingCount &&
-            prev.failedCount === next.failedCount &&
-            prev.isFlushing === next.isFlushing &&
-            prev.items.length === next.items.length
-        ) {
-            return prev;
-        }
+        if (prev.revision === next.revision) return prev;
         cached.current = next;
         return next;
     });

@@ -46,7 +46,7 @@ Endpoints all exist. No backend work required.
 | ~~13~~ | ~~**Navigation hand-off picker**~~ — DONE: Apple/Google/Waze/Uber, remembered default, browser fallback, none-installed state; verified opening Apple Maps on device | R2 D6 | client only |
 | ~~14~~ | ~~**Permissions primer**~~ — DONE: location/notifications/camera, denied vs blocked kept apart, partial-location state, Settings hand-off; verified on device | R2 A2 | client only |
 | ~~15~~ | ~~**Self-hosted connection**~~ — DONE: host verified unauthenticated via the root endpoint, no API key field, https enforced for remote hosts | R2 A4 | client only |
-| 16 | **Sync queue screen** | gap I1 (undesigned) | client only — reads `useQueue()` |
+| ~~16~~ | ~~**Sync queue screen**~~ — DONE: failed-first ordering, reason shown, confirmed discard, retry; driver-facing labels replace "POST issues". Empty state verified on device; populated states are test-covered (see below) | gap I1 (undesigned) | client only — reads `useQueue()` |
 | 17 | **Error states set** | gap I2 (undesigned) | client only |
 
 **Today (R1 s01/s12)** — build after 1–2. Ships degraded: next-stop, progress
@@ -313,6 +313,29 @@ Chat lives in **core-api**, not fleetops, under `/v1/chat-channels` with the
 `POST /v1/files`, plus a picker — so the composer offers text and quick replies
 rather than a button that does nothing. G1's order-context header has nothing to
 hang on: the public channel resource carries no order reference.
+
+## Queue semantics — worth knowing before changing the screen
+
+The queue treats two failures differently, and the sync-queue screen is built
+around the distinction:
+
+- **Permanent (4xx, except 408 and 429)** — the item is parked as `failed` and
+  the pass **continues** past it. A rejected entry does not strand everything
+  behind it forever.
+- **Transient (no response)** — the item goes back to `pending` and the pass
+  **stops**, so ordering survives losing signal. This is the head-of-line
+  blocking; it applies here and only here.
+
+I had this wrong in an earlier note that described the blocking as general. A
+test now pins both behaviours.
+
+**Device verification of this screen is partial.** The empty state was verified
+against the live instance. Producing genuinely failed entries needs the API to be
+unreachable, which would mean stopping the user's server, so the populated
+states — waiting, failed with reason, attempt counts, discard confirmation,
+retry — rest on the 18 tests rather than a device run. Worth completing during
+the offline pass in the plan's verification section, which airplane-modes a full
+stop sequence.
 
 ## Known follow-ups
 

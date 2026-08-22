@@ -42,7 +42,7 @@ const LINKS: AccountLink[] = [
     { route: 'Inspection', labelKey: 'account.inspection', blockedKey: 'account.laterPhase' },
     { route: 'Documents', labelKey: 'account.documents', blockedKey: 'account.laterPhase' },
     { route: 'Permissions', labelKey: 'account.permissions' },
-    { route: 'SyncQueue', labelKey: 'account.syncQueue', blockedKey: 'account.laterPhase' },
+    { route: 'SyncQueue', labelKey: 'account.syncQueue' },
     { route: 'Settings', labelKey: 'account.settings' },
 ];
 
