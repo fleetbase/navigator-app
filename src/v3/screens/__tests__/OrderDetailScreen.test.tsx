@@ -210,6 +210,45 @@ describe('OrderDetailScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
+    it('walks the transition graph when the config carries one', async () => {
+        /*
+         * The documented model: `activities` names the codes an activity can
+         * transition to, and `sequence` orders siblings. Array position means
+         * nothing — here `completed` is declared before the step that leads to
+         * it, and `dispatched` last.
+         */
+        mockConfig([
+            { code: 'completed', status: 'Order Completed', complete: true, activities: [] },
+            { code: 'enroute', status: 'Driver Enroute', activities: ['completed'] },
+            { code: 'created', status: 'Order Created', activities: ['dispatched'] },
+            { code: 'dispatched', status: 'Order Dispatched', activities: ['enroute'] },
+        ]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'dispatched' })); });
+        const t = await render();
+
+        expect(testIDs(t)).toContain('advance-activity');
+        expect(textOf(t)).toContain('En route');
+        expect(testIDs(t)).not.toContain('order-terminal');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('defers to dispatch when logic decides which way the order goes', async () => {
+        // Two candidate children, one gated by conditions expressed against the
+        // server's order model. Offering a guess would be offering a refusal.
+        mockConfig([
+            { code: 'arrived', status: 'Arrived', activities: ['completed', 'failed'] },
+            { code: 'completed', status: 'Order Completed', complete: true, sequence: 1 },
+            { code: 'failed', status: 'Failed', sequence: 2, logic: [{ type: 'and', conditions: [] }] },
+        ]);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'arrived' })); });
+        const t = await render();
+
+        const ids = testIDs(t);
+        expect(ids).toContain('next-ambiguous');
+        expect(ids).not.toContain('advance-activity');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
     it('says so when the config declares no flow at all', async () => {
         // A config that loads cleanly but carries an empty flow used to render
         // nothing: no stepper, no message, and no way to advance the order.

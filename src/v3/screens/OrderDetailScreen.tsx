@@ -18,7 +18,7 @@ import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
 import { Banner, ErrorState, Skeleton } from '../ui/Banner';
-import { ActivityStepper, ProofRequiredHint, nextActivity, isTerminal, type FlowActivity } from '../ui/ActivityStepper';
+import { ActivityStepper, ProofRequiredHint, nextActivity, isTerminal, unresolvedLogic, type FlowActivity } from '../ui/ActivityStepper';
 import { space } from '../theme/tokens';
 import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
@@ -77,6 +77,12 @@ export function OrderDetailScreen({
 
     const next = useMemo(() => nextActivity(flow, order?.status), [flow, order?.status]);
     const finished = useMemo(() => isTerminal(flow, order?.status), [flow, order?.status]);
+    /*
+     * Two ways forward, and which one applies depends on `logic` expressed
+     * against the server's order model. Guessing would offer the driver a step
+     * the server then refuses, so the choice is deferred rather than faked.
+     */
+    const ambiguous = useMemo(() => unresolvedLogic(flow, order?.status), [flow, order?.status]);
 
     const advance = useCallback(async () => {
         if (!next || !order) return;
@@ -253,7 +259,9 @@ export function OrderDetailScreen({
                     <ErrorState title={t('orderDetail.updateFailed')} body={advanceError} testID="advance-error" />
                 ) : null}
 
-                {next ? (
+                {ambiguous ? (
+                    <Banner tone="neutral" message={t('orderDetail.chooseWithDispatch')} testID="next-ambiguous" />
+                ) : next ? (
                     <Button
                         fullWidth
                         elevated

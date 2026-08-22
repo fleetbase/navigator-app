@@ -206,7 +206,8 @@
         "navigate": "Navigate",
         "payloadEmpty": "Nothing is recorded on this order.",
         "flowNotConfigured": "This order has no activity flow set up, so progress cannot be updated from the app. Ask dispatch.",
-        "statusOffFlow": "This order is %{status}, which is not a step in its configured flow. Ask dispatch to move it on."
+        "statusOffFlow": "This order is %{status}, which is not a step in its configured flow. Ask dispatch to move it on.",
+        "chooseWithDispatch": "This order can go more than one way from here, and the choice depends on conditions the app cannot check. Ask dispatch to move it on."
     },
     "editPayloadItem": {
         "title": "Editing",

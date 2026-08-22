@@ -32,7 +32,7 @@ cannot tell you a text field focused and was blurred again in the same tap.
 | O-7 | S2 | Chat **attachments** need `POST /v1/files` plus a picker; not built, so the composer is text-only. Camera / file / location share from G2 are all outstanding. | app + core-api |
 | O-8 | S3 | A chat channel carries **no order reference**, so G1's order-context header has nothing to link to. | core-api |
 | O-9 | S2 | `linkApp` finds the first admin user, gets-or-creates an `ApiCredential`, and ships it in a deep link — one shared, org-wide, unrevocable key on every handset. Phase 5 replaces this. | `NavigatorController@linkApp` |
-| O-17 | **S2** | **`order-configs` publishes no sequence for a config's activities** — a flat array, not in workflow order, with no next-step pointers and no ordinals. The app now sorts by a canonical FleetOps lifecycle it holds itself, which is correct for standard flows but has nothing to say about a customer's bespoke activity. Either the endpoint should publish the order (a `sequence` integer, or the `activities` graph the console already uses internally), or the app should walk `GET /v1/orders/{id}/next-activity` and accept a request per step. **This is the one I would most like your call on**, because the whole "dynamic renderer over the config" premise rests on it. | fleetops API + app |
+| O-17 | **S2** | **The public `order-configs` resource discards the flow's graph.** The stored config is a directed graph — each activity carries `activities` (the codes it can transition to), `sequence` (ordering among siblings reachable from the same parent), and optional `logic` (conditions gating availability, evaluated against the order). `Http/Resources/v1/OrderConfig::projectFlow()` keeps only `code`, `status`, `details`, `color`, `complete`, `pod_method` and `require_pod`, so the public API emits a flat list with the sequencing stripped out. The console's internal resource returns `flow` whole. **The fix is small and server-side: add `activities`, `sequence` and `logic` to the public projection.** Until it lands the app cannot traverse the graph, and falls back to a lifecycle ranking it holds itself. | `Http/Resources/v1/OrderConfig.php` |
 | O-18 | S3 | An order whose stops have unresolved coordinates reports **"11547.4 km · 230 h 56 m"** for a local Singapore drop. The app renders the tracker faithfully; the tracker is computing from a null island. Worth deciding whether the app should suppress implausible legs or the server should stop emitting them. | fleetops API |
 | O-11 | S4 | `isConnected` still proxies off the SocketCluster connection; there is no netinfo dependency, so "offline" means "socket dropped". | `src/v3` bridge |
 
@@ -259,29 +259,56 @@ returning 502 while its container restarted, the app said "Something went wrong
 on the server" rather than showing offline. That is correct — 502 is an answer,
 and the reachability rule is about whether anything answered at all.
 
-### The order config carries no sequence, and the app assumed one
+### The order config's flow is a graph, and the app assumed a list
 
-This is the most serious defect found in the whole walk, and it was invisible to
-every fixture, because every fixture I wrote listed the activities in the order
-a person would naturally write them.
+`order-configs` **does** describe sequence — I said otherwise, from one
+instance's response, without reading the docs or the resource that produced it.
+The correction matters, so here is the actual model:
 
-`GET /v1/order-configs` returns a config's activities as a **flat array with no
-sequencing data at all** — no next-step pointers, no ordinals — and the array is
-not in workflow order. The real config on the dev instance returns:
+- **`activities`** — the codes this activity can transition to. The flow is a
+  *directed graph*, not a list and not a tree.
+- **`sequence`** — an integer ordering activities reachable from the same parent.
+- **`logic`** — optional `and`/`or`/`not` condition blocks gating whether an
+  activity is available, evaluated against the order.
+- **`complete`** — moves the order to completed; any activity can carry it.
 
-    created, enroute, started, completed, dispatched
+FleetOps walks this server-side: `OrderConfig::nextActivity()` finds the current
+activity by code and calls `Activity::getNext()`, which expands `activities` into
+child activities and keeps the ones whose `logic` passes for that order.
 
-with `completed` fourth and `dispatched` last.
+**What the app actually receives is a flat list**, because
+`Http/Resources/v1/OrderConfig::projectFlow()` keeps only `code`, `status`,
+`details`, `color`, `complete`, `pod_method` and `require_pod` — `activities`,
+`sequence` and `logic` are dropped on the way out. The console's internal
+resource returns `flow` whole, which is why this is invisible from the console.
+That is O-17, and the server-side fix is three fields in one projection.
 
 | # | Sev | What | Fix |
 |---|---|---|---|
-| F-48 | **S1** | **A dispatched order was shown as finished, with no way to move it on.** `dispatched` is last in that array, so every earlier step painted green — including `completed` — and `nextActivity` returned `flow[i + 1]`, which is `undefined`, so the screen showed "This order is complete" and no advance button. The driver is told the job is done before they have driven anywhere, and the screen's primary action is gone. | A canonical lifecycle order in the status registry, applied by `sequenceFlow()` before anything reads position. The same real config now renders Created → **Dispatched** → En route → Started → Completed, with "Mark En route" offered. Verified on the device against that config, not a fixture. |
-| F-49 | **S2** | **"This order is complete" was shown whenever nothing followed the current activity in the array** — which is a different statement from "the current activity is terminal", and the wrong one. | Only an activity's own `complete` flag ends the flow. A status that is not in its config's flow at all now says exactly that and points at dispatch, instead of claiming success. |
+| F-48 | **S1** | **A dispatched order was shown as finished, with no way to move it on.** The app read the flat array's position as progress. In the real config `dispatched` is last, so every earlier step painted green — including `completed` — and the next activity was `flow[i + 1]`, which is nothing. The driver is told the job is done before they have driven anywhere, and the screen's primary action disappears. | An activity sequencer: traverse `activities` from the current code when the payload carries the graph, ordering siblings by `sequence`; fall back to a canonical lifecycle ranking when it does not, which is what today's public API sends. |
+| F-49 | **S2** | **"This order is complete" was shown whenever nothing followed the current activity** — a different statement from "the current activity is terminal", and the wrong one. | Only an activity's own `complete` flag ends the flow. |
 
-What this does *not* fix: a config containing a bespoke activity we have no rank
-for. `sequenceFlow` reports `ordered: false` there and the stepper stops
-claiming which steps are behind the driver, which is honest but not useful.
-**This needs your decision** — see the open items.
+Every flow fixture in the suite listed its activities in the order a person would
+naturally write them, so every test agreed with the code. The real config lists
+`completed` fourth and `dispatched` last.
+
+The app now has an **activity sequencer** (`src/v3/data/activityFlow.ts`) built
+to the documented model rather than to the payload:
+
+- Where the flow carries `activities`, it is walked as a graph — depth-first
+  from the activity nothing transitions into, siblings ordered by `sequence`,
+  each activity emitted once so a cycle terminates and a branch is not dropped.
+  `nextActivity` takes the current activity's first child in `sequence` order,
+  which is the choice `nextFirstActivity()` makes server-side.
+- Where it does not — today's public projection — it falls back to the canonical
+  lifecycle, and reports `ordered: false` for any code it has never heard of
+  instead of inventing a position for it.
+- `logic` is **not** evaluated client-side. The conditions are expressed against
+  the server's order model, and a guess would offer the driver a step the server
+  then refuses. Where two or more candidates exist and any is conditional, the
+  screen says the choice depends on conditions it cannot check and points at
+  dispatch. Once O-17 lands, that case should ask
+  `GET /v1/orders/{id}/next-activity` instead of deferring.
 
 ### Issue detail, walked in dark
 
