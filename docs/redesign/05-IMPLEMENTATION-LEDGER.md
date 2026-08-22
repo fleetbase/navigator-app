@@ -42,7 +42,7 @@ Endpoints all exist. No backend work required.
 | ~~9~~ | ~~**Account home**~~ — DONE: identity, organisation, assigned vehicle, links to everything under Account, sign out. Earnings omitted (no endpoint) | prototype | `drivers/{id}`, `organizations/current` |
 | ~~10~~ | ~~**Org switcher**~~ — DONE: driver-scoped list, current marked, single-org state, failures reported. Not blocked on the platform token after all | R2 A3 | `drivers/{id}/organizations`, `switch-organization` |
 | ~~11~~ | ~~**Profile edit**~~ — DONE: name, email, phone, city, country; sends only what changed; queues offline. No password change (endpoint does not verify the current one) | R2 A7 | `PUT /v1/drivers/{id}` |
-| ~~12~~ | **Sign in** — DONE (password); OTP still TODO | R2 A1, R1 s15 | `drivers/login` verified live |
+| ~~12~~ | ~~**Sign in**~~ — DONE: password **and** one-time code. The server picks sms or email and says which; the screen reports whichever happened | R2 A1, R1 s15 | `drivers/login`, `login-with-sms`, `verify-code` |
 | ~~13~~ | ~~**Navigation hand-off picker**~~ — DONE: Apple/Google/Waze/Uber, remembered default, browser fallback, none-installed state; verified opening Apple Maps on device | R2 D6 | client only |
 | ~~14~~ | ~~**Permissions primer**~~ — DONE: location/notifications/camera, denied vs blocked kept apart, partial-location state, Settings hand-off; verified on device | R2 A2 | client only |
 | ~~15~~ | ~~**Self-hosted connection**~~ — DONE: host verified unauthenticated via the root endpoint, no API key field, https enforced for remote hosts | R2 A4 | client only |

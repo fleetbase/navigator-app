@@ -668,5 +668,24 @@
         "driveTime": "Drive time left",
         "break": "Planned break",
         "inspection": "Vehicle inspection"
+    },
+    "otp": {
+        "title": "Sign in with a code",
+        "intro": "Enter your phone number and we will send you a one-time code.",
+        "introWithOrg": "Enter the phone number %{organization} has on file and we will send you a one-time code.",
+        "phoneLabel": "Phone number",
+        "phoneHint": "Include your country code, for example +65.",
+        "phoneInvalid": "That does not look like a phone number.",
+        "send": "Send me a code",
+        "sentSms": "We texted a code to %{phone}.",
+        "sentEmail": "We could not text you, so the code went to your email instead.",
+        "codeLabel": "Six-digit code",
+        "verify": "Sign in",
+        "resend": "Send again",
+        "changeNumber": "Change number",
+        "failed": "That did not work",
+        "usePassword": "Use a password instead",
+        "note": "Codes expire after a few minutes. Ask dispatch if your number has changed.",
+        "offlineNotice": "You need a connection to receive a code."
     }
 }

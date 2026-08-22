@@ -20,6 +20,7 @@ import waypointConfig, { type SchemeName } from './theme';
 import { useResolvedScheme } from './settings';
 import SignInScreen, { type AuthMethod } from './screens/SignInScreen';
 import SelfHostedConnectionScreen from './screens/SelfHostedConnectionScreen';
+import OtpSignInScreen from './screens/OtpSignInScreen';
 import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
@@ -149,6 +150,8 @@ export interface V3AppProps {
      * a managed deployment should not offer to point elsewhere.
      */
     onChangeHost?: (host: string) => void;
+    /** Completes an OTP sign-in; the host app creates the session. */
+    onOtpVerified?: (driver: unknown) => void;
     /** Rendered inside the providers — toasts, portals the host app owns. */
     children?: React.ReactNode;
 }
@@ -195,11 +198,16 @@ export function V3App({
     onSignIn,
     authMethods,
     onChangeHost,
+    onOtpVerified,
     children,
 }: V3AppProps): React.JSX.Element {
     // Pre-auth only: the driver can point the app at their own instance before
     // signing in. Deliberately local state — there is no navigator here yet.
     const [choosingHost, setChoosingHost] = React.useState(false);
+    // Which sign-in the driver is using. Password remains the default; the code
+    // route is offered because a driver who has forgotten theirs is otherwise
+    // stuck until dispatch intervenes.
+    const [usingOtp, setUsingOtp] = React.useState(false);
     return (
         <PortalProvider>
             <ThemedRoot scheme={scheme}>
@@ -242,6 +250,12 @@ export function V3App({
                                                             setChoosingHost(false);
                                                         }}
                                                     />
+                                                ) : usingOtp ? (
+                                                    <OtpSignInScreen
+                                                        organizationName={organizationName}
+                                                        onUsePassword={() => setUsingOtp(false)}
+                                                        onVerified={(driver) => onOtpVerified?.(driver)}
+                                                    />
                                                 ) : (
                                                     <SignInScreen
                                                         onSignIn={onSignIn ?? (() => Promise.reject(new Error('Sign-in is not configured')))}
@@ -249,6 +263,9 @@ export function V3App({
                                                         organizationName={organizationName}
                                                         host={host}
                                                         onChangeServer={onChangeHost ? () => setChoosingHost(true) : undefined}
+                                                        onSelectMethod={(method) => {
+                                                            if (method === 'phone') setUsingOtp(true);
+                                                        }}
                                                     />
                                                 )}
                                             </NavigationContainer>

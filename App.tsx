@@ -80,6 +80,11 @@ function DriverBridge(): React.JSX.Element {
             // admin API credential here; the v3 screen verifies the host
             // unauthenticated instead.
             onChangeHost={(nextHost: string) => setInstanceLinkConfig('FLEETBASE_HOST', nextHost)}
+            // The code route returns the same driver payload as a password
+            // sign-in, so the session is created in exactly the same way.
+            onOtpVerified={createDriverSession}
+            // Offer signing in with a code; v2 kept it behind a separate screen.
+            authMethods={['phone']}
             organizationId={(driver as { getAttribute?: (k: string) => unknown })?.getAttribute?.('company') as string | undefined}
             onOrganizationSwitched={createDriverSession}
             organizationName={organizationName}

@@ -160,6 +160,18 @@ defers to it rather than deciding for itself:
 
 Worth reading before building the Route tab in Phase 4b.
 
+## Self-inflicted, worth recording
+
+While wiring the OTP bridge I **emptied `App.tsx`**. The edit script opened the
+file with `io.open(p, 'w')` — which truncates immediately — and then threw on a
+typo before writing anything back, leaving a zero-byte file. Nothing was lost
+because it was committed, and `git checkout` restored all 130 lines, but the
+same script against an uncommitted file would have destroyed the work.
+
+Edits now write to a temp file and `os.replace` it over the original, so the
+replacement exists before the original goes. Worth keeping in mind for any
+scripted edit: truncate-then-write has no safe failure mode.
+
 ## Noted — real, not fixed here
 
 These are v2 defects found while auditing. v3 supersedes the code they live in,
