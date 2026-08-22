@@ -24,7 +24,7 @@ import OtpSignInScreen from './screens/OtpSignInScreen';
 import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
-import { FleetbaseProvider, mutationQueue, useQueue, type MutationQueue } from './api';
+import { FleetbaseProvider, mutationQueue, useQueue, useReachable, type MutationQueue } from './api';
 import { useActiveOrderCount } from './data';
 
 
@@ -33,11 +33,16 @@ import { useActiveOrderCount } from './data';
  * Phase 1 stub: the "N queued" count and the failed/retry state now reflect
  * work actually waiting to reach the server.
  */
-function QueueBoundSync({ children, isConnected, queue }: { children: React.ReactNode; isConnected: boolean; queue: MutationQueue }) {
+function QueueBoundSync({ children, isConnected, queue }: { children: React.ReactNode; isConnected?: boolean; queue: MutationQueue }) {
     const { pendingCount, failedCount, isFlushing } = useQueue(queue);
+    // Judged from what happened to our own requests. `isConnected` remains an
+    // override for a host that genuinely knows better, but nothing was passing
+    // it — so the app defaulted to `true` and believed it was online always,
+    // which made every offline affordance in the app unreachable.
+    const reachable = useReachable();
     return (
         <SyncProvider
-            isOnline={isConnected}
+            isOnline={isConnected ?? reachable}
             queuedCount={pendingCount + failedCount}
             syncState={failedCount > 0 ? 'failed' : isFlushing ? 'syncing' : 'idle'}
             onRetry={() => {
@@ -99,9 +104,9 @@ export interface V3AppProps {
     /** True once the Phase 4a shift endpoints exist. */
     breakSupported?: boolean;
     /**
-     * Connectivity. Still a proxy off the socket connection — the app has no
-     * netinfo dependency — but the queued count and sync state below are now
-     * real, read from the mutation queue.
+     * Optional override. Left unset, connectivity is judged from whether our
+     * own requests are reaching the API, which is the question the driver
+     * actually has — see `NavigatorAdapter.isReachable`.
      */
     isConnected?: boolean;
     /** API host. Required so the single Fleetbase instance can be built. */
@@ -180,7 +185,7 @@ export function V3App({
     isOnline = false,
     onToggleOnline,
     breakSupported = false,
-    isConnected = true,
+    isConnected,
     host = 'https://api.fleetbase.io',
     platformToken,
     userToken,

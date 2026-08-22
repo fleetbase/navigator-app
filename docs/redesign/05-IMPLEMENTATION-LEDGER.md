@@ -350,8 +350,18 @@ stop sequence.
   `ui/__tests__/no-hardcoded-copy.test.js` parses the sources to keep it that
   way. The queue's labels were fixed with the sync-queue slice (F-28).
 
-- `isConnected` still proxies off the SocketCluster connection; there is no
-  netinfo dependency. Decide whether to add one before Tier 1 lands.
+- ~~`isConnected` still proxies off the SocketCluster connection~~ **DONE, and
+  the premise was wrong.** It was not proxying off anything: `App.tsx` never
+  passed it, so it defaulted to `true` and the app believed it was online
+  always — every offline affordance in the app was unreachable (F-32).
+
+  **Decision: no netinfo dependency.** Connectivity is judged from whether our
+  own requests reach the API, which is the question a driver actually has. A
+  handset can show full signal while the API is unreachable — captive portal,
+  dropped VPN, DNS, or the server being down — and netinfo would report all of
+  those as online. Transport failures measure the thing that matters, need no
+  native module, and are testable. `isConnected` remains an override for a host
+  that genuinely knows better.
 - ~~`getTheme` should be lifted out of `src/utils/index.js`~~ **DONE.** It lives
   in `src/utils/theme.js`, so the barrel no longer imports `tamagui.config` and
   v3 can import the v2 formatters — proved by

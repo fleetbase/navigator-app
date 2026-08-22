@@ -85,10 +85,17 @@ export function FleetbaseProvider({
         value.adapter.setPlatformToken(platformToken);
     }, [value, platformToken]);
 
-    // Drain whatever accumulated while offline.
+    // Drain whatever accumulated while offline — on mount, and again whenever
+    // the API becomes reachable after having failed. Reads recover on their own
+    // (screens refetch on focus), so recovery is observed rather than polled.
     useEffect(() => {
         if (isConnected) void queue.flush();
-    }, [isConnected, queue]);
+
+        const adapter = value.adapter;
+        return adapter.onReachabilityChange((reachable) => {
+            if (reachable) void queue.flush();
+        });
+    }, [isConnected, queue, value]);
 
     return <FleetbaseContext.Provider value={value}>{children}</FleetbaseContext.Provider>;
 }
@@ -103,6 +110,22 @@ export function useFleetbase(): FleetbaseContextValue {
  * Live queue state, for the offline banner and the sync-queue screen.
  * useSyncExternalStore keeps this correct across concurrent rendering.
  */
+/**
+ * Live API reachability, from what happened to our requests.
+ *
+ * Deliberately not a radio check — see `NavigatorAdapter.isReachable`. A
+ * handset can show full signal while the API is unreachable, and the driver
+ * only cares whether their work can reach dispatch.
+ */
+export function useReachable(): boolean {
+    const { adapter } = useFleetbase();
+    return useSyncExternalStore(
+        useMemo(() => (fn: () => void) => adapter.onReachabilityChange(() => fn()), [adapter]),
+        () => adapter.isReachable(),
+        () => adapter.isReachable()
+    );
+}
+
 export function useQueue(queue: MutationQueue = mutationQueue): QueueSnapshot {
     const subscribe = useMemo(() => (fn: () => void) => queue.subscribe(() => fn()), [queue]);
     const cached = useRef<QueueSnapshot>(queue.snapshot());

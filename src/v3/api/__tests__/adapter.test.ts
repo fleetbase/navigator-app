@@ -195,3 +195,68 @@ describe('mutations that must never queue', () => {
         expect(queue.snapshot().pendingCount).toBe(0);
     });
 });
+
+/**
+ * Connectivity is judged from what happened to our own requests, not from the
+ * radio. A handset can show full signal while the API is unreachable — captive
+ * portal, dropped VPN, DNS, or the server being down — and the driver only
+ * cares whether their work can reach dispatch.
+ *
+ * This mattered because nothing was supplying `isConnected` at all: it defaulted
+ * to true, so the app believed it was online always and every offline
+ * affordance was unreachable.
+ */
+describe('reachability', () => {
+    it('starts optimistic, so a cold start does not flash the offline banner', () => {
+        expect(make().isReachable()).toBe(true);
+    });
+
+    it('goes unreachable on a transport failure', async () => {
+        const adapter = make();
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+        await adapter.get('orders').catch(() => {});
+        expect(adapter.isReachable()).toBe(false);
+    });
+
+    it('recovers on any answer at all, including an error status', async () => {
+        // A 500 still proves the round trip works; this is about transport.
+        const adapter = make();
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+        await adapter.get('orders').catch(() => {});
+        expect(adapter.isReachable()).toBe(false);
+
+        fetchMock.mockResolvedValue({
+            ok: false, status: 500, statusText: 'Server Error', json: async () => ({}),
+        } as never);
+        await adapter.get('orders').catch(() => {});
+        expect(adapter.isReachable()).toBe(true);
+    });
+
+    it('notifies subscribers only when it actually changes', async () => {
+        const adapter = make();
+        const seen: boolean[] = [];
+        adapter.onReachabilityChange((r) => seen.push(r));
+
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+        await adapter.get('a').catch(() => {});
+        await adapter.get('b').catch(() => {});
+
+        fetchMock.mockResolvedValue({ ok: true, status: 200, statusText: 'OK', json: async () => ({}) } as never);
+        await adapter.get('c');
+        await adapter.get('d');
+
+        // Two failures then two successes is one transition each way.
+        expect(seen).toEqual([false, true]);
+    });
+
+    it('stops notifying once unsubscribed', async () => {
+        const adapter = make();
+        const seen: boolean[] = [];
+        const off = adapter.onReachabilityChange((r) => seen.push(r));
+        off();
+
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+        await adapter.get('a').catch(() => {});
+        expect(seen).toEqual([]);
+    });
+});

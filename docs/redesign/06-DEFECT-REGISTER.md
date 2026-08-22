@@ -107,6 +107,17 @@ Android note: `shadowOpacity` alone draws nothing there. When Android is in
 scope, set elevation through a prop the style system does not rewrite rather
 than re-adding the key.
 
+### Connectivity
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-32 | **S2** | **The app believed it was online, always.** `isConnected` defaulted to `true` and `App.tsx` never passed it, so every offline affordance built across this rebuild — the offline banner, the "showing what is saved on this device" state on ten screens, the sync-queue notice — could not appear on a real handset. The ledger described this as "proxies off the socket"; it was not proxying off anything. | Connectivity is now judged from whether our own requests reach the API. Deliberately **not** netinfo: a handset can show full signal while the API is unreachable, and the driver only cares whether their work can reach dispatch. The queue also flushes when reachability recovers, rather than only on mount. |
+
+**Device verification outstanding.** The transitions are covered by adapter
+tests, but seeing the banner on a handset needs the API to actually go away,
+which means briefly stopping the server. This closes together with the sync
+queue's populated states in the plan's offline pass.
+
 ### Offline queue
 
 | # | Sev | What | Fix |

@@ -192,9 +192,15 @@ export class NavigatorAdapter extends BrowserAdapter {
             });
         } catch (err) {
             // fetch only rejects on transport failure — DNS, no route, TLS,
-            // aborted. This is the branch that means "queue it".
+            // aborted. This is the branch that means "queue it", and the only
+            // honest evidence that the API cannot currently be reached.
+            this.setReachable(false);
             throw new ApiError((err as Error)?.message ?? 'Network request failed', undefined, true);
         }
+
+        // The server answered. Even a 500 proves the round trip works, so
+        // reachability is about the transport, not the status.
+        this.setReachable(true);
 
         const json = await response.json().catch(() => ({}));
 
@@ -204,6 +210,39 @@ export class NavigatorAdapter extends BrowserAdapter {
         }
 
         return json;
+    }
+
+    /**
+     * Whether the **API** is reachable, judged from what actually happened to
+     * our requests rather than from the radio.
+     *
+     * This is deliberately not netinfo. What a driver needs to know is whether
+     * their work can reach dispatch, and a device can be firmly "connected"
+     * while the API is unreachable — a captive portal, a VPN that has dropped,
+     * DNS, or the server simply being down. Transport failures measure the
+     * thing that matters; a full signal bar does not.
+     *
+     * Starts optimistic: assuming offline before any request has been made
+     * would show the offline banner on every cold start.
+     */
+    private reachable = true;
+    private reachabilityListeners = new Set<(reachable: boolean) => void>();
+
+    isReachable(): boolean {
+        return this.reachable;
+    }
+
+    onReachabilityChange(fn: (reachable: boolean) => void): () => void {
+        this.reachabilityListeners.add(fn);
+        return () => {
+            this.reachabilityListeners.delete(fn);
+        };
+    }
+
+    private setReachable(next: boolean): void {
+        if (this.reachable === next) return;
+        this.reachable = next;
+        for (const fn of this.reachabilityListeners) fn(next);
     }
 
     private counter = 0;
