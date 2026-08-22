@@ -1,11 +1,15 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { TamaguiProvider, Theme } from 'tamagui';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import config, { SCHEMES, type SchemeName } from '../../theme';
 import { SignInScreen } from '../SignInScreen';
 import { SyncProvider } from '../../shell';
 import { clearV3 } from '../../api/storage';
 import { settingsStore } from '../../settings';
+
+/** These screens render pre-auth, outside DriverShell, so they read the inset directly. */
+const safeAreaMetrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 
 beforeEach(() => { clearV3(); settingsStore.reset(); });
 
@@ -14,13 +18,15 @@ function render(props: Partial<React.ComponentProps<typeof SignInScreen>> = {}, 
     let tree: ReactTestRenderer.ReactTestRenderer;
     ReactTestRenderer.act(() => {
         tree = ReactTestRenderer.create(
-            <TamaguiProvider config={config} defaultTheme={(props as { scheme?: SchemeName }).scheme ?? 'dark'}>
-                <Theme name="dark">
-                    <SyncProvider isOnline={isOnline}>
-                        <SignInScreen {...props} onSignIn={onSignIn} />
-                    </SyncProvider>
-                </Theme>
-            </TamaguiProvider>
+            <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+                <TamaguiProvider config={config} defaultTheme={(props as { scheme?: SchemeName }).scheme ?? 'dark'}>
+                    <Theme name="dark">
+                        <SyncProvider isOnline={isOnline}>
+                            <SignInScreen {...props} onSignIn={onSignIn} />
+                        </SyncProvider>
+                    </Theme>
+                </TamaguiProvider>
+            </SafeAreaProvider>
         );
     });
     // @ts-expect-error assigned inside act

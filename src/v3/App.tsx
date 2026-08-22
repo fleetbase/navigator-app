@@ -19,6 +19,7 @@ import { TamaguiProvider, Theme } from 'tamagui';
 import waypointConfig, { type SchemeName } from './theme';
 import { useResolvedScheme } from './settings';
 import SignInScreen, { type AuthMethod } from './screens/SignInScreen';
+import SelfHostedConnectionScreen from './screens/SelfHostedConnectionScreen';
 import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
@@ -143,6 +144,11 @@ export interface V3AppProps {
     onSignIn?: (identity: string, password: string) => Promise<void>;
     /** Per-organisation auth alternates. */
     authMethods?: AuthMethod[];
+    /**
+     * Accepts a verified self-hosted origin. Omit to hide the option entirely —
+     * a managed deployment should not offer to point elsewhere.
+     */
+    onChangeHost?: (host: string) => void;
     /** Rendered inside the providers — toasts, portals the host app owns. */
     children?: React.ReactNode;
 }
@@ -188,8 +194,12 @@ export function V3App({
     location,
     onSignIn,
     authMethods,
+    onChangeHost,
     children,
 }: V3AppProps): React.JSX.Element {
+    // Pre-auth only: the driver can point the app at their own instance before
+    // signing in. Deliberately local state — there is no navigator here yet.
+    const [choosingHost, setChoosingHost] = React.useState(false);
     return (
         <PortalProvider>
             <ThemedRoot scheme={scheme}>
@@ -223,12 +233,22 @@ export function V3App({
                                                         organizationId={organizationId}
                                                         onOrganizationSwitched={onOrganizationSwitched}
                                                     />
+                                                ) : choosingHost ? (
+                                                    <SelfHostedConnectionScreen
+                                                        initialHost={host}
+                                                        onCancel={() => setChoosingHost(false)}
+                                                        onConnected={(identity) => {
+                                                            onChangeHost?.(identity.host);
+                                                            setChoosingHost(false);
+                                                        }}
+                                                    />
                                                 ) : (
                                                     <SignInScreen
                                                         onSignIn={onSignIn ?? (() => Promise.reject(new Error('Sign-in is not configured')))}
                                                         methods={authMethods}
                                                         organizationName={organizationName}
                                                         host={host}
+                                                        onChangeServer={onChangeHost ? () => setChoosingHost(true) : undefined}
                                                     />
                                                 )}
                                             </NavigationContainer>

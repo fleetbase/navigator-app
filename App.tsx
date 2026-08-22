@@ -41,7 +41,7 @@ function DriverBridge(): React.JSX.Element {
     const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, logout, createDriverSession } = useAuth();
     const { fleetbase } = useFleetbaseV2();
     const { unreadCount } = useChat();
-    const { resolveConnectionConfig } = useConfig();
+    const { resolveConnectionConfig, setInstanceLinkConfig } = useConfig();
     // v2 already runs background geolocation for the whole app; v3 reads its
     // last fix rather than starting a second consumer of the same hardware.
     const { location } = useLocation();
@@ -76,6 +76,10 @@ function DriverBridge(): React.JSX.Element {
             userToken={authToken ?? undefined}
             onUnauthorized={logout}
             onSignOut={logout}
+            // Only the host is stored — never a key. v2's link flow shipped an
+            // admin API credential here; the v3 screen verifies the host
+            // unauthenticated instead.
+            onChangeHost={(nextHost: string) => setInstanceLinkConfig('FLEETBASE_HOST', nextHost)}
             organizationId={(driver as { getAttribute?: (k: string) => unknown })?.getAttribute?.('company') as string | undefined}
             onOrganizationSwitched={createDriverSession}
             organizationName={organizationName}

@@ -251,7 +251,8 @@
         "missingFields": "Enter your email and password",
         "invalidCredentials": "Those details were not recognised",
         "offline": "You need a connection to sign in",
-        "signingIn": "Signing in…"
+        "signingIn": "Signing in…",
+        "changeServer": "Connect to a different server"
     },
     "itemDetail": {
         "title": "Item",
@@ -543,5 +544,22 @@
         "outstanding": "You can start without these, but some things will not work until you allow them.",
         "later": "Not now",
         "continue": "Continue"
+    },
+    "connect": {
+        "title": "Connect to your Fleetbase",
+        "intro": "Enter the address your company gave you. You will sign in with your own account on the next screen.",
+        "hostLabel": "Server address",
+        "hostHint": "For example fleetbase.yourcompany.com. https is assumed.",
+        "noKeyNeeded": "No API key is needed. The app checks the address itself, then you sign in with your own credentials.",
+        "check": "Check address",
+        "checkFailed": "Could not use that address",
+        "invalidUrl": "That does not look like a web address. Check for a typo.",
+        "insecure": "That address is not secure (https). Your password would be sent in the clear, so it is not allowed.",
+        "unreachable": "Nothing answered at that address. Check the spelling, and that you are on a network that can reach it.",
+        "notFleetbase": "Something answered, but it is not a Fleetbase server.",
+        "verified": "Fleetbase server found",
+        "version": "Version %{version}",
+        "use": "Use this server",
+        "signInNext": "Next you will sign in with your own email and password."
     }
 }

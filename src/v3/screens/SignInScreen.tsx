@@ -19,6 +19,7 @@ import { Button } from '../ui/Button';
 import { Banner } from '../ui/Banner';
 import { Surface, Divider } from '../ui/Surface';
 import { space } from '../theme/tokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 
@@ -40,6 +41,8 @@ export interface SignInScreenProps {
     organizationName?: string;
     /** Shown so a driver on a self-hosted instance knows where they are. */
     host?: string;
+    /** Opens the self-hosted connection screen. Hidden when not offered. */
+    onChangeServer?: () => void;
 }
 
 export function SignInScreen({
@@ -49,9 +52,12 @@ export function SignInScreen({
     onForgotPassword,
     organizationName,
     host,
+    onChangeServer,
 }: SignInScreenProps) {
     const { t } = useTranslation();
     const { isOnline } = useSync();
+    // Same reason as the connection screen: no DriverShell above this one.
+    const insets = useSafeAreaInsets();
 
     const [identity, setIdentity] = useState('');
     const [password, setPassword] = useState('');
@@ -79,7 +85,7 @@ export function SignInScreen({
     return (
         <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: space[4], paddingTop: space[7], gap: space[5], flexGrow: 1 }}
+            contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[5], gap: space[5], flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             testID="sign-in-screen"
         >
@@ -170,6 +176,11 @@ export function SignInScreen({
 
             <YStack flex={1} justifyContent="flex-end">
                 {host ? <Micro center>{host}</Micro> : null}
+                {onChangeServer ? (
+                    <Button variant="ghost" onPress={onChangeServer} testID="change-server">
+                        {t('signIn.changeServer')}
+                    </Button>
+                ) : null}
             </YStack>
         </ScrollView>
     );

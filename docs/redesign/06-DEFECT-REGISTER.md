@@ -72,6 +72,12 @@ Both were misdiagnosed first — see *How these were found*, below.
 |---|---|---|---|
 | F-24 | S2 | **The camera prompt told drivers the wrong reason.** `NSCameraUsageDescription` read *"This app may need to use your camera for your profile picture"* — the camera is for proof-of-delivery photos and barcode scanning. Seen on device while verifying the primer. Both photo-library strings were equally vague. Purpose strings are what the driver reads at the one moment they decide, and App Review requires them to be accurate. | All three rewritten to say what the app actually does. **Needs a native rebuild to take effect.** |
 
+### Layout
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-25 | S3 | **Pre-auth screens rendered under the notch.** Everything else sits inside `DriverShell`, which supplies the top safe-area inset — sign-in and the new connection screen do not, and the connection screen's title collided with the Dynamic Island. Sign-in had been papering over it with a hardcoded `paddingTop`, which happens to clear the island on this device and would not on others. | Both now read `useSafeAreaInsets()`. Seen on device; no test would have caught it. |
+
 ### Design fidelity
 
 | # | Sev | What | Fix |
