@@ -364,6 +364,17 @@ telemetry figure when that is all there is — it is the true number — but say
 which it is, because a driver copying it into a fuel report needs to know
 whether they are reading a live feed or a months-old manual entry.
 
+### Edit destination, caught by looking at the screen
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-59 | S3 | **The "Change destination" button was hidden on exactly the orders that have a choice.** I gated it on `payload.waypoints.length > 1`, and wrote a comment claiming it appeared only when there was somewhere else to go. A plain pickup → drop-off order carries **no `waypoints` array at all** — waypoints are what an order adds *between* those two — so a two-stop order showed no button, while the tests passed because their fixtures all had waypoint arrays. | The count is the stops: pickup, drop-off and any waypoints. Verified on the device, where the button appeared on the real two-stop order it had been hiding from. |
+
+The comment is what gave it away. It described an intent — "only offered on an
+order with somewhere else to go" — that the code did not implement and the
+navigator contradicted by passing the handler unconditionally. Writing down what
+something is *for* is a reasonable way to notice it does not do that.
+
 ---
 
 ## The tracker is more honest than the app was using

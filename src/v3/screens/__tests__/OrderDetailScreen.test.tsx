@@ -319,6 +319,37 @@ describe('OrderDetailScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
+    it('offers a destination change only when there is more than one stop', async () => {
+        // A button that opens a list of one is a button that wasted a tap.
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { dropoff: { name: 'Harbour View Pharmacy' }, entities: [] } }));
+        });
+        const single = await renderWith({ onChangeDestination: jest.fn() });
+        expect(testIDs(single)).not.toContain('change-destination');
+        ReactTestRenderer.act(() => single.unmount());
+
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { dropoff: { name: 'Harbour View Pharmacy' }, entities: [], waypoints: [{}, {}] } }));
+        });
+        const many = await renderWith({ onChangeDestination: jest.fn() });
+        expect(testIDs(many)).toContain('change-destination');
+        ReactTestRenderer.act(() => many.unmount());
+    });
+
+    it('counts pickup and drop-off as stops, not just waypoints', async () => {
+        /*
+         * Found on the device: a plain pickup → drop-off order carries no
+         * `waypoints` at all, so counting only those hid the button on exactly
+         * the order that has two places to be.
+         */
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { pickup: { name: '16 Simon Walk' }, dropoff: { name: '23 Hougang Avenue 8' }, entities: [] } }));
+        });
+        const t = await renderWith({ onChangeDestination: jest.fn() });
+        expect(testIDs(t)).toContain('change-destination');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
     it('says so when the config declares no flow at all', async () => {
         // A config that loads cleanly but carries an empty flow used to render
         // nothing: no stepper, no message, and no way to advance the order.

@@ -36,6 +36,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import HelpScreen from '../screens/HelpScreen';
 import ProofCaptureScreen from '../screens/ProofCaptureScreen';
 import MyVehicleScreen from '../screens/MyVehicleScreen';
+import DestinationScreen from '../screens/DestinationScreen';
 import { vehicleOf } from '../data';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
@@ -148,6 +149,7 @@ function OrderDetail({ route, navigation }: { route: { params?: { orderId?: stri
             onNavigate={(destination: object) => navigation.navigate('NavigationHandoff', { destination })}
             onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId: route.params?.orderId })}
             onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
+            onChangeDestination={() => navigation.navigate('Destination', { orderId: route.params?.orderId })}
         />
     );
 }
@@ -412,6 +414,10 @@ function MyVehicle() {
     return <MyVehicleScreen vehicleId={vehicle?.id} />;
 }
 
+function Destination({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
+    return <DestinationScreen orderId={String(route.params?.orderId ?? '')} onDone={() => navigation.goBack()} />;
+}
+
 /* Header-wrapped screens. Declared once at module scope so the component
    identity is stable — an inline wrapper would remount on every render. */
 const NavigationHandoffH = withHeader('nav.navigationHandoff', NavigationHandoff);
@@ -437,6 +443,7 @@ const OrgSwitcherH = withHeader('nav.orgSwitcher', OrgSwitcher);
 const SettingsScreenH = withHeader('nav.settings', SettingsScreen);
 const HelpH = withHeader('nav.help', Help);
 const ProofCaptureH = withHeader('nav.proofCapture', ProofCapture);
+const DestinationH = withHeader('nav.destination', Destination);
 const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
 const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
 const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
@@ -473,6 +480,7 @@ function OrdersStack() {
             <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
             <Stack.Screen name="OrderTimeline" component={OrderTimelineH} />
             <Stack.Screen name="ProofCapture" component={ProofCaptureH} />
+            <Stack.Screen name="Destination" component={DestinationH} />
         </Stack.Navigator>
     );
 }

@@ -207,7 +207,8 @@
         "payloadEmpty": "Nothing is recorded on this order.",
         "flowNotConfigured": "This order has no activity flow set up, so progress cannot be updated from the app. Ask dispatch.",
         "statusOffFlow": "This order is %{status}, which is not a step in its configured flow. Ask dispatch to move it on.",
-        "chooseWithDispatch": "This order can go more than one way from here, and the choice depends on conditions the app cannot check. Ask dispatch to move it on."
+        "chooseWithDispatch": "This order can go more than one way from here, and the choice depends on conditions the app cannot check. Ask dispatch to move it on.",
+        "changeDestination": "Change"
     },
     "editPayloadItem": {
         "title": "Editing",
@@ -771,7 +772,8 @@
         "syncQueue": "Sync queue",
         "editItem": "Edit item",
         "help": "Help and support",
-        "proofCapture": "Proof of delivery"
+        "proofCapture": "Proof of delivery",
+        "destination": "Change destination"
     },
     "help": {
         "messageDispatch": "Message dispatch",
@@ -829,5 +831,21 @@
         "noneAssigned": "No vehicle is assigned to you. Dispatch assigns vehicles.",
         "sparse": "Nothing else is recorded for this vehicle.",
         "readOnly": "Changing your vehicle and entering an odometer reading are not available in the app yet."
+    },
+    "destination": {
+        "current": "Heading here",
+        "done": "Done",
+        "stop": "Stop",
+        "unnamed": "Unnamed stop",
+        "type": {
+            "pickup": "Pickup",
+            "dropoff": "Drop-off",
+            "waypoint": "Stop"
+        },
+        "queued": "Saved on this device. Dispatch will see it when you are back online.",
+        "failed": "Could not change the destination",
+        "emptyTitle": "No stops on this order",
+        "emptyBody": "There is nothing to head to yet.",
+        "note": "You can only head to a stop that is already on this order. To go somewhere else, message dispatch."
     }
 }

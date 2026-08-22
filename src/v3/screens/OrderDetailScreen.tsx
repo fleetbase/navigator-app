@@ -45,6 +45,7 @@ export function OrderDetailScreen({
     onOpenTimeline,
     onNavigate,
     onCaptureProof,
+    onChangeDestination,
 }: {
     orderId: string;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
@@ -53,6 +54,8 @@ export function OrderDetailScreen({
     onOpenTimeline?: () => void;
     /** Opens the navigation hand-off for the current destination (R2 D6). */
     onNavigate?: (destination: { latitude: number; longitude: number; label?: string }) => void;
+    /** Opens the stop picker, when the order has more than one stop. */
+    onChangeDestination?: () => void;
     /** Opens proof capture for an activity whose config demands it. */
     onCaptureProof?: (request: { orderId: string; activityCode: string; activityLabel: string; podMethod?: string | null }) => void;
 }) {
@@ -131,6 +134,15 @@ export function OrderDetailScreen({
     const payload = payloadOf(order);
     const entities = payload.entities ?? [];
     const destination = payload.dropoff?.name ?? payload.dropoff?.address;
+    /*
+     * Counting waypoints alone was wrong, and the device said so: a plain
+     * pickup → drop-off order carries no `waypoints` at all, so the button
+     * vanished from the very order that has two places to be. Pickup and
+     * drop-off are stops; the waypoint list is what an order adds *between*
+     * them.
+     */
+    const stopCount = [payload.pickup, payload.dropoff, ...((payload.waypoints as unknown[] | undefined) ?? [])].filter(Boolean).length;
+    const hasChoiceOfStops = stopCount > 1;
     // GeoJSON is [longitude, latitude]; fromGeoPoint owns that flip.
     const dropoffPoint = fromGeoPoint(
         (payload.dropoff as { location?: { coordinates?: number[] } } | undefined)?.location,
@@ -183,12 +195,25 @@ export function OrderDetailScreen({
                             <Caption>{t('orderDetail.currentDestination')}</Caption>
                             <Body fontWeight="700">{destination}</Body>
                         </YStack>
-                        {/* Only offered when there is a real point to send. */}
-                        {onNavigate && dropoffPoint ? (
-                            <Button variant="secondary" onPress={() => onNavigate(dropoffPoint)} testID="navigate-to-dropoff">
-                                {t('orderDetail.navigate')}
-                            </Button>
-                        ) : null}
+                        <XStack gap={space[2]} alignItems="center">
+                            {/*
+                              * Only offered on an order with somewhere else to
+                              * go. A single-stop order presents no choice, and
+                              * a button that opens a list of one is a button
+                              * that wasted the driver's tap.
+                              */}
+                            {onChangeDestination && hasChoiceOfStops ? (
+                                <Button variant="ghost" onPress={onChangeDestination} testID="change-destination">
+                                    {t('orderDetail.changeDestination')}
+                                </Button>
+                            ) : null}
+                            {/* Only offered when there is a real point to send. */}
+                            {onNavigate && dropoffPoint ? (
+                                <Button variant="secondary" onPress={() => onNavigate(dropoffPoint)} testID="navigate-to-dropoff">
+                                    {t('orderDetail.navigate')}
+                                </Button>
+                            ) : null}
+                        </XStack>
                     </XStack>
                 </Surface>
             ) : null}

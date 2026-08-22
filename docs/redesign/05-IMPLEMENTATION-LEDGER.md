@@ -100,7 +100,7 @@ Do not start these until the endpoint exists. Each names its blocker.
 | My documents | R2 A6 | `POST /v1/drivers/{id}/documents` |
 | Documents & receipts | R2 F1 | file attach to order |
 | Ad-hoc offers | R2 D1 | offer expiry/claim semantics |
-| Edit destination | R2 D2 | `PATCH orders/{id}/waypoints` |
+| ~~Edit destination~~ | R2 D2 | **NOT BLOCKED — built.** `POST\|PATCH /v1/orders/{id}/set-destination/{placeId}` is public; the ledger named an endpoint that was never going to exist. |
 | Destination changed alert | R2 D3 | dispatch push payload |
 | Notification inbox detail | R2 G4 | `GET /v1/notifications` |
 | Devices & sessions | R2 A5 | `GET/DELETE /v1/drivers/{id}/sessions` |
@@ -518,3 +518,37 @@ piece of design worth keeping: the odometer names its own source, because the
 vehicle's recorded column is frequently null while a telematics box reports a
 live figure, and a driver copying that number into a fuel report should know
 which of the two they are looking at.
+
+---
+
+## Edit destination — third stale blocker, now built
+
+The ledger had R2 D2 blocked on `PATCH orders/{id}/waypoints`. The capability
+ships as `POST|PATCH /v1/orders/{id}/set-destination/{placeId}`, and has all
+along.
+
+The endpoint is well-shaped for this: `resolveServiceStopFromKey` accepts a
+place uuid, a place public id, a waypoint uuid, a waypoint public id or a
+waypoint's `place_uuid`, and answers **422** for anything not in the order's own
+payload. So it is inherently scoped to this order's stops and the app does not
+have to police that itself — which also settles what the screen should be. Not
+free-text destination entry: a driver diverting to an address dispatch has never
+heard of is a conversation, not a form field. What it offers is *which of this
+order's own stops am I heading to*, which is the case that comes up when a
+delivery has to be skipped and returned to.
+
+Completed stops are listed but not selectable, and the stop already being headed
+to is not re-sent.
+
+**Offline it queues and says so, and deliberately does not fake the new state.**
+Everything else on that screen — which stop is active, what is complete, the
+sequence, the ETA — is the server's own computation over the payload. Rewriting
+one field of it locally would show a view that is neither what the driver chose
+nor what dispatch sees.
+
+**Verification.** 15 tests. On the device: the screen is reachable and titled,
+the Change affordance appears on a real two-stop order (after F-59), and the
+offline failure state resolves rather than spinning — which exercised the F-41
+timeout and the F-47 calm-offline treatment again. **The stop list itself and
+the write are not device-verified**: the instance was hung throughout (accepting
+TCP, never answering), so the tracker could not load.
