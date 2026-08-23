@@ -37,6 +37,7 @@ import HelpScreen from '../screens/HelpScreen';
 import ProofCaptureScreen from '../screens/ProofCaptureScreen';
 import MyVehicleScreen from '../screens/MyVehicleScreen';
 import DestinationScreen from '../screens/DestinationScreen';
+import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
 import { vehicleOf } from '../data';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
@@ -405,17 +406,33 @@ function ProofCapture({ route, navigation }: { route: { params?: { orderId?: str
     );
 }
 
-function MyVehicle() {
+function MyVehicle({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const { driver } = useDriver(driverId);
     // The driver record already carries the assignment; the screen fetches the
     // full vehicle from it rather than asking dispatch what is assigned.
     const vehicle = vehicleOf(driver);
-    return <MyVehicleScreen vehicleId={vehicle?.id} />;
+    return (
+        <MyVehicleScreen
+            vehicleId={vehicle?.id}
+            onChangeVehicle={() => navigation.navigate('ChangeVehicle', { currentVehicleId: vehicle?.id })}
+        />
+    );
 }
 
 function Destination({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
     return <DestinationScreen orderId={String(route.params?.orderId ?? '')} onDone={() => navigation.goBack()} />;
+}
+
+function ChangeVehicle({ route, navigation }: { route: { params?: { currentVehicleId?: string } }; navigation: Nav }) {
+    const driverId = useDriverId();
+    return (
+        <ChangeVehicleScreen
+            driverId={driverId}
+            currentVehicleId={route.params?.currentVehicleId}
+            onDone={() => navigation.goBack()}
+        />
+    );
 }
 
 /* Header-wrapped screens. Declared once at module scope so the component
@@ -444,6 +461,7 @@ const SettingsScreenH = withHeader('nav.settings', SettingsScreen);
 const HelpH = withHeader('nav.help', Help);
 const ProofCaptureH = withHeader('nav.proofCapture', ProofCapture);
 const DestinationH = withHeader('nav.destination', Destination);
+const ChangeVehicleH = withHeader('nav.changeVehicle', ChangeVehicle);
 const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
 const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
 const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
@@ -513,6 +531,7 @@ function AccountStack() {
               */}
             <Stack.Screen name="IssueCreate" component={IssueCreateH} />
             <Stack.Screen name="MyVehicle" component={MyVehicleH} />
+            <Stack.Screen name="ChangeVehicle" component={ChangeVehicleH} />
             <Stack.Screen name="Inspection" component={InspectionH} />
             <Stack.Screen name="Documents" component={DocumentsH} />
             <Stack.Screen name="ProfileEdit" component={ProfileEditH} />

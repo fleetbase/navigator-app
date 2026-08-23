@@ -18,6 +18,7 @@ import { Identifier } from '../ui/Identifier';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Skeleton } from '../ui/Banner';
+import { Button } from '../ui/Button';
 import { Banner } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
@@ -60,10 +61,12 @@ export function MyVehicleScreen({
     vehicleId,
     seed,
     reloadToken = 0,
+    onChangeVehicle,
 }: {
     vehicleId?: string;
     seed?: VehicleRecord | null;
     reloadToken?: number;
+    onChangeVehicle?: () => void;
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
@@ -71,9 +74,19 @@ export function MyVehicleScreen({
     const { vehicle, isLoading, error, reload } = useVehicle(vehicleId, seed, reloadToken);
 
     if (!vehicleId) {
+        /*
+         * No vehicle assigned is precisely the state in which a driver wants to
+         * pick one — the early return used to end here, leaving them told they
+         * had no vehicle and given no way to get one.
+         */
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="vehicle-none">
+            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[4]} justifyContent="center" testID="vehicle-none">
                 <Banner tone="neutral" message={t('vehicle.noneAssigned')} testID="vehicle-none-banner" />
+                {onChangeVehicle ? (
+                    <Button fullWidth onPress={onChangeVehicle} testID="vehicle-change">
+                        {t('vehicle.pick')}
+                    </Button>
+                ) : null}
             </YStack>
         );
     }
@@ -179,9 +192,16 @@ export function MyVehicleScreen({
                 <Secondary testID="vehicle-sparse">{t('vehicle.sparse')}</Secondary>
             )}
 
-            {/* Changing the vehicle and entering an odometer both need endpoints
-                that are not on the public namespace yet. Saying so beats a
-                control that fails. */}
+            {onChangeVehicle ? (
+                <Button variant="secondary" fullWidth onPress={onChangeVehicle} testID="vehicle-change">
+                    {t('vehicle.change')}
+                </Button>
+            ) : null}
+
+            {/* The odometer is the part still genuinely unavailable: PUT
+                /v1/vehicles/{id} accepts one and discards it (O-19, fleetops
+                #301). Saying so beats a control that reports success and does
+                nothing. */}
             <Micro tone="warning" testID="vehicle-readonly">
                 {t('vehicle.readOnly')}
             </Micro>

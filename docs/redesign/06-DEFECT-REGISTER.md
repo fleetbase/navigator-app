@@ -375,6 +375,20 @@ order with somewhere else to go" — that the code did not implement and the
 navigator contradicted by passing the handler unconditionally. Writing down what
 something is *for* is a reasonable way to notice it does not do that.
 
+### Change vehicle
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-60 | S3 | **"No vehicle is assigned to you" was a dead end.** The screen returned early on a missing vehicle id, so the one state in which a driver most wants to pick a vehicle was the one state that offered no way to. | The empty state carries the picker. |
+
+A judgement worth recording rather than a defect: the assignable check lists the
+statuses that mean **no** — maintenance, out of service, retired, decommissioned,
+stolen, accident, awaiting parts, inspection failed — and treats everything else
+as offerable. The create request alone permits eighteen statuses and a customer
+may add their own; an allowlist would silently hide a fleet the moment someone
+invented a word for "clean and ready". A vehicle wrongly offered is a 422 from
+the server. A vehicle wrongly hidden is a driver who cannot work.
+
 ---
 
 ## The tracker is more honest than the app was using

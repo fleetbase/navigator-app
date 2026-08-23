@@ -773,7 +773,8 @@
         "editItem": "Edit item",
         "help": "Help and support",
         "proofCapture": "Proof of delivery",
-        "destination": "Change destination"
+        "destination": "Change destination",
+        "changeVehicle": "Change vehicle"
     },
     "help": {
         "messageDispatch": "Message dispatch",
@@ -828,9 +829,11 @@
         "odometerRecorded": "Last recorded reading.",
         "odometerFromTelematics": "Live from the vehicle tracker, %{when}.",
         "recently": "recently",
-        "noneAssigned": "No vehicle is assigned to you. Dispatch assigns vehicles.",
+        "noneAssigned": "No vehicle is assigned to you yet.",
         "sparse": "Nothing else is recorded for this vehicle.",
-        "readOnly": "Changing your vehicle and entering an odometer reading are not available in the app yet."
+        "readOnly": "Entering an odometer reading is not available in the app yet.",
+        "change": "Change vehicle",
+        "pick": "Pick a vehicle"
     },
     "destination": {
         "current": "Heading here",
@@ -847,5 +850,13 @@
         "emptyTitle": "No stops on this order",
         "emptyBody": "There is nothing to head to yet.",
         "note": "You can only head to a stop that is already on this order. To go somewhere else, message dispatch."
+    },
+    "changeVehicle": {
+        "current": "Yours",
+        "queued": "Saved on this device. Dispatch will see it when you are back online.",
+        "failed": "Could not change your vehicle",
+        "emptyTitle": "No vehicles",
+        "emptyBody": "Your organisation has no vehicles set up.",
+        "note": "Vehicles that are off the road are shown but cannot be picked."
     }
 }

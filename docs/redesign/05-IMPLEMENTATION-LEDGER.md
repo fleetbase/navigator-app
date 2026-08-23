@@ -92,7 +92,7 @@ Do not start these until the endpoint exists. Each names its blocker.
 | Arrive out-of-geofence | R2 C6 | geofence events surfaced to the app |
 | Duty: break + HOS card | R2, shell | `drivers/{id}/shift/*`, `hos-status` public |
 | ~~My vehicle~~ | R2 E1 | **PARTLY STALE — viewing built.** `GET /v1/vehicles/{id}` is public and always was; only *changing* the vehicle and posting an odometer still need endpoints. |
-| Change vehicle | R2 E2 | `GET /v1/vehicles?available=1` |
+| ~~Change vehicle~~ | R2 E2 | **NOT BLOCKED — built.** `GET /v1/vehicles` is public and assignment is `PUT /v1/drivers/{id}` with a vehicle public id. No new endpoint was ever needed. |
 | DVIR E3a–E3d | R2 E3a-d | `inspection-templates`, `POST /v1/inspections` |
 | Inspection history | R2 E4 | `GET /v1/vehicles/{id}/inspections` |
 | Vehicle defects | R2 E5 | defect → work-order link |
@@ -552,3 +552,29 @@ offline failure state resolves rather than spinning — which exercised the F-41
 timeout and the F-47 calm-offline treatment again. **The stop list itself and
 the write are not device-verified**: the instance was hung throughout (accepting
 TCP, never answering), so the tracker could not load.
+
+---
+
+## Change vehicle — fourth stale blocker, now built
+
+The ledger wanted `GET /v1/vehicles?available=1` and a public `assign-vehicle`.
+Neither exists and neither is needed. `GET /v1/vehicles` is public and scoped to
+the session's company, and assignment is `PUT /v1/drivers/{id}` with the
+vehicle's **public id** — `DriverController@update` resolves it against
+`vehicles.public_id` for that company, so a driver can only ever be assigned a
+vehicle in their own organisation. That was the constraint worth having, and the
+server already enforces it.
+
+Reuses `useUpdateDriver` rather than adding a second hook that PUTs the same
+endpoint: assignment travels on the same request as a profile change because it
+*is* the same request.
+
+Vehicles that cannot be driven are shown greyed rather than hidden — a driver
+hunting for yesterday's van should learn it is off the road, not wonder whether
+the list is broken.
+
+**Verification.** 14 tests. On the device the API was returning 502 throughout,
+so the populated list and the write are **not device-verified**. What the run did
+confirm: the 502 is classified as a server fault rather than as being offline,
+the account links stay reachable through it (F-44), and the no-vehicle state now
+offers the picker (F-60, found by looking at that state on the device).

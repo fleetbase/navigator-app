@@ -222,6 +222,16 @@ export interface DriverProfileDraft {
     phone?: string;
     city?: string;
     country?: string;
+    /**
+     * Vehicle **public id**, not uuid — `DriverController@update` resolves it
+     * against `vehicles.public_id` scoped to the session's company, so a driver
+     * can only ever be assigned a vehicle in their own organisation.
+     *
+     * Carried on the same draft as the profile fields because it is the same
+     * request: there is no `assign-vehicle` on the public namespace, and there
+     * does not need to be.
+     */
+    vehicle?: string;
 }
 
 /**

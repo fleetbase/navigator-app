@@ -196,4 +196,13 @@ describe('MyVehicleScreen', () => {
         expect(testIDs(t)).toContain('vehicle-none');
         ReactTestRenderer.act(() => t.unmount());
     });
+
+    it('offers the picker when there is no vehicle, which is when it is wanted', async () => {
+        // The early return used to end at the message, telling a driver they
+        // had no vehicle and giving them no way to get one.
+        const onChangeVehicle = jest.fn();
+        const t = await mount(<MyVehicleScreen vehicleId={undefined} onChangeVehicle={onChangeVehicle} />);
+        expect(testIDs(t)).toContain('vehicle-change');
+        ReactTestRenderer.act(() => t.unmount());
+    });
 });
