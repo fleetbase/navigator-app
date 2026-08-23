@@ -25,6 +25,7 @@ import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
 import { FleetbaseProvider, mutationQueue, useQueue, useReachable, type MutationQueue } from './api';
+import { SocketProvider, type SocketConfig } from './realtime';
 import { useActiveOrderCount } from './data';
 
 
@@ -111,6 +112,11 @@ export interface V3AppProps {
     isConnected?: boolean;
     /** API host. Required so the single Fleetbase instance can be built. */
     host?: string;
+    /**
+     * SocketCluster connection. Absent, the app runs without realtime — every
+     * screen still works, it just learns about changes when it next asks.
+     */
+    socket?: SocketConfig;
     platformToken?: string;
     /** Driver Sanctum token. Changing it re-authorises without rebuilding. */
     userToken?: string;
@@ -179,6 +185,7 @@ function ThemedRoot({ scheme, children }: { scheme?: SchemeName; children: (s: S
 }
 
 export function V3App({
+    socket,
     scheme,
     organizationName,
     subtitle,
@@ -231,6 +238,7 @@ export function V3App({
                                     queue={queue}
                                     isConnected={isConnected}
                                 >
+                                    <SocketProvider config={socket} enabled={!!socket?.hostname}>
                                     <QueueBoundSync isConnected={isConnected} queue={queue}>
                                         <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
                                             <LocationProvider location={location}>
@@ -281,6 +289,7 @@ export function V3App({
                                             </LocationProvider>
                                         </DutyProvider>
                                     </QueueBoundSync>
+                                    </SocketProvider>
                                 </FleetbaseProvider>
                             </BottomSheetModalProvider>
                         </SafeAreaProvider>

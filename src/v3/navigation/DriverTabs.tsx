@@ -39,6 +39,7 @@ import MyVehicleScreen from '../screens/MyVehicleScreen';
 import DestinationScreen from '../screens/DestinationScreen';
 import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
 import { vehicleOf } from '../data';
+import { useDriverChannel } from '../realtime';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
 import OrdersScreen from '../screens/OrdersScreen';
@@ -552,6 +553,16 @@ const TAB_OPTIONS = {
     Account: { tabBarLabel: 'Account' },
 } as const;
 
+/**
+ * Subscribes to the driver's own realtime channel for as long as they are
+ * signed in. Renders nothing — it exists so the subscription's lifetime is the
+ * session's, rather than any one screen's.
+ */
+function DriverChannel({ driverId }: { driverId?: string }) {
+    useDriverChannel(driverId);
+    return null;
+}
+
 export function DriverTabs({
     badges,
     driverId,
@@ -585,6 +596,12 @@ export function DriverTabs({
 
     return (
         <DriverIdContext.Provider value={driverId}>
+            {/*
+              * One subscription for the whole session. Order events bump the
+              * live-refresh signal, so whatever is on screen refetches; geofence
+              * crossings and offers are held for the surfaces that show them.
+              */}
+            <DriverChannel driverId={driverId} />
             <DriverUserIdContext.Provider value={driverUserId}>
                 <SignOutContext.Provider value={onSignOut}>
                     <OrganizationContext.Provider value={organizationValue}>

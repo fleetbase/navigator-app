@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase } from '../api';
+import { useLiveRefresh } from '../realtime/liveRefresh';
 import { ApiError } from '../api/NavigatorAdapter';
 import { orderStore, type OrderRecord } from './orderStore';
 
@@ -55,9 +56,18 @@ export function useOrderQuery(params: OrderQueryParams = {}, options: { enabled?
         [adapter, enabled, key]
     );
 
+    /*
+     * `revision` is the socket's way in. The connection never writes to the
+     * store; it says the server moved, and every live query then asks what to.
+     * Refreshing rather than loading, so an event mid-scroll does not blank the
+     * list the driver is reading.
+     */
+    const revision = useLiveRefresh();
+    const isFirstLoad = useRef(true);
     useEffect(() => {
-        void load('loading');
-    }, [load]);
+        void load(isFirstLoad.current ? 'loading' : 'refreshing');
+        isFirstLoad.current = false;
+    }, [load, revision]);
 
     return {
         state,
