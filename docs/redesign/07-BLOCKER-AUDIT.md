@@ -69,3 +69,29 @@ that name** because the capability already shipped under another one.
 
 Worth re-running this audit whenever the server moves, rather than treating a
 blocker as permanent because it was true when written.
+
+---
+
+## Owner's direction — second pass (recorded so it is not re-litigated)
+
+The blockers were re-scoped by the owner. Recording the decisions here because
+several of them change what "blocked" means:
+
+| Area | Direction |
+|---|---|
+| **Geofence** | A socket event already fires. `GeofenceEntered`/`Exited`/`Dwelled` broadcast on `driver.{public_id}` and `driver.{uuid}` — **the app simply is not listening**, because v3 has no socket wiring at all. Not a backend gap. |
+| **Work orders / maintenance** | A work order is an active job sent to a vendor for work on an asset; maintenance is the log of completed ones. Most of it lives on the dispatch side. A **driver** should be able to file issues (which dispatch turns into work orders), and to *view* maintenance completed on their vehicle and work orders scheduled for it. |
+| **Route / optimise** | The orchestrator is for operators allocating and optimising orders, which produces a manifest. **The Route view must not use it.** Route shows the driver's already-assigned stops, and lets the driver optimise *those*. New endpoints welcome. |
+| **Inspections** | **Hold.** Not released in FleetOps yet — WIP in fleetbase/fleetops#267. Lands after the official release. |
+| **Driver shifts / HOS** | Established in the console; the consumable API may not exist and may need creating. |
+| **Notifications** | Provided by core-api; a consumable API for managing them may need creating, in both core-api (general) and fleetops (driver-specific). |
+| **Driver documents** | Exists, driven by driver onboard settings per organisation. Settings and API likely need expanding — document type and similar. |
+| **Files / chat attachments** | core-api already has `ChatAttachment` with a `File` relation, and the APIs appear to exist. Check and expand rather than build. |
+| **Ad-hoc offers** | Not a gap: orders with `adhoc: true` should raise offers over socket and push, Uber/DoorDash style, which the driver accepts. |
+| **Earnings** | Needs real work: a wallet exists via the ledger module, but computing a driver's earnings needs per-organisation settings in fleetops (a share of the service rate, or the whole fee). Deferred. |
+| **O-13 password** | Confirmed a security matter. Fixed — [fleetops#304](https://github.com/fleetbase/fleetops/pull/304). |
+
+**Standing instruction:** where fleetops or core-api needs a change, make it and
+open a PR against `dev-v0.6.61` (fleetops) for review. Cross-check
+<https://fleetbase.io/docs> and the module source as you go. The goal is not a
+reskin: it is an expansion and refactor to a standard Navigator can compete on.
