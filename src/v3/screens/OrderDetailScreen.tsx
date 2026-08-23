@@ -26,7 +26,9 @@ import {
     useOrder,
     useOrderConfig,
     useTracker,
-    currentStop,
+    currentDestination,
+    orderStops,
+    stopLabel,
     orderStore,
     displayIdOf,
     entityIdOf,
@@ -70,14 +72,13 @@ export function OrderDetailScreen({
     const configId = orderConfigIdOf(order);
     const { flow, isLoading: configLoading, failed: configFailed } = useOrderConfig(configId);
     /*
-     * "Current destination" has to come from the tracker, not from
-     * `payload.dropoff`. The drop-off is where the order *ends*; the stop the
-     * driver is heading to now is the server's own decision, and on a
-     * multi-stop order the two are different — this card confidently named the
-     * final drop-off while the driver was on their way to the pickup.
+     * The tracker is still wanted for the ETA and the distance, which are its
+     * own computation. The *destination* is not: `payload.current_waypoint` is
+     * a place id that the server writes when `set-destination` is called, so it
+     * is the authoritative answer to "where now" rather than something to infer
+     * from a tracker that may not have loaded.
      */
     const { tracker: live } = useTracker(orderId);
-    const heading = currentStop(live);
 
     const [isAdvancing, setIsAdvancing] = useState(false);
     const [queued, setQueued] = useState(false);
@@ -144,7 +145,13 @@ export function OrderDetailScreen({
 
     const payload = payloadOf(order);
     const entities = payload.entities ?? [];
-    const destination = heading?.name ?? heading?.address ?? payload.dropoff?.name ?? payload.dropoff?.address;
+    const heading = currentDestination(payload);
+    /*
+     * A stop with neither name nor address would otherwise take the whole card
+     * down with it — including the way to change destination. Fall through to
+     * anything on the order that can be named.
+     */
+    const destination = stopLabel(heading) ?? orderStops(payload).map(stopLabel).find(Boolean);
     /*
      * Counting waypoints alone was wrong, and the device said so: a plain
      * pickup → drop-off order carries no `waypoints` at all, so the button
@@ -152,8 +159,9 @@ export function OrderDetailScreen({
      * drop-off are stops; the waypoint list is what an order adds *between*
      * them.
      */
-    const stopCount = [payload.pickup, payload.dropoff, ...((payload.waypoints as unknown[] | undefined) ?? [])].filter(Boolean).length;
-    const hasChoiceOfStops = stopCount > 1;
+    // One list, one count, all three order shapes — the same resolver the
+    // picker and the destination card use.
+    const hasChoiceOfStops = orderStops(payload).length > 1;
     // GeoJSON is [longitude, latitude]; fromGeoPoint owns that flip.
     const dropoffPoint = fromGeoPoint(
         (payload.dropoff as { location?: { coordinates?: number[] } } | undefined)?.location,

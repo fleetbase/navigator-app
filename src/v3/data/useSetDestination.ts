@@ -16,6 +16,7 @@
 import { useCallback, useState } from 'react';
 import { useFleetbase } from '../api';
 import { isQueuedAck } from '../api/NavigatorAdapter';
+import { orderStore } from './orderStore';
 
 export type SetDestinationOutcome = 'set' | 'queued' | 'failed';
 
@@ -31,7 +32,18 @@ export function useSetDestination(orderId?: string) {
             setError(null);
             try {
                 const result = await adapter.post(`orders/${orderId}/set-destination/${placeId}`);
-                return isQueuedAck(result) ? 'queued' : 'set';
+                if (isQueuedAck(result)) return 'queued';
+                /*
+                 * The endpoint answers with the refreshed order, so the new
+                 * `payload.current_waypoint` comes back in the same round trip.
+                 * Storing it means nothing has to be guessed locally and every
+                 * screen reading the order sees the server's own version.
+                 */
+                const order = (result as { data?: unknown })?.data ?? result;
+                if (order && typeof order === 'object' && 'id' in order) {
+                    orderStore.upsert(order as Parameters<typeof orderStore.upsert>[0]);
+                }
+                return 'set';
             } catch (err) {
                 setError((err as Error).message);
                 return 'failed';

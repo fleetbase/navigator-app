@@ -395,7 +395,7 @@ Both found by driving the destination picker against the live instance.
 
 | # | Sev | What | Fix |
 |---|---|---|---|
-| F-61 | **S2** | **"Current destination" showed `payload.dropoff` — where the order *ends*, not where the driver is going.** On a two-stop order the card read "23 Hougang Avenue 8" while the picker, reading the tracker, correctly said the driver was heading to the pickup at 16 Simon Walk. A driver trusting the card drives to the wrong address. | The stop comes from the tracker's active stop, falling back to the drop-off only when there is no tracker. |
+| F-61 | **S2** | **"Current destination" showed `payload.dropoff` — where the order *ends*, not where the driver is going.** On a two-stop order the card read "23 Hougang Avenue 8" while the driver was heading to the pickup at 16 Simon Walk. A driver trusting the card drives to the wrong address. | **`payload.current_waypoint`**, resolved against the order's own stop list. My first fix read the tracker's active stop, which was right about the symptom and wrong about the source — corrected after the owner pointed at the payload property and at how v2 does it. |
 | F-62 | S3 | **The ETA and distance never rendered.** They were read from `order.tracker_data`, which this API returns as `null`, so the whole block was quietly dead — no error, just absent, on every order. | Both come from the tracker endpoint that was being loaded anyway. Verified live: "12:06 ETA / 12.2 km remaining" now appears where nothing did before. |
 
 F-61 is the more instructive one. `payload.dropoff` is a perfectly reasonable

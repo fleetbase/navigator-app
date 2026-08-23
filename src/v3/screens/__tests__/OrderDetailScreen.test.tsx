@@ -329,7 +329,15 @@ describe('OrderDetailScreen', () => {
         ReactTestRenderer.act(() => single.unmount());
 
         ReactTestRenderer.act(() => {
-            orderStore.upsert(order({ payload: { dropoff: { name: 'Harbour View Pharmacy' }, entities: [], waypoints: [{}, {}] } }));
+            orderStore.upsert(
+                order({
+                    payload: {
+                        dropoff: { id: 'place_d', name: 'Harbour View Pharmacy' },
+                        entities: [],
+                        waypoints: [{ id: 'place_w1', name: '81 Beach Road' }, { id: 'place_w2', name: '5 Changi Business Park' }],
+                    },
+                })
+            );
         });
         const many = await renderWith({ onChangeDestination: jest.fn() });
         expect(testIDs(many)).toContain('change-destination');

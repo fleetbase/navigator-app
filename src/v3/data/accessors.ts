@@ -71,10 +71,11 @@ export function customerNameOf(order?: Partial<OrderRecord> | null): string | un
 }
 
 export interface PayloadShape {
-    pickup?: { name?: string; address?: string };
-    dropoff?: { name?: string; address?: string };
-    waypoints?: unknown[];
+    pickup?: { id?: string; name?: string; address?: string; location?: { type?: string; coordinates?: number[] } | null };
+    dropoff?: { id?: string; name?: string; address?: string; location?: { type?: string; coordinates?: number[] } | null };
+    waypoints?: { id?: string; name?: string; address?: string; location?: { type?: string; coordinates?: number[] } | null }[];
     entities?: unknown[];
+    /** Place id of the stop being headed to — see `data/orderStops`. */
     current_waypoint?: string;
 }
 

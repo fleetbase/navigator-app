@@ -24,10 +24,11 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { useSync } from '../shell';
-import { useTracker, currentStop, type TrackerStop } from '../data/useTracker';
-import { useSetDestination, destinationKeyOf } from '../data/useSetDestination';
-
-const labelOf = (stop: TrackerStop) => stop.name ?? stop.address ?? undefined;
+import { useTracker } from '../data/useTracker';
+import { useSetDestination } from '../data/useSetDestination';
+import { orderStops, currentDestination, stopLabel, type OrderStop } from '../data/orderStops';
+import { orderStore } from '../data/orderStore';
+import { payloadOf } from '../data/accessors';
 
 export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone?: () => void }) {
     const { t } = useTranslation();
@@ -38,13 +39,26 @@ export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone
     const { setDestination, isSaving, error: saveError } = useSetDestination(orderId);
     const [queued, setQueued] = useState(false);
 
-    const stops = tracker?.stops ?? [];
-    const current = currentStop(tracker);
-    const currentKey = destinationKeyOf(current);
+    /*
+     * The stops and the current one come from the **payload**, which is where
+     * `set-destination` writes and where all three order shapes — pickup +
+     * dropoff, pickup + waypoints + dropoff, and waypoints only — are described
+     * in one list. The tracker is used only to mark what is already done, so
+     * the picker still works when the tracker has not loaded.
+     */
+    const payload = payloadOf(orderStore.get(orderId));
+    const stops = orderStops(payload);
+    const current = currentDestination(payload);
+    const currentKey = current?.id;
+
+    /** Place ids the server considers complete, if the tracker answered. */
+    const completed = new Set(
+        (tracker?.stops ?? []).filter((s) => s.completed).flatMap((s) => [s.uuid, s.public_id].filter(Boolean) as string[])
+    );
 
     const choose = useCallback(
-        async (stop: TrackerStop) => {
-            const key = destinationKeyOf(stop);
+        async (stop: OrderStop) => {
+            const key = stop.id;
             if (!key) return;
             const outcome = await setDestination(key);
             if (outcome === 'queued') {
@@ -69,7 +83,7 @@ export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone
         [onDone, setDestination]
     );
 
-    if (state === 'loading' && !tracker) {
+    if (state === 'loading' && !stops.length) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="destination-loading">
                 <Skeleton height={72} />
@@ -79,7 +93,7 @@ export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone
         );
     }
 
-    if (state === 'error' && !tracker) {
+    if (state === 'error' && !stops.length) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="destination-error">
                 <FailureState error={error as never} isOnline={isOnline} onRetry={retry} t={t} testID="destination-error" />
@@ -95,9 +109,9 @@ export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone
             {stops.length ? (
                 <Surface testID="destination-stops">
                     {stops.map((stop, i) => {
-                        const key = destinationKeyOf(stop) ?? String(i);
+                        const key = stop.id ?? String(i);
                         const isCurrent = !!currentKey && key === currentKey;
-                        const done = !!stop.completed;
+                        const done = completed.has(key);
                         const selectable = !done && !isCurrent && !isSaving;
 
                         return (
@@ -116,11 +130,9 @@ export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone
                                 >
                                     <YStack flex={1} gap={2} minWidth={0}>
                                         <Body fontSize={15} fontWeight={isCurrent ? '800' : '600'} numberOfLines={2}>
-                                            {labelOf(stop) ?? t('destination.unnamed')}
+                                            {stopLabel(stop) ?? t('destination.unnamed')}
                                         </Body>
-                                        <Micro>
-                                            {stop.type ? t(`destination.type.${stop.type}`, { defaultValue: stop.type }) : t('destination.stop')}
-                                        </Micro>
+                                        <Micro>{t(`destination.type.${stop.type}`, { defaultValue: stop.type })}</Micro>
                                     </YStack>
 
                                     {isCurrent ? (

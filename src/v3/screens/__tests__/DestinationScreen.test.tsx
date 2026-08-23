@@ -13,15 +13,27 @@ import { FleetbaseProvider, MutationQueue } from '../../api';
 import { SyncProvider } from '../../shell';
 import { clearV3 } from '../../api/storage';
 import { destinationKeyOf } from '../../data/useSetDestination';
+import { orderStore } from '../../data/orderStore';
 
-/** Shaped from a live `GET /v1/orders/{id}/tracker`. */
+/*
+ * Shaped from a live `GET /v1/orders/{id}`. The stops and the current one come
+ * from the payload — `current_waypoint` is a place id, and it is what the
+ * server writes when set-destination is called.
+ */
+const order = {
+    id: 'order_1',
+    status: 'dispatched',
+    payload: {
+        pickup: { id: 'place_pickup', name: '16 Simon Walk' },
+        waypoints: [{ id: 'place_wp', name: '81 Beach Road' }],
+        dropoff: { id: 'place_dropoff', name: '23 Hougang Avenue 8' },
+        current_waypoint: 'place_wp',
+    },
+};
+
+/** The tracker contributes only which stops are already done. */
 const tracker = {
-    stops: [
-        { uuid: 'wp-1', public_id: 'place_one', type: 'pickup', name: '16 Simon Walk', completed: true, sequence: 1 },
-        { uuid: 'wp-2', public_id: 'place_two', type: 'dropoff', name: '23 Hougang Avenue 8', completed: false, sequence: 2 },
-        { uuid: 'wp-3', public_id: 'place_three', type: 'waypoint', name: '81 Beach Road', completed: false, sequence: 3 },
-    ],
-    active_stop: { uuid: 'wp-2', public_id: 'place_two', name: '23 Hougang Avenue 8' },
+    stops: [{ uuid: 'place_pickup', public_id: 'place_pickup', completed: true }],
 };
 
 let queue: MutationQueue;
@@ -29,6 +41,8 @@ let fetchMock: jest.Mock;
 
 beforeEach(() => {
     clearV3();
+    orderStore.clear();
+    orderStore.upsert(order as never);
     queue = new MutationQueue();
     fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK', json: async () => tracker });
     (globalThis as unknown as { fetch: jest.Mock }).fetch = fetchMock;
@@ -99,30 +113,33 @@ describe('DestinationScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
-    it('lists every stop on the order', async () => {
+    it('lists every stop on the order, in the order they are worked', async () => {
         const t = await mount(<DestinationScreen orderId="order_1" />);
         const text = textOf(t);
         expect(text).toContain('16 Simon Walk');
-        expect(text).toContain('23 Hougang Avenue 8');
         expect(text).toContain('81 Beach Road');
+        expect(text).toContain('23 Hougang Avenue 8');
+        expect(text.indexOf('16 Simon Walk')).toBeLessThan(text.indexOf('81 Beach Road'));
+        expect(text.indexOf('81 Beach Road')).toBeLessThan(text.indexOf('23 Hougang Avenue 8'));
         ReactTestRenderer.act(() => t.unmount());
     });
 
     it('marks the one being headed to, and the one already done', async () => {
         const t = await mount(<DestinationScreen orderId="order_1" />);
         const ids = testIDs(t);
-        expect(ids).toContain('destination-current-wp-2');
-        expect(ids).toContain('destination-done-wp-1');
+        expect(ids).toContain('destination-current-place_wp');
+        // Completion is the tracker's contribution; identity is the payload's.
+        expect(ids).toContain('destination-done-place_pickup');
         ReactTestRenderer.act(() => t.unmount());
     });
 
     it('sends the chosen stop to set-destination', async () => {
         const t = await mount(<DestinationScreen orderId="order_1" />);
         await ReactTestRenderer.act(async () => {
-            (byID(t, 'destination-stop-wp-3').props as { onPress?: () => void }).onPress?.();
+            (byID(t, 'destination-stop-place_dropoff').props as { onPress?: () => void }).onPress?.();
         });
         expect(setCalls()).toHaveLength(1);
-        expect(String(setCalls()[0][0])).toContain('orders/order_1/set-destination/wp-3');
+        expect(String(setCalls()[0][0])).toContain('orders/order_1/set-destination/place_dropoff');
         ReactTestRenderer.act(() => t.unmount());
     });
 
@@ -130,7 +147,7 @@ describe('DestinationScreen', () => {
         // Shown for context, but not something the app should quietly allow.
         const t = await mount(<DestinationScreen orderId="order_1" />);
         await ReactTestRenderer.act(async () => {
-            (byID(t, 'destination-stop-wp-1').props as { onPress?: () => void }).onPress?.();
+            (byID(t, 'destination-stop-place_pickup').props as { onPress?: () => void }).onPress?.();
         });
         expect(setCalls()).toHaveLength(0);
         ReactTestRenderer.act(() => t.unmount());
@@ -139,7 +156,7 @@ describe('DestinationScreen', () => {
     it('will not re-send the stop already being headed to', async () => {
         const t = await mount(<DestinationScreen orderId="order_1" />);
         await ReactTestRenderer.act(async () => {
-            (byID(t, 'destination-stop-wp-2').props as { onPress?: () => void }).onPress?.();
+            (byID(t, 'destination-stop-place_wp').props as { onPress?: () => void }).onPress?.();
         });
         expect(setCalls()).toHaveLength(0);
         ReactTestRenderer.act(() => t.unmount());
@@ -154,16 +171,18 @@ describe('DestinationScreen', () => {
         const t = await mount(<DestinationScreen orderId="order_1" />, 'dark', { isOnline: false });
         fetchMock.mockRejectedValue(new TypeError('Network request failed'));
         await ReactTestRenderer.act(async () => {
-            (byID(t, 'destination-stop-wp-3').props as { onPress?: () => void }).onPress?.();
+            (byID(t, 'destination-stop-place_dropoff').props as { onPress?: () => void }).onPress?.();
         });
         const ids = testIDs(t);
         expect(ids).toContain('destination-queued');
-        // Still marked as heading to the stop the server last said.
-        expect(ids).toContain('destination-current-wp-2');
+        // Still marked as heading to the stop the payload last said.
+        expect(ids).toContain('destination-current-place_wp');
         ReactTestRenderer.act(() => t.unmount());
     });
 
     it('says so when the order has no stops at all', async () => {
+        orderStore.clear();
+        orderStore.upsert({ id: 'order_1', status: 'dispatched', payload: {} } as never);
         fetchMock.mockResolvedValue({ ok: true, status: 200, statusText: 'OK', json: async () => ({ stops: [] }) });
         const t = await mount(<DestinationScreen orderId="order_1" />);
         expect(testIDs(t)).toContain('destination-empty');
