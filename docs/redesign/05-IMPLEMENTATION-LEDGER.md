@@ -546,12 +546,15 @@ sequence, the ETA — is the server's own computation over the payload. Rewritin
 one field of it locally would show a view that is neither what the driver chose
 nor what dispatch sees.
 
-**Verification.** 15 tests. On the device: the screen is reachable and titled,
-the Change affordance appears on a real two-stop order (after F-59), and the
-offline failure state resolves rather than spinning — which exercised the F-41
-timeout and the F-47 calm-offline treatment again. **The stop list itself and
-the write are not device-verified**: the instance was hung throughout (accepting
-TCP, never answering), so the tracker could not load.
+**Verified end to end against the live instance**, once the API came back. The
+picker listed the order's two stops typed as Pickup and Drop-off with the
+current one marked; choosing the drop-off moved the server's `active_stop` to
+it, which Today then reflected as "Next drop-off"; choosing the pickup again
+moved it back. The order was left exactly as it was found.
+
+That pass turned up F-61 and F-62 — the order screen was naming the final
+drop-off as the current destination, and its ETA and distance had never rendered
+at all because they read a field this API returns as null.
 
 ---
 

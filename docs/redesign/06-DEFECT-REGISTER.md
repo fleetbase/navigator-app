@@ -389,6 +389,19 @@ may add their own; an allowlist would silently hide a fleet the moment someone
 invented a word for "clean and ready". A vehicle wrongly offered is a 422 from
 the server. A vehicle wrongly hidden is a driver who cannot work.
 
+### Order detail named the wrong place, and hid two numbers
+
+Both found by driving the destination picker against the live instance.
+
+| # | Sev | What | Fix |
+|---|---|---|---|
+| F-61 | **S2** | **"Current destination" showed `payload.dropoff` — where the order *ends*, not where the driver is going.** On a two-stop order the card read "23 Hougang Avenue 8" while the picker, reading the tracker, correctly said the driver was heading to the pickup at 16 Simon Walk. A driver trusting the card drives to the wrong address. | The stop comes from the tracker's active stop, falling back to the drop-off only when there is no tracker. |
+| F-62 | S3 | **The ETA and distance never rendered.** They were read from `order.tracker_data`, which this API returns as `null`, so the whole block was quietly dead — no error, just absent, on every order. | Both come from the tracker endpoint that was being loaded anyway. Verified live: "12:06 ETA / 12.2 km remaining" now appears where nothing did before. |
+
+F-61 is the more instructive one. `payload.dropoff` is a perfectly reasonable
+thing to show under a heading like "Delivering to". Under "Current destination"
+it is a claim about *now*, and only the tracker knows that.
+
 ---
 
 ## The tracker is more honest than the app was using

@@ -350,6 +350,36 @@ describe('OrderDetailScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
+    it('names the stop being headed to, not the final drop-off', async () => {
+        /*
+         * Found on the device: the card read "Current destination: 23 Hougang
+         * Avenue 8" while the driver was on their way to the pickup. It was
+         * showing `payload.dropoff`, which is where the order *ends* — on a
+         * multi-stop order that is a different place, and the tracker is the
+         * only thing that knows which.
+         */
+        fetchMock.mockImplementation((url: string) =>
+            Promise.resolve({
+                ok: true, status: 200, statusText: 'OK',
+                json: () =>
+                    Promise.resolve(
+                        String(url).includes('tracker')
+                            ? { active_stop: { uuid: 'wp-1', name: '16 Simon Walk' }, stops: [] }
+                            : String(url).includes('order-configs')
+                              ? { id: 'cfg_1', flow: FLOWS.five }
+                              : {}
+                    ),
+            })
+        );
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { pickup: { name: '16 Simon Walk' }, dropoff: { name: '23 Hougang Avenue 8' }, entities: [] } }));
+        });
+        const t = await render();
+        const text = textOf(t);
+        expect(text).toContain('16 Simon Walk');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
     it('says so when the config declares no flow at all', async () => {
         // A config that loads cleanly but carries an empty flow used to render
         // nothing: no stepper, no message, and no way to advance the order.

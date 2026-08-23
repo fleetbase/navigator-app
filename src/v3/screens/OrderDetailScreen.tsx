@@ -25,6 +25,8 @@ import { useTranslation } from '../i18n/useTranslation';
 import {
     useOrder,
     useOrderConfig,
+    useTracker,
+    currentStop,
     orderStore,
     displayIdOf,
     entityIdOf,
@@ -67,6 +69,15 @@ export function OrderDetailScreen({
     const order = useOrder(orderId);
     const configId = orderConfigIdOf(order);
     const { flow, isLoading: configLoading, failed: configFailed } = useOrderConfig(configId);
+    /*
+     * "Current destination" has to come from the tracker, not from
+     * `payload.dropoff`. The drop-off is where the order *ends*; the stop the
+     * driver is heading to now is the server's own decision, and on a
+     * multi-stop order the two are different — this card confidently named the
+     * final drop-off while the driver was on their way to the pickup.
+     */
+    const { tracker: live } = useTracker(orderId);
+    const heading = currentStop(live);
 
     const [isAdvancing, setIsAdvancing] = useState(false);
     const [queued, setQueued] = useState(false);
@@ -133,7 +144,7 @@ export function OrderDetailScreen({
 
     const payload = payloadOf(order);
     const entities = payload.entities ?? [];
-    const destination = payload.dropoff?.name ?? payload.dropoff?.address;
+    const destination = heading?.name ?? heading?.address ?? payload.dropoff?.name ?? payload.dropoff?.address;
     /*
      * Counting waypoints alone was wrong, and the device said so: a plain
      * pickup → drop-off order carries no `waypoints` at all, so the button
@@ -148,7 +159,17 @@ export function OrderDetailScreen({
         (payload.dropoff as { location?: { coordinates?: number[] } } | undefined)?.location,
         payload.dropoff?.name ?? payload.dropoff?.address
     );
-    const tracker = order.tracker_data as { eta_seconds?: number; distance_m?: number } | undefined;
+    /*
+     * `order.tracker_data` comes back null on this API, so the ETA and distance
+     * this fed never rendered — a quiet dead path. The live tracker endpoint is
+     * where those numbers actually are, and it is already loaded above for the
+     * current stop.
+     */
+    const tracker = {
+        // Time to the stop being headed to, not to the whole order finishing.
+        eta_seconds: live?.eta?.active_stop_seconds ?? live?.eta?.start_seconds,
+        distance_m: live?.progress?.remaining_distance_m ?? undefined,
+    };
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="order-detail">
