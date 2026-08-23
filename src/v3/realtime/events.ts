@@ -65,9 +65,15 @@ const KINDS: Record<string, RealtimeEventKind> = {
     OrderCompleted: 'order.completed',
     OrderCanceled: 'order.canceled',
     OrderFailed: 'order.failed',
-    /* Ad-hoc offers ride in on assignment of an order flagged `adhoc`. */
-    OrderOffered: 'order.offered',
-    'order.offered': 'order.offered',
+    /*
+     * Ad-hoc offers. `DispatchAdhocOrders` runs every minute, finds drivers
+     * within the order's ping distance, and notifies each with `OrderPing`,
+     * whose `broadcastType()` is `order.ping`. That is the name on the wire —
+     * there is no OrderOffered event, whatever its absence in this map once
+     * implied.
+     */
+    'order.ping': 'order.offered',
+    OrderPing: 'order.offered',
 };
 
 function readString(source: unknown, ...keys: string[]): string | undefined {

@@ -60,7 +60,23 @@ const MUTATIONS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  *
  * These fail loudly instead, so the screen can say it did not work.
  */
-const NEVER_QUEUE = [/switch-organization/, /\/login\b/, /\/logout\b/, /verify-code/, /switch-vehicle/];
+const NEVER_QUEUE = [
+    /switch-organization/,
+    /\/login\b/,
+    /\/logout\b/,
+    /verify-code/,
+    /switch-vehicle/,
+    /change-password/,
+    /reset-password/,
+    /*
+     * Starting an order claims it. For an ad-hoc offer that is a race against
+     * every other nearby driver, and replaying it from a queue an hour later
+     * would claim a job that has long since gone to someone else — or reopen
+     * one the customer cancelled. An accept that could not be sent is an accept
+     * that did not happen.
+     */
+    /orders\/[^/]+\/start\b/,
+];
 
 function isQueueable(path: string): boolean {
     return !NEVER_QUEUE.some((pattern) => pattern.test(path));

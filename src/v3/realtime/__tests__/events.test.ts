@@ -47,8 +47,10 @@ describe('parseRealtimeEvent', () => {
         }
     });
 
-    it('recognises an ad-hoc offer', () => {
-        expect(parseRealtimeEvent({ event: 'OrderOffered', data: { order_id: 'order_9' } })?.kind).toBe('order.offered');
+    it('recognises an ad-hoc offer by the name actually on the wire', () => {
+        // OrderPing::broadcastType() is 'order.ping'. There is no OrderOffered.
+        expect(parseRealtimeEvent({ event: 'order.ping', data: { order_id: 'order_9' } })?.kind).toBe('order.offered');
+        expect(parseRealtimeEvent({ event: 'OrderPing', data: { order_id: 'order_9' } })?.kind).toBe('order.offered');
     });
 });
 

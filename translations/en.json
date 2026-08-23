@@ -671,7 +671,11 @@
         "hos": "Hours of service",
         "driveTime": "Drive time left",
         "break": "Planned break",
-        "inspection": "Vehicle inspection"
+        "inspection": "Vehicle inspection",
+        "offers": {
+            "one": "%{count} job offered to you",
+            "other": "%{count} jobs offered to you"
+        }
     },
     "otp": {
         "title": "Sign in with a code",
@@ -774,7 +778,8 @@
         "help": "Help and support",
         "proofCapture": "Proof of delivery",
         "destination": "Change destination",
-        "changeVehicle": "Change vehicle"
+        "changeVehicle": "Change vehicle",
+        "offers": "Offers"
     },
     "help": {
         "messageDispatch": "Message dispatch",
@@ -858,5 +863,14 @@
         "emptyTitle": "No vehicles",
         "emptyBody": "Your organisation has no vehicles set up.",
         "note": "Vehicles that are off the road are shown but cannot be picked."
+    },
+    "offers": {
+        "available": "Offered to you",
+        "accept": "Accept",
+        "view": "Details",
+        "taken": "Someone else took that one.",
+        "emptyTitle": "No offers right now",
+        "emptyBody": "Jobs near you that need a driver will appear here.",
+        "note": "Offers go to every driver nearby. The first to accept gets the job."
     }
 }

@@ -38,6 +38,7 @@ import ProofCaptureScreen from '../screens/ProofCaptureScreen';
 import MyVehicleScreen from '../screens/MyVehicleScreen';
 import DestinationScreen from '../screens/DestinationScreen';
 import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
+import OffersScreen from '../screens/OffersScreen';
 import { vehicleOf } from '../data';
 import { useDriverChannel } from '../realtime';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
@@ -436,6 +437,11 @@ function ChangeVehicle({ route, navigation }: { route: { params?: { currentVehic
     );
 }
 
+function Offers({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    return <OffersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
+}
+
 /* Header-wrapped screens. Declared once at module scope so the component
    identity is stable — an inline wrapper would remount on every render. */
 const NavigationHandoffH = withHeader('nav.navigationHandoff', NavigationHandoff);
@@ -463,6 +469,7 @@ const HelpH = withHeader('nav.help', Help);
 const ProofCaptureH = withHeader('nav.proofCapture', ProofCapture);
 const DestinationH = withHeader('nav.destination', Destination);
 const ChangeVehicleH = withHeader('nav.changeVehicle', ChangeVehicle);
+const OffersH = withHeader('nav.offers', Offers);
 const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
 const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
 const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
@@ -494,6 +501,7 @@ function OrdersStack() {
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="OrdersHome" component={OrdersHome} />
             <Stack.Screen name="OrderDetail" component={OrderDetailH} />
+            <Stack.Screen name="Offers" component={OffersH} />
             <Stack.Screen name="EditPayloadItem" component={EditPayloadItemH} options={modalOptions} />
             <Stack.Screen name="EntityDetail" component={EntityDetailH} />
             <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />

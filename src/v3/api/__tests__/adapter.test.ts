@@ -206,6 +206,33 @@ describe('mutations that must never queue', () => {
  * to true, so the app believed it was online always and every offline
  * affordance was unreachable.
  */
+describe('what must never be queued', () => {
+    /*
+     * Queueing is the right default for a driver's work, but a few things are
+     * claims on a shared resource or on a session, and replaying them later is
+     * worse than losing them.
+     */
+    it.each([
+        ['accepting an ad-hoc offer', 'orders/order_1/start'],
+        ['changing a password', 'drivers/driver_1/change-password'],
+        ['switching organisation', 'drivers/driver_1/switch-organization'],
+    ])('refuses to queue %s', async (_name, path) => {
+        const queue = new MutationQueue();
+        const adapter = make({ queue });
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+
+        await expect(adapter.post(path, {})).rejects.toBeInstanceOf(ApiError);
+        expect(queue.snapshot().items).toHaveLength(0);
+    });
+
+    it('still queues ordinary work offline', async () => {
+        const adapter = make();
+        fetchMock.mockRejectedValue(new TypeError('Network request failed'));
+        const result = await adapter.post('issues', { report: 'x' });
+        expect(isQueuedAck(result)).toBe(true);
+    });
+});
+
 describe('reachability', () => {
     it('starts optimistic, so a cold start does not flash the offline banner', () => {
         expect(make().isReachable()).toBe(true);
