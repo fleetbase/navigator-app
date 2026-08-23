@@ -95,3 +95,24 @@ several of them change what "blocked" means:
 open a PR against `dev-v0.6.61` (fleetops) for review. Cross-check
 <https://fleetbase.io/docs> and the module source as you go. The goal is not a
 reskin: it is an expansion and refactor to a standard Navigator can compete on.
+
+---
+
+## PRs opened against `dev-v0.6.61`
+
+| PR | What |
+|---|---|
+| [#304](https://github.com/fleetbase/fleetops/pull/304) | **Security.** A driver's password could be set through a general update with no proof of the old one. Dedicated change / forgot / reset endpoints; `update()` no longer accepts `password`. |
+| [#305](https://github.com/fleetbase/fleetops/pull/305) | **Driver manifests.** The models were complete but every endpoint was console-only, so a driver could be assigned a route with no way to read it. Read, run and re-sequence, narrow by design — creating and cancelling stay internal. |
+
+Earlier, merged into the release branch: [#300](https://github.com/fleetbase/fleetops/pull/300) (order-config flow graph), [#301](https://github.com/fleetbase/fleetops/pull/301) (odometer discarded), [#302](https://github.com/fleetbase/fleetops/pull/302) (driver filter aliases).
+
+### On the driver-side optimise
+
+Built as a nearest-neighbour walk over OSRM road distances rather than a call
+into the orchestrator, because the orchestrator allocates orders across a fleet
+and produces manifests — a dispatch concern — while this reorders the stops of
+one manifest already assigned. The heuristic is named as a heuristic in the code
+and in the PR; it is typically a large improvement on an arbitrary order and is
+not optimal, and saying otherwise would be a claim the implementation cannot
+support.
