@@ -1,8 +1,10 @@
 import React, { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import { AppState, Platform } from 'react-native';
 import BackgroundGeolocation from 'react-native-background-geolocation';
 import BackgroundFetch from 'react-native-background-fetch';
+import { check, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { Place, Point } from '@fleetbase/sdk';
-import { isEmpty, config } from '../utils';
+import { isEmpty } from '../utils';
 import { useAuth } from './AuthContext';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
@@ -14,15 +16,49 @@ const LocationContext = createContext({
     stopTracking: () => {},
 });
 
+const getLocationPermission = () => (Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+
+export const isLocationTrackingAllowed = ({ driver, isOnline, permissionStatus }) => Boolean(driver && isOnline && permissionStatus === RESULTS.GRANTED);
+
 export const LocationProvider = ({ children }) => {
     const { isOnline, driver, trackDriver } = useAuth();
     const { adapter } = useFleetbase();
     const [authToken] = useStorage('_driver_token');
     const [location, setLocation] = useStorage(`${driver?.id ?? 'anon'}_location`, {});
     const [isTracking, setIsTracking] = useState(false);
+    const [permissionStatus, setPermissionStatus] = useState(Platform.OS === 'web' ? RESULTS.GRANTED : RESULTS.DENIED);
+    const canTrackLocation = isLocationTrackingAllowed({ driver, isOnline, permissionStatus });
+    const hasStoredLocation = !isEmpty(location);
+
+    // Keep native tracking synchronized with permission changes made in Settings.
+    useEffect(() => {
+        if (Platform.OS === 'web') return;
+
+        let isMounted = true;
+        const refreshPermissionStatus = async () => {
+            const status = await check(getLocationPermission());
+            if (isMounted) {
+                setPermissionStatus(status);
+            }
+        };
+
+        refreshPermissionStatus();
+        const subscription = AppState.addEventListener('change', (nextState) => {
+            if (nextState === 'active') {
+                refreshPermissionStatus();
+            }
+        });
+
+        return () => {
+            isMounted = false;
+            subscription.remove();
+        };
+    }, []);
 
     // Manually track location
     const trackLocation = useCallback(async () => {
+        if (!canTrackLocation) return;
+
         try {
             const location = await BackgroundGeolocation.getCurrentPosition({
                 samples: 3,
@@ -36,7 +72,7 @@ export const LocationProvider = ({ children }) => {
         } catch (error) {
             console.warn('Error attempting to track and update location:', error);
         }
-    }, [trackDriver]);
+    }, [canTrackLocation, trackDriver, setLocation]);
 
     // Get the drivers location as a Place
     const getDriverLocationAsPlace = useCallback(
@@ -59,7 +95,7 @@ export const LocationProvider = ({ children }) => {
 
     // Get the HTTP configuration for background geolocation tracking
     const getHttpConfig = useCallback(() => {
-        if (!adapter || !driver || !authToken) return {};
+        if (!adapter || !driver?.id || !authToken) return {};
 
         return {
             url: `${adapter.host}/${adapter.namespace}/drivers/${driver.id}/track`,
@@ -72,13 +108,16 @@ export const LocationProvider = ({ children }) => {
             locationTemplate:
                 '{"latitude":<%= latitude %>,"longitude":<%= longitude %>,"heading":<%= heading %>,"speed":<%= speed %>,"altitude":<%= altitude %>,"timestamp":"<%= timestamp %>","activity":"<%= activity.type %>","is_moving":<%= is_moving %>,"battery":{"level":<%= battery.level %>,"is_charging":<%= battery.is_charging %>}}',
         };
-    }, [adapter, driver, authToken]);
+    }, [adapter, driver?.id, authToken]);
 
     // Callback to handle location updates.
-    const onLocation = useCallback((location) => {
-        console.log('[BackgroundGeolocation] onLocation:', location);
-        setLocation(location);
-    }, []);
+    const onLocation = useCallback(
+        (location) => {
+            console.log('[BackgroundGeolocation] onLocation:', location);
+            setLocation(location);
+        },
+        [setLocation]
+    );
 
     // Callback to handle activity updates.
     const onMotionChange = useCallback(
@@ -98,11 +137,13 @@ export const LocationProvider = ({ children }) => {
 
     // Function to start tracking.
     const startTracking = useCallback(() => {
+        if (!canTrackLocation) return;
+
         BackgroundGeolocation.start(() => {
             setIsTracking(true);
             console.log('[BackgroundGeolocation] Tracking started');
         });
-    }, []);
+    }, [canTrackLocation]);
 
     // Function to stop tracking.
     const stopTracking = useCallback(() => {
@@ -113,13 +154,20 @@ export const LocationProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        if (!driver) return;
+        if (!canTrackLocation) {
+            stopTracking();
+            return;
+        }
+
+        let isActive = true;
+        const subscriptions = [];
 
         BackgroundGeolocation.ready(
             {
                 backgroundPermissionRationale: {
-                    title: `Allow ${config('APP_NAME')} to access your location`,
-                    message: `${config('APP_NAME')} collects location data to update your position in real-time, even when the app is closed or running in the background. This allows dispatchers and ops teams to track your progress and provide better support while you drive.`,
+                    title: 'Allow Fleetbase Navigator to access your location',
+                    message:
+                        'Fleetbase Navigator collects precise location data to enable real-time driver tracking and order progress updates for your organization’s dispatchers and operations team, even when the app is closed or not in use. Location is collected while you are online and is sent securely to Fleetbase.',
                     positiveAction: 'Allow',
                     negativeAction: 'Deny',
                 },
@@ -133,26 +181,32 @@ export const LocationProvider = ({ children }) => {
             },
             (state) => {
                 console.log('[BackgroundGeolocation] is ready:', state);
-                if (isOnline) {
+                if (isActive) {
                     startTracking();
                 }
             }
         );
 
         // Subscribe to location events.
-        BackgroundGeolocation.onLocation(onLocation, onLocationError);
+        subscriptions.push(BackgroundGeolocation.onLocation(onLocation, onLocationError));
 
         // Subscribe to motion and activity events.
-        BackgroundGeolocation.onMotionChange(onMotionChange);
+        subscriptions.push(BackgroundGeolocation.onMotionChange(onMotionChange));
 
         // Clean up the listener when unmounting.
         return () => {
-            BackgroundGeolocation.removeListeners();
+            isActive = false;
+            subscriptions.forEach((subscription) => subscription?.remove?.());
         };
-    }, [driver, onLocation, onLocationError, onMotionChange, isOnline, getHttpConfig]);
+    }, [canTrackLocation, onLocation, onLocationError, onMotionChange, getHttpConfig, startTracking, stopTracking]);
 
     // Configure BackgroundFetch for periodic tasks.
     useEffect(() => {
+        if (!canTrackLocation) {
+            BackgroundFetch.stop();
+            return;
+        }
+
         BackgroundFetch.configure(
             {
                 minimumFetchInterval: 5,
@@ -167,21 +221,15 @@ export const LocationProvider = ({ children }) => {
                 console.warn('[BackgroundFetch] failed to configure:', error);
             }
         );
-    }, [trackLocation]);
 
-    // Toggle tracking based on the driver's online status.
-    useEffect(() => {
-        if (!driver) return;
-        if (isOnline) {
-            startTracking();
-        } else {
-            stopTracking();
-        }
-
-        if (isEmpty(location) && driver) {
+        if (!hasStoredLocation && driver) {
             trackLocation();
         }
-    }, [driver, isOnline, startTracking, stopTracking]);
+
+        return () => {
+            BackgroundFetch.stop();
+        };
+    }, [canTrackLocation, driver?.id, hasStoredLocation, trackLocation]);
 
     // Memoize the context value to prevent unnecessary re-renders.
     const value = useMemo(
