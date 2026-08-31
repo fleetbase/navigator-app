@@ -1,0 +1,27 @@
+name: Dependency Review
+
+on:
+    pull_request:
+        branches:
+            - main
+            - 'dev-v*'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: navigator-dependency-review-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    dependency-review:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+            - name: Review dependency changes
+              uses: actions/dependency-review-action@v5
+              with:
+                  fail-on-severity: high

@@ -75,14 +75,14 @@
     },
     "DriverReportScreen": {},
     "LocationPermissionScreen": {
-        "enableLocationServices": "Enable Location Services",
-        "enableLocationPrompt": "We need your location to provide real-time tracking and updates. Please allow access to continue.",
-        "shareAndContinue": "Share and Continue",
+        "enableLocationServices": "Location Data Disclosure",
+        "enableLocationPrompt": "Fleetbase Navigator collects precise location data to enable real-time driver tracking and order progress updates for your organization’s dispatchers and operations team, even when the app is closed or not in use. Location is collected while you are online and is sent securely to Fleetbase.",
+        "shareAndContinue": "Allow location and continue",
+        "privacyPolicy": "Privacy Policy",
         "permissionNeededTitle": "Location Permission Needed",
         "enableInSettingsTitle": "Enable Location in Settings",
-        "permissionDeniedPrompt": "Without location access some features won’t work. Would you like to allow access now?",
+        "permissionDeniedPrompt": "Location access is required before you can sign in. Would you like to allow access now?",
         "locationBlockedPrompt": "Location access has been blocked. Please open Settings and enable it to continue.",
-        "goToSettings": "Go to Settings",
-        "skipForNow": "Skip for now"
+        "goToSettings": "Go to Settings"
     }
 }

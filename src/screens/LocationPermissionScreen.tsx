@@ -11,6 +11,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import useDimensions from '../hooks/use-dimensions';
 
 const LocationPermissionScreen: React.FC = () => {
+    const privacyPolicyUrl = 'https://www.fleetbase.io/privacy-policy';
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const { screenWidth } = useDimensions();
@@ -19,16 +20,13 @@ const LocationPermissionScreen: React.FC = () => {
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [dialogMode, setDialogMode] = useState<'retry' | 'settings'>('retry');
 
-    // Navigate to Boot, passing whether location is enabled
-    const finish = useCallback(
-        (granted: boolean) => {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Boot', params: { locationEnabled: granted } }],
-            });
-        },
-        [navigation]
-    );
+    // Continue only after location access has been granted.
+    const finish = useCallback(() => {
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'Boot' }],
+        });
+    }, [navigation]);
 
     // Open app settings
     const openSettings = () => {
@@ -41,10 +39,10 @@ const LocationPermissionScreen: React.FC = () => {
         useCallback(() => {
             if (Platform.OS === 'web') return;
             (async () => {
-                const perm = PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
+                const perm = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
                 const status = await check(perm);
                 if (status === RESULTS.GRANTED) {
-                    finish(true);
+                    finish();
                 }
             })();
         }, [finish])
@@ -54,14 +52,19 @@ const LocationPermissionScreen: React.FC = () => {
     const requestLocationPermission = useCallback(async () => {
         if (Platform.OS === 'web') {
             const granted = await requestWebGeolocationPermission();
-            return finish(granted);
+            if (granted) {
+                return finish();
+            }
+            setDialogMode('retry');
+            setDialogOpen(true);
+            return;
         }
 
         const perm = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 
         const status = await request(perm);
         if (status === RESULTS.GRANTED) {
-            return finish(true);
+            return finish();
         }
 
         if (status === RESULTS.DENIED) {
@@ -72,6 +75,10 @@ const LocationPermissionScreen: React.FC = () => {
         setDialogOpen(true);
     }, [finish]);
 
+    const openPrivacyPolicy = useCallback(() => {
+        Linking.openURL(privacyPolicyUrl);
+    }, []);
+
     return (
         <YStack flex={1} bg='$background' pt={insets.top} pb={insets.bottom} alignItems='center' justifyContent='center' padding='$6'>
             <YStack alignItems='center' justifyContent='center'>
@@ -81,16 +88,16 @@ const LocationPermissionScreen: React.FC = () => {
             <Text fontSize='$8' fontWeight='bold' color='$textPrimary' mb='$2' textAlign='center'>
                 {t('LocationPermissionScreen.enableLocationServices')}
             </Text>
-            <Text color='$textSecondary' fontSize='$4' textAlign='center' mb='$6'>
+            <Text color='$textSecondary' fontSize='$4' textAlign='center' mb='$3'>
                 {t('LocationPermissionScreen.enableLocationPrompt')}
             </Text>
 
-            <Button size='$5' bg='$primary' color='$white' width='100%' onPress={requestLocationPermission} icon={<FontAwesomeIcon icon={faMapMarkerAlt} color='white' />}>
-                <Button.Text color='$white'>{t('LocationPermissionScreen.shareAndContinue')}</Button.Text>
+            <Button size='$3' variant='ghost' mb='$4' onPress={openPrivacyPolicy} accessibilityRole='link'>
+                <Button.Text color='$primary'>{t('LocationPermissionScreen.privacyPolicy')}</Button.Text>
             </Button>
 
-            <Button size='$5' variant='ghost' mt='$3' onPress={() => finish(false)}>
-                <Button.Text color='$textSecondary'>{t('LocationPermissionScreen.skipForNow')}</Button.Text>
+            <Button size='$5' bg='$primary' color='$white' width='100%' onPress={requestLocationPermission} icon={<FontAwesomeIcon icon={faMapMarkerAlt} color='white' />}>
+                <Button.Text color='$white'>{t('LocationPermissionScreen.shareAndContinue')}</Button.Text>
             </Button>
 
             <AlertDialog open={isDialogOpen} onOpenChange={setDialogOpen}>
@@ -112,7 +119,6 @@ const LocationPermissionScreen: React.FC = () => {
                                 borderColor='$borderColorWithShadow'
                                 onPress={() => {
                                     setDialogOpen(false);
-                                    finish(false);
                                 }}
                             >
                                 {t('common.cancel')}

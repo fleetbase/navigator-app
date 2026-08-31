@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { ScrollView, RefreshControl, SafeAreaView, StyleSheet, Alert, Platform } from 'react-native';
-import { Separator, Button, Image, Stack, Text, YStack, XStack, Spinner, useTheme } from 'tamagui';
+import { Separator, Button, Image, Stack, Text, YStack, XStack, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faPenToSquare, faFlagCheckered, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
 import { BlurView } from '@react-native-community/blur';
@@ -44,6 +44,7 @@ import DestinationChangedAlert from '../components/DestinationChangedAlert';
 import Badge from '../components/Badge';
 import Spacer from '../components/Spacer';
 import BackButton from '../components/BackButton';
+import SafeSpinner from '../components/SafeSpinner';
 import { SectionHeader, SectionInfoLine, ActionContainer } from '../components/Content';
 
 const getOrderDestination = (order, adapter) => {
@@ -532,7 +533,7 @@ const OrderScreen = ({ route }) => {
                     {isOldAndroid && showLoadingOverlay && (
                         <YStack>
                             <XStack alignItems='center' gap='$2' borderWidth={1} borderColor='$infoBorder' bg='$info' py='$2' px='$3' borderRadius='$5'>
-                                <Spinner color='$infoText' />
+                                <SafeSpinner color={theme.infoText.val} />
                                 <Text color='$infoText' fontSize='$4'>
                                     {loadingOverlayMessage}
                                 </Text>
@@ -543,7 +544,7 @@ const OrderScreen = ({ route }) => {
                         {isIncomingAdhoc && (
                             <XStack flex={1} space='$2' ml={5}>
                                 <Button onPress={handleAdhocAccept} flex={1} bg='$success' borderWidth={1} borderColor='$successBorder' disabled={isAccepting}>
-                                    <Button.Icon>{isAccepting ? <Spinner color='$successText' /> : <FontAwesomeIcon icon={faCheck} color={theme.successText.val} />}</Button.Icon>
+                                    <Button.Icon>{isAccepting ? <SafeSpinner color={theme.successText.val} /> : <FontAwesomeIcon icon={faCheck} color={theme.successText.val} />}</Button.Icon>
                                     <Button.Text color='$successText'>Accept Order</Button.Text>
                                 </Button>
                                 <Button onPress={handleAdhocDismissal} flex={1} bg='$error' borderWidth={1} borderColor='$errorBorder' disabled={isAccepting}>
@@ -557,7 +558,7 @@ const OrderScreen = ({ route }) => {
                         {isNotStarted && (
                             <Button onPress={() => startOrder()} bg='$success' borderWidth={1} borderColor='$successBorder'>
                                 <Button.Icon>
-                                    {isLoading('startOrder') ? <Spinner color='$successText' /> : <FontAwesomeIcon icon={faFlagCheckered} color={theme.successText.val} />}
+                                    {isLoading('startOrder') ? <SafeSpinner color={theme.successText.val} /> : <FontAwesomeIcon icon={faFlagCheckered} color={theme.successText.val} />}
                                 </Button.Icon>
                                 <Button.Text color='$successText'>Start Order</Button.Text>
                             </Button>
@@ -565,14 +566,14 @@ const OrderScreen = ({ route }) => {
                         {order.isInProgress && (
                             <Button onPress={() => updateOrderActivity()} bg='$success' borderWidth={1} borderColor='$successBorder'>
                                 <Button.Icon>
-                                    {isLoading('nextOrderActivity') ? <Spinner color='successText' /> : <FontAwesomeIcon icon={faPenToSquare} color={theme.infoText.val} />}
+                                    {isLoading('nextOrderActivity') ? <SafeSpinner color={theme.successText.val} /> : <FontAwesomeIcon icon={faPenToSquare} color={theme.infoText.val} />}
                                 </Button.Icon>
                                 <Button.Text color='$successText'>Update Activity</Button.Text>
                             </Button>
                         )}
                         {isNavigatable && (
                             <Button onPress={startNavigation} bg='$info' borderWidth={1} borderColor='$infoBorder'>
-                                <Button.Icon>{isLoading('startNavigation') ? <Spinner color='$infoText' /> : <FontAwesomeIcon icon={faPaperPlane} color={theme.infoText.val} />}</Button.Icon>
+                                <Button.Icon>{isLoading('startNavigation') ? <SafeSpinner color={theme.infoText.val} /> : <FontAwesomeIcon icon={faPaperPlane} color={theme.infoText.val} />}</Button.Icon>
                                 <Button.Text color='$infoText'>Start Navigation</Button.Text>
                             </Button>
                         )}
