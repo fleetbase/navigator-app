@@ -48,6 +48,8 @@ should be your call, not a surprise PR.
 | O-9 | S2 | `linkApp` finds the first admin user, gets-or-creates an `ApiCredential`, and ships it in a deep link — one shared, org-wide, unrevocable key on every handset. Phase 5 replaces this. | `NavigatorController@linkApp` |
 | O-17 | **S2** | ~~The public `order-configs` resource discards the flow's graph.~~ **PR OPEN — [fleetbase/fleetops#300](https://github.com/fleetbase/fleetops/pull/300).** The stored flow is a directed graph: `activities` names the codes an activity can transition to, `sequence` orders activities reachable from the same parent, and `logic` gates availability. `Http/Resources/v1/OrderConfig::projectFlow()` dropped all three, so the public API emitted an unordered set while the console's internal resource returned the flow whole. The PR publishes them, normalises transitions written as objects to plain codes, and keeps the fields present-but-null for legacy activities. The app's sequencer already prefers the graph when it is there, so nothing further is needed here once it merges. | `Http/Resources/v1/OrderConfig.php` |
 | O-19 | **S2** | **PR OPEN — [fleetops#301](https://github.com/fleetbase/fleetops/pull/301).** **`PUT /v1/vehicles/{id}` accepts an odometer and silently discards it.** `odometer` is in the model's `$fillable` and the request rules do not forbid it, but `VehicleController::vehicleInputFromRequest()` builds its input with `$request->only([...])` and that list omits `odometer`. The write returns 200, the response looks correct, and nothing changed. Same shape as O-1: an input the API accepts, ignores, and reports success for. Either accept it or reject it — reporting success for a discarded field is the one option that cannot be right. | `VehicleController` |
+| O-20 | **S1** | **FIXED — [fleetops#304](https://github.com/fleetbase/fleetops/pull/304).** **A password given at driver creation was never kept.** `password` is guarded on `User`, so `User::create()` dropped it silently — while `CreateDriverRequest` has always accepted and validated one. A driver created through the public API could never sign in with the password chosen for them, and the first change-password call was refused because the stored hash was never theirs. Found by running the Postman collection against a live instance, not by tests. | `DriverController::createUser` |
+| O-21 | **S1** | **FIXED — [fleetops#304](https://github.com/fleetbase/fleetops/pull/304).** **`changePassword` compared against a column it could not read.** It resolved the account via `Driver::getUser()`, which goes through the `user` relation, whose `->select([...])` omits `password`. The comparison ran against an empty string and refused every caller with the correct password. The same call made in-process returned 200 where the endpoint returned 422 — the gap between those two is what identified it. | `DriverController::changePassword` |
 | O-18 | S3 | An order whose stops have unresolved coordinates reports **"11547.4 km · 230 h 56 m"** for a local Singapore drop. The app renders the tracker faithfully; the tracker is computing from a null island. Worth deciding whether the app should suppress implausible legs or the server should stop emitting them. | fleetops API |
 | O-11 | S4 | `isConnected` still proxies off the SocketCluster connection; there is no netinfo dependency, so "offline" means "socket dropped". | `src/v3` bridge |
 
@@ -490,6 +492,18 @@ the chrome was alive and said nothing about the content, which really was dead.
 symptom.** Scrolling needs no JS handler, so if scrolling is dead too, the cause
 is structural — an overlay, or a subtree being remounted — not a missing
 `onPress`.
+
+**A seam that hides the bug you are testing for.** O-21 sat behind two layers of
+stand-in. The controller tests overrode `passwordMatches`, so the comparison they
+exercised was never the real one; and the fixture user carried a password, while
+the relation the controller actually reads does not select that column. Both
+tests passed, at 100% line coverage, on a code path that refused every real
+caller. What settled it was calling the untouched method in-process against the
+same driver the failing HTTP request named: 200 there, 422 over the wire, same
+data. A difference that large between two callers of one method is a statement
+about the caller, not the data.
+
+> Coverage says a line ran. It does not say the line ran against anything real.
 
 **Fixtures agree with you; instances do not.** F-3 through F-9 were all invisible
 under test fixtures, which had ids where the API returns null and strings where
