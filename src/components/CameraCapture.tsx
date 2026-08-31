@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Dimensions, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { YStack, XStack, Button, Text, Image, Card, ScrollView } from 'tamagui';
-import { Camera, useCameraDevice, useFrameProcessor } from 'react-native-vision-camera';
+import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import type { Camera as CameraRef } from 'react-native-vision-camera';
-import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import { launchImageLibrary } from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import useDimensions from '../hooks/use-dimensions';
 import { toast, ToastPosition } from '../utils/toast';
@@ -61,24 +61,28 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
         }
     }, []);
 
-    // Let the user pick images from their camera roll
+    // Use the system photo picker so the app only receives access to photos
+    // explicitly selected by the user.
     const handleSelectFromCameraRoll = useCallback(async () => {
         try {
-            // Example: open system gallery multi-picker (this is up to you to implement).
-            // You could also use a library like `react-native-image-crop-picker` or
-            // a custom UI that fetches camera roll photos with CameraRoll.getPhotos.
-            const photosFromGallery = await CameraRoll.getPhotos({
-                first: 10, // e.g. fetch 10 photos
-                assetType: 'Photos',
+            const result = await launchImageLibrary({
+                mediaType: 'photo',
+                selectionLimit: 10,
             });
-            // For simplicity, let's just take the first photo (in a real scenario you'd present a UI).
-            if (photosFromGallery.edges.length > 0) {
-                const { node } = photosFromGallery.edges[0];
-                toast.info('Photo added from gallery.', { position: ToastPosition.TOP });
-                setPhotos((prev) => [...prev, { uri: node.image.uri }]);
+
+            if (result.didCancel) return;
+            if (result.errorCode) {
+                throw new Error(result.errorMessage ?? `Unable to select photos (${result.errorCode}).`);
             }
+
+            const selectedPhotos = (result.assets ?? []).flatMap((asset) => (asset.uri ? [{ uri: asset.uri }] : []));
+            if (selectedPhotos.length === 0) return;
+
+            setPhotos((prev) => [...prev, ...selectedPhotos]);
+            toast.info(`${selectedPhotos.length} photo${selectedPhotos.length === 1 ? '' : 's'} added from gallery.`, { position: ToastPosition.TOP });
         } catch (error) {
             console.warn('Error selecting from camera roll:', error);
+            toast.error(error instanceof Error ? error.message : 'Unable to select photos.', { position: ToastPosition.TOP });
         }
     }, []);
 

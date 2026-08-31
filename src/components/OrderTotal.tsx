@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { FlatList } from 'react-native';
-import { Spinner, Text, YStack, XStack, Separator, useTheme } from 'tamagui';
+import { Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { formatCurrency, numbersOnly } from '../utils/format';
 import { percentage } from '../utils/math';
 
