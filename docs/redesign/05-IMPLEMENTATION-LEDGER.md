@@ -762,6 +762,32 @@ job; the outcome and detail screens show their identifiers when returned.
 
 **Not device-verified**, and cannot be until the FleetOps PR is on an instance.
 
+**The server side, as delivered (2026-09-09).** Three draft PRs, none merged:
+
+- [fleetops#319](https://github.com/fleetbase/fleetops/pull/319) —
+  `feature/inspections-driver-api` → `main`: fleetops#267 rebased (zero
+  conflicts) plus `Api\v1\InspectionController` with the six routes above, a
+  shared `Support\InspectionSubmitter` used by the public and driver paths, a
+  `Base64OrUrl` rule for photos, the migration re-stamped to 2026-09-09, and the
+  four main tests the PR broke updated (Hub KPIs, hub actions, report schema,
+  and an observer status the study had missed). **Idempotency:** the platform
+  has no `Idempotency-Key` middleware, so the controller stores the key in
+  `meta.idempotency_key` and answers a same-driver replay with the original
+  submission — the app's queue can replay safely. Coverage measured locally with
+  PCOV over the CI sequence: 99.99% (36546/36549 statements); the three missing
+  lines are in untouched files and are a PCOV-vs-Xdebug attribution difference
+  on `finally` blocks. 2600 tests, 0 failing. Deviations from §6: `vehicle`
+  omitted on submit falls back to the driver's assigned vehicle.
+- [postman#60](https://github.com/fleetbase/postman/pull/60) — an
+  `Inspections` folder with the six requests, chained ids, no skips, no seeded
+  variable overwritten; lint clean. Cannot pass until the FleetOps release
+  carries the routes and a form is seeded.
+- [fleetbase#652](https://github.com/fleetbase/fleetbase/pull/652) — `feat/ci-seed-inspection-form`:
+  `scripts/ci/mint-api-key.php` seeds a published organisation-wide form for the
+  CI organisation, guarded on the model existing.
+
+Land in that order: fleetops → seed → postman.
+
 ---
 
 ## Auto-arrival (C6, passive half) and chat attachments (G1/G2)

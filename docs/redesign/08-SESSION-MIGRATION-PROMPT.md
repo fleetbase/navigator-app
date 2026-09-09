@@ -259,6 +259,11 @@ driver responsibility?
 
 ## 6. Inspections / DVIR — you are taking this over
 
+> **Status 2026-09-09: taken over.** Draft PRs [fleetops#319](https://github.com/fleetbase/fleetops/pull/319)
+> (rebased #267 + the driver `v1` API + tests at the 100% gate), [postman#60](https://github.com/fleetbase/postman/pull/60)
+> and [fleetbase#652](https://github.com/fleetbase/fleetbase/pull/652) (the CI seed). The app side is built. What
+> follows is the brief as it stood; the ledger's "Inspections / DVIR" section is the current record.
+
 **PR:** <https://github.com/fleetbase/fleetops/pull/267> — "Add inspection maintenance platform foundation"
 **Branch:** `feature/maintenance-platform-upgrade` → `main`
 **State (2026-09-09):** OPEN, not a draft, 104 files, +3250/−5, last updated **2026-07-17**.
