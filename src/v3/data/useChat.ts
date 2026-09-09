@@ -39,11 +39,20 @@ export interface ChatParticipant {
     last_seen_at?: string;
 }
 
+export interface ChatAttachment {
+    id?: string;
+    /** The file's public id. */
+    file?: string;
+    url?: string | null;
+    filename?: string | null;
+    content_type?: string | null;
+}
+
 export interface ChatMessage {
     id: string;
     sender?: ChatParticipant;
     content?: string;
-    attachments?: unknown[];
+    attachments?: ChatAttachment[];
     receipts?: { id?: string; participant?: string }[];
     created_at?: string;
 }
@@ -246,9 +255,9 @@ export function useSendMessage(channelId?: string, senderParticipantId?: string)
     const [error, setError] = useState<string | null>(null);
 
     const send = useCallback(
-        async (content: string): Promise<ChatMessage | null> => {
+        async (content: string, files: string[] = []): Promise<ChatMessage | null> => {
             const body = content.trim();
-            if (!channelId || !body) return null;
+            if (!channelId || (!body && !files.length)) return null;
             if (!senderParticipantId) {
                 // Without a participant record the API 422s; say so rather than
                 // letting the driver type into a void.
@@ -262,6 +271,8 @@ export function useSendMessage(channelId?: string, senderParticipantId?: string)
                 const result = await adapter.post(`chat-channels/${channelId}/send-message`, {
                     sender: senderParticipantId,
                     content: body,
+                    // File public ids, already uploaded; the server attaches them.
+                    ...(files.length ? { files } : {}),
                 });
                 if (isQueuedAck(result)) {
                     setQueued(true);

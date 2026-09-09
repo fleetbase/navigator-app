@@ -754,3 +754,24 @@ job; the outcome and detail screens show their identifiers when returned.
 
 **Not device-verified**, and cannot be until the FleetOps PR is on an instance.
 
+---
+
+## Auto-arrival (C6, passive half) and chat attachments (G1/G2)
+
+**Auto-arrive.** The socket's `geofence.entered` event names a geofence, and the
+public stop resource carries no geofence id, so matching the two is guesswork.
+`useAutoArrive` proposes arrival from the same check the manual sheet runs —
+device fix inside the 120 m radius of the current pending stop — with the
+frame's ten-second undo, then records `arrival_check: 'auto'` so dispatch can
+tell it from a tap. One proposal per stop; an undo holds for that stop. Rendered
+as a brand banner on both route views.
+
+**Chat attachments.** `POST /v1/files/base64` (core API) takes the base64 the
+app already holds, and `send-message` takes `files: [file public id]`. The
+composer gains a photo button (the same lazily-loaded camera as proof capture);
+each photo uploads first and the message carries the ids; bubbles render image
+attachments. **Uploads are in `NEVER_QUEUE`**: the message needs the id before
+it can be sent, so a replayed upload would be an orphan. Offline, the composer
+says photos need a connection and text still queues. Chat's other gap — an
+order reference on a channel — is still a backend matter.
+

@@ -396,3 +396,90 @@ describe('NewConversationScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 });
+
+/* -- Attachments — the composer's photo path (gap G1/G2). ----------------- */
+
+jest.mock('../../../components/CameraCapture', () => {
+    const React = require('react');
+    const { View } = require('react-native');
+    return { __esModule: true, default: (props: { onDone?: (p: { base64?: string }[]) => void }) => React.createElement(View, { testID: 'camera-mock', onDone: props.onDone }) };
+});
+
+describe('ConversationScreen — attachments', () => {
+    const withAttachment: ChatChannelRecord = {
+        ...channel,
+        feed: [
+            {
+                type: 'message',
+                created_at: '2026-08-21T11:54:52.000000Z',
+                data: {
+                    id: 'm9',
+                    content: '',
+                    sender: { id: 'chat_participant_her', user: 'user_other', name: 'Charlotte Thomas' },
+                    attachments: [{ id: 'chat_attachment_1', file: 'file_1', url: 'https://x.test/photo.jpg', filename: 'photo.jpg', content_type: 'image/jpeg' }],
+                    created_at: '2026-08-21T11:54:52.000000Z',
+                },
+            },
+        ],
+    } as ChatChannelRecord;
+
+    function mockUploads(online = true) {
+        fetchMock.mockImplementation((url: string, init?: { method?: string }) => {
+            const u = String(url);
+            const post = String(init?.method).toUpperCase() === 'POST';
+            if (!online && post) return Promise.reject(new TypeError('Network request failed'));
+            if (post && u.includes('files/base64')) {
+                return Promise.resolve({ ok: true, status: 201, statusText: 'Created', json: () => Promise.resolve({ id: 'file_9', url: 'https://x.test/up.jpg', content_type: 'image/jpeg' }) });
+            }
+            if (post) return Promise.resolve({ ok: true, status: 201, statusText: 'Created', json: () => Promise.resolve({ id: 'new' }) });
+            return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(channel) });
+        });
+    }
+
+    async function takePhoto(t: ReactTestRenderer.ReactTestRenderer) {
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'attach-photo').props as { onPress?: () => void }).onPress?.();
+        });
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'camera-mock').props as { onDone?: (p: { base64?: string }[]) => void }).onDone?.([{ base64: 'QUJD' }]);
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+    }
+
+    it('uploads a photo as base64 first and sends the message with its file id', async () => {
+        mockUploads();
+        const t = await mount(<ConversationScreen channelId={channel.id} channel={channel} userId={ME} />);
+        await takePhoto(t);
+        const upload = fetchMock.mock.calls.find((c) => String(c[0]).includes('files/base64'));
+        expect(upload).toBeTruthy();
+        expect(JSON.parse(String(upload?.[1]?.body))).toMatchObject({ data: 'QUJD', file_type: 'image', content_type: 'image/jpeg' });
+        expect(testIDs(t)).toContain('composer-attachments');
+        expect(textOf(t)).toContain('1 photo attached');
+
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'send').props as { onPress?: () => void }).onPress?.();
+            await Promise.resolve();
+        });
+        const send = fetchMock.mock.calls.find((c) => String(c[0]).includes('send-message'));
+        expect(JSON.parse(String(send?.[1]?.body))).toMatchObject({ sender: 'chat_participant_me', files: ['file_9'] });
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('never queues an upload — offline it says photos need a connection, and nothing is queued', async () => {
+        mockUploads(false);
+        const t = await mount(<ConversationScreen channelId={channel.id} channel={channel} userId={ME} />, 'dark');
+        await takePhoto(t);
+        expect(testIDs(t)).toContain('attach-needs-connection');
+        expect(queue.snapshot().items.length).toBe(0);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('renders an attachment the other side sent as an image', async () => {
+        mockApi([withAttachment], withAttachment);
+        const t = await mount(<ConversationScreen channelId={withAttachment.id} channel={withAttachment} userId={ME} />);
+        expect(testIDs(t)).toContain('attachment-chat_attachment_1');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+});

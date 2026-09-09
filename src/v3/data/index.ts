@@ -21,3 +21,5 @@ export * from './useOrderRecord';
 export * from './useTrailers';
 export * from './useWallet';
 export * from './useInspections';
+export * from './useAutoArrive';
+export * from './useFiles';

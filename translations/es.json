@@ -353,7 +353,17 @@
             "onMyWay": "Voy de camino",
             "runningLate": "Llego 10 min tarde",
             "arrived": "He llegado"
-        }
+        },
+        "attachPhoto": "Foto",
+        "attachedCount": {
+            "one": "%{count} foto adjunta",
+            "other": "%{count} fotos adjuntas"
+        },
+        "removeAttachment": "Quitar",
+        "attachmentsNeedConnection": "Las fotos necesitan conexión para enviarse. El texto se envía igualmente cuando vuelvas a estar en línea.",
+        "attachmentFailed": "No se pudo subir esa foto.",
+        "attachment": "Adjunto",
+        "uploading": "Subiendo…"
     },
     "newConversation": {
         "title": "Nueva conversación",
@@ -890,7 +900,11 @@
         "noStops": "Este manifiesto aún no tiene paradas.",
         "noPositions": "Las paradas de esta ruta no tienen coordenadas, así que el mapa no puede ubicarlas.",
         "backToManifests": "Todos los manifiestos",
-        "routeCancelled": "Despacho canceló este manifiesto."
+        "routeCancelled": "Despacho canceló este manifiesto.",
+        "autoArriveTitle": "¿Has llegado a la parada %{sequence}?",
+        "autoArriveBody": "Estás dentro de la geocerca de la parada. La llegada se registra en %{seconds} s.",
+        "undo": "Deshacer",
+        "autoArrived": "Llegada registrada automáticamente"
     },
     "stopDetail": {
         "stopOf": "Parada %{sequence} de %{total}",

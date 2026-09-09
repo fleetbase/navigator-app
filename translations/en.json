@@ -410,7 +410,17 @@
             "onMyWay": "On my way",
             "runningLate": "Running 10 min late",
             "arrived": "Arrived"
-        }
+        },
+        "attachPhoto": "Photo",
+        "attachedCount": {
+            "one": "%{count} photo attached",
+            "other": "%{count} photos attached"
+        },
+        "removeAttachment": "Remove",
+        "attachmentsNeedConnection": "Photos need a connection to send. Text still goes when you are back online.",
+        "attachmentFailed": "That photo could not be uploaded.",
+        "attachment": "Attachment",
+        "uploading": "Uploading…"
     },
     "newConversation": {
         "title": "New conversation",
@@ -947,7 +957,11 @@
         "noStops": "This manifest has no stops yet.",
         "noPositions": "Stops on this route have no coordinates, so the map cannot place them.",
         "backToManifests": "All manifests",
-        "routeCancelled": "Dispatch cancelled this manifest."
+        "routeCancelled": "Dispatch cancelled this manifest.",
+        "autoArriveTitle": "Arrived at stop %{sequence}?",
+        "autoArriveBody": "You are inside the stop's geofence. Recording arrival in %{seconds}s.",
+        "undo": "Undo",
+        "autoArrived": "Arrival recorded automatically"
     },
     "stopDetail": {
         "stopOf": "Stop %{sequence} of %{total}",

@@ -119,7 +119,7 @@ surfaced within minutes of pointing the app at a real instance.
 |---|---|
 | v3 screens | 44 built, 0 `placeholder()` (Documents renders an honest "not enabled" state; Inspections degrade to it on a 404) |
 | v3 source | 188 files, ~28,600 lines |
-| Tests | 945 passing, 63 suites, 0 failing |
+| Tests | 952 passing, 64 suites, 0 failing |
 | v3 lint / typecheck | **0 errors** (105 warnings) |
 | v2 lint / typecheck | 596 lint errors, 15 type errors — **pre-existing, untouched** |
 | Cutover | `NAVIGATOR_V3=true` in `.env` selects the v3 tree at `App.tsx` |
@@ -594,9 +594,9 @@ Re-verified against `routes.php` at v0.6.65. Do not start these without backend 
 
 **Earnings is no longer in this table** — it moves to the ledger extension. See §8a.
 
-Also outstanding, app-side: **chat attachments** need `POST /v1/files` plus a picker (composer is
-text-only today), and a chat channel carries **no order reference**, so G1's order-context header has
-nothing to link to.
+Also outstanding, app-side: a chat channel carries **no order reference**, so G1's order-context
+header has nothing to link to. (Chat attachments are built — `POST /v1/files/base64` plus the camera;
+uploads never queue.)
 
 ---
 

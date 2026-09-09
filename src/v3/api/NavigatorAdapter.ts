@@ -82,6 +82,12 @@ const NEVER_QUEUE = [
      * and the preview they confirmed would no longer be what is applied.
      */
     /manifests\/[^/]+\/optimize\b/,
+    /*
+     * An upload's whole point is the file id it answers with, which the
+     * message or record it belongs to needs before it can be sent. Replayed
+     * later it lands as an orphan nothing references.
+     */
+    /files\/base64\b/,
 ];
 
 function isQueueable(path: string): boolean {

@@ -36,7 +36,7 @@ import { RouteMap, placeableStops } from '../ui/RouteMap';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSettings, useResolvedScheme } from '../settings';
-import { useSync, useDeviceLocation } from '../shell';
+import { useSync, useDeviceLocation, toGeoPoint } from '../shell';
 import {
     useManifests,
     useManifest,
@@ -46,6 +46,8 @@ import {
     manifestProgress,
     coordsOfStop,
     isStopDone,
+    useStopUpdate,
+    useAutoArrive,
     type ManifestBucket,
     type ManifestRecord,
 } from '../data';
@@ -158,9 +160,44 @@ function RouteView({
     const [view, setView] = useState<View>('list');
     const [showCompleted, setShowCompleted] = useState(false);
     const [fitToken, setFitToken] = useState(0);
+    const [autoArrivedId, setAutoArrivedId] = useState<string | undefined>();
 
     const progress = manifestProgress(manifest);
     const current = currentManifestStop(stops);
+
+    /*
+     * R2 C6, the passive half: inside the arrival radius the stop is arrived
+     * automatically after a ten-second undo. The arrival is recorded with
+     * `arrival_check: 'auto'` so dispatch can tell it from a tap.
+     */
+    const { update: updateStop } = useStopUpdate(manifestId);
+    const autoArrive = useAutoArrive(
+        current?.status === 'pending' ? current : undefined,
+        position,
+        async (stop) => {
+            const outcome = await updateStop(stop, { status: 'arrived', meta: { arrival_check: 'auto', arrival_position: toGeoPoint(position) } });
+            if (outcome !== 'failed') setAutoArrivedId(stop.id);
+        },
+        { enabled: !readOnly }
+    );
+    const [, tick] = useState(0);
+    useEffect(() => {
+        if (autoArrive.state.kind !== 'pending') return;
+        const id = setInterval(() => tick((n) => n + 1), 1000);
+        return () => clearInterval(id);
+    }, [autoArrive.state.kind]);
+    const autoArriveBanner =
+        autoArrive.state.kind === 'pending' && current ? (
+            <Banner
+                tone="brand"
+                message={t('route.autoArriveTitle', { sequence: current.sequence })}
+                meta={t('route.autoArriveBody', { seconds: Math.max(0, Math.ceil((autoArrive.state.endsAt - Date.now()) / 1000)) })}
+                action={{ label: t('route.undo'), onPress: autoArrive.undo }}
+                testID="route-auto-arrive"
+            />
+        ) : autoArrivedId && autoArrivedId === current?.id ? (
+            <Banner tone="success" message={t('route.autoArrived')} testID="route-auto-arrived" />
+        ) : null;
     const completed = stops.filter(isStopDone);
     const remaining = stops.filter((s) => !isStopDone(s));
     const remainingDistanceM = remaining.reduce((sum, s) => sum + (Number(s.distance_from_prev_m) || 0), 0) || manifest?.total_distance_m;
@@ -230,8 +267,9 @@ function RouteView({
     if (view === 'map') {
         return (
             <YStack flex={1} testID="route-map-view">
-                <YStack padding={space[4]} paddingBottom={space[2]}>
+                <YStack padding={space[4]} paddingBottom={space[2]} gap={space[2]}>
                     {header}
+                    {autoArriveBanner}
                 </YStack>
                 <YStack flex={1} minHeight={240}>
                     {placeable.length ? (
@@ -314,6 +352,7 @@ function RouteView({
                 ) : null}
                 {header}
 
+                {autoArriveBanner}
                 {manifest?.status === 'cancelled' ? <Banner tone="neutral" message={t('route.routeCancelled')} testID="route-cancelled" /> : null}
 
                 {!stops.length ? <EmptyState title={t('route.noStops')} testID="route-no-stops" /> : null}

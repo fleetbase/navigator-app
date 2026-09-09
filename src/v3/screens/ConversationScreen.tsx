@@ -17,7 +17,7 @@
  * Read receipts are shown where the API gives them: `receipts` on each message.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, ScrollView } from 'react-native';
+import { FlatList, Image, ScrollView, View } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';
 import { Field } from '../ui/Field';
@@ -38,6 +38,14 @@ import {
     type FeedEntry,
 } from '../data';
 import { formatClock } from '../format';
+import { useUploadFile, type UploadedFile } from '../data/useFiles';
+import type { ChatAttachment } from '../data/useChat';
+import type { CapturedPhoto } from '../../components/CameraCapture';
+
+/* VisionCamera initialises its native module at import; load it only when the driver asks for a photo. */
+const lazyCamera = () => require('../../components/CameraCapture').default as React.ComponentType<{ onDone?: (photos: CapturedPhoto[]) => void }>;
+
+const isImage = (a: ChatAttachment) => String(a.content_type ?? '').startsWith('image/');
 
 /** G2's quick replies — the three things a driver says most. */
 const QUICK_REPLY_KEYS = ['onMyWay', 'runningLate', 'arrived'] as const;
@@ -53,6 +61,7 @@ function SystemLine({ text, at }: { text: string; at?: string }) {
 
 function Bubble({
     content,
+    attachments,
     author,
     at,
     mine,
@@ -61,6 +70,7 @@ function Bubble({
     testID,
 }: {
     content: string;
+    attachments?: ChatAttachment[];
     author?: string;
     at?: string;
     mine: boolean;
@@ -82,9 +92,24 @@ function Bubble({
                 borderWidth={mine ? 0 : 1}
                 borderColor="$border"
             >
-                <Body fontSize={15} color={mine ? '$onPrimary' : '$textPrimary'}>
-                    {content}
-                </Body>
+                {attachments?.length ? (
+                    <YStack gap={space[2]} paddingBottom={content ? space[2] : 0}>
+                        {attachments.map((a, i) =>
+                            isImage(a) && a.url ? (
+                                <Image key={a.id ?? i} source={{ uri: a.url }} style={{ width: 220, height: 165, borderRadius: radius.compact }} accessibilityLabel={a.filename ?? t('conversation.attachment')} testID={`attachment-${a.id ?? i}`} />
+                            ) : (
+                                <Micro key={a.id ?? i} color={mine ? '$onPrimary' : '$textSecondary'} testID={`attachment-${a.id ?? i}`}>
+                                    📎 {a.filename ?? t('conversation.attachment')}
+                                </Micro>
+                            )
+                        )}
+                    </YStack>
+                ) : null}
+                {content ? (
+                    <Body fontSize={15} color={mine ? '$onPrimary' : '$textPrimary'}>
+                        {content}
+                    </Body>
+                ) : null}
             </YStack>
 
             <XStack gap={space[2]} paddingHorizontal={space[2]} paddingTop={2} alignItems="center">
@@ -113,6 +138,29 @@ export function ConversationScreen({
     const { send, isSending, queued, error: sendError, clearError } = useSendMessage(channelId, me?.id);
 
     const [draft, setDraft] = useState('');
+    const [pending, setPending] = useState<UploadedFile[]>([]);
+    const [camera, setCamera] = useState(false);
+    const [attachNotice, setAttachNotice] = useState<'needs-connection' | 'failed' | null>(null);
+    const { upload, isUploading } = useUploadFile();
+
+    /*
+     * Photos upload first (`POST files/base64`) and the message carries their
+     * ids. An upload cannot queue — the message needs the id — so without a
+     * connection the driver is told photos will not go, and text still does.
+     */
+    const attach = useCallback(
+        async (taken: CapturedPhoto[]) => {
+            setCamera(false);
+            setAttachNotice(null);
+            for (const photo of taken) {
+                if (!photo.base64) continue;
+                const outcome = await upload({ base64: photo.base64, fileName: `photo-${Date.now()}.jpg`, contentType: 'image/jpeg', fileType: 'image' });
+                if (outcome.kind === 'uploaded') setPending((prev) => [...prev, outcome.file]);
+                else setAttachNotice(outcome.kind === 'needs-connection' ? 'needs-connection' : 'failed');
+            }
+        },
+        [upload]
+    );
 
     const entries = useMemo(() => {
         const feed = channel?.feed ?? [];
@@ -122,14 +170,15 @@ export function ConversationScreen({
 
     const submit = useCallback(
         async (text: string) => {
-            const sent = await send(text);
+            const sent = await send(text, pending.map((f) => f.id));
             if (sent) {
                 setDraft('');
+                setPending([]);
                 // Cheapest correct refresh: the feed is assembled server-side.
                 await reload();
             }
         },
-        [send, reload]
+        [send, reload, pending]
     );
 
     const renderItem = useCallback(
@@ -144,6 +193,7 @@ export function ConversationScreen({
             return (
                 <Bubble
                     content={item.data.content ?? ''}
+                    attachments={item.data.attachments}
                     author={item.data.sender?.name}
                     at={item.created_at ?? item.data.created_at}
                     mine={mine}
@@ -184,7 +234,7 @@ export function ConversationScreen({
      */
     const heading = channelTitle(channel, userId, t('inbox.untitled'));
     const alreadyNamed = headingNamesEveryone(heading, others);
-    const canSend = !!me && draft.trim().length > 0;
+    const canSend = !!me && (draft.trim().length > 0 || pending.length > 0) && !isUploading;
 
     return (
         <YStack flex={1} backgroundColor="$background" testID="conversation">
@@ -264,7 +314,39 @@ export function ConversationScreen({
                     ))}
                 </ScrollView>
 
+                {attachNotice ? (
+                    <Banner
+                        tone={attachNotice === 'needs-connection' ? 'neutral' : 'danger'}
+                        message={attachNotice === 'needs-connection' ? t('conversation.attachmentsNeedConnection') : t('conversation.attachmentFailed')}
+                        action={{ label: t('common.dismiss'), onPress: () => setAttachNotice(null) }}
+                        testID={`attach-${attachNotice}`}
+                    />
+                ) : null}
+                {pending.length ? (
+                    <XStack gap={space[2]} alignItems="center" flexWrap="wrap" testID="composer-attachments">
+                        {pending.map((f) => (
+                            <XStack key={f.id} gap={space[1]} alignItems="center">
+                                {f.url ? <Image source={{ uri: f.url }} style={{ width: 44, height: 44, borderRadius: radius.compact - 2 }} /> : null}
+                                <Button variant="ghost" height={32} paddingHorizontal={space[2]} onPress={() => setPending((prev) => prev.filter((p) => p.id !== f.id))} testID={`remove-attachment-${f.id}`}>
+                                    {t('conversation.removeAttachment')}
+                                </Button>
+                            </XStack>
+                        ))}
+                        <Micro tabular>{t('conversation.attachedCount', { count: pending.length })}</Micro>
+                    </XStack>
+                ) : null}
+                {camera ? (
+                    <View style={{ height: 300 }} testID="composer-camera">
+                        {(() => {
+                            const Camera = lazyCamera();
+                            return <Camera onDone={(taken) => void attach(taken)} />;
+                        })()}
+                    </View>
+                ) : null}
                 <XStack gap={space[2]} alignItems="flex-end">
+                    <Button variant="secondary" disabled={!me || isUploading} loading={isUploading} onPress={() => setCamera((v) => !v)} testID="attach-photo">
+                        {t('conversation.attachPhoto')}
+                    </Button>
                     <YStack flex={1}>
                         <Field
                             value={draft}
