@@ -57,12 +57,20 @@ to a driver. Verified on device against the live instance.
 
 ---
 
-## Tier 2 — needs SDK stores (Phase 2e)
+## Tier 2 — SDK stores
 
-`fleetbase-js` has no stores for issues, fuelReports, manifests, workOrders,
-inspections, files, comments, chatChannels, orderConfigs, notifications. Tier 1
-can reach these through `adapter` directly; add the stores when the Tier 3
-routes land so both ship together.
+**Draft PR open: [fleetbase-js#35](https://github.com/fleetbase/fleetbase-js/pull/35)**
+(`feat/driver-app-stores` → `dev-v2.0.0`, the TypeScript branch; there is no
+`main`, and `master` is still the 1.2.x JavaScript source). Adds `manifests`
+(+ `optimize`, `drivers.manifests`), `manifestStops.update`, `trailers` (+
+attach/detach/connections/track, `vehicles.trailers`), `fuelReports`, `issues`,
+`workOrders` (+ `send`), `inspectionForms`, `inspections` (+
+`vehicles.inspections`, marked as depending on the FleetOps driver inspection
+API), and `drivers.changePassword/forgotPassword/resetPassword`. 30 tests at
+100% coverage; lint, typecheck, build and package parity pass. v3 keeps reaching
+these through the adapter until the SDK release that carries them is adopted —
+swapping is mechanical, the paths are identical. Still absent from the SDK:
+files, comments, chatChannels, orderConfigs, notifications, wallet.
 
 ---
 

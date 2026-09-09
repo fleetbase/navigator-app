@@ -660,10 +660,12 @@ once at the edge.
 
 ---
 
-**Tier 2 — the SDK.** `fleetbase-js` still has no stores for `issues`, `fuelReports`, `manifests`,
-`workOrders`, `inspections`, `trailers`, `files`, `comments`, `chatChannels`, `orderConfigs`,
-`notifications`, `wallet`/`transactions`. v3 reaches these through the adapter directly. Adding the stores is legitimate
-work and should ship alongside whatever endpoints you consume.
+**Tier 2 — the SDK.** Draft PR [fleetbase-js#35](https://github.com/fleetbase/fleetbase-js/pull/35)
+adds the stores for everything v3 consumes (manifests, manifest stops, trailers, fuel reports, issues,
+work orders, inspections, driver passwords). It targets `dev-v2.0.0`, the TypeScript branch, and
+should be retargeted once fleetbase-js#33 lands on `master`. v3 still goes through the adapter;
+switching to the stores is mechanical once a release carries them. Not yet in the SDK: files,
+comments, chat channels, order configs, notifications, wallet.
 
 ---
 
