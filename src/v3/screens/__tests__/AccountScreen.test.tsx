@@ -171,10 +171,12 @@ describe('AccountScreen', () => {
     it('links to everything filed under Account, marking what is not built', async () => {
         const t = await mount(<AccountScreen driverId={driver.id} onNavigate={jest.fn()} />);
         const ids = testIDs(t);
-        for (const route of ['FuelLog', 'Issues', 'Settings', 'MyVehicle']) {
+        for (const route of ['FuelLog', 'Issues', 'Settings', 'MyVehicle', 'Inspection', 'Earnings', 'Documents']) {
             expect(ids).toContain(`link-${route}`);
         }
-        expect(textOf(t)).toContain('Coming soon');
+        // Nothing is "coming soon" any more: what has no backing says so honestly.
+        expect(textOf(t)).not.toContain('Coming soon');
+        expect(textOf(t)).toContain('Not enabled');
         ReactTestRenderer.act(() => t.unmount());
     });
 
