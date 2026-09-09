@@ -384,19 +384,35 @@ framework pieces, as the existing tests do.
 
 ### The prototypes — read them before implementing any screen
 
-Both rounds were delivered as Claude Design canvases in project
-`4dddbb4b-bdbf-4e12-ae68-2970c0c5050d`:
+**Access is already authorized on this machine** (`/design-login` has been run). Read them with the
+**`DesignSync`** tool:
 
-- **Round 1** — <https://claude.ai/design/p/4dddbb4b-bdbf-4e12-ae68-2970c0c5050d?file=Navigator+Redesign.dc.html>
-- **Round 2** — <https://claude.ai/design/p/4dddbb4b-bdbf-4e12-ae68-2970c0c5050d?file=Navigator+Redesign+R2.dc.html>
+```
+DesignSync method=list_files projectId=4dddbb4b-bdbf-4e12-ae68-2970c0c5050d
+DesignSync method=get_file  projectId=4dddbb4b-bdbf-4e12-ae68-2970c0c5050d path="<one of the files below>"
+```
 
-**Getting access.** These are not artifact URLs and cannot be fetched with `WebFetch` or the
-`Artifact` tool. Reach them with the **`DesignSync`** tool (`list_files`, then `get_file`), which
-needs design-system authorization: run **`/design-login` once from an interactive Claude Code
-session on this machine** and later sessions reuse it. On claude.ai/code, use Claude Design's
-"Send to Claude Code Web" to seed the project into the workspace instead. A previous session could
-not reach the project at all and worked from the written specs alone — do not repeat that if you can
-avoid it, because the frames carry spacing, state and composition detail the prose does not.
+`list_projects` returns **empty** — it filters to design-*system* projects and this one is
+`PROJECT_TYPE_PROJECT`. Address it by id directly; `get_project` confirms `canEdit: true`. These are
+not artifact URLs: `WebFetch` and the `Artifact` tool cannot read them. Files run 150–265 KB, so a
+`get_file` spills to disk — parse the saved JSON rather than reading it all into context.
+
+**There are seven design files, not two.** A previous handover named only the two the owner linked:
+
+| File | What it is |
+|---|---|
+| `Navigator Design System.dc.html` | **The Waypoint system itself** — exact tokens for all 4 themes, 11 statuses, type scale, space, radius, elevation, motion, buttons. Start here. |
+| `Navigator Redesign.dc.html` | Round 1 — 19 frames, `s01`–`s19` |
+| `Navigator Redesign R2.dc.html` | Round 2 — 40 frames, `A1`–`H2` |
+| `Navigator Prototype.dc.html` | The round 1 interactive prototype (app shell, duty sheet, Account home) |
+| `Navigator Prototype v2.dc.html` | A later prototype revision — **not previously mentioned anywhere**; diff it against v1 before trusting either |
+| `Navigator Redesign-print.dc.html`, `Navigator Prototype v2-print.dc.html` | Print/export variants of the above |
+| `uploads/` | The audit and round 1 brief, plus 8 screenshots of the **old** app for reference |
+
+Round 1 (`s01`–`s19`): Today; Route map; Route list; Driving glance (always dark); Orders; Order
+detail; Edit payload item; Stop execution; Fuel log; Report an issue; Inbox; Today dark; Welcome;
+Find your organization; Verification code; Onboarding checklist; Route map dark; Orders dark; Stop
+execution dark.
 
 **Source of truth, in order:**
 
@@ -408,15 +424,38 @@ avoid it, because the frames carry spacing, state and composition detail the pro
 4. `src/v3/theme/` and `src/v3/ui/` — the system **as actually built**. Where a doc and the code
    disagree, the code is what ships; reconcile deliberately rather than silently.
 
-**What R2 does and does not cover.** R2 *was* delivered. What was truncated was a previous session's
-**reading** of it — it hit a read cap partway into section H. So the frames exist for sections A
-through H1, **including E3 (DVIR), E4 and E5**, which is exactly the flow you are taking over: go and
-look at them before designing anything new. Confirmed to have **no frames**: **G2** (composer,
-partly inferable from G1), **H2** (earnings), **H3** (help), **H4** (sign out), and **all of section
-I** — sync queue, error states, push notification designs, iOS Live Activity / Android
-foreground-service notification, and tablet layouts. I1 and I2 were built from the design system
-directly, which is legitimate because they are mechanical; the rest need a design round or an
-explicit decision to ship without them.
+**What R2 covers — read from the file, not inferred.** R2 contains **40 frames**, and each is drawn
+in a specific state rather than as a neutral default, which is most of their value:
+
+`A1` sign in, 4 auth methods · `A2` permissions primer, **location denied with recovery** · `A3` org
+switcher, **switching / session teardown** · `A4` self-hosted, **unreachable** · `A5` devices &
+sessions, **revoking** · `A6` my documents, mixed states · `A7` profile, **editing with conflict** ·
+`B1` manifests, multi-day · `B2` stop detail · `B3` optimise preview, **before/after** · `B4` manual
+resequencing, **dragging, delta worse** · `C1` failed delivery · `C2` ID/age verification, **fail
+path** · `C3` custom fields renderer, **validation error** · `C4` complete stop, **blocked on missing
+proof** · `C5` proof of delivery record · `C6` arrive out of geofence · `D1` ad-hoc offer, **stacked,
+counting down** · `D2` edit destination, pin adjust · `D3` destination changed by dispatch · `D4`
+item detail, **damaged flagged** · `D5` order timeline, live · `D6` navigation hand-off · `E1` my
+vehicle, **1 open defect** · `E2` change vehicle, **inspection-required gate** · **`E3a` pre-trip
+checklist offline · `E3b` inspection item defect capture · `E3c` review & certification · `E3d`
+submitted — vehicle marked unsafe** · `E4` inspection history · `E5` vehicle defect with status
+timeline · `E6` maintenance & work orders, due soon · `F1` documents, **upload failed** · `F2` fuel
+report, **rejected with reason** · `F3` issue detail, escalated · `G1` conversation, **order context,
+failed send** · `G3` new conversation · `G4` notification detail · `H1` settings, **tracking disabled
+warning**.
+
+**The whole DVIR flow is drawn** — `E3a`–`E3d`, plus `E4`, `E5`, and the `E2` inspection-required
+gate. That is the feature you are taking over, so read those five frames before designing anything.
+Note `E3a` is drawn **offline**, which matches the requirement that inspections complete without a
+connection.
+
+**Where R2 actually stops:** the document ends mid-label at `H2 · Earnings —`. It was truncated
+during **generation**, not merely during a previous session's reading. So `H2` has a heading and no
+frame, and **`G2`** (composer), **`H3`** (help), **`H4`** (sign out) and **all of section I** —
+sync queue, error states, push notifications, Live Activity / foreground notification, tablet
+layouts — were never drawn. I1 and I2 were built from the design system directly, which is legitimate
+because they are mechanical; the rest need a design round or an explicit decision to ship without
+them.
 
 **Trailers have no frames at all** — the feature postdates both rounds. Either commission a round for
 them, or specify the frames' worth yourself and get it approved before building. Do not improvise a
@@ -440,6 +479,48 @@ parallel visual treatment.
 **Verification gate already in force:** every v3 screen renders in **all four schemes** under test.
 Keep that gate. `src/v3/ui/__tests__/no-hardcoded-copy.test.js` parses the sources to keep English
 literals out of the component library — keep that too.
+
+### The system's exact values, and the fidelity check
+
+From `Navigator Design System.dc.html`. Use these when adding anything new, so trailers and
+inspections land inside the system rather than beside it.
+
+| Token | Dark (default) | Light | Sunlight | Night |
+|---|---|---|---|---|
+| background | `#0B1017` | `#F4F6F9` | `#FFFFFF` | `#0C0906` |
+| surface | `#121927` | `#FFFFFF` | `#FFFFFF` | `#151009` |
+| surfaceRaised | `#1A2333` | `#FFFFFF` | `#F2F4F7` | `#1E1710` |
+| border | `#243044` | `#E2E8F0` | `#101828` | `#2C2114` |
+| textPrimary | `#F2F5F9` | `#101828` | `#000000` | `#E8D9C5` |
+| textSecondary | `#A8B3C4` | `#46536A` | `#1D2939` | `#B39C7D` |
+| textMuted | `#64748B` | `#8494AB` | `#475467` | `#6E5D45` |
+| primary | `#3D7BFA` | `#2E63D9` | `#0040DD` | `#D98A3D` |
+| onPrimary | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | `#160D02` |
+
+**Statuses — hue + shape + glyph, never colour alone:** `created` #8394AB ·circle ·
+`preparing` #4C9AFF ·circle · `dispatched` #4C9AFF »square · `driver_assigned` #8B7CF6 A·square ·
+`driver_enroute` #F5A623 »diamond · `started` #3D7BFA ▸square · `arrived` #22B8A8 ◎circle ·
+`completed` #2FBF71 ✓circle · `canceled` #8394AB ×square · `failed` #E5484D !diamond ·
+`on_hold` #E3C000 ‖square.
+
+**Type** (Archivo): display 34/800/−.02em · title 28/700 · heading 22/700 · body 17/500 ·
+secondary 15/500 · caption 13/600 · micro 11/700/.06em. **Glanceable tier**: 56 (ETA), 40
+(distance), stop-sequence badge min 44×44dp. Identifiers in JetBrains Mono.
+
+**Space** 4/8/12/16/24/32/48 · **radius** compact 10, hero 18, pill 999 · **detents** peek 120,
+half 50%, full 92% · **buttons** 5 variants × 6 states (default, pressed, disabled, loading, error,
+skeleton), min 48dp.
+
+**Elevation** base flat · card `0 1px 2px #0009` · sheet `0 -8px 32px #000c` · floating action
+`0 8px 20px #3D7BFA40` · map overlay `0 4px 16px #000a` with `blur(12)`.
+
+**Motion, nothing over 250ms:** sheet 220ms spring(.86) · list reorder 180ms ease-out · status
+confirm 240ms spring(.8) · sync tick 200ms ease-out · press feedback 90ms linear at scale .97.
+
+**Fidelity check, run 2026-09-09:** every one of the 36 theme hex values above, all 11 status hues,
+all glyphs and all three marker shapes are present in `src/v3/theme/`. **The built system matches the
+delivered design exactly** — so when a screen looks wrong, suspect the screen's composition, not the
+tokens. Re-run that diff after any theme change.
 
 ---
 
@@ -559,7 +640,8 @@ Internal wallet operations that already exist and may matter: `{id}/transfer`, `
 4. **Payout to the driver** — `{id}/payout` exists on the internal namespace; a driver-initiated
    withdrawal, if wanted, needs a consumable route and a gateway decision.
 
-**App side.** H2 Earnings is one of the screens with **no R2 frame**, and the gap spec has it
+**App side.** H2 Earnings is the exact point where R2 stops — a heading with **no frame behind it**
+(§7) — so it needs designing as well as building. The gap spec has it
 **config-gated and off by default** with a clear empty state — keep that until the crediting path
 actually exists, so the app never shows a plausible-looking zero that is really "not wired up".
 Design it as: balance, period selector, a transaction feed with type and direction, and payout
@@ -644,8 +726,9 @@ Raise these early rather than guessing:
 
 1. **Trailers** — view-only or full driver management? Should attach/detach be offline-queueable?
    Is trailer odometer / reefer-hours capture a driver responsibility?
-2. **Inspections** — E3/E4/E5 already have R2 frames; read them first. The open question is whether
-   **trailers** get a design round or specified frames approved before building.
+2. **Inspections** — E3a–E3d, E4, E5 and the E2 gate are all drawn; read them first. The open
+   design questions are **trailers** (no frames at all), and the four screens R2 never reached:
+   G2 composer, H2 earnings, H3 help, H4 sign out, plus section I.
 2a. **Localisation** — which locales ship first, and is RTL in scope for v3.0? Both answers change
    layout work across all 32 existing screens, so they are wanted early, not late.
 2b. **Earnings** — what does a driver actually earn (per order / per stop / per km / a share)? No
