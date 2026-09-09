@@ -483,6 +483,23 @@ capability is `POST /v1/manifests/{id}/optimize`, per manifest. The same audit
 found that it applies immediately, which changed the preview's design (see the
 ledger).
 
+### Internationalisation, found by adding a second language
+
+**F-64 — the tab bar was English by construction.** `TAB_OPTIONS` held
+`tabBarLabel: 'Today'` and so on as literals; no `t()` anywhere near them. The
+first thing a Spanish-speaking driver would have seen was five English tabs.
+Keys now, resolved in the bar at render.
+
+**F-65 — fifteen physical edges.** `marginLeft="auto"`, `paddingRight`,
+`textAlign="right"`, absolute `left`/`right` and seven hard-coded `›` chevrons.
+None of these flip under `I18nManager.forceRTL`, so an RTL locale would have
+mirrored the rows and left every value, badge and chevron on the wrong side.
+Found by grep once there was an RTL pseudo-locale to matter for.
+
+**F-66 — `language: 'en-GB'` with a catalogue keyed `en`.** Worked only because
+i18n-js falls back by language; the settings row displayed the raw tag. Now
+`'system'`, resolved by `resolveLocale`, which also rescues the stale value.
+
 ## How these were found — and how two were nearly missed
 
 Worth keeping, because the method mattered more than the fixes.

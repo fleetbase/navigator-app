@@ -19,6 +19,7 @@ export interface Settings {
     theme: ThemePreference;
     units: UnitPreference;
     navigationApp: NavigationApp;
+    /** `'system'` follows the device; otherwise a tag the i18n layer knows. */
     language: string;
     notifyNewWork: boolean;
     notifyDispatchMessages: boolean;
@@ -30,7 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
     theme: 'system',
     units: 'metric',
     navigationApp: 'apple',
-    language: 'en-GB',
+    language: 'system',
     notifyNewWork: true,
     notifyDispatchMessages: true,
     notifyNearbyOffers: false,

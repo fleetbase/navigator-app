@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
-import type { DistanceUnit } from '../format';
+import { formatNumber, type DistanceUnit } from '../format';
 
 export interface FuelReportRecord {
     id: string;
@@ -134,7 +134,7 @@ export function formatVolume(report?: FuelReportRecord | null): string {
 export function formatOdometer(report?: FuelReportRecord | null, units: DistanceUnit = 'metric'): string {
     const v = num(report?.odometer);
     if (v == null) return '—';
-    return `${v.toLocaleString()} ${units === 'imperial' ? 'mi' : 'km'}`;
+    return `${formatNumber(v)} ${units === 'imperial' ? 'mi' : 'km'}`;
 }
 
 /**

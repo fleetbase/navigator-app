@@ -248,7 +248,7 @@ export function ConversationScreen({
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ gap: space[2], paddingRight: space[4] }}
+                    contentContainerStyle={{ gap: space[2], paddingEnd: space[4] }}
                     testID="quick-replies"
                 >
                     {QUICK_REPLY_KEYS.map((key) => (

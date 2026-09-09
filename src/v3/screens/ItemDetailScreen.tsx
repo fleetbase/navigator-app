@@ -40,6 +40,7 @@ import {
 import { useSync } from '../shell';
 import { formatMoney, formatWeight, formatDimensions, formatClock } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { endAlign } from '../i18n/direction';
 
 /** The API returns bare base64; <Image> needs the data URI. */
 function pngSource(base64?: unknown) {
@@ -218,7 +219,7 @@ export function ItemDetailScreen({
                                 testID={`meta-${row.key}`}
                             >
                                 <Caption>{t(row.labelKey)}</Caption>
-                                <Body fontSize={15} tabular={row.mono} textAlign="right" flexShrink={1}>
+                                <Body fontSize={15} tabular={row.mono} textAlign={endAlign()} flexShrink={1}>
                                     {row.value}
                                 </Body>
                             </XStack>

@@ -23,8 +23,9 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useSettings } from '../settings';
 import { formatVolume, formatOdometer, formatEconomy, computeEconomy, type FuelReportRecord } from '../data';
 import { isRealPoint } from '../data/useOrderTimeline';
-import { formatMoney } from '../format';
+import { formatMoney, formatDateTime } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { endAlign } from '../i18n/direction';
 
 /** Rejection reasons are internal-only; the status alone is what we may show. */
 const REJECTED = new Set(['rejected', 'canceled', 'cancelled']);
@@ -72,7 +73,7 @@ export function FuelReportScreen({
                     <Body fontSize={24} fontWeight="800" tabular>
                         {formatMoney(report.amount, report.currency ?? 'USD')}
                     </Body>
-                    {report.created_at ? <Micro>{new Date(report.created_at).toLocaleString()}</Micro> : null}
+                    {report.created_at ? <Micro>{formatDateTime(report.created_at)}</Micro> : null}
                 </YStack>
             </Surface>
 
@@ -86,7 +87,7 @@ export function FuelReportScreen({
                         {i > 0 ? <Divider /> : null}
                         <XStack padding={space[3]} justifyContent="space-between" alignItems="center" gap={space[3]} testID={`fuel-row-${row.key}`}>
                             <Caption>{t(row.labelKey)}</Caption>
-                            <Body fontSize={15} tabular={row.mono} textAlign="right" flexShrink={1}>
+                            <Body fontSize={15} tabular={row.mono} textAlign={endAlign()} flexShrink={1}>
                                 {row.value}
                             </Body>
                         </XStack>

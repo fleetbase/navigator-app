@@ -13,6 +13,7 @@
  * stack a system-styled row on top of a designed one.
  */
 import { XStack, YStack } from 'tamagui';
+import { backChevron } from '../i18n/direction';
 import { Body } from './Text';
 import { space } from '../theme/tokens';
 
@@ -53,7 +54,7 @@ export function ScreenHeader({
                     testID="screen-back"
                 >
                     <Body fontSize={26} fontWeight="400" tone="brand" lineHeight={28}>
-                        ‹
+                        {backChevron()}
                     </Body>
                 </YStack>
             ) : (

@@ -753,7 +753,12 @@
         "notifyOffersHint": "Interrupts even in Do Not Disturb",
         "offlineCache": "Offline cache",
         "manage": "Manage",
-        "sendDiagnostics": "Send diagnostics"
+        "sendDiagnostics": "Send diagnostics",
+        "languageSystem": "Follow the phone",
+        "languageHint": "Names are shown in each language's own spelling.",
+        "restartTitle": "Restart to change the layout direction",
+        "restartBody": "Right-to-left layout is applied when the app next starts. Close it fully and open it again.",
+        "pseudoNote": "Test locales — development builds only"
     },
     "nav": {
         "stopDetail": "Stop",
@@ -785,7 +790,14 @@
         "destination": "Change destination",
         "changeVehicle": "Change vehicle",
         "offers": "Offers",
-        "routeHome": "Route"
+        "routeHome": "Route",
+        "tabs": {
+            "today": "Today",
+            "route": "Route",
+            "orders": "Orders",
+            "inbox": "Inbox",
+            "account": "Account"
+        }
     },
     "help": {
         "messageDispatch": "Message dispatch",

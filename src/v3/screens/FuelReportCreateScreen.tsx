@@ -26,6 +26,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useSettings } from '../settings';
 import { useSync } from '../shell';
 import { useCreateFuelReport, computeEconomy, formatEconomy, type FuelReportRecord } from '../data';
+import { formatNumber } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
 const VOLUME_UNITS = ['L', 'gal'] as const;
@@ -69,7 +70,7 @@ export function FuelReportCreateScreen({
         if (!isDecimal(odometer)) return t('fuelCreate.odometerInvalid');
         // A reading below the last one is a typo far more often than a swap.
         if (Number.isFinite(lastOdometer) && Number(odometer) < lastOdometer) {
-            return t('fuelCreate.odometerBehind', { last: lastOdometer.toLocaleString() });
+            return t('fuelCreate.odometerBehind', { last: formatNumber(lastOdometer) });
         }
         return undefined;
     }, [odometer, touched.odometer, lastOdometer, t]);
@@ -122,7 +123,7 @@ export function FuelReportCreateScreen({
                         error={odometerError}
                         hint={
                             Number.isFinite(lastOdometer)
-                                ? t('fuelCreate.lastOdometer', { last: lastOdometer.toLocaleString() })
+                                ? t('fuelCreate.lastOdometer', { last: formatNumber(lastOdometer) })
                                 : undefined
                         }
                         accessory={<FieldAccessory label={units === 'imperial' ? 'mi' : 'km'} />}

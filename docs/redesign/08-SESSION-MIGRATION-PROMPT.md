@@ -119,7 +119,7 @@ surfaced within minutes of pointing the app at a real instance.
 |---|---|
 | v3 screens | 36 built, 2 still `placeholder()` |
 | v3 source | 188 files, ~28,600 lines |
-| Tests | 855 passing, 58 suites, 0 failing |
+| Tests | 872 passing, 59 suites, 0 failing |
 | v3 lint / typecheck | **0 errors** (105 warnings) |
 | v2 lint / typecheck | 596 lint errors, 15 type errors — **pre-existing, untouched** |
 | Cutover | `NAVIGATOR_V3=true` in `.env` selects the v3 tree at `App.tsx` |
@@ -551,25 +551,22 @@ and only 6 of 34 screens imported the language hook, which is much of why this r
 - `no-hardcoded-copy.test.js` enforces `t()` across the component library.
 - `setLocale()` exists.
 
-**What is missing — treat as open work:**
+**Done 2026-09-09 — the foundation is in and exercised:** a full Spanish catalogue
+(`translations/es.json`, parity-tested against `en`), development-only pseudo-locales `en-XA`
+(+30% expansion) and `ar-XB` (RTL override), device-locale detection with `language: 'system'` as
+the default, a real language picker in Settings with a restart notice for direction changes, every
+physical edge and chevron in the tree made direction-aware (`src/v3/i18n/direction.ts`), tab labels
+through `t()`, and locale-aware Intl formatting. See the ledger's "Internationalisation" section.
 
-1. **There is only one catalogue.** `catalogues = { en }`. No second language exists, so nothing has
-   ever exercised a real translation path. Add at least one non-English locale early — ideally one
-   that stresses the assumptions (a longer language for the ~30% expansion rule, and an RTL one).
-2. **No RTL handling anywhere.** `grep -rn "I18nManager" src/` returns nothing. Invariant 7 requires
-   RTL, and RTL is not a translation problem — it is a layout problem. Retrofitting it after 32
-   screens is materially harder than doing it now, and it interacts with every row, icon direction
-   and swipe gesture in the app.
-3. **Settings shows language as a read-only row**, not a picker (`SettingsScreen.tsx:167` renders a
-   `ListRow` with `meta`), because there is nothing to switch to. H1 specifies a real selector.
-4. **No device-locale detection** wired at startup.
-5. `settingsStore` defaults `language: 'en-GB'` while the catalogue is keyed `en` — reconcile
-   language tags versus catalogue keys before adding locales, or fallbacks will silently misfire.
-6. **Every new screen — trailers, inspections, the Route tab — must be authored through `t()` from
-   the first commit**, with its keys added to `en.json` in the same change. Do not leave literals to
-   sweep up later.
-7. Dates and numbers: v2 hard-codes English in `formatWhatsAppTimestamp` and passes no locale to
-   `date-fns`. Anything v3 shares with it needs checking.
+**Still open:**
+
+1. **Which real locales ship** is the owner's decision — Spanish is a working proof of the path, and
+   `es.json` wants a translator's review.
+2. **RTL has been walked in code, not on a device.** Run the app under `ar-XB` (Settings → Language,
+   dev build, restart) and fix what the grep could not see: swipe gestures, map overlays, the scanner.
+3. **Every new screen must be authored through `t()` from the first commit**, with keys added to
+   `en.json` *and* `es.json` in the same change — the parity test fails otherwise.
+4. v2 namespaces are deliberately untranslated; the v2 tree is what the cutover flag replaces.
 
 ---
 

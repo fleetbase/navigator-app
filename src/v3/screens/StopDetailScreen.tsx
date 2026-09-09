@@ -52,6 +52,7 @@ import {
 } from '../data';
 import { formatClock, formatDuration, formatMeters } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { chevron } from '../i18n/direction';
 
 export interface StopDetailScreenProps {
     manifestId: string;
@@ -273,7 +274,7 @@ export function StopDetailScreen({ manifestId, stopId, onNavigate, onOpenOrder, 
                             ) : null}
                             {onOpenOrder ? (
                                 <Button variant="ghost" alignSelf="flex-start" onPress={() => onOpenOrder(stop.order!.id!)} testID="stop-open-order">
-                                    {t('stopDetail.openOrder')} ›
+                                    {t('stopDetail.openOrder')} {chevron()}
                                 </Button>
                             ) : null}
                         </YStack>

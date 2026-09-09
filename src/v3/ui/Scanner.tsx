@@ -60,7 +60,7 @@ export function ScannerOverlay({
                     borderColor={frameColor as never}
                     accessibilityLabel="Scanner viewfinder"
                 >
-                    <YStack position="absolute" top="50%" left={space[5]} right={space[5]} height={2} backgroundColor={frameColor as never} />
+                    <YStack position="absolute" top="50%" start={space[5]} end={space[5]} height={2} backgroundColor={frameColor as never} />
                 </YStack>
             </YStack>
 

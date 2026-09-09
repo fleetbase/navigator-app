@@ -76,8 +76,8 @@ function useFrameStyle(plain: boolean, multiline?: boolean, disabled?: boolean) 
         borderWidth: 1,
         borderColor: theme.border?.val as string,
         backgroundColor: theme.surface?.val as string,
-        paddingLeft: space[4],
-        paddingRight: plain ? space[4] : space[2],
+        paddingStart: space[4],
+        paddingEnd: plain ? space[4] : space[2],
         gap: space[2],
         opacity: disabled ? 0.38 : 1,
     };
@@ -201,7 +201,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
 export function FieldAccessory({ label, onPress, testID }: { label: string; onPress?: () => void; testID?: string }) {
     if (!onPress) {
         return (
-            <Micro paddingRight={space[2]} testID={testID}>
+            <Micro paddingEnd={space[2]} testID={testID}>
                 {label}
             </Micro>
         );

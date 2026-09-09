@@ -11,6 +11,7 @@ import { Body, Micro, Secondary } from './Text';
 import { Button } from './Button';
 import { radius, space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
+import { endAlign } from '../i18n/direction';
 
 const Frame = styled(XStack, {
     name: 'Banner',
@@ -74,7 +75,7 @@ export function Banner({ tone = 'neutral', message, meta, action, testID }: Bann
                 // flexShrink, because `meta` is meant for short adornments
                 // ("3 queued") and a long one used to take its full intrinsic
                 // width and squeeze the message down to nothing.
-                <Micro tone={textTone[tone]} tabular flexShrink={1} textAlign="right">
+                <Micro tone={textTone[tone]} tabular flexShrink={1} textAlign={endAlign()}>
                     {meta}
                 </Micro>
             ) : null}

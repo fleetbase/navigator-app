@@ -20,6 +20,7 @@ import { headingOf, humanizeTerm, type IssueRecord } from '../data';
 import { formatDateTime } from '../format';
 import { isRealPoint } from '../data/useOrderTimeline';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { endAlign } from '../i18n/direction';
 
 export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
     const { t } = useTranslation();
@@ -89,7 +90,7 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
                             {i > 0 ? <Divider /> : null}
                             <XStack padding={space[3]} justifyContent="space-between" alignItems="center" gap={space[3]} testID={`issue-row-${row.key}`}>
                                 <Caption>{t(row.labelKey)}</Caption>
-                                <Body fontSize={15} textAlign="right" flexShrink={1}>
+                                <Body fontSize={15} textAlign={endAlign()} flexShrink={1}>
                                     {row.value}
                                 </Body>
                             </XStack>

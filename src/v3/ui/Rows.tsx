@@ -13,6 +13,7 @@ import { Surface } from './Surface';
 import { radius, space } from '../theme/tokens';
 import { formatDuration, formatMeters, type DistanceUnit } from '../format';
 import { useTranslation } from '../i18n/useTranslation';
+import { chevron } from '../i18n/direction';
 
 export type StopState = 'current' | 'pending' | 'completed' | 'failed';
 
@@ -172,7 +173,7 @@ export function StopRow({
                         {itemCount != null ? <Chip label={t('ui.itemCount', { count: itemCount })} /> : null}
                         {window ? <Chip label={`Window ${window}`} /> : null}
                         {leg ? (
-                            <Micro marginLeft="auto" tabular>
+                            <Micro marginStart="auto" tabular>
                                 {leg}
                             </Micro>
                         ) : null}
@@ -249,7 +250,7 @@ export function ListRow({
                 {name}
             </Body>
             {meta ? <Caption tone={metaTone}>{meta}</Caption> : null}
-            <Micro fontSize={16}>›</Micro>
+            <Micro fontSize={16}>{chevron()}</Micro>
         </XStack>
     );
 }

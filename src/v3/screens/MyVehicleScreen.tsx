@@ -24,9 +24,10 @@ import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { endAlign } from '../i18n/direction';
 import { useSync } from '../shell';
 import { useVehicle, odometerOf, vehicleTitle, type VehicleRecord } from '../data/useVehicle';
-import { formatDateTime } from '../format';
+import { formatDateTime, formatNumber } from '../format';
 import { humanizeStatus } from '../theme/status';
 
 /** Rows the driver has a use for, in the order they would look for them. */
@@ -139,7 +140,7 @@ export function MyVehicleScreen({
                     <YStack gap={space[1]}>
                         <Caption>{t('vehicle.odometer')}</Caption>
                         <Body fontSize={22} fontWeight="800" tabular testID="vehicle-odometer-value">
-                            {Math.round(odometer.value).toLocaleString()} {vehicle.odometer_unit ?? 'km'}
+                            {formatNumber(Math.round(odometer.value))} {vehicle.odometer_unit ?? 'km'}
                         </Body>
                         {/*
                          * Where the number came from matters: a driver about to
@@ -180,7 +181,7 @@ export function MyVehicleScreen({
                             ) : (
                                 <XStack padding={space[3]} justifyContent="space-between" alignItems="center" gap={space[3]} testID={`vehicle-row-${row.key}`}>
                                     <Caption>{row.label}</Caption>
-                                    <Body fontSize={15} textAlign="right" flexShrink={1}>
+                                    <Body fontSize={15} textAlign={endAlign()} flexShrink={1}>
                                         {row.value}
                                     </Body>
                                 </XStack>

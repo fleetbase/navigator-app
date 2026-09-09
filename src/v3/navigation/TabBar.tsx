@@ -11,6 +11,7 @@
  * Navigation expects a style object and referenced an undefined `focued`; it
  * silently never ran.
  */
+import { useTranslation } from '../i18n/useTranslation';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack, useTheme } from 'tamagui';
@@ -27,6 +28,7 @@ export interface TabBadges {
 }
 
 export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTabBarProps & { badges?: TabBadges }) {
+    const { t } = useTranslation();
     const theme = useTheme();
     const insets = useSafeAreaInsets();
 
@@ -43,7 +45,7 @@ export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTa
             {state.routes.map((route, index) => {
                 const focused = state.index === index;
                 const { options } = descriptors[route.key];
-                const label = (options.tabBarLabel as string) ?? options.title ?? route.name;
+                const label = t((options.tabBarLabel as string) ?? options.title ?? route.name, { defaultValue: route.name });
                 const Icon = tabIcons[route.name as TabIconName];
                 const badge = badges[route.name as keyof TabBadges];
 
@@ -78,7 +80,7 @@ export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTa
                                 <XStack
                                     position="absolute"
                                     top={-4}
-                                    right={-10}
+                                    end={-10}
                                     minWidth={15}
                                     height={15}
                                     paddingHorizontal={4}

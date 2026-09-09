@@ -31,6 +31,7 @@ import { Field } from '../ui/Field';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { chevron } from '../i18n/direction';
 import { useSync } from '../shell';
 import { useQueue, useFleetbase } from '../api';
 import { useCreateIssue } from '../data';
@@ -128,7 +129,7 @@ export function HelpScreen({
                         <Body fontSize={15}>{t('help.messageDispatch')}</Body>
                         <Micro>{t('help.messageDispatchBody')}</Micro>
                     </YStack>
-                    <Secondary fontSize={17}>›</Secondary>
+                    <Secondary fontSize={17}>{chevron()}</Secondary>
                 </XStack>
 
                 <Divider />

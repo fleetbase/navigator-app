@@ -21,8 +21,10 @@ import { ListRow } from '../ui/Rows';
 import { space } from '../theme/tokens';
 import { useSettings, useSetSetting } from '../settings';
 import { useTranslation } from '../i18n/useTranslation';
+import { applyLocale, deviceLanguageTags, resolveLocale, selectableLocales, type LocaleInfo } from '../i18n';
 import type { ThemePreference, UnitPreference } from '../settings';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { useState } from 'react';
 
 /** Keys, not words — these tables are module-level and outlive a language change. */
 const THEME_OPTIONS: { value: ThemePreference; labelKey: string }[] = [
@@ -46,6 +48,37 @@ const NAV_APP_LABEL_KEYS: Record<string, string> = {
     waze: 'handoff.waze',
     uber: 'handoff.uber',
 };
+
+/**
+ * One language, as a selectable row. The name is the language's own — a
+ * picker that translates "Español" into the current language defeats the
+ * driver who cannot read the current language.
+ */
+function LanguageRow({ name, selected, onPress, testID }: { name: string; selected: boolean; onPress: () => void; testID?: string }) {
+    return (
+        <XStack
+            alignItems="center"
+            gap={space[3]}
+            paddingHorizontal={space[4]}
+            paddingVertical={space[3]}
+            minHeight={52}
+            onPress={onPress}
+            pressStyle={{ backgroundColor: '$surfaceRaised' }}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            testID={testID}
+        >
+            <Body flex={1} fontSize={15} fontWeight={selected ? '700' : '500'}>
+                {name}
+            </Body>
+            {selected ? (
+                <Micro tone="brand" fontSize={16}>
+                    ✓
+                </Micro>
+            ) : null}
+        </XStack>
+    );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
@@ -114,8 +147,18 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
     const settings = useSettings();
     const set = useSetSetting();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const screen = useScreenStyle();
+    const [needsRestart, setNeedsRestart] = useState(false);
+
+    const locales: LocaleInfo[] = selectableLocales();
+    const chooseLanguage = (preference: string) => {
+        set('language', preference);
+        const target = resolveLocale(preference, deviceLanguageTags());
+        // Direction is applied on the next launch; say so rather than leave
+        // the driver on a half-flipped screen.
+        setNeedsRestart(applyLocale(target).needsRestart);
+    };
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[5] }} testID="settings-screen">
@@ -164,7 +207,31 @@ export function SettingsScreen({
                     </YStack>
                 </YStack>
                 <Divider />
-                <ListRow name={t('settings.language')} meta={settings.language} />
+                <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={2}>
+                    <Body fontSize={15}>{t('settings.language')}</Body>
+                    <Micro>{t('settings.languageHint')}</Micro>
+                </YStack>
+                <LanguageRow
+                    name={t('settings.languageSystem')}
+                    selected={settings.language === 'system'}
+                    onPress={() => chooseLanguage('system')}
+                    testID="language-system"
+                />
+                {locales.map((l) => (
+                    <LanguageRow
+                        key={l.tag}
+                        name={l.pseudo ? `${l.name} · ${t('settings.pseudoNote')}` : l.name}
+                        selected={settings.language === l.tag}
+                        onPress={() => chooseLanguage(l.tag)}
+                        testID={`language-${l.tag}`}
+                    />
+                ))}
+                {needsRestart ? (
+                    <YStack padding={space[3]}>
+                        <Banner tone="brand" message={t('settings.restartTitle')} meta={locale} testID="language-restart" />
+                        <Micro paddingTop={space[2]}>{t('settings.restartBody')}</Micro>
+                    </YStack>
+                ) : null}
                 <Divider />
                 <YStack padding={space[4]} gap={space[3]}>
                     <Body fontSize={15}>{t('settings.units')}</Body>

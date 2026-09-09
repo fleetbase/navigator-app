@@ -86,7 +86,7 @@ export function ActivityStepper({ flow, currentCode, labelFor, testID }: Activit
         <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: space[2], paddingRight: space[4] }}
+            contentContainerStyle={{ gap: space[2], paddingEnd: space[4] }}
             testID={testID}
         >
             {steps}

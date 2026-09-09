@@ -52,6 +52,7 @@ import {
 import { dayKey } from '../data/orderStore';
 import { formatClock, formatDay, formatMeters } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { backChevron } from '../i18n/direction';
 
 export interface RouteScreenProps {
     driverId?: string;
@@ -247,7 +248,7 @@ function RouteView({
                             <EmptyState title={t('route.noPositions')} testID="route-map-empty" />
                         </YStack>
                     )}
-                    <XStack position="absolute" top={space[3]} right={space[3]} gap={space[2]}>
+                    <XStack position="absolute" top={space[3]} end={space[3]} gap={space[2]}>
                         <Button variant="secondary" height={40} paddingHorizontal={space[3]} onPress={() => setFitToken((n) => n + 1)} testID="route-recenter">
                             {t('route.recenter')}
                         </Button>
@@ -258,7 +259,7 @@ function RouteView({
                         ) : null}
                     </XStack>
                     {current ? (
-                        <YStack position="absolute" left={space[3]} right={space[3]} bottom={space[3]}>
+                        <YStack position="absolute" start={space[3]} end={space[3]} bottom={space[3]}>
                             <Surface level="mapOverlay" hero padded testID="route-next-stop">
                                 <YStack gap={space[2]}>
                                     <XStack gap={space[3]} alignItems="center">
@@ -308,7 +309,7 @@ function RouteView({
             >
                 {onBack ? (
                     <Button variant="ghost" alignSelf="flex-start" onPress={onBack} testID="route-back">
-                        ‹ {t('route.backToManifests')}
+                        {backChevron()} {t('route.backToManifests')}
                     </Button>
                 ) : null}
                 {header}

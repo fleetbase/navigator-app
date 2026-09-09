@@ -22,6 +22,7 @@
  *
  * Anything that genuinely duplicates v2 should now be imported from it instead.
  */
+import { currentLocale } from './i18n';
 
 export type DistanceUnit = 'metric' | 'imperial';
 
@@ -65,7 +66,7 @@ export function formatClock(iso?: string | null): string {
     if (!iso) return '—';
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return d.toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 /**
@@ -80,7 +81,7 @@ export function formatDateTime(iso?: string | null): string {
     if (!iso) return '—';
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(currentLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -102,7 +103,7 @@ export function formatDay(day?: string | null, options: { weekday?: boolean } = 
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
     const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(day);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(options.weekday ? { weekday: 'short' } : {}) });
+    return d.toLocaleDateString(currentLocale(), { day: 'numeric', month: 'short', ...(options.weekday ? { weekday: 'short' } : {}) });
 }
 
 /**
@@ -127,7 +128,7 @@ export function formatMoney(amount?: string | number | null, currency = 'USD'): 
     const major = zeroDecimal ? raw : raw / 100;
 
     try {
-        return new Intl.NumberFormat(undefined, {
+        return new Intl.NumberFormat(currentLocale(), {
             style: 'currency',
             currency: code,
             minimumFractionDigits: zeroDecimal ? 0 : 2,
@@ -165,4 +166,12 @@ export function formatDimensions(
     if (sides.every((s) => s == null)) return undefined;
     const body = sides.map((s) => s ?? '?').join(' × ');
     return unit ? `${body} ${unit}` : body;
+}
+
+/** A plain number in the driver's locale — "12,480" · "12.480" · "١٢٬٤٨٠". */
+export function formatNumber(value?: number | string | null, options: Intl.NumberFormatOptions = {}): string {
+    if (value == null || value === '') return '—';
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) return '—';
+    return new Intl.NumberFormat(currentLocale(), options).format(n);
 }

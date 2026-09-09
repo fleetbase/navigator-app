@@ -603,12 +603,17 @@ function AccountStack() {
     );
 }
 
+/**
+ * Label *keys*. The bar resolves them through `t()` at render, so the labels
+ * follow a language change; `tabBarLabel` itself would be baked in English
+ * at module load.
+ */
 const TAB_OPTIONS = {
-    Today: { tabBarLabel: 'Today' },
-    Route: { tabBarLabel: 'Route' },
-    Orders: { tabBarLabel: 'Orders' },
-    Inbox: { tabBarLabel: 'Inbox' },
-    Account: { tabBarLabel: 'Account' },
+    Today: { tabBarLabel: 'nav.tabs.today' },
+    Route: { tabBarLabel: 'nav.tabs.route' },
+    Orders: { tabBarLabel: 'nav.tabs.orders' },
+    Inbox: { tabBarLabel: 'nav.tabs.inbox' },
+    Account: { tabBarLabel: 'nav.tabs.account' },
 } as const;
 
 /**

@@ -29,6 +29,7 @@ import { useSync } from '../shell';
 import { useQueue, useFleetbase } from '../api';
 import { useDriver, useCurrentOrganization, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { chevron } from '../i18n/direction';
 
 export interface AccountLink {
     route: string;
@@ -213,7 +214,7 @@ export function AccountScreen({
                             testID={`link-${link.route}`}
                         >
                             <Body fontSize={15}>{t(link.labelKey)}</Body>
-                            {link.blockedKey ? <Micro tone="warning">{t(link.blockedKey)}</Micro> : <Secondary fontSize={17}>›</Secondary>}
+                            {link.blockedKey ? <Micro tone="warning">{t(link.blockedKey)}</Micro> : <Secondary fontSize={17}>{chevron()}</Secondary>}
                         </XStack>
                     </YStack>
                 ))}

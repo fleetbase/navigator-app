@@ -58,3 +58,12 @@ jest.mock('react-native-maps', () => {
     const Polyline = () => null;
     return { __esModule: true, default: MapView, Marker, Polyline, PROVIDER_GOOGLE: 'google', PROVIDER_DEFAULT: undefined };
 });
+
+/**
+ * react-native-localize reads the OS. Tests get a British English phone, which
+ * is the case the `en-GB` → `en` catalogue match exists for.
+ */
+jest.mock('react-native-localize', () => ({
+    getLocales: () => [{ languageTag: 'en-GB', languageCode: 'en', countryCode: 'GB', isRTL: false }],
+    findBestLanguageTag: () => ({ languageTag: 'en-GB', isRTL: false }),
+}));

@@ -630,3 +630,40 @@ all four screens in all four schemes. **Not device-verified** — the dev instan
 has no seeded manifest for the test driver; seeding one is the first thing to do
 before a road test.
 
+---
+
+## Internationalisation — the foundation, exercised end to end
+
+The i18n layer existed but had never translated anything: one catalogue, a
+read-only language row, a stored default (`en-GB`) that no catalogue was keyed
+by, no device detection, no RTL. Built in one slice:
+
+- **`translations/es.json`** — a full Spanish catalogue for every v3
+  namespace (828 keys). `i18n/__tests__/locales.test.ts` enforces parity: every
+  v3 key present, no extra keys, identical `%{placeholders}`, and a ceiling on
+  strings identical to English. A new key without a Spanish string fails CI,
+  which is the only way a second language stays complete.
+- **Pseudo-locales, dev builds only.** `en-XA` accents and pads every string
+  by ~30%; `ar-XB` does the same under a bidi override. Both are generated from
+  `en` at boot (`i18n/pseudo.ts`) and never shipped. They are how invariant 7
+  gets walked on every screen without a translator in the loop.
+- **Device locale.** `language` now defaults to `'system'` and resolves through
+  `react-native-localize` (`resolveLocale`: exact tag, then language subtag,
+  then `en`). The stale `en-GB` default is rescued by language, not dropped.
+- **A real picker** in Settings (H1), showing each language's own name, with a
+  restart notice when the direction changes — RN applies `forceRTL` at the next
+  launch, not in place.
+- **RTL groundwork.** Every physical edge in the tree (`marginLeft`,
+  `paddingRight`, `textAlign="right"`, absolute `left`/`right`) became a logical
+  one (`marginStart`, `paddingEnd`, `endAlign()`, `start`/`end`), and every
+  chevron goes through `chevron()`/`backChevron()` from `i18n/direction.ts`.
+  Tab labels, which were English literals in `TAB_OPTIONS`, are keys.
+- **Formatting follows the locale.** `formatClock`, `formatDateTime`,
+  `formatDay`, `formatMoney` and the new `formatNumber` pass `currentLocale()`
+  to Intl; the four screens that called `toLocaleString()` bare no longer do.
+
+**Still open:** which real locales ship (owner's call — Spanish is a working
+proof, not a decision); a translator's review of `es.json`; and the v2
+namespaces, which are not translated because the v2 tree is what the cutover
+flag replaces.
+

@@ -23,13 +23,14 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useOrder, useOrderTimeline, placeOf, displayIdOf, type TrackingStatusEvent } from '../data';
 import { useSync } from '../shell';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { currentLocale } from '../i18n';
 
 /** Absolute date + time — a timeline entry needs the day, not just the clock. */
 function formatStamp(iso?: string): string {
     if (!iso) return '—';
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(currentLocale(), {
         day: 'numeric',
         month: 'short',
         hour: '2-digit',

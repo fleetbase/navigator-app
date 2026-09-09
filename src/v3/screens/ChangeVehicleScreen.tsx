@@ -26,6 +26,7 @@ import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { chevron } from '../i18n/direction';
 import { useSync } from '../shell';
 import { useVehicles, isAssignable } from '../data/useVehicles';
 import { useUpdateDriver } from '../data/useAccount';
@@ -118,7 +119,7 @@ export function ChangeVehicleScreen({
                                     ) : vehicle.status ? (
                                         <StatusPill status={vehicle.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} testID={`vehicle-status-${vehicle.id}`} />
                                     ) : (
-                                        <Secondary fontSize={17}>›</Secondary>
+                                        <Secondary fontSize={17}>{chevron()}</Secondary>
                                     )}
                                 </XStack>
                             </YStack>

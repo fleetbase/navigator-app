@@ -13,14 +13,31 @@
  * %{total}` is interpolation. Concatenating those breaks every language whose
  * word order or plural categories differ from English.
  */
+import { I18nManager } from 'react-native';
 import I18n from 'i18n-js';
 import en from '../../../translations/en.json';
+import es from '../../../translations/es.json';
+import { pseudolocalize } from './pseudo';
+import { DEFAULT_LOCALE, isRtlLocale, localeInfo } from './locales';
 
-export const catalogues: Record<string, object> = { en };
+export * from './locales';
+export * from './direction';
+export { pseudolocalize, pseudolocalizeString } from './pseudo';
+
+export const catalogues: Record<string, object> = { en, es };
+
+/*
+ * The pseudo-locales are built, not shipped: a development build gets them
+ * for free and a release build never carries them. See locales.ts.
+ */
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    catalogues['en-XA'] = pseudolocalize(en);
+    catalogues['ar-XB'] = pseudolocalize(en, { rtl: true });
+}
 
 I18n.fallbacks = true;
-I18n.defaultLocale = 'en';
-I18n.locale = 'en';
+I18n.defaultLocale = DEFAULT_LOCALE;
+I18n.locale = DEFAULT_LOCALE;
 I18n.translations = catalogues;
 
 /** Missing keys must be loud in dev and harmless in production. */
@@ -60,6 +77,53 @@ export function currentLocale(): string {
 
 export function setLocale(locale: string): void {
     I18n.locale = locale;
+}
+
+/**
+ * The device's languages, most preferred first, as BCP-47 tags.
+ *
+ * `react-native-localize` is native; under Jest, or on a platform where the
+ * module has not linked, it throws rather than returning nothing. An empty
+ * list means "no preference known", and the resolver falls back to English.
+ */
+export function deviceLanguageTags(): string[] {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const localize = require('react-native-localize') as { getLocales?: () => { languageTag: string }[] };
+        return (localize.getLocales?.() ?? []).map((l) => l.languageTag).filter(Boolean);
+    } catch {
+        return [];
+    }
+}
+
+export interface ApplyLocaleResult {
+    locale: string;
+    /**
+     * Direction is applied by React Native at launch, not at the moment it is
+     * forced. When switching between an LTR and an RTL locale the app has to
+     * be restarted for rows, chevrons and gestures to flip, and the caller
+     * should say so rather than leave the driver looking at a half-flipped
+     * screen.
+     */
+    needsRestart: boolean;
+}
+
+/**
+ * Make `locale` current: the catalogue, and the layout direction it needs.
+ * Idempotent — calling it with the current locale changes nothing.
+ */
+export function applyLocale(locale: string): ApplyLocaleResult {
+    const target = localeInfo(locale) ? locale : DEFAULT_LOCALE;
+    setLocale(target);
+
+    const rtl = isRtlLocale(target);
+    let needsRestart = false;
+    if (I18nManager.isRTL !== rtl) {
+        I18nManager.allowRTL(rtl);
+        I18nManager.forceRTL(rtl);
+        needsRestart = true;
+    }
+    return { locale: target, needsRestart };
 }
 
 export function availableLocales(): string[] {

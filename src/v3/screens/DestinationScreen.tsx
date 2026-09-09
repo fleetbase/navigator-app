@@ -23,6 +23,7 @@ import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { chevron } from '../i18n/direction';
 import { useSync } from '../shell';
 import { useTracker } from '../data/useTracker';
 import { useSetDestination } from '../data/useSetDestination';
@@ -144,7 +145,7 @@ export function DestinationScreen({ orderId, onDone }: { orderId: string; onDone
                                             {t('destination.done')}
                                         </Micro>
                                     ) : (
-                                        <Secondary fontSize={17}>›</Secondary>
+                                        <Secondary fontSize={17}>{chevron()}</Secondary>
                                     )}
                                 </XStack>
                             </YStack>
