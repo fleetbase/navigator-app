@@ -20,3 +20,4 @@ export * from './routeGeo';
 export * from './useOrderRecord';
 export * from './useTrailers';
 export * from './useWallet';
+export * from './useInspections';

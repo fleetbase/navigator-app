@@ -717,3 +717,40 @@ reads like data. `Placeholder.tsx` has no remaining users on the tab graph.
 The unused **Contacts** permission is gone from the Podfile and `Info.plist`;
 that lands with the next `pod install`.
 
+---
+
+## Inspections / DVIR — the app side, built against a contract still in review
+
+E2 gate, E3a checklist, E3b defect capture, E3c review and certification, E3d
+outcome, E4 history and its detail (carrying E5's defect view) are built.
+The driver-facing API does not exist on any released FleetOps: it is being
+added on `feature/inspections-driver-api` (fleetops#267 rebased — cleanly, zero
+conflicts — plus the `v1` surface, tests against the 100% gate, and the Postman
+collection), as a **draft PR for review**. Until it lands, an instance answers
+404 and the hub renders the not-enabled state.
+
+**Offline-first by construction.** `InspectionDraftStore` persists every answer
+to MMKV the moment it is given; the checklist renders the draft and owns no
+answer state. Photos are base64 (replayable across a cold start, as proof
+capture proved). Submit goes through the adapter; queued, the draft becomes a
+local receipt (`queued · will sync`) in the history until the server lists the
+submission by `meta.client_key`.
+
+**The body mirrors `PublicInspectionController@submit`** field for field
+(`item_results[].{item_key,label,category,status,severity,passed,comments,photos}`,
+`odometer`, `location`, `signature`, `attachments`) plus `inspection_form`,
+`driver`, `vehicle`, `started_at` and `meta.source_app`. An unanswered optional
+item is sent as passed; a not-applicable one as `status: not_applicable, passed:
+true` — the server counts failures on `passed`.
+
+**Rules from the frames, enforced in code:** a defect needs a severity, a note,
+and a photo at high or above (`settings.photo_required_from` overrides); the
+vehicle is unsafe at high or above, or when the driver ticks it; review blocks
+submit until every required item is answered and the driver certifies, plus a
+signature when `settings.require_signature`. The E2 gate is `onAssigned` on
+Change vehicle: a confirmed swap lands on the hub with the required-inspection
+banner. Failure consequences (issue, work order) are the server's config-driven
+job; the outcome and detail screens show their identifiers when returned.
+
+**Not device-verified**, and cannot be until the FleetOps PR is on an instance.
+

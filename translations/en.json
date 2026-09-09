@@ -801,7 +801,11 @@
             "account": "Account"
         },
         "trailerDetail": "Trailer",
-        "earnings": "Earnings"
+        "earnings": "Earnings",
+        "inspectionChecklist": "Inspection",
+        "inspectionReview": "Review",
+        "inspectionResult": "Inspection",
+        "inspectionDetail": "Inspection"
     },
     "help": {
         "messageDispatch": "Message dispatch",
@@ -884,7 +888,8 @@
         "failed": "Could not change your vehicle",
         "emptyTitle": "No vehicles",
         "emptyBody": "Your organisation has no vehicles set up.",
-        "note": "Vehicles that are off the road are shown but cannot be picked."
+        "note": "Vehicles that are off the road are shown but cannot be picked.",
+        "assignAndInspect": "Assign and start inspection"
     },
     "offers": {
         "available": "Offered to you",
@@ -1135,6 +1140,177 @@
             "adjustment": "Adjustment",
             "earning": "Earning",
             "other": "Transaction"
+        }
+    },
+    "inspection": {
+        "title": "Vehicle inspection",
+        "hubIntro": "Pre-trip and post-trip checks for your assigned vehicle.",
+        "afterSwapTitle": "A pre-trip inspection is required before you drive this vehicle.",
+        "afterSwapBody": "It takes a few minutes and works offline.",
+        "dueTitle": "CHECKS FOR THIS VEHICLE",
+        "noVehicle": "No vehicle is assigned to you, so there is nothing to inspect.",
+        "noForms": "Your organisation has not published any inspection checklists for this vehicle.",
+        "notEnabledBody": "Inspections are not switched on for your organisation yet. Checks are done on paper or in the console.",
+        "start": "Start",
+        "resume": "Resume",
+        "startNew": "Start a new inspection",
+        "itemCount": {
+            "one": "%{count} item",
+            "other": "%{count} items"
+        },
+        "frequency": {
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "monthly": "Monthly",
+            "pre_trip": "Pre-trip",
+            "post_trip": "Post-trip",
+            "ad_hoc": "When needed"
+        },
+        "type": {
+            "dvir": "DVIR",
+            "safety": "Safety",
+            "compliance": "Compliance",
+            "maintenance": "Maintenance",
+            "pre_trip": "Pre-trip",
+            "post_trip": "Post-trip"
+        },
+        "inProgress": "In progress · %{answered} of %{total}",
+        "historyTitle": "INSPECTIONS",
+        "historyCount": {
+            "one": "%{count} record",
+            "other": "%{count} records"
+        },
+        "segmentAll": "All",
+        "segmentPreTrip": "Pre-trip",
+        "segmentPostTrip": "Post-trip",
+        "segmentDefects": "Defects",
+        "resultPassed": "PASSED",
+        "resultDefects": {
+            "one": "%{count} DEFECT",
+            "other": "%{count} DEFECTS"
+        },
+        "queuedShort": "Queued · will sync",
+        "unsafeShort": "Vehicle marked out of service",
+        "historyEmptyTitle": "No inspections yet",
+        "historyEmptyBody": "Inspections you submit are kept here with their outcome.",
+        "checklist": {
+            "template": "template “%{name}”",
+            "offline": "Offline. Every answer is saved on this device.",
+            "savedOnDevice": "Every answer is saved on this device as you go.",
+            "progress": "%{answered} / %{total}",
+            "groupProgress": "%{category} · %{answered} OF %{total}",
+            "itemOf": "ITEM %{index} OF %{total}",
+            "pass": "Pass",
+            "defect": "Defect",
+            "notApplicable": "Not applicable to this vehicle",
+            "passRecorded": "Pass",
+            "naRecorded": "Not applicable",
+            "defectRecorded": "Defect · severity %{severity}",
+            "photoCount": {
+                "one": "%{count} photo",
+                "other": "%{count} photos"
+            },
+            "saveAndPause": "Save and pause",
+            "nextItem": "Next item",
+            "review": "Review inspection",
+            "missingRequired": {
+                "one": "%{count} required item still needs an answer.",
+                "other": "%{count} required items still need answers."
+            },
+            "formUnavailable": "This checklist could not be loaded.",
+            "empty": "This checklist has no items. Ask dispatch to check the form."
+        },
+        "defect": {
+            "title": "Record defect",
+            "queued": "QUEUED",
+            "severityLabel": "SEVERITY · REQUIRED",
+            "severity": {
+                "low": "Minor",
+                "medium": "Medium",
+                "high": "High",
+                "critical": "Critical"
+            },
+            "severityHint": {
+                "low": "monitor",
+                "medium": "book in",
+                "high": "unsafe",
+                "critical": "immobilise"
+            },
+            "photoLabel": "PHOTO · REQUIRED FOR HIGH AND ABOVE",
+            "photoOptional": "PHOTO · OPTIONAL",
+            "addPhoto": "Add photo",
+            "addAngle": "Add angle",
+            "photoDone": "Done with photos",
+            "autoAttached": "AUTO-ATTACHED",
+            "noPosition": "No position",
+            "notesLabel": "WHAT YOU SEE · REQUIRED",
+            "notesPlaceholder": "Describe what you see, where, and how bad.",
+            "unsafe": "Vehicle is unsafe to drive",
+            "unsafeHint": "Marks the vehicle out of service and alerts dispatch",
+            "pipeline": "This defect will open a vehicle defect record and, if the organisation has workshops enabled, a linked work order once it is sent.",
+            "save": "Save defect",
+            "incomplete": "Severity, a photo where required, and a note are needed before the defect can be saved."
+        },
+        "review": {
+            "title": "Review inspection",
+            "summary": "%{answered} of %{total} items · %{defects} defects",
+            "passed": "PASSED",
+            "defects": "DEFECTS",
+            "minutes": "MINUTES",
+            "defectsRaised": "DEFECTS RAISED",
+            "noDefects": "No defects raised.",
+            "unsafeMark": "marked unsafe",
+            "odometer": "ODOMETER",
+            "odometerHint": "Reading now, as the dash shows it.",
+            "odometerInvalid": "Enter the odometer as a number.",
+            "certification": "DRIVER CERTIFICATION",
+            "certify": "I certify this inspection was carried out by me and the record is accurate.",
+            "signature": "Sign to certify",
+            "clearSignature": "Clear",
+            "signed": "Signed",
+            "submit": "Submit inspection",
+            "offlineNote": "Stored on device now, sent when you're back online",
+            "incomplete": "Answer every required item before submitting.",
+            "needsCertification": "Tick the certification to submit.",
+            "needsSignature": "This checklist needs your signature to submit.",
+            "failed": "The inspection could not be sent. It is still on this device."
+        },
+        "result": {
+            "unsafeTitle": "%{vehicle} is out of service",
+            "unsafeBody": "A high-severity defect means you must not drive this vehicle. Dispatch and the workshop have been notified.",
+            "defectsTitle": "Inspection submitted with defects",
+            "defectsBody": "Dispatch has the defect record. The vehicle can be driven unless dispatch says otherwise.",
+            "passedTitle": "Inspection passed",
+            "passedBody": "No defects. You are clear to drive.",
+            "record": "INSPECTION RECORD",
+            "defectRecord": "DEFECT RECORD",
+            "workOrder": "WORK ORDER",
+            "submittedAt": "Submitted %{time}",
+            "queued": "Queued · will sync",
+            "whatNow": "What happens now",
+            "step1": "Your manifest stays assigned — it just needs a different vehicle.",
+            "step2": "Pick an available vehicle and run its pre-trip check.",
+            "step3": "Dispatch can override only with a workshop sign-off.",
+            "chooseVehicle": "Choose another vehicle",
+            "messageDispatch": "Message dispatch",
+            "done": "Done"
+        },
+        "detail": {
+            "title": "Inspection",
+            "itemsTitle": "ITEMS",
+            "defectsTitle": "DEFECTS",
+            "odometer": "Odometer",
+            "submitted": "Submitted",
+            "started": "Started",
+            "source": "Source",
+            "linkedIssue": "Defect record",
+            "linkedWorkOrder": "Work order",
+            "status": "Status",
+            "photos": {
+                "one": "%{count} photo",
+                "other": "%{count} photos"
+            },
+            "noItems": "Item results are not included in this record."
         }
     }
 }

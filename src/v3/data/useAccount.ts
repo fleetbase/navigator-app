@@ -20,6 +20,8 @@ export interface VehicleSummary {
     make?: string | null;
     model?: string | null;
     year?: string | number | null;
+    /** Carried by the driver's embedded vehicle on the live API; seeds the odometer prompt. */
+    odometer?: number | string | null;
 }
 
 export interface DriverRecord {
@@ -61,7 +63,7 @@ export function vehicleOf(driver?: DriverRecord | null): VehicleSummary | undefi
 }
 
 /** "Toyota Hiace 2021", from whichever of those the record actually has. */
-export function vehicleDescription(vehicle?: VehicleSummary): string | undefined {
+export function vehicleDescription(vehicle?: Pick<VehicleSummary, 'make' | 'model' | 'year'> | null): string | undefined {
     const parts = [vehicle?.make, vehicle?.model, vehicle?.year].filter(Boolean).map(String);
     return parts.length ? parts.join(' ') : undefined;
 }

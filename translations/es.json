@@ -744,7 +744,11 @@
             "account": "Cuenta"
         },
         "trailerDetail": "Remolque",
-        "earnings": "Ganancias"
+        "earnings": "Ganancias",
+        "inspectionChecklist": "Inspección",
+        "inspectionReview": "Revisión",
+        "inspectionResult": "Inspección",
+        "inspectionDetail": "Inspección"
     },
     "help": {
         "messageDispatch": "Escribir a despacho",
@@ -827,7 +831,8 @@
         "failed": "No se pudo cambiar tu vehículo",
         "emptyTitle": "Sin vehículos",
         "emptyBody": "Tu organización no tiene vehículos configurados.",
-        "note": "Los vehículos fuera de servicio se muestran pero no pueden elegirse."
+        "note": "Los vehículos fuera de servicio se muestran pero no pueden elegirse.",
+        "assignAndInspect": "Asignar e iniciar inspección"
     },
     "offers": {
         "available": "Ofrecido a ti",
@@ -1078,6 +1083,177 @@
             "adjustment": "Ajuste",
             "earning": "Ganancia",
             "other": "Transacción"
+        }
+    },
+    "inspection": {
+        "title": "Inspección del vehículo",
+        "hubIntro": "Revisiones previas y posteriores al viaje para tu vehículo asignado.",
+        "afterSwapTitle": "Se requiere una inspección previa al viaje antes de conducir este vehículo.",
+        "afterSwapBody": "Tarda unos minutos y funciona sin conexión.",
+        "dueTitle": "REVISIONES PARA ESTE VEHÍCULO",
+        "noVehicle": "No tienes ningún vehículo asignado, así que no hay nada que inspeccionar.",
+        "noForms": "Tu organización no ha publicado listas de inspección para este vehículo.",
+        "notEnabledBody": "Las inspecciones aún no están activadas para tu organización. Las revisiones se hacen en papel o en la consola.",
+        "start": "Empezar",
+        "resume": "Continuar",
+        "startNew": "Iniciar una nueva inspección",
+        "itemCount": {
+            "one": "%{count} punto",
+            "other": "%{count} puntos"
+        },
+        "frequency": {
+            "daily": "Diaria",
+            "weekly": "Semanal",
+            "monthly": "Mensual",
+            "pre_trip": "Antes del viaje",
+            "post_trip": "Después del viaje",
+            "ad_hoc": "Cuando sea necesario"
+        },
+        "type": {
+            "dvir": "DVIR",
+            "safety": "Seguridad",
+            "compliance": "Cumplimiento",
+            "maintenance": "Mantenimiento",
+            "pre_trip": "Previa al viaje",
+            "post_trip": "Posterior al viaje"
+        },
+        "inProgress": "En curso · %{answered} de %{total}",
+        "historyTitle": "INSPECCIONES",
+        "historyCount": {
+            "one": "%{count} registro",
+            "other": "%{count} registros"
+        },
+        "segmentAll": "Todas",
+        "segmentPreTrip": "Previas",
+        "segmentPostTrip": "Posteriores",
+        "segmentDefects": "Defectos",
+        "resultPassed": "APROBADA",
+        "resultDefects": {
+            "one": "%{count} DEFECTO",
+            "other": "%{count} DEFECTOS"
+        },
+        "queuedShort": "En cola · se sincronizará",
+        "unsafeShort": "Vehículo marcado fuera de servicio",
+        "historyEmptyTitle": "Aún no hay inspecciones",
+        "historyEmptyBody": "Las inspecciones que envíes se guardan aquí con su resultado.",
+        "checklist": {
+            "template": "plantilla “%{name}”",
+            "offline": "Sin conexión. Cada respuesta se guarda en este dispositivo.",
+            "savedOnDevice": "Cada respuesta se guarda en este dispositivo sobre la marcha.",
+            "progress": "%{answered} / %{total}",
+            "groupProgress": "%{category} · %{answered} DE %{total}",
+            "itemOf": "PUNTO %{index} DE %{total}",
+            "pass": "Correcto",
+            "defect": "Defecto",
+            "notApplicable": "No aplica a este vehículo",
+            "passRecorded": "Correcto",
+            "naRecorded": "No aplica",
+            "defectRecorded": "Defecto · gravedad %{severity}",
+            "photoCount": {
+                "one": "%{count} foto",
+                "other": "%{count} fotos"
+            },
+            "saveAndPause": "Guardar y pausar",
+            "nextItem": "Siguiente punto",
+            "review": "Revisar inspección",
+            "missingRequired": {
+                "one": "%{count} punto obligatorio aún necesita respuesta.",
+                "other": "%{count} puntos obligatorios aún necesitan respuesta."
+            },
+            "formUnavailable": "No se pudo cargar esta lista de inspección.",
+            "empty": "Esta lista no tiene puntos. Pide a despacho que revise el formulario."
+        },
+        "defect": {
+            "title": "Registrar defecto",
+            "queued": "EN COLA",
+            "severityLabel": "GRAVEDAD · OBLIGATORIO",
+            "severity": {
+                "low": "Leve",
+                "medium": "Media",
+                "high": "Alta",
+                "critical": "Crítica"
+            },
+            "severityHint": {
+                "low": "vigilar",
+                "medium": "programar taller",
+                "high": "inseguro",
+                "critical": "inmovilizar"
+            },
+            "photoLabel": "FOTO · OBLIGATORIA PARA ALTA O SUPERIOR",
+            "photoOptional": "FOTO · OPCIONAL",
+            "addPhoto": "Añadir foto",
+            "addAngle": "Añadir otro ángulo",
+            "photoDone": "Fotos listas",
+            "autoAttached": "ADJUNTADO AUTOMÁTICAMENTE",
+            "noPosition": "Sin posición",
+            "notesLabel": "QUÉ VES · OBLIGATORIO",
+            "notesPlaceholder": "Describe qué ves, dónde y cuánto de grave es.",
+            "unsafe": "El vehículo no es seguro para conducir",
+            "unsafeHint": "Marca el vehículo fuera de servicio y avisa a despacho",
+            "pipeline": "Este defecto abrirá un registro de defecto del vehículo y, si la organización tiene talleres activados, una orden de trabajo vinculada cuando se envíe.",
+            "save": "Guardar defecto",
+            "incomplete": "Hacen falta la gravedad, una foto cuando sea obligatoria y una nota antes de guardar el defecto."
+        },
+        "review": {
+            "title": "Revisar inspección",
+            "summary": "%{answered} de %{total} puntos · %{defects} defectos",
+            "passed": "CORRECTOS",
+            "defects": "DEFECTOS",
+            "minutes": "MINUTOS",
+            "defectsRaised": "DEFECTOS REGISTRADOS",
+            "noDefects": "Sin defectos registrados.",
+            "unsafeMark": "marcado inseguro",
+            "odometer": "ODÓMETRO",
+            "odometerHint": "Lectura actual, tal como la muestra el cuadro.",
+            "odometerInvalid": "Introduce el odómetro como un número.",
+            "certification": "CERTIFICACIÓN DEL CONDUCTOR",
+            "certify": "Certifico que esta inspección la realicé yo y que el registro es exacto.",
+            "signature": "Firma para certificar",
+            "clearSignature": "Borrar",
+            "signed": "Firmado",
+            "submit": "Enviar inspección",
+            "offlineNote": "Guardada en el dispositivo ahora, se envía cuando vuelvas a tener conexión",
+            "incomplete": "Responde todos los puntos obligatorios antes de enviar.",
+            "needsCertification": "Marca la certificación para enviar.",
+            "needsSignature": "Esta lista necesita tu firma para enviarse.",
+            "failed": "La inspección no se pudo enviar. Sigue en este dispositivo."
+        },
+        "result": {
+            "unsafeTitle": "%{vehicle} está fuera de servicio",
+            "unsafeBody": "Un defecto de gravedad alta significa que no debes conducir este vehículo. Se ha avisado a despacho y al taller.",
+            "defectsTitle": "Inspección enviada con defectos",
+            "defectsBody": "Despacho tiene el registro del defecto. El vehículo puede conducirse salvo que despacho indique lo contrario.",
+            "passedTitle": "Inspección aprobada",
+            "passedBody": "Sin defectos. Puedes conducir.",
+            "record": "REGISTRO DE INSPECCIÓN",
+            "defectRecord": "REGISTRO DE DEFECTO",
+            "workOrder": "ORDEN DE TRABAJO",
+            "submittedAt": "Enviada %{time}",
+            "queued": "En cola · se sincronizará",
+            "whatNow": "Qué ocurre ahora",
+            "step1": "Tu manifiesto sigue asignado — solo necesita otro vehículo.",
+            "step2": "Elige un vehículo disponible y haz su revisión previa al viaje.",
+            "step3": "Despacho solo puede anularlo con la aprobación del taller.",
+            "chooseVehicle": "Elegir otro vehículo",
+            "messageDispatch": "Escribir a despacho",
+            "done": "Listo"
+        },
+        "detail": {
+            "title": "Inspección",
+            "itemsTitle": "PUNTOS",
+            "defectsTitle": "DEFECTOS",
+            "odometer": "Odómetro",
+            "submitted": "Enviada",
+            "started": "Iniciada",
+            "source": "Origen",
+            "linkedIssue": "Registro de defecto",
+            "linkedWorkOrder": "Orden de trabajo",
+            "status": "Estado",
+            "photos": {
+                "one": "%{count} foto",
+                "other": "%{count} fotos"
+            },
+            "noItems": "Este registro no incluye los resultados por punto."
         }
     }
 }

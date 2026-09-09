@@ -36,11 +36,18 @@ export function ChangeVehicleScreen({
     driverId,
     currentVehicleId,
     onDone,
+    onAssigned,
 }: {
     driverId?: string;
     /** Public id of the vehicle already assigned, so it can be marked. */
     currentVehicleId?: string;
     onDone?: () => void;
+    /**
+     * R2 E2: a confirmed swap goes straight to the pre-trip inspection for the
+     * new vehicle rather than back to the account. When set, it replaces
+     * `onDone` for the confirmed case; a queued swap still reports itself here.
+     */
+    onAssigned?: (vehicle: VehicleRecord) => void;
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
@@ -55,9 +62,12 @@ export function ChangeVehicleScreen({
             const updated = await save({ vehicle: vehicle.id });
             // A queued change reports itself through the hook's own state; only
             // a confirmed one should close the screen behind the driver.
-            if (updated) onDone?.();
+            if (updated) {
+                if (onAssigned) onAssigned(vehicle);
+                else onDone?.();
+            }
         },
-        [onDone, save]
+        [onAssigned, onDone, save]
     );
 
     if (isLoading && !vehicles) {

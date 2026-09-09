@@ -117,9 +117,9 @@ surfaced within minutes of pointing the app at a real instance.
 
 | Metric | Value |
 |---|---|
-| v3 screens | 39 built, 0 `placeholder()` (Documents and Inspection render an honest "not enabled" state) |
+| v3 screens | 44 built, 0 `placeholder()` (Documents renders an honest "not enabled" state; Inspections degrade to it on a 404) |
 | v3 source | 188 files, ~28,600 lines |
-| Tests | 899 passing, 61 suites, 0 failing |
+| Tests | 945 passing, 63 suites, 0 failing |
 | v3 lint / typecheck | **0 errors** (105 warnings) |
 | v2 lint / typecheck | 596 lint errors, 15 type errors — **pre-existing, untouched** |
 | Cutover | `NAVIGATOR_V3=true` in `.env` selects the v3 tree at `App.tsx` |
@@ -146,7 +146,8 @@ credits drivers.
 
 **Built 2026-09-09, not device-verified:** the Route tab (B1–B3, C4, C6), trailers (view only, spec in
 `09-TRAILERS-SPEC.md`), earnings (H2, gated), the i18n foundation (Spanish, pseudo-locales, RTL
-edges, picker). The dev instance has no seeded manifest, trailer or driver wallet for the test driver;
+edges, picker), and the whole DVIR flow (E2 gate, E3a–E3d, E4/E5) against the driver API proposed in
+§6 — see the ledger's "Inspections / DVIR" section and the draft FleetOps PR it names. The dev instance has no seeded manifest, trailer or driver wallet for the test driver;
 seed those before a road test.
 
 ---|---|---|

@@ -38,10 +38,15 @@ import MyVehicleScreen from '../screens/MyVehicleScreen';
 import TrailerDetailScreen from '../screens/TrailerDetailScreen';
 import NotEnabledScreen from '../screens/NotEnabledScreen';
 import EarningsScreen from '../screens/EarningsScreen';
+import InspectionScreen from '../screens/InspectionScreen';
+import InspectionChecklistScreen from '../screens/InspectionChecklistScreen';
+import InspectionReviewScreen from '../screens/InspectionReviewScreen';
+import InspectionResultScreen from '../screens/InspectionResultScreen';
+import InspectionDetailScreen from '../screens/InspectionDetailScreen';
 import DestinationScreen from '../screens/DestinationScreen';
 import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
 import OffersScreen from '../screens/OffersScreen';
-import { vehicleOf } from '../data';
+import { vehicleOf, vehicleDescription } from '../data';
 import { useDriverChannel } from '../realtime';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
@@ -71,7 +76,7 @@ import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
 import { useDriver } from '../data';
-import type { FuelReportRecord, IssueRecord, ChatChannelRecord, TrailerRecord } from '../data';
+import type { FuelReportRecord, IssueRecord, ChatChannelRecord, TrailerRecord, InspectionFormRecord, InspectionSubmissionRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -139,10 +144,101 @@ export const useFeatures = () => useContext(FeaturesContext);
 const OrganizationContext = createContext<{ id?: string; onSwitched?: (driver: unknown) => void }>({});
 export const useOrganization = () => useContext(OrganizationContext);
 
-/* -- Not enabled yet: honest states, not build-time placeholders. --------- */
-function Inspection() {
-    return <NotEnabledScreen feature="inspection" />;
+/* -- Inspections (E2–E5). ------------------------------------------------- */
+
+type InspectionParams = {
+    route: { params?: { formId?: string; vehicleId?: string; vehicleName?: string; form?: InspectionFormRecord; afterSwap?: boolean } };
+    navigation: Nav;
+};
+
+/** The assigned vehicle, from the driver record, like My vehicle does it. */
+function useAssignedVehicle() {
+    const driverId = useDriverId();
+    const { driver } = useDriver(driverId);
+    const vehicle = vehicleOf(driver);
+    return { driverId, driver, vehicleId: vehicle?.id, vehicleName: vehicleDescription(vehicle) ?? vehicle?.name ?? undefined, odometer: vehicle?.odometer };
 }
+
+function Inspection({ route, navigation }: InspectionParams) {
+    const { driverId, vehicleId, vehicleName } = useAssignedVehicle();
+    const reloadToken = useFocusCount();
+    return (
+        <InspectionScreen
+            driverId={driverId}
+            vehicleId={route.params?.vehicleId ?? vehicleId}
+            vehicleName={route.params?.vehicleName ?? vehicleName}
+            afterSwap={route.params?.afterSwap}
+            reloadToken={reloadToken}
+            onStart={(form, forVehicle) =>
+                navigation.navigate('InspectionChecklist', { formId: form.id, form, vehicleId: forVehicle, vehicleName: route.params?.vehicleName ?? vehicleName })
+            }
+            onOpenSubmission={(submission) => navigation.navigate('InspectionDetail', { submissionId: submission.id, submission })}
+        />
+    );
+}
+
+function InspectionChecklist({ route, navigation }: InspectionParams) {
+    const p = route.params ?? {};
+    return (
+        <InspectionChecklistScreen
+            formId={String(p.formId ?? '')}
+            vehicleId={p.vehicleId}
+            vehicleName={p.vehicleName}
+            seedForm={p.form}
+            onPause={navigation.goBack}
+            onReview={(formId, vehicleId) => navigation.navigate('InspectionReview', { formId, vehicleId, form: p.form, vehicleName: p.vehicleName })}
+        />
+    );
+}
+
+function InspectionReview({ route, navigation }: InspectionParams) {
+    const p = route.params ?? {};
+    const { driverId, driver, odometer } = useAssignedVehicle();
+    const odometerSeed = Number(odometer);
+    return (
+        <InspectionReviewScreen
+            formId={String(p.formId ?? '')}
+            vehicleId={p.vehicleId}
+            vehicleName={p.vehicleName}
+            driverId={driverId}
+            driverName={driver?.name ?? undefined}
+            seedForm={p.form}
+            odometerSeed={Number.isFinite(odometerSeed) ? odometerSeed : undefined}
+            onSubmitted={(outcome, _form, unsafe) => {
+                if (outcome.kind === 'failed') return;
+                const submission = outcome.kind === 'sent' ? outcome.submission : outcome.receipt;
+                navigation.navigate('InspectionResult', { submission, vehicleName: p.vehicleName, unsafe });
+            }}
+        />
+    );
+}
+
+function InspectionResult({
+    route,
+    navigation,
+}: {
+    route: { params?: { submission?: InspectionSubmissionRecord; vehicleName?: string; unsafe?: boolean } };
+    navigation: Nav;
+}) {
+    const submission = route.params?.submission;
+    if (!submission) return null;
+    return (
+        <InspectionResultScreen
+            submission={submission}
+            vehicleName={route.params?.vehicleName}
+            unsafe={route.params?.unsafe}
+            onChooseVehicle={() => navigation.navigate('ChangeVehicle', {})}
+            onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation' })}
+            onDone={() => navigation.navigate('Inspection', {})}
+        />
+    );
+}
+
+function InspectionDetail({ route }: { route: { params?: { submissionId?: string; submission?: InspectionSubmissionRecord } } }) {
+    return <InspectionDetailScreen submissionId={String(route.params?.submissionId ?? '')} seed={route.params?.submission} />;
+}
+
+/* -- Not enabled yet: honest states, not build-time placeholders. --------- */
 function Documents() {
     return <NotEnabledScreen feature="documents" />;
 }
@@ -508,6 +604,7 @@ function ChangeVehicle({ route, navigation }: { route: { params?: { currentVehic
             driverId={driverId}
             currentVehicleId={route.params?.currentVehicleId}
             onDone={() => navigation.goBack()}
+            onAssigned={(vehicle) => navigation.navigate('Inspection', { vehicleId: vehicle.id, vehicleName: vehicleDescription(vehicle) ?? vehicle.name ?? undefined, afterSwap: true })}
         />
     );
 }
@@ -536,6 +633,10 @@ const IssueCreateH = withHeader('nav.issueCreate', IssueCreate);
 const MyVehicleH = withHeader('nav.myVehicle', MyVehicle);
 const TrailerDetailH = withHeader('nav.trailerDetail', TrailerDetail);
 const InspectionH = withHeader('nav.inspection', Inspection);
+const InspectionChecklistH = withHeader('nav.inspectionChecklist', InspectionChecklist);
+const InspectionReviewH = withHeader('nav.inspectionReview', InspectionReview);
+const InspectionResultH = withHeader('nav.inspectionResult', InspectionResult);
+const InspectionDetailH = withHeader('nav.inspectionDetail', InspectionDetail);
 const DocumentsH = withHeader('nav.documents', Documents);
 const EarningsH = withHeader('nav.earnings', Earnings);
 const ProfileEditH = withHeader('nav.profileEdit', ProfileEdit);
@@ -622,6 +723,10 @@ function AccountStack() {
             <Stack.Screen name="TrailerDetail" component={TrailerDetailH} />
             <Stack.Screen name="ChangeVehicle" component={ChangeVehicleH} />
             <Stack.Screen name="Inspection" component={InspectionH} />
+            <Stack.Screen name="InspectionChecklist" component={InspectionChecklistH} />
+            <Stack.Screen name="InspectionReview" component={InspectionReviewH} />
+            <Stack.Screen name="InspectionResult" component={InspectionResultH} />
+            <Stack.Screen name="InspectionDetail" component={InspectionDetailH} />
             <Stack.Screen name="Documents" component={DocumentsH} />
             <Stack.Screen name="Earnings" component={EarningsH} />
             <Stack.Screen name="ProfileEdit" component={ProfileEditH} />
