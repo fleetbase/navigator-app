@@ -12,6 +12,7 @@ export * from './Field';
 export * from './Progress';
 export * from './Rows';
 export * from './Cards';
+export * from './RouteMap';
 export * from './Scanner';
 export { default as BottomSheetSelect } from './Select';
 export type { BottomSheetSelectProps, BottomSheetSelectRef, SelectOption } from './Select';

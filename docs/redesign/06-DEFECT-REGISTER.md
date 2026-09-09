@@ -463,6 +463,26 @@ if v2 ships again before cutover.
 
 ---
 
+### Route tab, found by building it
+
+**F-61 — `RouteProgress` carried three English literals.** "stops complete",
+"On time" and "Behind" sat in the component library untranslated. The
+no-hardcoded-copy gate only catches sentences that *start* with a capital between
+tags, and "stops complete" starts lower-case, so it slipped through and nothing
+rendered it until the Route tab did. Now `t('ui.stopsComplete')` and friends.
+
+**F-62 — `scheduled_date` read through `Date` lands on the wrong day.** The
+manifest's date is a Laravel `date` cast, serialised as midnight UTC. In any
+timezone west of Greenwich `new Date(...)` is the evening before, which would
+have filed today's route under "past". `scheduledDayOf` takes the day from the
+string.
+
+**F-63 — the ledger named an optimise endpoint that never existed.**
+`POST /v1/drivers/{id}/optimize-route` is not in `routes.php` on any tag; the
+capability is `POST /v1/manifests/{id}/optimize`, per manifest. The same audit
+found that it applies immediately, which changed the preview's design (see the
+ledger).
+
 ## How these were found — and how two were nearly missed
 
 Worth keeping, because the method mattered more than the fixes.

@@ -117,10 +117,10 @@ surfaced within minutes of pointing the app at a real instance.
 
 | Metric | Value |
 |---|---|
-| v3 screens | 32 built, 6 still `placeholder()` |
-| v3 source | 173 files, ~25,300 lines |
-| Tests | 786 passing, 55 suites, 0 failing |
-| v3 lint / typecheck | **0 errors** (93 warnings) |
+| v3 screens | 36 built, 2 still `placeholder()` |
+| v3 source | 188 files, ~28,600 lines |
+| Tests | 855 passing, 58 suites, 0 failing |
+| v3 lint / typecheck | **0 errors** (105 warnings) |
 | v2 lint / typecheck | 596 lint errors, 15 type errors — **pre-existing, untouched** |
 | Cutover | `NAVIGATOR_V3=true` in `.env` selects the v3 tree at `App.tsx` |
 
@@ -137,21 +137,21 @@ issues (list/detail/create), Inbox (conversations, composer, participants), Acco
 profile edit, my vehicle, change vehicle, sign in (password + one-time code), navigation hand-off,
 permissions primer, self-hosted connection, sync queue, error states, ad-hoc offers, settings, help.
 
-### The six placeholders
+### The two placeholders
 
-`src/v3/navigation/DriverTabs.tsx` — all reachable, all showing a "not built" state:
+`src/v3/navigation/DriverTabs.tsx` — reachable, showing a "not built" state:
 
 | Placeholder | Stack | Status |
 |---|---|---|
-| `RouteHome` | Route | **Buildable now** — manifest endpoints shipped in v0.6.61 |
-| `StopDetail` | Route | **Buildable now** |
-| `StopExecution` | Route | **Buildable now** (order proof capture is separate and *is* built) |
-| `OptimisePreview` | Route | **Buildable now** |
 | `Inspection` | Account | Your new scope — see §6 |
 | `Documents` | Account | Still blocked, no endpoint |
 
-**The entire Route tab is a placeholder.** It is one of five tabs, it is the biggest remaining gap,
-and everything it needs has been live since v0.6.61. Treat it as the first priority.
+**The Route tab is built (2026-09-09):** `RouteScreen` (B1 + s02/s03, list and map), `StopDetailScreen`
+(B2 + the C6 geofence sheet), `StopExecutionScreen` (C4) and `OptimisePreviewScreen` (B3), on a
+persisted `manifestStore`. It is **not device-verified** — the dev instance has no manifest seeded for
+the test driver. Seed one before a road test. The ledger's "Route tab" section records what the API
+cannot carry (no manifest name, no stop window, optimise applies without a dry run) and how each was
+degraded rather than faked.
 
 ---
 

@@ -61,6 +61,10 @@ import NavigationHandoffScreen from '../screens/NavigationHandoffScreen';
 import PermissionsPrimerScreen from '../screens/PermissionsPrimerScreen';
 import SyncQueueScreen from '../screens/SyncQueueScreen';
 import TodayScreen from '../screens/TodayScreen';
+import RouteScreen from '../screens/RouteScreen';
+import StopDetailScreen from '../screens/StopDetailScreen';
+import StopExecutionScreen from '../screens/StopExecutionScreen';
+import OptimisePreviewScreen from '../screens/OptimisePreviewScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
@@ -72,8 +76,6 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const P4 = 'Phase 4b';
-
-const MANIFESTS = 'driver-scoped manifest endpoints (Phase 4a)';
 
 const screenOptions = { headerShown: false } as const;
 const modalOptions = { presentation: 'modal' } as const;
@@ -126,16 +128,62 @@ const OrganizationContext = createContext<{ id?: string; onSwitched?: (driver: u
 export const useOrganization = () => useContext(OrganizationContext);
 
 /* -- Placeholders, built once. ------------------------------------------- */
-const RouteHome = placeholder('Route', P4, MANIFESTS);
-const StopDetail = placeholder('Stop detail', P4, MANIFESTS);
-const StopExecution = placeholder('Stop execution', P4, 'order-config proof declarations (Phase 4a)');
-const OptimisePreview = placeholder('Optimise route', P4, 'driver-scoped optimise endpoint (Phase 4a)');
 const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
 const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
 
-/* -- Orders tab. ---------------------------------------------------------- */
-
 type Nav = { navigate: (route: string, params?: object) => void; goBack: () => void };
+
+/* -- Route tab. ----------------------------------------------------------- */
+
+type StopParams = { route: { params?: { manifestId?: string; stopId?: string } }; navigation: Nav };
+
+/** Orders live in their own tab; a stop's order is opened there. */
+const openOrderFrom = (navigation: Nav) => (orderId: string) =>
+    navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId } });
+
+function RouteHome({ navigation }: { navigation: Nav }) {
+    const driverId = useDriverId();
+    const reloadToken = useFocusCount();
+    return (
+        <RouteScreen
+            driverId={driverId}
+            reloadToken={reloadToken}
+            onOpenStop={(manifestId, stopId) => navigation.navigate('StopDetail', { manifestId, stopId })}
+            onOptimise={(manifestId) => navigation.navigate('OptimisePreview', { manifestId })}
+            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
+        />
+    );
+}
+
+function StopDetail({ route, navigation }: StopParams) {
+    return (
+        <StopDetailScreen
+            manifestId={String(route.params?.manifestId ?? '')}
+            stopId={String(route.params?.stopId ?? '')}
+            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
+            onOpenOrder={openOrderFrom(navigation)}
+            onComplete={(manifestId, stopId) => navigation.navigate('StopExecution', { manifestId, stopId })}
+        />
+    );
+}
+
+function StopExecution({ route, navigation }: StopParams) {
+    return (
+        <StopExecutionScreen
+            manifestId={String(route.params?.manifestId ?? '')}
+            stopId={String(route.params?.stopId ?? '')}
+            onOpenOrder={openOrderFrom(navigation)}
+            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
+            onDone={() => navigation.navigate('RouteHome')}
+        />
+    );
+}
+
+function OptimisePreview({ route, navigation }: { route: { params?: { manifestId?: string } }; navigation: Nav }) {
+    return <OptimisePreviewScreen manifestId={String(route.params?.manifestId ?? '')} onDone={navigation.goBack} />;
+}
+
+/* -- Orders tab. ---------------------------------------------------------- */
 
 function OrdersHome({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
@@ -492,6 +540,8 @@ function RouteStack() {
             <Stack.Screen name="StopDetail" component={StopDetailH} />
             <Stack.Screen name="StopExecution" component={StopExecutionH} />
             <Stack.Screen name="OptimisePreview" component={OptimisePreviewH} />
+            {/* Shared with Today and Orders — `navigate` resolves within the stack. */}
+            <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
         </Stack.Navigator>
     );
 }

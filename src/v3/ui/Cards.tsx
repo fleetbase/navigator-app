@@ -269,3 +269,89 @@ export function VehicleCard({
         </Surface>
     );
 }
+
+/* -- ManifestCard — R2 frame B1. ------------------------------------------ */
+
+export interface ManifestCardProps {
+    /** The manifest's public id, rendered in full and monospaced. */
+    manifestId: string;
+    status?: string | null;
+    /** "TODAY, 19 AUG" — the caller formats the date for the bucket it is in. */
+    dateLabel: string;
+    /** "Purbeck loop · Sprinter 316" — vehicle and notes, whatever is known. */
+    subtitle?: string;
+    completedStops?: number;
+    totalStops?: number;
+    distanceM?: number | null;
+    durationS?: number | null;
+    /** Started or scheduled clock time, with its label. */
+    time?: { label: string; value: string };
+    /** Draft: dispatch is still building it. Shown instead of the metrics. */
+    notice?: string;
+    /** Metric labels, translated by the caller. */
+    labels: { stops: string; distance: string; duration: string };
+    units?: DistanceUnit;
+    onPress?: () => void;
+    testID?: string;
+}
+
+function Metric({ value, label }: { value: string; label: string }) {
+    return (
+        <YStack flex={1} gap={2}>
+            <Body fontSize={16} fontWeight="800" tabular>
+                {value}
+            </Body>
+            <Micro fontSize={10}>{label}</Micro>
+        </YStack>
+    );
+}
+
+export function ManifestCard({
+    manifestId,
+    status,
+    dateLabel,
+    subtitle,
+    completedStops,
+    totalStops,
+    distanceM,
+    durationS,
+    time,
+    notice,
+    labels,
+    units = 'metric',
+    onPress,
+    testID,
+}: ManifestCardProps) {
+    const { t } = useTranslation();
+    return (
+        <Surface testID={testID} hero onPress={onPress} pressStyle={{ opacity: 0.85 }} accessibilityRole="button" overflow="hidden">
+            <YStack padding={space[4]} gap={space[2]}>
+                <XStack alignItems="center" justifyContent="space-between" gap={space[2]}>
+                    <Caption>
+                        {t('ui.manifestId')} · {dateLabel}
+                    </Caption>
+                    {status ? <StatusPill status={status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} /> : null}
+                </XStack>
+                <Identifier value={manifestId} boxed={false} />
+                {subtitle ? <Secondary fontSize={13}>{subtitle}</Secondary> : null}
+            </YStack>
+
+            <Divider />
+
+            <YStack padding={space[4]}>
+                {notice ? (
+                    <Secondary fontSize={13}>{notice}</Secondary>
+                ) : (
+                    <XStack gap={space[3]}>
+                        {totalStops != null ? (
+                            <Metric value={`${completedStops ?? 0} / ${totalStops}`} label={labels.stops} />
+                        ) : null}
+                        {distanceM != null ? <Metric value={formatMeters(distanceM, units)} label={labels.distance} /> : null}
+                        {durationS != null ? <Metric value={formatDuration(durationS)} label={labels.duration} /> : null}
+                        {time ? <Metric value={time.value} label={time.label} /> : null}
+                    </XStack>
+                )}
+            </YStack>
+        </Surface>
+    );
+}

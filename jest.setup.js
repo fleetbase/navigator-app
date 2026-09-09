@@ -40,3 +40,21 @@ jest.mock('react-native-bootsplash', () => ({
  * Jest. The library ships an official mock for exactly this.
  */
 jest.mock('react-native-permissions', () => require('react-native-permissions/mock'));
+
+/**
+ * react-native-maps is native through and through. The route surface renders
+ * markers and a polyline into it; the tests assert on what surrounds the map,
+ * so a View that keeps its children is enough — and it keeps the markers'
+ * testIDs reachable, so a test can still count the stops on the map.
+ */
+jest.mock('react-native-maps', () => {
+    const React = require('react');
+    const { View } = require('react-native');
+    const MapView = React.forwardRef((props, ref) => {
+        React.useImperativeHandle(ref, () => ({ fitToCoordinates: jest.fn(), animateToRegion: jest.fn() }));
+        return React.createElement(View, { testID: props.testID ?? 'map-view' }, props.children);
+    });
+    const Marker = (props) => React.createElement(View, { testID: props.testID }, props.children);
+    const Polyline = () => null;
+    return { __esModule: true, default: MapView, Marker, Polyline, PROVIDER_GOOGLE: 'google', PROVIDER_DEFAULT: undefined };
+});

@@ -91,6 +91,21 @@ export function formatDateTime(iso?: string | null): string {
 }
 
 /**
+ * A calendar day, for manifest rows. "19 Aug" · with `weekday`, "Thu, 21 Aug".
+ *
+ * Takes a day key (`YYYY-MM-DD`) or an ISO timestamp. A bare day is built as a
+ * *local* date on purpose: `new Date('2026-08-19')` is midnight UTC, which in
+ * any timezone west of Greenwich is the evening of the 18th.
+ */
+export function formatDay(day?: string | null, options: { weekday?: boolean } = {}): string {
+    if (!day) return '—';
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(day);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(options.weekday ? { weekday: 'short' } : {}) });
+}
+
+/**
  * Money.
  *
  * Fleetbase stores amounts in **minor units**, as a string — a live entity

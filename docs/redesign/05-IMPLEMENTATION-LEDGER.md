@@ -79,17 +79,17 @@ Do not start these until the endpoint exists. Each names its blocker.
 
 | Slice | Design | BLOCKED — needs |
 |---|---|---|
-| Route list + map | R1 s02/s03/s17 | driver-scoped manifest endpoints |
-| Manifest list | R2 B1 | `GET /v1/drivers/{id}/manifests` |
-| Stop detail | R2 B2 | manifest stops |
-| Optimise preview | R2 B3 | `POST /v1/drivers/{id}/optimize-route` |
-| Manual resequencing | R2 B4 | `PATCH /v1/manifests/{id}/resequence` |
+| ~~Route list + map~~ | R1 s02/s03/s17 | **BUILT** on `GET /v1/drivers/{id}/manifests` + `GET /v1/manifests/{id}` (v0.6.61). See below. |
+| ~~Manifest list~~ | R2 B1 | **BUILT** — today / upcoming / past segments |
+| ~~Stop detail~~ | R2 B2 | **BUILT** — arrive / skip via `PATCH /v1/manifest-stops/{id}` |
+| ~~Optimise preview~~ | R2 B3 | **BUILT** — the route named here never existed; it is `POST /v1/manifests/{id}/optimize`, per manifest, and it applies at once (no dry run) |
+| Manual resequencing | R2 B4 | still no resequence endpoint — only the automatic optimise shipped |
 | ~~Stop execution (dynamic steps)~~ | R1 s08/s19 | **NOT BLOCKED — the blocker was stale.** See below. |
 | Failed delivery / exception | R2 C1 | `POST /v1/orders/{id}/exception` + reason codes |
 | ID / age verification | R2 C2 | proof type extension |
-| Complete stop review | R2 C4 | required-proof declarations |
+| ~~Complete stop review~~ | R2 C4 | **BUILT** — gated on the order's `pod_required` + status; proof itself stays on the order |
 | Proof of delivery record | R2 C5 | `orders/{id}/proofs` shape |
-| Arrive out-of-geofence | R2 C6 | geofence events surfaced to the app |
+| ~~Arrive out-of-geofence~~ | R2 C6 | **BUILT** client-side (haversine, 120 m). Auto-arrive with undo still needs the geofence socket events wired |
 | Duty: break + HOS card | R2, shell | `drivers/{id}/shift/*`, `hos-status` public |
 | ~~My vehicle~~ | R2 E1 | **PARTLY STALE — viewing built.** `GET /v1/vehicles/{id}` is public and always was; only *changing* the vehicle and posting an odometer still need endpoints. |
 | ~~Change vehicle~~ | R2 E2 | **NOT BLOCKED — built.** `GET /v1/vehicles` is public and assignment is `PUT /v1/drivers/{id}` with a vehicle public id. No new endpoint was ever needed. |
@@ -581,3 +581,52 @@ so the populated list and the write are **not device-verified**. What the run di
 confirm: the 502 is classified as a server fault rather than as being offline,
 the account links stay reachable through it (F-44), and the no-vehicle state now
 offers the picker (F-60, found by looking at that state on the device).
+
+---
+
+## Route tab — the whole tab was a placeholder, and nothing it needed was missing
+
+Five rows of the Tier 3 table above named the Route tab as blocked. Every
+endpoint it needs shipped in v0.6.61 and was documented in the Postman
+collection (fleetbase/postman #53, #57). Built in one slice: `RouteScreen`
+(B1 + s02/s03), `StopDetailScreen` (B2 + C6), `StopExecutionScreen` (C4),
+`OptimisePreviewScreen` (B3), a persisted `manifestStore`, `useManifests`,
+`routeGeo`, and a `RouteMap` on react-native-maps — the first map in the v3 tree.
+
+**What the API carries, and what the frames draw that it does not.**
+
+- A manifest has **no name**. The vehicle and the date stand in for one;
+  dispatch's `notes` are the subtitle. "Purbeck loop" in the frame is `notes`.
+- A stop has **no time window** — only `estimated_arrival`. The window chip is
+  absent rather than faked, and "finish ~17:05" is the last remaining stop's
+  estimate when the server gave one.
+- **Optimise applies immediately.** `POST /v1/manifests/{id}/optimize` rewrites
+  `sequence` and returns the manifest; there is no preview or dry run. B3 asks
+  the driver to confirm a before/after, so the proposal is computed client-side
+  with the *same* nearest-neighbour walk the controller runs (`nearestFirst`,
+  tested against the controller's rules: done stops stay in front, fewer than
+  three pending is left alone), and the server is called only on Apply. Its
+  answer replaces the manifest wholesale. Distances are straight-line and say so;
+  time saved is estimated at the plan's own average speed and omitted without
+  totals. A `dry_run` flag on the endpoint would let the preview be the server's
+  own — a candidate FleetOps PR, not a blocker.
+- **Optimise is in `NEVER_QUEUE`.** It re-sequences from a position; replayed an
+  hour later it would reorder the route from wherever the driver was then.
+- Stop updates (`arrived`, `completed`, `skipped`) **are** queueable and are
+  reflected locally, so a route keeps moving in a basement. The arrival check is
+  written into the stop's `meta` (`arrival_check`, `arrival_position`,
+  `arrival_distance_m`) so dispatch sees a 340 m arrival as what it was.
+- **C4's proof list is not drawn.** Proof belongs to the order and its config;
+  the stop's completion is gated on `pod_required` + the order not being
+  finished, and the way through is the order screen. Listing the captured proofs
+  is the same read C5 needs and lands with it.
+- Phone masking (correction 3) has no capability behind it; the place's `phone`
+  is shown in full. Copy-to-clipboard has no dependency in the app; Share covers
+  it through the system sheet.
+- The planned break (s03) needs the HOS surface, still console-only.
+
+**Verification.** 69 tests across `routeGeo`, `manifests` and `RouteScreens`;
+all four screens in all four schemes. **Not device-verified** — the dev instance
+has no seeded manifest for the test driver; seeding one is the first thing to do
+before a road test.
+

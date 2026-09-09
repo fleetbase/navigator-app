@@ -31,6 +31,7 @@ export function RouteProgress({
     onTime?: boolean;
     testID?: string;
 }) {
+    const { t } = useTranslation();
     const segments = Array.from({ length: Math.max(total, 0) }, (_, i) => {
         if (i < completed) return '$successText';
         if (currentIndex !== undefined && i === currentIndex) return '$primary';
@@ -40,15 +41,12 @@ export function RouteProgress({
     return (
         <YStack gap={space[2]} testID={testID}>
             <XStack alignItems="baseline" justifyContent="space-between" gap={space[2]}>
-                <Body fontSize={13} fontWeight="700">
-                    <Body tabular fontSize={13} fontWeight="700">
-                        {completed} of {total}
-                    </Body>{' '}
-                    stops complete
+                <Body tabular fontSize={13} fontWeight="700">
+                    {t('ui.stopsComplete', { completed, total })}
                 </Body>
                 {finishLabel ? (
                     <Micro tone={onTime === false ? 'danger' : 'success'} tabular>
-                        {onTime === false ? 'Behind' : 'On time'} · {finishLabel}
+                        {onTime === false ? t('ui.behind') : t('ui.onTime')} · {finishLabel}
                     </Micro>
                 ) : null}
             </XStack>

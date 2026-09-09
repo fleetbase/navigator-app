@@ -76,6 +76,12 @@ const NEVER_QUEUE = [
      * that did not happen.
      */
     /orders\/[^/]+\/start\b/,
+    /*
+     * Optimise re-sequences a route from a position. Replayed from a queue it
+     * would reorder the driver's stops from wherever they were an hour ago,
+     * and the preview they confirmed would no longer be what is applied.
+     */
+    /manifests\/[^/]+\/optimize\b/,
 ];
 
 function isQueueable(path: string): boolean {
