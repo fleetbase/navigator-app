@@ -48,9 +48,9 @@ Three standing rules from the owner, carried across every session:
 
 | Thing | Path / URL |
 |---|---|
-| App worktree (work here) | `/Users/ron/Development/fleetbase/navigator-app/.claude/worktrees/navigator-redesign-analysis-1fae32` |
-| App branch | `feature/navigator-redesign-analysis-1fae32` (69 commits ahead of `main`) |
-| App main checkout | `/Users/ron/Development/fleetbase/navigator-app` |
+| App repo | `/Users/ron/Development/fleetbase/navigator-app` (`git@github.com:fleetbase/navigator-app.git`) |
+| **Branch — work here** | **`feature/v3-redesign`**, tracking `origin/feature/v3-redesign` |
+| **PR** | [fleetbase/navigator-app#109](https://github.com/fleetbase/navigator-app/pull/109) — draft, `feature/v3-redesign` → `main` |
 | FleetOps (linked to the running dev instance) | `~/Development/fleetbase/oss/fleetbase-dev/packages/fleetops` |
 | Fleetbase monorepo (CI, seeding scripts) | `~/Development/fleetbase/oss/fleetbase-dev` |
 | Postman collection repo | `~/Development/fleetbase/postman` |
@@ -58,8 +58,13 @@ Three standing rules from the owner, carried across every session:
 | Local API | `http://localhost:8000` (Docker, `fleetbase-dev-*` containers) |
 | Official docs — **check as you go** | <https://fleetbase.io/docs> |
 
-**This is a git worktree.** The stash stack is shared with the main checkout and other sessions.
-Never use bare `git stash` / `git stash pop`. Prefer a temporary WIP commit.
+**Commit and push to `feature/v3-redesign` as you go.** PR #109 is the running record of this work.
+It is a **draft on purpose** — it is a long-lived integration branch, not a finished change — so keep
+committing to it rather than opening a new branch per slice. Undraft it when the parity gate is met.
+
+**If the repo has other worktrees**, the stash stack is shared across all of them and the main
+checkout. Never use bare `git stash` / `git stash pop` — you could pop another session's work.
+Prefer a temporary WIP commit. (`git worktree list` tells you what else is live.)
 
 Commands: `yarn test` (jest), `yarn lint`, `yarn typecheck`, `yarn ios`, `yarn android`.
 Stack: React Native 0.86, React 19.2.7, Tamagui 1.125.20, React Navigation 7, MMKV, Hermes.
