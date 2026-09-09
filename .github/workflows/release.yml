@@ -1,6 +1,6 @@
 name: Release Tag
 
-# Tags a release when a `dev-v*` branch is merged to main. The reusable Fleetbase
+# Tags a release when a release branch is merged to main. The reusable Fleetbase
 # workflow validates that the branch version, package.json and RELEASE.md agree.
 # Tag pushes are then handled by create-release.yml. The mobile-store publishing
 # jobs remain intentionally disabled until their signing and upload paths are repaired.
@@ -22,7 +22,8 @@ jobs:
     tag:
         if: github.event_name == 'workflow_dispatch' ||
             (github.event.pull_request.merged == true &&
-            startsWith(github.event.pull_request.head.ref, 'dev-v'))
+            (startsWith(github.event.pull_request.head.ref, 'release/v') ||
+             startsWith(github.event.pull_request.head.ref, 'dev-v')))
         uses: fleetbase/fleetbase/.github/workflows/release-tag.yml@main
         with:
             version-files: package.json
