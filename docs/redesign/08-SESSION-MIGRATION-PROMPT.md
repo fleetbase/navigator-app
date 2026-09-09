@@ -732,22 +732,31 @@ A readiness snapshot as of 2026-09-02 is published at
 
 ## 12. Decisions the owner still owes you
 
-Raise these early rather than guessing:
+Each was taken with a stated default on 2026-09-09 so the build could continue; every default is
+reversible, and the place to change it is named.
 
-1. **Trailers** — view-only or full driver management? Should attach/detach be offline-queueable?
-   Is trailer odometer / reefer-hours capture a driver responsibility?
-2. **Inspections** — E3a–E3d, E4, E5 and the E2 gate are all drawn; read them first. The open
-   design questions are **trailers** (no frames at all), and the four screens R2 never reached:
-   G2 composer, H2 earnings, H3 help, H4 sign out, plus section I.
-2a. **Localisation** — which locales ship first, and is RTL in scope for v3.0? Both answers change
-   layout work across all 32 existing screens, so they are wanted early, not late.
-2b. **Earnings** — what does a driver actually earn (per order / per stop / per km / a share)? No
-   rate model exists anywhere, and nothing can be credited until that is decided.
-3. **Inspections rebase** — 976 commits is a large rebase. Confirm the owner wants it rebased onto
-   the current release branch rather than re-cut fresh from today's `main`.
-4. **Scope of the driver inspection API** — the proposed routes in §6 are a proposal, not a
-   specification. Get them agreed before implementing, since they set the contract.
-5. **Turn-by-turn** (correction 4 in the gap spec) — Driving glance is currently scoped to next-stop
-   + hand-off. Confirm that stays for v3.0.
-6. **Phone masking** (correction 3) — specified as the right behaviour but has no backing capability
-   anywhere in FleetOps. Build it as a FleetOps feature, or drop it from the design?
+1. **Trailers** — **default taken: view only.** Attached trailers show on My vehicle in towing order
+   and open a read-only detail. Attach / detach / reorder are specified in
+   `09-TRAILERS-SPEC.md` and not built; reorder needs a FleetOps PR first (no atomic path). Say
+   "drivers manage trailers" and the spec becomes the next slice. Odometer / reefer hours are shown,
+   never captured.
+2. **Inspections** — built to the frames (E2 gate, E3a–E3d, E4/E5). The four screens R2 never
+   reached are built from the system: G2 composer (with attachments), H2 earnings (gated), H3 help,
+   H4 sign out. Section I: sync queue and error states exist; push / Live Activity / tablet do not.
+2a. **Localisation** — **default taken: `en` + `es` ship, `system` follows the phone, RTL is in the
+   code but unverified on a device.** Which real locales ship, and a translator's pass on `es.json`,
+   are yours.
+2b. **Earnings** — **default taken: the screen exists and is gated off.** The ledger already has
+   `WalletService::creditEarnings()` and `processPayout()`; what is missing is the rate model and the
+   order-completion listener. See `10-EARNINGS-LEDGER-PROPOSAL.md` for the options and the
+   recommended one; nothing is credited until you choose.
+3. **Inspections rebase** — **resolved: rebase.** It applied onto `main` with zero conflicts; the
+   draft FleetOps PR is cut from the rebased tip and supersedes fleetops#267 (left open).
+4. **Driver inspection API** — **default taken: the §6 contract, as a draft PR.** Review it there;
+   the app's `buildSubmission` mirrors it and is the one place to change if the contract moves.
+5. **Turn-by-turn** — unchanged: Driving glance stays next-stop + hand-off for v3.0.
+6. **Phone masking** — unchanged: numbers are shown in full (stop detail shows the place's phone).
+   Build it as a FleetOps feature or drop it from the design.
+7. **Auto-arrival** — **default taken: on**, proposed from the device fix inside the 120 m radius
+   with a ten-second undo, recorded as `arrival_check: 'auto'`. Turn it off with `enabled: false` on
+   `useAutoArrive` if dispatch would rather every arrival be a tap.
