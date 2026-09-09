@@ -93,18 +93,18 @@ Do not start these until the endpoint exists. Each names its blocker.
 | Duty: break + HOS card | R2, shell | `drivers/{id}/shift/*`, `hos-status` public |
 | ~~My vehicle~~ | R2 E1 | **PARTLY STALE — viewing built.** `GET /v1/vehicles/{id}` is public and always was; only *changing* the vehicle and posting an odometer still need endpoints. |
 | ~~Change vehicle~~ | R2 E2 | **NOT BLOCKED — built.** `GET /v1/vehicles` is public and assignment is `PUT /v1/drivers/{id}` with a vehicle public id. No new endpoint was ever needed. |
-| DVIR E3a–E3d | R2 E3a-d | `inspection-templates`, `POST /v1/inspections` |
-| Inspection history | R2 E4 | `GET /v1/vehicles/{id}/inspections` |
-| Vehicle defects | R2 E5 | defect → work-order link |
+| ~~DVIR E3a–E3d~~ | R2 E3a-d | **BUILT** app-side on the §6 contract; the driver API is a draft FleetOps PR (`feature/inspections-driver-api`). See "Inspections / DVIR" below |
+| ~~Inspection history~~ | R2 E4 | **BUILT** — `GET /v1/inspections?driver=` on the same draft PR |
+| Vehicle defects | R2 E5 | **PARTLY BUILT** — the inspection detail carries the defect view with the linked issue and work order; a standalone defect timeline is still console-only |
 | Maintenance & work orders | R2 E6 | `maintenance-schedules` public |
 | My documents | R2 A6 | `POST /v1/drivers/{id}/documents` |
-| Documents & receipts | R2 F1 | file attach to order |
+| Documents & receipts | R2 F1 | `POST /v1/files/base64` is public (used by chat attachments); attaching to an *order* still needs a subject decision |
 | Ad-hoc offers | R2 D1 | offer expiry/claim semantics |
 | ~~Edit destination~~ | R2 D2 | **NOT BLOCKED — built.** `POST\|PATCH /v1/orders/{id}/set-destination/{placeId}` is public; the ledger named an endpoint that was never going to exist. |
 | Destination changed alert | R2 D3 | dispatch push payload |
 | Notification inbox detail | R2 G4 | `GET /v1/notifications` |
 | Devices & sessions | R2 A5 | `GET/DELETE /v1/drivers/{id}/sessions` |
-| Earnings | not designed | no earnings data exists in FleetOps |
+| ~~Earnings~~ | H2 (no frame) | **BUILT, gated off.** Ledger wallet API read; crediting needs the PR in `10-EARNINGS-LEDGER-PROPOSAL.md` |
 
 ---
 
