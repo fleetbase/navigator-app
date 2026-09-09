@@ -22,13 +22,25 @@ React Native driver app. The owner's framing, verbatim:
 
 The work is built in a **parallel `src/v3/` tree** behind a cutover flag, so `main` stays shippable.
 
-Two new items are now in scope, both described in detail below:
+Four things are in scope beyond finishing the tree, each described in detail below:
 
 1. **Trailers** — FleetOps v0.6.65 made trailers a first-class resource. The app needs trailer
-   awareness, trailer management, and trailer position ordering.
+   awareness, trailer management, and trailer position ordering. (§5)
 2. **Inspections / DVIR** — you are **taking over** the FleetOps inspections feature
    ([fleetops#267](https://github.com/fleetbase/fleetops/pull/267)) and coordinating it with the app.
-   This is the last major outstanding feature.
+   This is the last major outstanding feature. (§6)
+3. **Full internationalisation from the start** — every screen, every string, translation files
+   included. Not a later pass. (§7a)
+4. **Driver wallet earnings via the ledger API**, opening a PR against the ledger extension if
+   changes are required. (§8a)
+
+Three standing rules from the owner, carried across every session:
+
+- FleetOps and ledger changes go on the current release branch as **PRs for review** — never merged
+  by you.
+- **Cross-check <https://fleetbase.io/docs>** and the core-api / FleetOps source as you go.
+- New consumable endpoints must be added to the **Postman collection** as a PR, and the FleetOps
+  Postman contract CI must still pass.
 
 ---
 
@@ -370,23 +382,45 @@ framework pieces, as the existing tests do.
 
 ## 7. The design spec — analyse it before implementing
 
+### The prototypes — read them before implementing any screen
+
+Both rounds were delivered as Claude Design canvases in project
+`4dddbb4b-bdbf-4e12-ae68-2970c0c5050d`:
+
+- **Round 1** — <https://claude.ai/design/p/4dddbb4b-bdbf-4e12-ae68-2970c0c5050d?file=Navigator+Redesign.dc.html>
+- **Round 2** — <https://claude.ai/design/p/4dddbb4b-bdbf-4e12-ae68-2970c0c5050d?file=Navigator+Redesign+R2.dc.html>
+
+**Getting access.** These are not artifact URLs and cannot be fetched with `WebFetch` or the
+`Artifact` tool. Reach them with the **`DesignSync`** tool (`list_files`, then `get_file`), which
+needs design-system authorization: run **`/design-login` once from an interactive Claude Code
+session on this machine** and later sessions reuse it. On claude.ai/code, use Claude Design's
+"Send to Claude Code Web" to seed the project into the workspace instead. A previous session could
+not reach the project at all and worked from the written specs alone — do not repeat that if you can
+avoid it, because the frames carry spacing, state and composition detail the prose does not.
+
 **Source of truth, in order:**
 
-1. `docs/redesign/02-CLAUDE-DESIGN-PROMPT.md` — the round 1 brief.
+1. The two canvases above — the actual frames.
 2. `docs/redesign/03-DESIGN-GAP-SPEC.md` — the round 2 brief. **Read this in full.** It carries the
    invariants, six corrections to round 1, and a screen-by-screen spec for ~48 screens keyed
-   `A1…I5`.
-3. `src/v3/theme/` and `src/v3/ui/` — the system **as actually built**. Where a doc and the code
+   `A1…I5`. It is the brief the R2 canvas was drawn from, so use it as the index into the frames.
+3. `docs/redesign/02-CLAUDE-DESIGN-PROMPT.md` — the round 1 brief.
+4. `src/v3/theme/` and `src/v3/ui/` — the system **as actually built**. Where a doc and the code
    disagree, the code is what ships; reconcile deliberately rather than silently.
-4. Round 1 Claude Design project `4dddbb4b-bdbf-4e12-ae68-2970c0c5050d` — the 19 high-fidelity
-   frames plus the interactive prototype.
 
-**Important: design round 2 was never delivered.** It was truncated at the read cap partway into
-section H. So sections A–I of the gap spec are *written* specs with **no frames**, including
-**E3 (DVIR), E4 and E5** — exactly what you are now taking over — and there are no trailer designs at
-all. You will be implementing from prose against a built design system. Either commission a design
-round for E3/E4/E5 + trailers, or write the frames' worth of specification yourself and get it
-approved before building. Do not improvise a parallel visual treatment.
+**What R2 does and does not cover.** R2 *was* delivered. What was truncated was a previous session's
+**reading** of it — it hit a read cap partway into section H. So the frames exist for sections A
+through H1, **including E3 (DVIR), E4 and E5**, which is exactly the flow you are taking over: go and
+look at them before designing anything new. Confirmed to have **no frames**: **G2** (composer,
+partly inferable from G1), **H2** (earnings), **H3** (help), **H4** (sign out), and **all of section
+I** — sync queue, error states, push notification designs, iOS Live Activity / Android
+foreground-service notification, and tablet layouts. I1 and I2 were built from the design system
+directly, which is legitimate because they are mechanical; the rest need a design round or an
+explicit decision to ship without them.
+
+**Trailers have no frames at all** — the feature postdates both rounds. Either commission a round for
+them, or specify the frames' worth yourself and get it approved before building. Do not improvise a
+parallel visual treatment.
 
 **The eight invariants — every screen is checked against these:**
 
@@ -409,6 +443,50 @@ literals out of the component library — keep that too.
 
 ---
 
+## 7a. Internationalisation is a requirement, not a later pass
+
+**The app must be fully internationalised from the start — every screen, every string, translation
+files included.** This is an explicit requirement from the owner, and it is also the cheapest thing
+to get right early and the most expensive to retrofit: the original app was effectively unlocalised
+and only 6 of 34 screens imported the language hook, which is much of why this rebuild exists.
+
+**What is already built:**
+
+- `src/v3/i18n/` — a v3 layer on `i18n-js` with **pluralisation and interpolation**. Deliberately
+  not reusing `src/utils/localize.js`, which imports the v2 `tamagui.config` and would pull a second
+  Tamagui config into the v3 tree.
+- `translations/en.json` — **719 keys**, shared by v2 and v3 so a translator sees one job. v3
+  namespaces: `account`, `changeVehicle`, `common`, `connect`, `conversation`, `destination`,
+  `editPayloadItem`, `failure`, `fuelCreate`, `fuelLog`, `fuelReport`, `handoff`, `help`, `inbox`,
+  `issueCreate`, `issueDetail`, `issues`, `itemDetail`, `nav`, `newConversation`, `offers`,
+  `orderDetail`, `orderStatuses`, `orderTimeline`, `ordersScreen`, `orgSwitcher`, `otp`,
+  `permissions`, `profile`, `proof`, `settings`, `signIn`, `sync`, `today`, `ui`, `vehicle`.
+- Missing keys warn loudly in `__DEV__` and return undefined in production.
+- `no-hardcoded-copy.test.js` enforces `t()` across the component library.
+- `setLocale()` exists.
+
+**What is missing — treat as open work:**
+
+1. **There is only one catalogue.** `catalogues = { en }`. No second language exists, so nothing has
+   ever exercised a real translation path. Add at least one non-English locale early — ideally one
+   that stresses the assumptions (a longer language for the ~30% expansion rule, and an RTL one).
+2. **No RTL handling anywhere.** `grep -rn "I18nManager" src/` returns nothing. Invariant 7 requires
+   RTL, and RTL is not a translation problem — it is a layout problem. Retrofitting it after 32
+   screens is materially harder than doing it now, and it interacts with every row, icon direction
+   and swipe gesture in the app.
+3. **Settings shows language as a read-only row**, not a picker (`SettingsScreen.tsx:167` renders a
+   `ListRow` with `meta`), because there is nothing to switch to. H1 specifies a real selector.
+4. **No device-locale detection** wired at startup.
+5. `settingsStore` defaults `language: 'en-GB'` while the catalogue is keyed `en` — reconcile
+   language tags versus catalogue keys before adding locales, or fallbacks will silently misfire.
+6. **Every new screen — trailers, inspections, the Route tab — must be authored through `t()` from
+   the first commit**, with its keys added to `en.json` in the same change. Do not leave literals to
+   sweep up later.
+7. Dates and numbers: v2 hard-codes English in `formatWhatsAppTimestamp` and passes no locale to
+   `date-fns`. Anything v3 shares with it needs checking.
+
+---
+
 ## 8. What is still genuinely blocked
 
 Re-verified against `routes.php` at v0.6.65. Do not start these without backend work:
@@ -422,15 +500,77 @@ Re-verified against `routes.php` at v0.6.65. Do not start these without backend 
 | My documents (A6) | No driver document endpoints |
 | Devices and sessions (A5) | No session list/revoke routes |
 | Maintenance history | `maintenances` is console-only (work orders **are** public) |
-| Earnings (H2) | No earnings, payout or rate data exists in FleetOps at all |
+
+**Earnings is no longer in this table** — it moves to the ledger extension. See §8a.
 
 Also outstanding, app-side: **chat attachments** need `POST /v1/files` plus a picker (composer is
 text-only today), and a chat channel carries **no order reference**, so G1's order-context header has
 nothing to link to.
 
+---
+
+## 8a. Driver wallet and earnings — build on the ledger extension
+
+**Owner's decision: driver earnings go through the ledger API, not a new FleetOps concept.** Open a
+PR against the ledger if changes are required.
+
+Repo: `git@github.com:fleetbase/ledger.git`, checked out at
+`~/Development/fleetbase/oss/fleetbase-dev/packages/ledger`.
+
+**What already exists.** A consumable, driver-facing wallet API — verified in the ledger's
+`routes.php` and against the running instance. Routes sit behind the `fleetbase.api` middleware under
+the `ledger` prefix, so the real paths are:
+
+```
+GET  /ledger/v1/wallet               wallet for the authenticated subject (creates on first read)
+GET  /ledger/v1/wallet/balance       { balance (minor units), formatted_balance, currency, status }
+GET  /ledger/v1/wallet/transactions  filter: type, direction, status, date_from, date_to; limit/page
+POST /ledger/v1/wallet/topup
+```
+
+I confirmed `/ledger/v1/wallet/balance` is routed and answers `401` to an organisation API key;
+`/v1/ledger/...` is **not** a route (404). The controller resolves the subject from `_consumer`
+first, then `session('user')` — with a comment documenting that a driver's own Sanctum token is the
+intended credential and that `$request->user()` is null under `fleetbase.api`. **I did not verify the
+driver-token path end to end; do that first, before designing anything on top of it.**
+
+`Wallet` is polymorphic and its own docblock names the case explicitly:
+`driver: Earnings wallet for FleetOps drivers` (alongside `customer` and `company`). Balances are
+integers in minor units, and **every balance change must produce a Transaction** — so an earnings
+screen is a wallet balance plus a filtered transaction feed, not a separate ledger.
+
+Internal wallet operations that already exist and may matter: `{id}/transfer`, `{id}/credit`,
+`{id}/topup`, **`{id}/payout`**, `{id}/freeze`, `{id}/unfreeze`, `{id}/recalculate`,
+`{id}/transactions`.
+
+**What is missing — this is the PR work to expect:**
+
+1. **Nothing credits a driver on order completion.** The ledger's events are entirely
+   invoice/payment-centric — `InvoiceCreated`, `InvoicePaid`, `PaymentFailed`, `PaymentSucceeded`,
+   `RefundProcessed`, with three matching listeners. There is no order-completion listener and no
+   FleetOps order → wallet credit path anywhere in `server/src`.
+2. **There is no rate or payout model** — nothing expresses what a driver earns per order, per stop,
+   per kilometre, or as a share. That has to be designed before any crediting can be meaningful, and
+   it is as much a product decision as an engineering one.
+3. **Confirm the wallet subject for a driver.** `resolveSubject()` returns a **`User`**, but the
+   docblock describes driver wallets. Whether a driver's wallet is keyed on `Driver` or on `User`
+   changes every query, and getting it wrong is the kind of thing that looks fine until two drivers
+   share a user or a driver moves organisation. Settle it before building.
+4. **Payout to the driver** — `{id}/payout` exists on the internal namespace; a driver-initiated
+   withdrawal, if wanted, needs a consumable route and a gateway decision.
+
+**App side.** H2 Earnings is one of the screens with **no R2 frame**, and the gap spec has it
+**config-gated and off by default** with a clear empty state — keep that until the crediting path
+actually exists, so the app never shows a plausible-looking zero that is really "not wired up".
+Design it as: balance, period selector, a transaction feed with type and direction, and payout
+status. Money formatting already exists in `src/v3/format.ts`; use minor units end to end and format
+once at the edge.
+
+---
+
 **Tier 2 — the SDK.** `fleetbase-js` still has no stores for `issues`, `fuelReports`, `manifests`,
 `workOrders`, `inspections`, `trailers`, `files`, `comments`, `chatChannels`, `orderConfigs`,
-`notifications`. v3 reaches these through the adapter directly. Adding the stores is legitimate
+`notifications`, `wallet`/`transactions`. v3 reaches these through the adapter directly. Adding the stores is legitimate
 work and should ship alongside whatever endpoints you consume.
 
 ---
@@ -504,8 +644,12 @@ Raise these early rather than guessing:
 
 1. **Trailers** — view-only or full driver management? Should attach/detach be offline-queueable?
    Is trailer odometer / reefer-hours capture a driver responsibility?
-2. **Inspections** — do you commission a design round for E3/E4/E5 (and trailers), or build from the
-   written spec with your own frames approved first?
+2. **Inspections** — E3/E4/E5 already have R2 frames; read them first. The open question is whether
+   **trailers** get a design round or specified frames approved before building.
+2a. **Localisation** — which locales ship first, and is RTL in scope for v3.0? Both answers change
+   layout work across all 32 existing screens, so they are wanted early, not late.
+2b. **Earnings** — what does a driver actually earn (per order / per stop / per km / a share)? No
+   rate model exists anywhere, and nothing can be credited until that is decided.
 3. **Inspections rebase** — 976 commits is a large rebase. Confirm the owner wants it rebased onto
    the current release branch rather than re-cut fresh from today's `main`.
 4. **Scope of the driver inspection API** — the proposed routes in §6 are a proposal, not a
