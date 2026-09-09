@@ -16,7 +16,6 @@ prepare_react_native_project!
 # Permissions handlers
 setup_permissions([
   'Camera',
-  'Contacts',
   'FaceID',
   'LocationAccuracy',
   'LocationAlways',

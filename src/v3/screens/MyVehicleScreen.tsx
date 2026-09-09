@@ -24,7 +24,8 @@ import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
-import { endAlign } from '../i18n/direction';
+import { useVehicleTrailers, trailerTitle, trainPositionOf, reeferRangeOf, type TrailerRecord } from '../data/useTrailers';
+import { endAlign, chevron } from '../i18n/direction';
 import { useSync } from '../shell';
 import { useVehicle, odometerOf, vehicleTitle, type VehicleRecord } from '../data/useVehicle';
 import { formatDateTime, formatNumber } from '../format';
@@ -63,12 +64,16 @@ export function MyVehicleScreen({
     seed,
     reloadToken = 0,
     onChangeVehicle,
+    onOpenTrailer,
 }: {
     vehicleId?: string;
     seed?: VehicleRecord | null;
     reloadToken?: number;
     onChangeVehicle?: () => void;
+    /** Opens the trailer's read view; the row is passed so it paints at once. */
+    onOpenTrailer?: (trailer: TrailerRecord) => void;
 }) {
+    const trailers = useVehicleTrailers(vehicleId, reloadToken);
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const { isOnline } = useSync();
@@ -192,6 +197,75 @@ export function MyVehicleScreen({
             ) : (
                 <Secondary testID="vehicle-sparse">{t('vehicle.sparse')}</Secondary>
             )}
+
+            {/*
+              * Trailers — FleetOps v0.6.65. The train is listed in towing
+              * order, each unit with the identifier painted on its side, its
+              * coupling state, and the set temperature if it is a fridge.
+              */}
+            <YStack gap={space[2]} testID="vehicle-trailers">
+                <Caption paddingHorizontal={space[1]}>{t('trailer.attached')}</Caption>
+                {trailers.isLoading ? (
+                    <Skeleton height={64} />
+                ) : trailers.failed ? (
+                    <Secondary fontSize={13} testID="vehicle-trailers-error">{t('trailer.loadFailed')}</Secondary>
+                ) : trailers.trailers.length ? (
+                    <Surface>
+                        {trailers.trailers.map((trailer, i) => {
+                            const position = trainPositionOf(trailer);
+                            const reefer = reeferRangeOf(trailer);
+                            return (
+                                <YStack key={trailer.id}>
+                                    {i > 0 ? <Divider /> : null}
+                                    <XStack
+                                        padding={space[3]}
+                                        gap={space[3]}
+                                        alignItems="center"
+                                        onPress={onOpenTrailer ? () => onOpenTrailer(trailer) : undefined}
+                                        pressStyle={onOpenTrailer ? { opacity: 0.7 } : undefined}
+                                        accessibilityRole={onOpenTrailer ? 'button' : 'text'}
+                                        testID={`vehicle-trailer-${trailer.id}`}
+                                    >
+                                        <YStack
+                                            width={40}
+                                            height={40}
+                                            borderRadius={radius.compact + 1}
+                                            alignItems="center"
+                                            justifyContent="center"
+                                            backgroundColor="$surfaceRaised"
+                                            borderWidth={1}
+                                            borderColor="$border"
+                                        >
+                                            <Body fontSize={17} fontWeight="800" tone="secondary" tabular>
+                                                {position != null ? t('trailer.positionBadge', { position }) : '·'}
+                                            </Body>
+                                        </YStack>
+                                        <YStack flex={1} gap={space[1]} minWidth={0}>
+                                            <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
+                                                <Body fontSize={15} fontWeight="700" flex={1} numberOfLines={1}>
+                                                    {trailerTitle(trailer) ?? t('trailer.unnamed')}
+                                                </Body>
+                                                {trailer.attachment_state ? (
+                                                    <StatusPill status={trailer.attachment_state} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} />
+                                                ) : null}
+                                            </XStack>
+                                            {trailer.plate_number ? <Identifier value={trailer.plate_number} boxed={false} /> : null}
+                                            {reefer ? (
+                                                <Micro tone="brand" tabular testID={`vehicle-trailer-reefer-${trailer.id}`}>
+                                                    {t('trailer.refrigerated')} · {reefer}
+                                                </Micro>
+                                            ) : null}
+                                        </YStack>
+                                        {onOpenTrailer ? <Secondary fontSize={17}>{chevron()}</Secondary> : null}
+                                    </XStack>
+                                </YStack>
+                            );
+                        })}
+                    </Surface>
+                ) : (
+                    <Secondary fontSize={13} testID="vehicle-trailers-none">{t('trailer.none')}</Secondary>
+                )}
+            </YStack>
 
             {onChangeVehicle ? (
                 <Button variant="secondary" fullWidth onPress={onChangeVehicle} testID="vehicle-change">

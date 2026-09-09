@@ -458,7 +458,9 @@
             "other": "%{count} things you did have not reached dispatch yet. They stay on this phone and can only be sent by you — sign back in on this device to finish sending them."
         },
         "signOutConfirm": "Sign out",
-        "help": "Help and support"
+        "help": "Help and support",
+        "earnings": "Earnings",
+        "notEnabled": "Not enabled"
     },
     "orgSwitcher": {
         "title": "Organisation",
@@ -797,7 +799,9 @@
             "orders": "Orders",
             "inbox": "Inbox",
             "account": "Account"
-        }
+        },
+        "trailerDetail": "Trailer",
+        "earnings": "Earnings"
     },
     "help": {
         "messageDispatch": "Message dispatch",
@@ -1041,5 +1045,96 @@
         "noPositionNote": "Worked out from the first remaining stop — turn location on to start from where you are.",
         "worse": "This order is longer than the current one.",
         "failed": "The route could not be re-ordered. The current order is unchanged."
+    },
+    "notEnabled": {
+        "title": "Not switched on for your organisation",
+        "askDispatch": "Ask dispatch if you expected to see this here.",
+        "documents": {
+            "title": "My documents",
+            "body": "Licence, permits and certificates you have shared with dispatch, with expiry dates.",
+            "why": "The driver API has no document endpoints yet, so nothing here can be shown truthfully."
+        },
+        "inspection": {
+            "title": "Vehicle inspection",
+            "body": "Pre-trip and post-trip checks, with defects reported straight to maintenance.",
+            "why": "Inspections are being added to the driver API. Until they land, checks are done on paper or in the console."
+        },
+        "earnings": {
+            "title": "Earnings",
+            "body": "Your balance and what each job paid, from your organisation's ledger.",
+            "why": "Nothing credits a driver's wallet yet, so a balance here would be a zero that means nothing."
+        }
+    },
+    "trailer": {
+        "title": "Trailers",
+        "attached": "ATTACHED TRAILERS",
+        "none": "No trailer is attached to this vehicle.",
+        "loadFailed": "Could not read the trailers on this vehicle.",
+        "unnamed": "Trailer",
+        "identity": "IDENTITY",
+        "towing": "TOWING",
+        "sizeAndWeight": "SIZE & WEIGHT",
+        "runningGear": "RUNNING GEAR",
+        "refrigeration": "REFRIGERATION",
+        "telematics": "TELEMATICS",
+        "plate": "Plate",
+        "vin": "VIN",
+        "serial": "Serial number",
+        "code": "Fleet code",
+        "towedBy": "Towed by",
+        "position": "Position in train",
+        "positionValue": "%{position}",
+        "attachedAt": "Attached since",
+        "couplingType": "Coupling",
+        "length": "Length",
+        "width": "Width",
+        "height": "Height",
+        "tareWeight": "Tare weight",
+        "gvwr": "GVWR",
+        "payloadCapacity": "Payload",
+        "cargoVolume": "Cargo volume",
+        "axles": "Axles",
+        "tyres": "Tyres",
+        "doors": "Doors",
+        "brakeType": "Brakes",
+        "abs": "ABS",
+        "ebs": "EBS",
+        "yes": "Yes",
+        "no": "No",
+        "refrigerated": "Refrigerated",
+        "temperatureRange": "Set range",
+        "reeferHours": "Reefer hours",
+        "online": "Tracker",
+        "onlineNow": "Online",
+        "offline": "Offline",
+        "lastOnline": "Last online",
+        "odometer": "Odometer",
+        "engineHours": "Engine hours",
+        "sparse": "Nothing else is recorded for this trailer.",
+        "couplingByDispatch": "Coupling and uncoupling are recorded by dispatch. Report a coupling fault as an issue.",
+        "positionBadge": "%{position}"
+    },
+    "earnings": {
+        "balance": "BALANCE",
+        "payoutNote": "Payouts are made by your organisation. This balance is what has been credited and not yet paid out.",
+        "frozen": "Your wallet is frozen. Nothing can be paid out until your organisation lifts it.",
+        "periodWeek": "This week",
+        "periodMonth": "This month",
+        "periodAll": "All time",
+        "periodTotal": "In this period",
+        "emptyTitle": "Nothing in this period",
+        "emptyBody": "Credits for completed work and payouts appear here.",
+        "type": {
+            "credit": "Credit",
+            "debit": "Debit",
+            "payout": "Payout",
+            "transfer": "Transfer",
+            "topup": "Top-up",
+            "refund": "Refund",
+            "fee": "Fee",
+            "adjustment": "Adjustment",
+            "earning": "Earning",
+            "other": "Transaction"
+        }
     }
 }

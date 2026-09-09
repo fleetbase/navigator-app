@@ -117,9 +117,9 @@ surfaced within minutes of pointing the app at a real instance.
 
 | Metric | Value |
 |---|---|
-| v3 screens | 36 built, 2 still `placeholder()` |
+| v3 screens | 39 built, 0 `placeholder()` (Documents and Inspection render an honest "not enabled" state) |
 | v3 source | 188 files, ~28,600 lines |
-| Tests | 872 passing, 59 suites, 0 failing |
+| Tests | 899 passing, 61 suites, 0 failing |
 | v3 lint / typecheck | **0 errors** (105 warnings) |
 | v2 lint / typecheck | 596 lint errors, 15 type errors — **pre-existing, untouched** |
 | Cutover | `NAVIGATOR_V3=true` in `.env` selects the v3 tree at `App.tsx` |
@@ -137,12 +137,19 @@ issues (list/detail/create), Inbox (conversations, composer, participants), Acco
 profile edit, my vehicle, change vehicle, sign in (password + one-time code), navigation hand-off,
 permissions primer, self-hosted connection, sync queue, error states, ad-hoc offers, settings, help.
 
-### The two placeholders
+### No placeholders remain
 
-`src/v3/navigation/DriverTabs.tsx` — reachable, showing a "not built" state:
+`Placeholder.tsx` has no users on the tab graph. Documents and Inspection render `NotEnabledScreen`
+(invariant 8: what it is, not enabled, ask dispatch). Earnings is built and **gated off** behind
+`features.earnings` (`FEATURE_EARNINGS` in `.env`, read by `navigator.config`) until the ledger
+credits drivers.
 
-| Placeholder | Stack | Status |
-|---|---|---|
+**Built 2026-09-09, not device-verified:** the Route tab (B1–B3, C4, C6), trailers (view only, spec in
+`09-TRAILERS-SPEC.md`), earnings (H2, gated), the i18n foundation (Spanish, pseudo-locales, RTL
+edges, picker). The dev instance has no seeded manifest, trailer or driver wallet for the test driver;
+seed those before a road test.
+
+---|---|---|
 | `Inspection` | Account | Your new scope — see §6 |
 | `Documents` | Account | Still blocked, no endpoint |
 

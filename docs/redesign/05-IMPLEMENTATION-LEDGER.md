@@ -667,3 +667,53 @@ proof, not a decision); a translator's review of `es.json`; and the v2
 namespaces, which are not translated because the v2 tree is what the cutover
 flag replaces.
 
+---
+
+## Trailers — view built, management specified and waiting on a decision
+
+No frame exists for trailers, so the treatment is written down first:
+[09-TRAILERS-SPEC.md](09-TRAILERS-SPEC.md). Built to it: an *Attached
+trailers* section on My vehicle (E1) listing the train in towing order — position
+badge from `current_connection.position`, title, attachment pill, plate in full,
+reefer range — and a `TrailerDetailScreen` with identity, towing, size and
+weight, running gear, refrigeration and telematics groups, each omitted when
+empty. Reads `GET /v1/vehicles/{id}/trailers` and `GET /v1/trailers/{id}`, both
+already in the Postman collection (fleetbase/postman #58).
+
+Attach, detach and reorder are specified in the same document and **not built**:
+whether a driver couples trailers from the app is the owner's call (§12.1). The
+spec also records that reorder has no atomic path — it is detach + attach — and
+names the FleetOps PR (`position` on the active connection) to open before
+building it. Coupling checks belong to the DVIR checklist, not to these screens.
+
+---
+
+## Earnings — H2, gated off by default, wired to the ledger
+
+H2 is the point where R2 stops, so this is built from the gap spec's own words:
+balance, period selector (week / month / all), transaction feed with type and
+direction, payout status. `useWallet` reads `/ledger/v1/wallet/balance` and
+`/ledger/v1/wallet/transactions` by absolute URL — the ledger mounts outside
+`v1`, and the adapter gained `absoluteUrl()` so the same auth, timeout and
+reachability apply. Minor units end to end; `formatMoney` once at the edge.
+
+**Gated.** `features.earnings` travels host → `V3App` → `DriverTabs`
+(`useFeatures`). Off, the Account row reads *Not enabled* and the route renders
+`NotEnabledScreen`. On, the screen shows the wallet. The host reads
+`FEATURE_EARNINGS` through `navigator.config`. It stays off until the ledger
+credits drivers on completion — that PR (rate model, order-completion listener,
+subject = Driver vs User) is still the open design question in §8a, and this
+screen is the surface it will land on. **Not verified against a driver token**:
+the dev instance has no driver credentials on this machine.
+
+---
+
+## The two remaining placeholders are now honest states
+
+`NotEnabledScreen` replaces the build-time `Placeholder` for Documents and
+Inspections (and gated Earnings): what the feature is, that the organisation has
+not enabled it, and who to ask — in the driver's language, with nothing that
+reads like data. `Placeholder.tsx` has no remaining users on the tab graph.
+The unused **Contacts** permission is gone from the Podfile and `Info.plist`;
+that lands with the next `pod install`.
+

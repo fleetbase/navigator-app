@@ -31,11 +31,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { YStack } from 'tamagui';
 import { ScreenHeader } from '../ui/ScreenHeader';
 import { useTranslation } from '../i18n/useTranslation';
-import { placeholder } from '../screens/Placeholder';
 import SettingsScreen from '../screens/SettingsScreen';
 import HelpScreen from '../screens/HelpScreen';
 import ProofCaptureScreen from '../screens/ProofCaptureScreen';
 import MyVehicleScreen from '../screens/MyVehicleScreen';
+import TrailerDetailScreen from '../screens/TrailerDetailScreen';
+import NotEnabledScreen from '../screens/NotEnabledScreen';
+import EarningsScreen from '../screens/EarningsScreen';
 import DestinationScreen from '../screens/DestinationScreen';
 import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
 import OffersScreen from '../screens/OffersScreen';
@@ -69,13 +71,12 @@ import InboxScreen from '../screens/InboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
 import { useDriver } from '../data';
-import type { FuelReportRecord, IssueRecord, ChatChannelRecord } from '../data';
+import type { FuelReportRecord, IssueRecord, ChatChannelRecord, TrailerRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const P4 = 'Phase 4b';
 
 const screenOptions = { headerShown: false } as const;
 const modalOptions = { presentation: 'modal' } as const;
@@ -123,13 +124,33 @@ export const useDriverUserId = () => useContext(DriverUserIdContext);
 const SignOutContext = createContext<(() => void) | undefined>(undefined);
 export const useSignOut = () => useContext(SignOutContext);
 
+/**
+ * Organisation-level feature switches. Every entry defaults to off, and an
+ * off surface renders its "not enabled" state — never fake data (invariant 8).
+ */
+export interface Features {
+    /** H2: driver wallet earnings via the ledger extension. */
+    earnings?: boolean;
+}
+const FeaturesContext = createContext<Features>({});
+export const useFeatures = () => useContext(FeaturesContext);
+
 /** Current organisation, and the host's handler for a completed switch. */
 const OrganizationContext = createContext<{ id?: string; onSwitched?: (driver: unknown) => void }>({});
 export const useOrganization = () => useContext(OrganizationContext);
 
-/* -- Placeholders, built once. ------------------------------------------- */
-const Inspection = placeholder('Vehicle inspection', P4, 'inspection endpoints + design round 2');
-const Documents = placeholder('My documents', P4, 'driver document endpoints (Phase 5)');
+/* -- Not enabled yet: honest states, not build-time placeholders. --------- */
+function Inspection() {
+    return <NotEnabledScreen feature="inspection" />;
+}
+function Documents() {
+    return <NotEnabledScreen feature="documents" />;
+}
+function Earnings() {
+    const { earnings } = useFeatures();
+    const reloadToken = useFocusCount();
+    return earnings ? <EarningsScreen reloadToken={reloadToken} /> : <NotEnabledScreen feature="earnings" />;
+}
 
 type Nav = { navigate: (route: string, params?: object) => void; goBack: () => void };
 
@@ -335,6 +356,7 @@ function AccountHome({ navigation }: { navigation: Nav }) {
         <AccountScreen
             driverId={driverId}
             reloadToken={reloadToken}
+            features={useFeatures()}
             onNavigate={(route) => navigation.navigate(route, {})}
             onSignOut={signOut}
         />
@@ -456,6 +478,10 @@ function ProofCapture({ route, navigation }: { route: { params?: { orderId?: str
     );
 }
 
+function TrailerDetail({ route }: { route: { params?: { trailerId?: string; trailer?: TrailerRecord } } }) {
+    return <TrailerDetailScreen trailerId={String(route.params?.trailerId ?? '')} seed={route.params?.trailer} />;
+}
+
 function MyVehicle({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const { driver } = useDriver(driverId);
@@ -466,6 +492,7 @@ function MyVehicle({ navigation }: { navigation: Nav }) {
         <MyVehicleScreen
             vehicleId={vehicle?.id}
             onChangeVehicle={() => navigation.navigate('ChangeVehicle', { currentVehicleId: vehicle?.id })}
+            onOpenTrailer={(trailer) => navigation.navigate('TrailerDetail', { trailerId: trailer.id, trailer })}
         />
     );
 }
@@ -507,8 +534,10 @@ const IssuesH = withHeader('nav.issues', Issues);
 const IssueDetailH = withHeader('nav.issueDetail', IssueDetail);
 const IssueCreateH = withHeader('nav.issueCreate', IssueCreate);
 const MyVehicleH = withHeader('nav.myVehicle', MyVehicle);
+const TrailerDetailH = withHeader('nav.trailerDetail', TrailerDetail);
 const InspectionH = withHeader('nav.inspection', Inspection);
 const DocumentsH = withHeader('nav.documents', Documents);
+const EarningsH = withHeader('nav.earnings', Earnings);
 const ProfileEditH = withHeader('nav.profileEdit', ProfileEdit);
 const PermissionsPrimerH = withHeader('nav.permissions', PermissionsPrimer);
 const OrgSwitcherH = withHeader('nav.orgSwitcher', OrgSwitcher);
@@ -590,9 +619,11 @@ function AccountStack() {
               */}
             <Stack.Screen name="IssueCreate" component={IssueCreateH} />
             <Stack.Screen name="MyVehicle" component={MyVehicleH} />
+            <Stack.Screen name="TrailerDetail" component={TrailerDetailH} />
             <Stack.Screen name="ChangeVehicle" component={ChangeVehicleH} />
             <Stack.Screen name="Inspection" component={InspectionH} />
             <Stack.Screen name="Documents" component={DocumentsH} />
+            <Stack.Screen name="Earnings" component={EarningsH} />
             <Stack.Screen name="ProfileEdit" component={ProfileEditH} />
             <Stack.Screen name="Permissions" component={PermissionsPrimerH} />
             <Stack.Screen name="OrgSwitcher" component={OrgSwitcherH} />
@@ -633,6 +664,7 @@ export function DriverTabs({
     onSignOut,
     organizationId,
     onOrganizationSwitched,
+    features,
 }: {
     badges?: TabBadges;
     driverId?: string;
@@ -640,7 +672,9 @@ export function DriverTabs({
     onSignOut?: () => void;
     organizationId?: string;
     onOrganizationSwitched?: (driver: unknown) => void;
+    features?: Features;
 }) {
+    const featuresValue = useMemo<Features>(() => ({ ...features }), [features]);
     // `tabBar` is a render prop, not `component`, so re-creating it re-renders
     // the bar rather than remounting it — which is why the badges may close
     // over `badges` while the screens above may not.
@@ -659,6 +693,7 @@ export function DriverTabs({
 
     return (
         <DriverIdContext.Provider value={driverId}>
+          <FeaturesContext.Provider value={featuresValue}>
             {/*
               * One subscription for the whole session. Order events bump the
               * live-refresh signal, so whatever is on screen refetches; geofence
@@ -683,6 +718,7 @@ export function DriverTabs({
                     </OrganizationContext.Provider>
                 </SignOutContext.Provider>
             </DriverUserIdContext.Provider>
+          </FeaturesContext.Provider>
         </DriverIdContext.Provider>
     );
 }

@@ -36,6 +36,8 @@ export interface AccountLink {
     labelKey: string;
     /** Shown in place of a chevron when the destination is not built yet. */
     blockedKey?: string;
+    /** Organisation switch that lifts `blockedKey` when on. */
+    feature?: 'earnings';
 }
 
 /** Everything filed under Account, built or not. */
@@ -44,8 +46,9 @@ const LINKS: AccountLink[] = [
     { route: 'FuelLog', labelKey: 'account.fuelLog' },
     { route: 'Issues', labelKey: 'account.issues' },
     { route: 'MyVehicle', labelKey: 'account.myVehicle' },
+    { route: 'Earnings', labelKey: 'account.earnings', blockedKey: 'account.notEnabled', feature: 'earnings' },
     { route: 'Inspection', labelKey: 'account.inspection', blockedKey: 'account.laterPhase' },
-    { route: 'Documents', labelKey: 'account.documents', blockedKey: 'account.laterPhase' },
+    { route: 'Documents', labelKey: 'account.documents', blockedKey: 'account.notEnabled' },
     { route: 'Permissions', labelKey: 'account.permissions' },
     { route: 'SyncQueue', labelKey: 'account.syncQueue' },
     { route: 'Settings', labelKey: 'account.settings' },
@@ -70,12 +73,15 @@ export function AccountScreen({
     reloadToken,
     onNavigate,
     onSignOut,
+    features,
 }: {
     driverId?: string;
     driver?: DriverRecord | null;
     reloadToken?: number;
     onNavigate?: (route: string) => void;
     onSignOut?: () => void;
+    /** Organisation switches; a gated row loses its "not enabled" mark when on. */
+    features?: { earnings?: boolean };
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
@@ -201,7 +207,9 @@ export function AccountScreen({
             )}
 
             <Surface testID="account-links">
-                {LINKS.map((link, i) => (
+                {LINKS.map((raw, i) => {
+                    const link = raw.feature && features?.[raw.feature] ? { ...raw, blockedKey: undefined } : raw;
+                    return (
                     <YStack key={link.route}>
                         {i > 0 ? <Divider /> : null}
                         <XStack
@@ -217,7 +225,8 @@ export function AccountScreen({
                             {link.blockedKey ? <Micro tone="warning">{t(link.blockedKey)}</Micro> : <Secondary fontSize={17}>{chevron()}</Secondary>}
                         </XStack>
                     </YStack>
-                ))}
+                    );
+                })}
             </Surface>
 
             {/*

@@ -30,6 +30,7 @@ import { LocationProvider, useLocation } from './src/contexts/LocationContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 import { SocketClusterProvider } from './src/contexts/SocketClusterContext';
 import { TempStoreProvider } from './src/contexts/TempStoreContext';
+import { navigatorConfig } from './src/utils/navigator-config';
 
 /**
  * OrderManagerProvider is intentionally absent from the v3 branch: it reads
@@ -62,9 +63,13 @@ function DriverBridge(): React.JSX.Element {
         [fleetbase, createDriverSession]
     );
 
+    // Organisation switches, read once: the config module is not reactive.
+    const features = useMemo(() => ({ earnings: Boolean(navigatorConfig('features.earnings', false)) }), []);
+
     return (
         <V3App
             onSignIn={handleSignIn}
+            features={features}
             // One Fleetbase instance for the app; the adapter takes credentials
             // without being rebuilt, so a login or org switch no longer
             // invalidates every consumer the way v2's did.

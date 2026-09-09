@@ -152,10 +152,20 @@ describe('AccountScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
-    it('never shows earnings, which no endpoint provides', async () => {
-        const t = await mount(<AccountScreen driverId={driver.id} />);
-        expect(textOf(t).toLowerCase()).not.toContain('earnings');
-        ReactTestRenderer.act(() => t.unmount());
+    it('marks earnings as not enabled until the organisation switches it on (correction 5)', async () => {
+        // Off by default: the row is there, honestly gated, never a plausible zero.
+        const off = await mount(<AccountScreen driverId={driver.id} />);
+        const rows = off.root.findAll((n) => n.props?.testID === 'link-Earnings');
+        expect(rows.length).toBeGreaterThan(0);
+        expect(textOf(off)).toContain('Not enabled');
+        ReactTestRenderer.act(() => off.unmount());
+
+        const on = await mount(<AccountScreen driverId={driver.id} features={{ earnings: true }} />);
+        const text = textOf(on);
+        expect(text).toContain('Earnings');
+        // Only the documents row still carries the mark.
+        expect(text.split('Not enabled').length - 1).toBe(1);
+        ReactTestRenderer.act(() => on.unmount());
     });
 
     it('links to everything filed under Account, marking what is not built', async () => {

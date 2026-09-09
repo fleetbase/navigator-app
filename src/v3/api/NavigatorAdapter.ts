@@ -151,6 +151,20 @@ export class NavigatorAdapter extends BrowserAdapter {
     }
 
     /**
+     * A URL on this host outside the `v1` namespace. The ledger extension
+     * mounts its consumable API at `/ledger/v1/...`, so a wallet read cannot
+     * be expressed as a `v1` path; callers build the URL here and pass it as
+     * `options.url` so the same auth, timeout and reachability apply.
+     */
+    absoluteUrl(namespace: string, path: string, query: Record<string, string | number | undefined> = {}): string {
+        const qs = Object.entries(query)
+            .filter(([, v]) => v !== undefined && v !== '')
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+            .join('&');
+        return `${this.host}/${namespace}/${path}${qs ? `?${qs}` : ''}`;
+    }
+
+    /**
      * Single interception point. Deliberately does not call `super.request` —
      * the base implementation swallows the distinction between a transport
      * failure and an HTTP error, which is exactly what the retry policy needs.

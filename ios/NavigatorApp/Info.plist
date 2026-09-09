@@ -128,8 +128,6 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Navigator uses the camera to take proof-of-delivery photos and to scan package barcodes when you complete a stop.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>This app may need to access your contacts for sharing</string>
 	<key>NSLocalUsageDescription</key>
 	<string>This app requires access to send you notifications about order status updates and other important information.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

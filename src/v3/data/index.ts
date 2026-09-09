@@ -18,3 +18,5 @@ export * from './manifestStore';
 export * from './useManifests';
 export * from './routeGeo';
 export * from './useOrderRecord';
+export * from './useTrailers';
+export * from './useWallet';

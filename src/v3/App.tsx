@@ -24,6 +24,7 @@ import OtpSignInScreen from './screens/OtpSignInScreen';
 import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
+import type { Features } from './navigation/DriverTabs';
 import { FleetbaseProvider, mutationQueue, useQueue, useReachable, type MutationQueue } from './api';
 import { SocketProvider, type SocketConfig } from './realtime';
 import { useActiveOrderCount } from './data';
@@ -70,6 +71,7 @@ function DriverSurface(props: {
     onSignOut?: () => void;
     organizationId?: string;
     onOrganizationSwitched?: (driver: unknown) => void;
+    features?: Features;
 }) {
     const activeOrders = useActiveOrderCount();
 
@@ -91,6 +93,7 @@ function DriverSurface(props: {
             onSignOut={props.onSignOut}
             organizationId={props.organizationId}
             onOrganizationSwitched={props.onOrganizationSwitched}
+            features={props.features}
         />
     );
 }
@@ -130,6 +133,11 @@ export interface V3AppProps {
      * app re-creates the session; v3 does not own auth.
      */
     onOrganizationSwitched?: (driver: unknown) => void;
+    /**
+     * Organisation-level switches. Off by default: a surface that is not
+     * wired up renders its "not enabled" state rather than a plausible zero.
+     */
+    features?: Features;
     queue?: MutationQueue;
     badges?: TabBadges;
     activeStopCount?: number;
@@ -200,6 +208,7 @@ export function V3App({
     onSignOut,
     organizationId,
     onOrganizationSwitched,
+    features,
     queue = mutationQueue,
     badges,
     activeStopCount = 0,
@@ -254,6 +263,7 @@ export function V3App({
                                                         onSignOut={onSignOut}
                                                         organizationId={organizationId}
                                                         onOrganizationSwitched={onOrganizationSwitched}
+                                                        features={features}
                                                     />
                                                 ) : choosingHost ? (
                                                     <SelfHostedConnectionScreen

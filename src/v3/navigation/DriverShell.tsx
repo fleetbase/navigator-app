@@ -9,7 +9,7 @@ import { useCallback, useState } from 'react';
 import { Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
-import { DriverTabs } from './DriverTabs';
+import { DriverTabs, type Features } from './DriverTabs';
 import type { TabBadges } from './TabBar';
 import { AppHeader, DutySheet, OfflineBar, useDuty } from '../shell';
 import { space } from '../theme/tokens';
@@ -24,6 +24,7 @@ export function DriverShell({
     onSignOut,
     organizationId,
     onOrganizationSwitched,
+    features,
 }: {
     organizationName: string;
     subtitle?: string;
@@ -35,6 +36,7 @@ export function DriverShell({
     onSignOut?: () => void;
     organizationId?: string;
     onOrganizationSwitched?: (driver: unknown) => void;
+    features?: Features;
 }) {
     const insets = useSafeAreaInsets();
     const { duty, isChanging, breakSupported, setDuty, error } = useDuty();
@@ -65,7 +67,7 @@ export function DriverShell({
             </YStack>
 
             <YStack flex={1}>
-                <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} organizationId={organizationId} onOrganizationSwitched={onOrganizationSwitched} />
+                <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} organizationId={organizationId} onOrganizationSwitched={onOrganizationSwitched} features={features} />
             </YStack>
 
             <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>

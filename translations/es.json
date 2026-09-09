@@ -401,7 +401,9 @@
             "other": "%{count} acciones tuyas aún no han llegado a despacho. Se quedan en este teléfono y solo tú puedes enviarlas — vuelve a iniciar sesión en este dispositivo para terminar de enviarlas."
         },
         "signOutConfirm": "Cerrar sesión",
-        "help": "Ayuda y soporte"
+        "help": "Ayuda y soporte",
+        "earnings": "Ganancias",
+        "notEnabled": "No activado"
     },
     "orgSwitcher": {
         "title": "Organización",
@@ -740,7 +742,9 @@
             "orders": "Pedidos",
             "inbox": "Bandeja",
             "account": "Cuenta"
-        }
+        },
+        "trailerDetail": "Remolque",
+        "earnings": "Ganancias"
     },
     "help": {
         "messageDispatch": "Escribir a despacho",
@@ -984,5 +988,96 @@
         "noPositionNote": "Calculado desde la primera parada restante — activa la ubicación para empezar desde donde estás.",
         "worse": "Este orden es más largo que el actual.",
         "failed": "No se pudo reordenar la ruta. El orden actual no ha cambiado."
+    },
+    "notEnabled": {
+        "title": "No está activado para tu organización",
+        "askDispatch": "Consulta a despacho si esperabas verlo aquí.",
+        "documents": {
+            "title": "Mis documentos",
+            "body": "Licencia, permisos y certificados que has compartido con despacho, con sus fechas de caducidad.",
+            "why": "La API del conductor aún no tiene endpoints de documentos, así que nada de esto puede mostrarse con fidelidad."
+        },
+        "inspection": {
+            "title": "Inspección del vehículo",
+            "body": "Revisiones previas y posteriores al viaje, con defectos reportados directamente a mantenimiento.",
+            "why": "Las inspecciones se están añadiendo a la API del conductor. Hasta entonces, las revisiones se hacen en papel o en la consola."
+        },
+        "earnings": {
+            "title": "Ganancias",
+            "body": "Tu saldo y lo que pagó cada trabajo, desde el libro contable de tu organización.",
+            "why": "Todavía nada abona en el monedero del conductor, así que un saldo aquí sería un cero sin significado."
+        }
+    },
+    "trailer": {
+        "title": "Remolques",
+        "attached": "REMOLQUES ACOPLADOS",
+        "none": "No hay ningún remolque acoplado a este vehículo.",
+        "loadFailed": "No se pudieron leer los remolques de este vehículo.",
+        "unnamed": "Remolque",
+        "identity": "IDENTIDAD",
+        "towing": "ARRASTRE",
+        "sizeAndWeight": "TAMAÑO Y PESO",
+        "runningGear": "TREN DE RODAJE",
+        "refrigeration": "REFRIGERACIÓN",
+        "telematics": "TELEMÁTICA",
+        "plate": "Matrícula",
+        "vin": "VIN",
+        "serial": "Número de serie",
+        "code": "Código de flota",
+        "towedBy": "Arrastrado por",
+        "position": "Posición en el convoy",
+        "positionValue": "%{position}",
+        "attachedAt": "Acoplado desde",
+        "couplingType": "Enganche",
+        "length": "Longitud",
+        "width": "Anchura",
+        "height": "Altura",
+        "tareWeight": "Tara",
+        "gvwr": "PMA",
+        "payloadCapacity": "Carga útil",
+        "cargoVolume": "Volumen de carga",
+        "axles": "Ejes",
+        "tyres": "Neumáticos",
+        "doors": "Puertas",
+        "brakeType": "Frenos",
+        "abs": "ABS",
+        "ebs": "EBS",
+        "yes": "Sí",
+        "no": "No",
+        "refrigerated": "Refrigerado",
+        "temperatureRange": "Rango configurado",
+        "reeferHours": "Horas del equipo de frío",
+        "online": "Rastreador",
+        "onlineNow": "En línea",
+        "offline": "Desconectado",
+        "lastOnline": "Última conexión",
+        "odometer": "Odómetro",
+        "engineHours": "Horas de motor",
+        "sparse": "No hay nada más registrado para este remolque.",
+        "couplingByDispatch": "El acople y desacople los registra despacho. Reporta un fallo de enganche como incidencia.",
+        "positionBadge": "%{position}"
+    },
+    "earnings": {
+        "balance": "SALDO",
+        "payoutNote": "Los pagos los realiza tu organización. Este saldo es lo abonado que aún no se ha pagado.",
+        "frozen": "Tu monedero está congelado. No se puede pagar nada hasta que tu organización lo libere.",
+        "periodWeek": "Esta semana",
+        "periodMonth": "Este mes",
+        "periodAll": "Todo",
+        "periodTotal": "En este periodo",
+        "emptyTitle": "Nada en este periodo",
+        "emptyBody": "Los abonos por trabajo completado y los pagos aparecerán aquí.",
+        "type": {
+            "credit": "Abono",
+            "debit": "Cargo",
+            "payout": "Pago",
+            "transfer": "Transferencia",
+            "topup": "Recarga",
+            "refund": "Reembolso",
+            "fee": "Comisión",
+            "adjustment": "Ajuste",
+            "earning": "Ganancia",
+            "other": "Transacción"
+        }
     }
 }
