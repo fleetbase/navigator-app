@@ -33,14 +33,63 @@ import type { GeoPoint } from '../shell/LocationContext';
 export type Severity = 'low' | 'medium' | 'high' | 'critical';
 export const SEVERITIES: Severity[] = ['low', 'medium', 'high', 'critical'];
 
-/** One checklist item, as the console's form builder writes it into `items`. */
+/**
+ * A field on the form — the second cut's unit. The form builder writes these
+ * as platform custom fields, grouped; the driver API answers `grouped_fields`.
+ * The first cut's `items` (pass/fail only) are folded into the same shape by
+ * `fieldsOf`, so the renderer has one vocabulary.
+ */
+export type InspectionFieldType =
+    | 'pass-fail'
+    | 'input'
+    | 'textarea'
+    | 'number'
+    | 'select'
+    | 'radio-button'
+    | 'boolean'
+    | 'date-picker'
+    | 'date-time-input'
+    | 'file-upload'
+    | 'signature';
+
+export interface PassFailMeta {
+    severity?: Severity | string | null;
+    require_photo_on_fail?: boolean;
+    require_comment_on_fail?: boolean;
+    unsafe_on_fail?: boolean;
+    instructions?: string | null;
+}
+
+export interface InspectionField {
+    /** Public id of the custom field; the key values are filed under. */
+    id: string;
+    name?: string | null;
+    label: string;
+    description?: string | null;
+    help_text?: string | null;
+    type: InspectionFieldType | string;
+    required?: boolean;
+    options?: string[] | null;
+    order?: number | null;
+    meta?: (PassFailMeta & { unit?: string | null; role?: string | null; [key: string]: unknown }) | null;
+}
+
+export interface InspectionFieldGroup {
+    id?: string | null;
+    name: string;
+    description?: string | null;
+    order?: number | null;
+    meta?: { grid_size?: number; [key: string]: unknown } | null;
+    fields: InspectionField[];
+}
+
+/** First-cut checklist item, still accepted from older forms. */
 export interface InspectionFormItem {
     key: string;
     label: string;
     description?: string | null;
     category?: string | null;
     required?: boolean;
-    /** The builder's default severity for a defect on this item. */
     severity?: Severity | string | null;
 }
 
@@ -61,13 +110,31 @@ export interface InspectionFormRecord {
     type?: string | null;
     status?: string | null;
     frequency?: string | null;
+    /** Legacy, first cut. Read through `fieldsOf`. */
     items?: InspectionFormItem[] | null;
+    /** The form proper: groups of typed fields. */
+    grouped_fields?: InspectionFieldGroup[] | null;
     settings?: InspectionFormSettings | null;
     subject_name?: string | null;
     item_count?: number;
     is_published?: boolean;
     published_at?: string | null;
     [key: string]: unknown;
+}
+
+export interface InspectionFieldValueRecord {
+    custom_field?: string;
+    label?: string | null;
+    type?: string | null;
+    value?: unknown;
+}
+
+export interface InspectionFileRecord {
+    id: string;
+    url?: string | null;
+    original_filename?: string | null;
+    content_type?: string | null;
+    type?: string | null;
 }
 
 export interface InspectionItemResultRecord {
@@ -100,6 +167,8 @@ export interface InspectionSubmissionRecord {
     driver_name?: string | null;
     vehicle?: { id?: string; name?: string | null; plate_number?: string | null } | null;
     item_results?: InspectionItemResultRecord[];
+    custom_field_values?: InspectionFieldValueRecord[];
+    files?: InspectionFileRecord[];
     issue?: { id?: string; status?: string | null; priority?: string | null } | null;
     work_order?: { id?: string; status?: string | null } | null;
     meta?: Record<string, unknown> | null;
@@ -121,11 +190,17 @@ export interface ItemAnswer {
     unsafe?: boolean;
 }
 
+/** A typed field's answer: text, number, boolean, ISO date, or base64 for a photo/signature. */
+export type FieldValue = string | number | boolean | null;
+
 export interface InspectionDraft {
     formId: string;
     vehicleId?: string;
     startedAt: string;
+    /** Pass/fail fields, keyed by field id. */
     answers: Record<string, ItemAnswer>;
+    /** Every other field, keyed by field id. */
+    values?: Record<string, FieldValue>;
     odometer?: string;
     certified?: boolean;
 }
@@ -175,6 +250,12 @@ export class InspectionDraftStore {
         const draft = this.start(formId, vehicleId);
         const next = { ...draft, answers: { ...draft.answers, [itemKey]: answer } };
         this.commit({ byKey: { ...this.state.byKey, [draftKey(formId, vehicleId)]: next } });
+    }
+
+    setValue(formId: string, vehicleId: string | undefined, fieldId: string, value: FieldValue): void {
+        const draft = this.start(formId, vehicleId);
+        const values = { ...(draft.values ?? {}), [fieldId]: value };
+        this.commit({ byKey: { ...this.state.byKey, [draftKey(formId, vehicleId)]: { ...draft, values } } });
     }
 
     patch(formId: string, vehicleId: string | undefined, patch: Partial<Pick<InspectionDraft, 'odometer' | 'certified'>>): void {
@@ -247,23 +328,58 @@ export function usePendingInspections(store: InspectionDraftStore = inspectionDr
 
 export const UNCATEGORISED = 'general';
 
+export function isPassFail(field: Pick<InspectionField, 'type'>): boolean {
+    return field.type === 'pass-fail';
+}
+
+/**
+ * The form as groups of fields, whichever cut wrote it. A first-cut form
+ * (`items`, no `grouped_fields`) becomes one group per category of
+ * `pass-fail` fields whose id is the item key, so a draft keyed by field id
+ * survives the upgrade.
+ */
+export function groupsOf(form?: InspectionFormRecord | null): InspectionFieldGroup[] {
+    const grouped = form?.grouped_fields;
+    if (Array.isArray(grouped) && grouped.length) {
+        return grouped.map((g) => ({ ...g, name: g.name || UNCATEGORISED, fields: [...(g.fields ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) }));
+    }
+    const groups = new Map<string, InspectionFieldGroup>();
+    for (const item of form?.items ?? []) {
+        const name = (item.category ?? '').trim() || UNCATEGORISED;
+        const group = groups.get(name) ?? { id: null, name, fields: [] };
+        group.fields.push({
+            id: item.key,
+            name: item.key,
+            label: item.label,
+            description: item.description ?? null,
+            type: 'pass-fail',
+            required: item.required !== false,
+            meta: { severity: item.severity ?? 'medium', require_comment_on_fail: true },
+        });
+        groups.set(name, group);
+    }
+    return [...groups.values()];
+}
+
+/** Every field in form order. */
+export function fieldsOf(form?: InspectionFormRecord | null): InspectionField[] {
+    return groupsOf(form).flatMap((g) => g.fields);
+}
+
 export interface ItemGroup {
-    category: string;
-    items: InspectionFormItem[];
+    group: InspectionFieldGroup;
     answered: number;
 }
 
-/** The checklist by area, in the order the form declares them (E3a). */
+export function isAnswered(field: InspectionField, draft?: InspectionDraft | null): boolean {
+    if (isPassFail(field)) return draft?.answers[field.id] !== undefined;
+    const v = draft?.values?.[field.id];
+    return v !== undefined && v !== null && v !== '';
+}
+
+/** Groups with their answered counts (E3a's "EXTERIOR · 4 OF 6"). */
 export function groupItems(form?: InspectionFormRecord | null, draft?: InspectionDraft | null): ItemGroup[] {
-    const groups = new Map<string, ItemGroup>();
-    for (const item of form?.items ?? []) {
-        const category = (item.category ?? '').trim() || UNCATEGORISED;
-        const group = groups.get(category) ?? { category, items: [], answered: 0 };
-        group.items.push(item);
-        if (draft?.answers[item.key] !== undefined) group.answered += 1;
-        groups.set(category, group);
-    }
-    return [...groups.values()];
+    return groupsOf(form).map((group) => ({ group, answered: group.fields.filter((f) => isAnswered(f, draft)).length }));
 }
 
 export function severityRank(severity?: string | null): number {
@@ -288,64 +404,89 @@ export interface DraftProgress {
     defects: number;
     notApplicable: number;
     complete: boolean;
-    /** Items marked required by the form that have no answer. */
-    missingRequired: InspectionFormItem[];
+    /** Required fields with no answer. */
+    missingRequired: InspectionField[];
 }
 
 export function draftProgress(form?: InspectionFormRecord | null, draft?: InspectionDraft | null): DraftProgress {
-    const items = form?.items ?? [];
+    const fields = fieldsOf(form);
     let answered = 0;
     let passed = 0;
     let defects = 0;
     let notApplicable = 0;
-    const missingRequired: InspectionFormItem[] = [];
-    for (const item of items) {
-        const a = draft?.answers[item.key];
-        if (a === undefined) {
-            if (item.required !== false) missingRequired.push(item);
+    const missingRequired: InspectionField[] = [];
+    for (const field of fields) {
+        if (!isAnswered(field, draft)) {
+            if (field.required !== false) missingRequired.push(field);
             continue;
         }
         answered += 1;
-        if (a.passed === true) passed += 1;
-        else if (a.passed === false) defects += 1;
-        else notApplicable += 1;
+        if (isPassFail(field)) {
+            const a = draft!.answers[field.id];
+            if (a.passed === true) passed += 1;
+            else if (a.passed === false) defects += 1;
+            else notApplicable += 1;
+        }
     }
-    return { total: items.length, answered, passed, defects, notApplicable, complete: items.length > 0 && missingRequired.length === 0, missingRequired };
+    return { total: fields.length, answered, passed, defects, notApplicable, complete: fields.length > 0 && missingRequired.length === 0, missingRequired };
 }
 
-/** The first item without an answer, in form order — where "Next item" goes. */
-export function nextUnanswered(form?: InspectionFormRecord | null, draft?: InspectionDraft | null): InspectionFormItem | undefined {
-    return (form?.items ?? []).find((item) => draft?.answers[item.key] === undefined);
+/** The first field without an answer, in form order — where "Next item" goes. */
+export function nextUnanswered(form?: InspectionFormRecord | null, draft?: InspectionDraft | null): InspectionField | undefined {
+    return fieldsOf(form).find((field) => !isAnswered(field, draft));
+}
+
+/** The field's own rule, else the first cut's "high and above". */
+export function unsafeOnFail(field?: InspectionField | null, answer?: ItemAnswer | null): boolean {
+    if (answer?.unsafe) return true;
+    if (answer?.passed !== false) return false;
+    const meta = field?.meta ?? {};
+    if (typeof meta.unsafe_on_fail === 'boolean') return meta.unsafe_on_fail;
+    return severityRank(answer?.severity ?? meta.severity ?? 'medium') >= severityRank('high');
 }
 
 /**
- * A defect on a high-or-worse severity marks the vehicle unsafe (E3d), and so
- * does the driver saying so on any defect.
+ * A defect at a field that marks the vehicle unsafe, or one the driver
+ * marked unsafe, takes the vehicle out of service (E3d).
  */
-export function isUnsafe(draft?: InspectionDraft | null, settings?: InspectionFormSettings | null): boolean {
-    const threshold = settings?.photo_required_from ?? 'high';
-    for (const a of Object.values(draft?.answers ?? {})) {
-        if (a.passed !== false) continue;
-        if (a.unsafe) return true;
-        if (severityRank(a.severity ?? 'medium') >= severityRank(threshold)) return true;
+export function isUnsafe(draft?: InspectionDraft | null, form?: InspectionFormRecord | null): boolean {
+    const byId = new Map(fieldsOf(form).map((f) => [f.id, f]));
+    for (const [id, a] of Object.entries(draft?.answers ?? {})) {
+        if (unsafeOnFail(byId.get(id), a)) return true;
     }
     return false;
 }
 
-/** E3b: photo required for high and above; a note is always required on a defect. */
-export function photoRequiredFor(severity: Severity | undefined, settings?: InspectionFormSettings | null): boolean {
-    return severityRank(severity ?? 'medium') >= severityRank(settings?.photo_required_from ?? 'high');
+/** E3b: photo required by the field's rule, else from high severity. */
+export function photoRequiredFor(field: InspectionField | undefined, severity: Severity | undefined): boolean {
+    const meta = field?.meta ?? {};
+    if (typeof meta.require_photo_on_fail === 'boolean') return meta.require_photo_on_fail;
+    return severityRank(severity ?? meta.severity ?? 'medium') >= severityRank('high');
 }
 
-export function defectComplete(answer: ItemAnswer, settings?: InspectionFormSettings | null): boolean {
+export function commentRequiredFor(field: InspectionField | undefined): boolean {
+    const meta = field?.meta ?? {};
+    return typeof meta.require_comment_on_fail === 'boolean' ? meta.require_comment_on_fail : true;
+}
+
+export function defectComplete(answer: ItemAnswer, field?: InspectionField): boolean {
     if (answer.passed !== false) return true;
     if (!answer.severity) return false;
-    if (!(answer.comments ?? '').trim()) return false;
-    if (photoRequiredFor(answer.severity, settings) && !answer.photos.length) return false;
+    if (commentRequiredFor(field) && !(answer.comments ?? '').trim()) return false;
+    if (photoRequiredFor(field, answer.severity) && !answer.photos.length) return false;
     return true;
 }
 
-/* -- Submission body — mirrors PublicInspectionController@submit ------------ */
+/** The odometer, when the form carries a meter field playing that role. */
+export function odometerFieldOf(form?: InspectionFormRecord | null): InspectionField | undefined {
+    return fieldsOf(form).find((f) => f.type === 'number' && (f.meta?.role === 'odometer' || String(f.name ?? '').toLowerCase() === 'odometer'));
+}
+
+export function signatureFieldOf(form?: InspectionFormRecord | null): InspectionField | undefined {
+    return fieldsOf(form).find((f) => f.type === 'signature');
+}
+
+/* -- Submission body — the second-cut contract (docs/redesign/11) ---------- */
 
 export interface SubmissionContext {
     driverId: string;
@@ -355,24 +496,84 @@ export interface SubmissionContext {
     now?: () => Date;
 }
 
+function valueTypeFor(field: InspectionField): string {
+    switch (field.type) {
+        case 'pass-fail':
+            return 'object';
+        case 'number':
+            return 'number';
+        case 'boolean':
+            return 'boolean';
+        case 'file-upload':
+        case 'signature':
+            return 'file';
+        case 'date-picker':
+            return 'date';
+        case 'date-time-input':
+            return 'datetime';
+        default:
+            return 'text';
+    }
+}
+
+/**
+ * `custom_field_values` for every answered field, plus the derived
+ * `item_results` for pass/fail fields — the server prefers the former and
+ * derives the latter itself; sending both keeps a first-cut server working.
+ */
 export function buildSubmission(form: InspectionFormRecord, draft: InspectionDraft, ctx: SubmissionContext): Record<string, unknown> {
     const now = ctx.now ?? (() => new Date());
-    const item_results = (form.items ?? []).map((item) => {
-        const a = draft.answers[item.key];
-        const passed = a?.passed !== false;
-        const na = a?.passed === null;
-        return {
-            item_key: item.key,
-            label: item.label,
-            category: item.category ?? null,
-            status: na ? 'not_applicable' : passed ? 'passed' : 'failed',
-            severity: passed ? null : (a?.severity ?? item.severity ?? 'medium'),
-            passed,
-            comments: a?.comments?.trim() || null,
-            photos: a?.photos ?? [],
-        };
-    });
-    const odometer = draft.odometer != null && draft.odometer !== '' && Number.isFinite(Number(draft.odometer)) ? Math.round(Number(draft.odometer)) : null;
+    const fields = fieldsOf(form);
+    const custom_field_values: Record<string, unknown>[] = [];
+    const item_results: Record<string, unknown>[] = [];
+
+    for (const field of fields) {
+        if (isPassFail(field)) {
+            const a = draft.answers[field.id];
+            const passed = a?.passed !== false;
+            const na = a?.passed === null;
+            const severity = passed ? null : (a?.severity ?? (field.meta?.severity as string | undefined) ?? 'medium');
+            const result = {
+                item_key: field.name ?? field.id,
+                label: field.label,
+                category: null as string | null,
+                status: na ? 'not_applicable' : passed ? 'passed' : 'failed',
+                severity,
+                passed,
+                comments: a?.comments?.trim() || null,
+                photos: a?.photos ?? [],
+            };
+            item_results.push(result);
+            if (a !== undefined) {
+                custom_field_values.push({
+                    custom_field: field.id,
+                    value_type: 'object',
+                    value: { passed, not_applicable: na, severity, comments: result.comments, photos: result.photos, unsafe: unsafeOnFail(field, a) },
+                });
+            }
+            continue;
+        }
+        const v = draft.values?.[field.id];
+        if (v === undefined || v === null || v === '') continue;
+        custom_field_values.push({ custom_field: field.id, value_type: valueTypeFor(field), value: field.type === 'number' ? Number(v) : v });
+    }
+
+    // Category on the derived results: the group the field sits in.
+    for (const group of groupsOf(form)) {
+        for (const field of group.fields) {
+            const r = item_results.find((x) => x.item_key === (field.name ?? field.id));
+            if (r) r.category = group.name;
+        }
+    }
+
+    const meterField = odometerFieldOf(form);
+    const meter = meterField ? draft.values?.[meterField.id] : draft.odometer;
+    const odometer = meter != null && meter !== '' && Number.isFinite(Number(meter)) ? Math.round(Number(meter)) : null;
+
+    const signatureField = signatureFieldOf(form);
+    const signed = signatureField ? draft.values?.[signatureField.id] : undefined;
+    const signature = ctx.signature ?? (typeof signed === 'string' && signed ? { image: signed, signed_at: now().toISOString() } : null);
+
     return {
         inspection_form: form.id,
         driver: ctx.driverId,
@@ -380,14 +581,15 @@ export function buildSubmission(form: InspectionFormRecord, draft: InspectionDra
         odometer,
         engine_hours: null,
         started_at: draft.startedAt,
+        custom_field_values,
         item_results,
         location: ctx.location ?? null,
-        signature: ctx.signature ?? null,
+        signature,
         attachments: [],
         meta: {
             source_app: 'navigator',
             client_key: draftKey(form.id, ctx.vehicleId ?? draft.vehicleId),
-            unsafe: isUnsafe(draft, form.settings),
+            unsafe: isUnsafe(draft, form),
             submitted_at_device: now().toISOString(),
         },
     };

@@ -1175,7 +1175,8 @@
                 "other": "%{count} puntos obligatorios aún necesitan respuesta."
             },
             "formUnavailable": "No se pudo cargar esta lista de inspección.",
-            "empty": "Esta lista no tiene puntos. Pide a despacho que revise el formulario."
+            "empty": "Esta lista no tiene puntos. Pide a despacho que revise el formulario.",
+            "itemOfType": "PUNTO %{index} DE %{total} · %{type}"
         },
         "defect": {
             "title": "Registrar defecto",
@@ -1206,7 +1207,8 @@
             "unsafeHint": "Marca el vehículo fuera de servicio y avisa a despacho",
             "pipeline": "Este defecto abrirá un registro de defecto del vehículo y, si la organización tiene talleres activados, una orden de trabajo vinculada cuando se envíe.",
             "save": "Guardar defecto",
-            "incomplete": "Hacen falta la gravedad, una foto cuando sea obligatoria y una nota antes de guardar el defecto."
+            "incomplete": "Hacen falta la gravedad, una foto cuando sea obligatoria y una nota antes de guardar el defecto.",
+            "notesOptional": "QUÉ VES · OPCIONAL"
         },
         "review": {
             "title": "Revisar inspección",
@@ -1267,7 +1269,43 @@
                 "one": "%{count} foto",
                 "other": "%{count} fotos"
             },
-            "noItems": "Este registro no incluye los resultados por punto."
+            "noItems": "Este registro no incluye los resultados por punto.",
+            "valuesTitle": "RESPUESTAS",
+            "files": "ARCHIVOS"
+        },
+        "field": {
+            "pass": "Correcto",
+            "fail": "Defecto",
+            "yes": "Sí",
+            "no": "No",
+            "save": "Guardar respuesta",
+            "clear": "Borrar",
+            "numberPlaceholder": "Introduce un número",
+            "textPlaceholder": "Escribe tu respuesta",
+            "datePlaceholder": "AAAA-MM-DD",
+            "dateTimePlaceholder": "AAAA-MM-DD HH:MM",
+            "invalidNumber": "Introduce un número.",
+            "invalidDate": "Usa el formato AAAA-MM-DD.",
+            "invalidDateTime": "Usa el formato AAAA-MM-DD HH:MM",
+            "takePhoto": "Hacer foto",
+            "retakePhoto": "Repetir",
+            "photoTaken": "Foto capturada",
+            "sign": "Firmar",
+            "signed": "Firmado",
+            "choose": "Elegir…",
+            "type": {
+                "pass-fail": "Correcto / defecto",
+                "input": "Texto",
+                "textarea": "Notas",
+                "number": "Número",
+                "select": "Opción",
+                "radio-button": "Opción",
+                "boolean": "Sí / no",
+                "date-picker": "Fecha",
+                "date-time-input": "Fecha y hora",
+                "file-upload": "Foto",
+                "signature": "Firma"
+            }
         }
     }
 }

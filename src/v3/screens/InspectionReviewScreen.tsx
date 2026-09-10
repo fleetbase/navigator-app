@@ -28,6 +28,10 @@ import {
     draftProgress,
     isUnsafe,
     severityRank,
+    fieldsOf,
+    isPassFail,
+    odometerFieldOf,
+    signatureFieldOf,
     type InspectionFormRecord,
     type SubmitOutcome,
 } from '../data';
@@ -77,17 +81,28 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
     const signatureRef = useRef<{ readSignature: () => void } | null>(null);
 
     const progress = useMemo(() => draftProgress(form, draft), [form, draft]);
-    const unsafe = useMemo(() => isUnsafe(draft, form?.settings), [draft, form?.settings]);
+    const unsafe = useMemo(() => isUnsafe(draft, form), [draft, form]);
     const defects = useMemo(
         () =>
-            (form?.items ?? [])
-                .map((item) => ({ item, answer: draft?.answers[item.key] }))
+            fieldsOf(form)
+                .filter(isPassFail)
+                .map((item) => ({ item, answer: draft?.answers[item.id] }))
                 .filter(({ answer }) => answer?.passed === false)
                 .sort((a, b) => severityRank(b.answer?.severity) - severityRank(a.answer?.severity)),
         [form, draft]
     );
-    const requiresSignature = Boolean(form?.settings?.require_signature);
-    const odometer = draft?.odometer ?? (odometerSeed != null ? String(odometerSeed) : '');
+    /*
+     * Second cut: odometer and signature are ordinary fields when the form
+     * carries them, answered on the checklist. The review only asks for what
+     * the form did not — a signature the settings require, an odometer the
+     * form has no meter field for.
+     */
+    const meterField = useMemo(() => odometerFieldOf(form), [form]);
+    const signatureField = useMemo(() => signatureFieldOf(form), [form]);
+    const signedOnForm = Boolean(signatureField && draft?.values?.[signatureField.id]);
+    const requiresSignature = Boolean(form?.settings?.require_signature) && !signatureField;
+    const meterValue = meterField ? draft?.values?.[meterField.id] : undefined;
+    const odometer = meterValue != null ? String(meterValue) : (draft?.odometer ?? (odometerSeed != null ? String(odometerSeed) : ''));
     const odometerInvalid = odometer !== '' && !Number.isFinite(Number(odometer));
     const elapsedS = draft?.startedAt ? Math.max(0, (now().getTime() - new Date(draft.startedAt).getTime()) / 1000) : 0;
     const canSubmit = progress.complete && Boolean(draft?.certified) && !odometerInvalid && (!requiresSignature || Boolean(signature)) && Boolean(driverId);
@@ -148,9 +163,9 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
                     {defects.length ? (
                         <Surface testID="review-defect-list">
                             {defects.map(({ item, answer }, i) => (
-                                <YStack key={item.key}>
+                                <YStack key={item.id}>
                                     {i > 0 ? <Divider /> : null}
-                                    <YStack padding={space[3]} gap={2} testID={`review-defect-${item.key}`}>
+                                    <YStack padding={space[3]} gap={2} testID={`review-defect-${item.id}`}>
                                         <XStack justifyContent="space-between" gap={space[2]}>
                                             <Body fontSize={14} fontWeight="700" flex={1}>
                                                 {item.label}
@@ -178,7 +193,8 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
                         onChangeText={(v) => inspectionDrafts.patch(formId, vehicleId, { odometer: v })}
                         keyboardType="numeric"
                         tabular
-                        hint={t('inspection.review.odometerHint')}
+                        disabled={Boolean(meterField)}
+                        hint={meterField ? undefined : t('inspection.review.odometerHint')}
                         error={odometerInvalid ? t('inspection.review.odometerInvalid') : undefined}
                         testID="review-odometer"
                     />
@@ -216,6 +232,11 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
                                 <Micro tabular>{[driverName, formatDateTime(now().toISOString())].filter(Boolean).join(' · ')}</Micro>
                             </YStack>
                         </XStack>
+                        {signedOnForm ? (
+                            <Micro marginTop={space[3]} tone="success" testID="review-signed-on-form">
+                                ✓ {t('inspection.review.signed')}
+                            </Micro>
+                        ) : null}
                         {requiresSignature ? (
                             <YStack marginTop={space[3]} gap={space[2]} testID="review-signature">
                                 {signature ? (

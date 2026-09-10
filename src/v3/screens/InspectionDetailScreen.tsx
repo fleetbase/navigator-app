@@ -7,7 +7,7 @@
  * server's config-driven consequences; the app shows that they happened.
  */
 import { useMemo } from 'react';
-import { ScrollView } from 'react-native';
+import { Image, ScrollView } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';
@@ -133,6 +133,51 @@ export function InspectionDetailScreen({ submissionId, seed }: InspectionDetailS
                             </YStack>
                         ))}
                     </Surface>
+                </YStack>
+            ) : null}
+
+            {submission.custom_field_values?.length ? (
+                <YStack gap={space[2]}>
+                    <Caption paddingHorizontal={space[1]}>{t('inspection.detail.valuesTitle')}</Caption>
+                    <Surface testID="inspection-detail-values">
+                        {submission.custom_field_values
+                            .filter((v) => v.type !== 'pass-fail')
+                            .map((v, i) => {
+                                const raw = v.value as { url?: string; id?: string } | string | number | boolean | null | undefined;
+                                const isFile = raw && typeof raw === 'object' && 'url' in raw;
+                                const shown = isFile ? null : typeof raw === 'boolean' ? (raw ? t('inspection.field.yes') : t('inspection.field.no')) : raw == null ? '—' : String(raw);
+                                return (
+                                    <YStack key={v.custom_field ?? i}>
+                                        {i > 0 ? <Divider /> : null}
+                                        <XStack padding={space[3]} justifyContent="space-between" gap={space[3]} alignItems="center" testID={`inspection-detail-value-${v.custom_field ?? i}`}>
+                                            <Caption flex={1}>{v.label ?? v.custom_field}</Caption>
+                                            {isFile && (raw as { url?: string }).url ? (
+                                                <Image source={{ uri: (raw as { url: string }).url }} style={{ width: 72, height: 54, borderRadius: 6 }} />
+                                            ) : (
+                                                <Body fontSize={15} textAlign={endAlign()} flexShrink={1} tabular>
+                                                    {shown}
+                                                </Body>
+                                            )}
+                                        </XStack>
+                                    </YStack>
+                                );
+                            })}
+                    </Surface>
+                </YStack>
+            ) : null}
+
+            {submission.files?.length ? (
+                <YStack gap={space[2]}>
+                    <Caption paddingHorizontal={space[1]}>{t('inspection.detail.files')}</Caption>
+                    <XStack gap={space[2]} flexWrap="wrap" testID="inspection-detail-files">
+                        {submission.files.map((f) =>
+                            f.url && String(f.content_type ?? '').startsWith('image/') ? (
+                                <Image key={f.id} source={{ uri: f.url }} style={{ width: 96, height: 72, borderRadius: 8 }} accessibilityLabel={f.original_filename ?? f.id} />
+                            ) : (
+                                <Micro key={f.id}>📎 {f.original_filename ?? f.id}</Micro>
+                            )
+                        )}
+                    </XStack>
                 </YStack>
             ) : null}
 

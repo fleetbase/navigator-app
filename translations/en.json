@@ -1232,7 +1232,8 @@
                 "other": "%{count} required items still need answers."
             },
             "formUnavailable": "This checklist could not be loaded.",
-            "empty": "This checklist has no items. Ask dispatch to check the form."
+            "empty": "This checklist has no items. Ask dispatch to check the form.",
+            "itemOfType": "ITEM %{index} OF %{total} · %{type}"
         },
         "defect": {
             "title": "Record defect",
@@ -1263,7 +1264,8 @@
             "unsafeHint": "Marks the vehicle out of service and alerts dispatch",
             "pipeline": "This defect will open a vehicle defect record and, if the organisation has workshops enabled, a linked work order once it is sent.",
             "save": "Save defect",
-            "incomplete": "Severity, a photo where required, and a note are needed before the defect can be saved."
+            "incomplete": "Severity, a photo where required, and a note are needed before the defect can be saved.",
+            "notesOptional": "WHAT YOU SEE · OPTIONAL"
         },
         "review": {
             "title": "Review inspection",
@@ -1324,7 +1326,43 @@
                 "one": "%{count} photo",
                 "other": "%{count} photos"
             },
-            "noItems": "Item results are not included in this record."
+            "noItems": "Item results are not included in this record.",
+            "valuesTitle": "ANSWERS",
+            "files": "FILES"
+        },
+        "field": {
+            "pass": "Pass",
+            "fail": "Defect",
+            "yes": "Yes",
+            "no": "No",
+            "save": "Save answer",
+            "clear": "Clear",
+            "numberPlaceholder": "Enter a number",
+            "textPlaceholder": "Type your answer",
+            "datePlaceholder": "YYYY-MM-DD",
+            "dateTimePlaceholder": "YYYY-MM-DD HH:MM",
+            "invalidNumber": "Enter a number.",
+            "invalidDate": "Use the format YYYY-MM-DD.",
+            "invalidDateTime": "Use the format YYYY-MM-DD HH:MM",
+            "takePhoto": "Take photo",
+            "retakePhoto": "Retake",
+            "photoTaken": "Photo captured",
+            "sign": "Sign",
+            "signed": "Signed",
+            "choose": "Choose…",
+            "type": {
+                "pass-fail": "Pass / fail",
+                "input": "Text",
+                "textarea": "Notes",
+                "number": "Number",
+                "select": "Choice",
+                "radio-button": "Choice",
+                "boolean": "Yes / no",
+                "date-picker": "Date",
+                "date-time-input": "Date and time",
+                "file-upload": "Photo",
+                "signature": "Signature"
+            }
         }
     }
 }

@@ -29,6 +29,7 @@ import {
     useInspectionDrafts,
     usePendingInspections,
     draftProgress,
+    fieldsOf,
     type InspectionFormRecord,
     type InspectionSubmissionRecord,
 } from '../data';
@@ -119,7 +120,7 @@ export function InspectionScreen({ driverId, vehicleId, vehicleName, afterSwap, 
                                     const kind = [
                                         form.type ? t(`inspection.type.${form.type}`, { defaultValue: String(form.type) }) : null,
                                         form.frequency ? t(`inspection.frequency.${form.frequency}`, { defaultValue: String(form.frequency) }) : null,
-                                        t('inspection.itemCount', { count: form.item_count ?? form.items?.length ?? 0 }),
+                                        t('inspection.itemCount', { count: fieldsOf(form).length || form.item_count || 0 }),
                                     ]
                                         .filter(Boolean)
                                         .join(' · ');

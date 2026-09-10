@@ -820,3 +820,33 @@ it can be sent, so a replayed upload would be an orphan. Offline, the composer
 says photos need a connection and text still queues. Chat's other gap — an
 order reference on a channel — is still a backend matter.
 
+---
+
+## Inspections, second cut — typed fields on the app side (2026-09-10)
+
+The owner reviewed the first cut against fliit and Fleetio and asked for real
+forms: groups of typed fields, file attachments, not a pass/fail list. The design
+is `11-INSPECTIONS-OVERHAUL.md` (visual plan approved). App side, done:
+
+- `InspectionFormRecord.grouped_fields` is the form; `groupsOf()` folds a
+  first-cut `items` form into the same shape (one group per category of
+  `pass-fail` fields keyed by item key), so old forms and drafts keep working.
+- The checklist is a **typed-field renderer**: `pass-fail` keeps the E3b defect
+  sheet, now driven by the field's own rules (`meta.severity`,
+  `require_photo_on_fail`, `require_comment_on_fail`, `unsafe_on_fail`,
+  `instructions`); `number` (with `meta.unit`), `input`/`textarea`, `select`/
+  `radio-button`, `boolean`, `date-picker`/`date-time-input` (typed, validated),
+  `file-upload` (camera, base64), `signature` (pad, base64) each get a native
+  control, every answer written to the persisted draft (`values` beside
+  `answers`).
+- `buildSubmission` sends `custom_field_values[]` per the design's contract and
+  still derives `item_results[]` so a first-cut server keeps working. A `number`
+  field with `meta.role = odometer` (or named `odometer`) stands in for the
+  top-level odometer; a `signature` field for the top-level signature; the
+  review only asks for what the form did not.
+- Detail renders the typed answers (file values as images) and the attached
+  files. 20 new tests; 965 total.
+
+Server and console are on fleetops#319's second cut, in progress as a
+background job; its report will be recorded below when it lands.
+

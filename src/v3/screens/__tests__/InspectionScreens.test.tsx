@@ -445,3 +445,159 @@ describe('InspectionDetailScreen', () => {
         await unmount(t);
     });
 });
+
+/* -- Second cut: typed fields ---------------------------------------------- */
+
+const typedForm: InspectionFormRecord = {
+    id: 'inspection_form_2',
+    name: 'LGV daily',
+    type: 'pre_trip',
+    status: 'published',
+    is_published: true,
+    settings: { create_issue_on_failure: true },
+    grouped_fields: [
+        {
+            id: 'cat_1', name: 'Exterior', order: 1,
+            fields: [
+                { id: 'cf_mirrors', name: 'mirrors', label: 'Mirrors', type: 'pass-fail', required: true, order: 1, meta: { severity: 'medium', require_photo_on_fail: false, require_comment_on_fail: true, unsafe_on_fail: false } },
+                { id: 'cf_coupled', name: 'trailer_coupled', label: 'Trailer coupled', type: 'boolean', required: true, order: 2 },
+                { id: 'cf_photo', name: 'body_photo', label: 'Body damage photo', type: 'file-upload', required: false, order: 3 },
+            ],
+        },
+        {
+            id: 'cat_2', name: 'Sign-off', order: 2,
+            fields: [
+                { id: 'cf_odo', name: 'odometer', label: 'Odometer', type: 'number', required: true, order: 1, meta: { unit: 'km', role: 'odometer' } },
+                { id: 'cf_fuel', name: 'fuel_level', label: 'Fuel level', type: 'select', required: true, order: 2, options: ['Quarter', 'Half', 'Full'] },
+                { id: 'cf_sig', name: 'driver_signature', label: 'Driver signature', type: 'signature', required: true, order: 3 },
+            ],
+        },
+    ],
+};
+
+describe('InspectionChecklistScreen — typed fields', () => {
+    beforeEach(() => mockApi({ 'inspection-forms/': typedForm }));
+
+    it.each(SCHEMES)('renders a typed form in the %s scheme', async (scheme) => {
+        const t = await mount(<InspectionChecklistScreen formId="inspection_form_2" vehicleId="vehicle_2" seedForm={typedForm} />, scheme);
+        expect(testIDs(t)).toContain('checklist-group-Exterior');
+        expect(textOf(t)).toContain('EXTERIOR · 0 OF 3');
+        await unmount(t);
+    });
+
+    it('walks every field type, writing each typed value to the draft', async () => {
+        const t = await mount(<InspectionChecklistScreen formId="inspection_form_2" vehicleId="vehicle_2" seedForm={typedForm} />);
+        // 1 · pass/fail
+        await press(t, 'checklist-pass');
+        // 2 · boolean
+        const seg = t.root.findAll((n) => n.props?.testID === 'field-boolean-cf_coupled')[0];
+        const no = seg.findAll((n) => n.props?.accessibilityRole === 'radio' && typeof n.props?.onPress === 'function')[1];
+        await ReactTestRenderer.act(async () => no.props.onPress());
+        expect(inspectionDrafts.get('inspection_form_2', 'vehicle_2')?.values?.cf_coupled).toBe(false);
+        // 3 · optional photo, skipped: jump to the odometer
+        await press(t, 'checklist-item-cf_odo');
+        await type(t, 'field-number-cf_odo', '112480');
+        await press(t, 'field-save-cf_odo');
+        expect(inspectionDrafts.get('inspection_form_2', 'vehicle_2')?.values?.cf_odo).toBe(112480);
+        expect(textOf(t)).toContain('112480 km');
+        // 4 · select — the optional photo is next in order, so the row is chosen directly.
+        await press(t, 'checklist-item-cf_fuel');
+        await press(t, 'field-option-cf_fuel-Half');
+        expect(inspectionDrafts.get('inspection_form_2', 'vehicle_2')?.values?.cf_fuel).toBe('Half');
+        // 5 · signature — again past the optional photo, which is still next in order.
+        await press(t, 'checklist-item-cf_sig');
+        await press(t, 'field-sign-cf_sig');
+        const pad = t.root.findAll((n) => n.props?.testID === 'signature-mock')[0];
+        await ReactTestRenderer.act(async () => pad.props.onOK('data:image/png;base64,U0lH'));
+        expect(inspectionDrafts.get('inspection_form_2', 'vehicle_2')?.values?.cf_sig).toBe('U0lH');
+        // Every required field is answered; the optional photo may stay blank.
+        expect(testIDs(t)).toContain('checklist-review');
+        await unmount(t);
+    });
+
+    it('captures a photo field through the camera', async () => {
+        const t = await mount(<InspectionChecklistScreen formId="inspection_form_2" vehicleId="vehicle_2" seedForm={typedForm} />);
+        await press(t, 'checklist-item-cf_photo');
+        await press(t, 'field-photo-cf_photo');
+        const cam = t.root.findAll((n) => n.props?.testID === 'camera-mock')[0];
+        await ReactTestRenderer.act(async () => cam.props.onDone([{ base64: 'UEhPVE8=' }]));
+        expect(inspectionDrafts.get('inspection_form_2', 'vehicle_2')?.values?.cf_photo).toBe('UEhPVE8=');
+        expect(textOf(t)).toContain('Photo captured');
+        await unmount(t);
+    });
+
+    it('applies the field’s own fail rules: no photo needed, a note needed', async () => {
+        const t = await mount(<InspectionChecklistScreen formId="inspection_form_2" vehicleId="vehicle_2" seedForm={typedForm} />);
+        await press(t, 'checklist-defect');
+        expect(textOf(t)).toContain('PHOTO · OPTIONAL');
+        const save = () => t.root.findAll((n) => n.props?.testID === 'defect-save')[0];
+        expect(save().props.disabled).toBe(true);
+        await type(t, 'defect-notes', 'Cracked glass');
+        expect(save().props.disabled).toBe(false);
+        await press(t, 'defect-save');
+        expect(inspectionDrafts.get('inspection_form_2', 'vehicle_2')?.answers.cf_mirrors).toMatchObject({ passed: false, severity: 'medium', comments: 'Cracked glass' });
+        await unmount(t);
+    });
+});
+
+describe('InspectionReviewScreen — typed fields', () => {
+    function typedDraft() {
+        inspectionDrafts.start('inspection_form_2', 'vehicle_2', () => new Date('2026-09-09T06:48:00Z'));
+        inspectionDrafts.answer('inspection_form_2', 'vehicle_2', 'cf_mirrors', { passed: true, photos: [] });
+        inspectionDrafts.setValue('inspection_form_2', 'vehicle_2', 'cf_coupled', false);
+        inspectionDrafts.setValue('inspection_form_2', 'vehicle_2', 'cf_odo', 112480);
+        inspectionDrafts.setValue('inspection_form_2', 'vehicle_2', 'cf_fuel', 'Half');
+        inspectionDrafts.setValue('inspection_form_2', 'vehicle_2', 'cf_sig', 'U0lH');
+    }
+
+    it('takes the odometer and signature from the form’s own fields and sends custom field values', async () => {
+        typedDraft();
+        mockApi({ 'inspection-forms/': typedForm, '/inspections': { submission } });
+        const onSubmitted = jest.fn();
+        const t = await mount(<InspectionReviewScreen formId="inspection_form_2" vehicleId="vehicle_2" driverId="driver_1" seedForm={typedForm} onSubmitted={onSubmitted} now={now} />);
+        const odo = t.root.findAll((n) => n.props?.testID === 'review-odometer' && typeof n.props?.onChangeText === 'function')[0];
+        expect(odo.props.value).toBe('112480');
+        expect(odo.props.disabled).toBe(true);
+        expect(testIDs(t)).toContain('review-signed-on-form');
+        expect(testIDs(t)).not.toContain('review-signature');
+        await press(t, 'review-certify');
+        await press(t, 'review-submit');
+        const m = lastMutation();
+        expect(m.body.odometer).toBe(112480);
+        expect(m.body.signature).toMatchObject({ image: 'U0lH' });
+        expect(m.body.custom_field_values).toHaveLength(5);
+        expect(m.body.custom_field_values[0]).toMatchObject({ custom_field: 'cf_mirrors', value_type: 'object', value: { passed: true } });
+        expect(m.body.custom_field_values.find((v: { custom_field: string }) => v.custom_field === 'cf_coupled')).toMatchObject({ value_type: 'boolean', value: false });
+        expect(onSubmitted).toHaveBeenCalledWith(expect.objectContaining({ kind: 'sent' }), expect.anything(), false);
+        await unmount(t);
+    });
+});
+
+describe('InspectionDetailScreen — answers and files', () => {
+    it('lists the typed answers with file values as images, and the attached files', async () => {
+        const rich: InspectionSubmissionRecord = {
+            ...passed,
+            custom_field_values: [
+                { custom_field: 'cf_mirrors', label: 'Mirrors', type: 'pass-fail', value: { passed: true } },
+                { custom_field: 'cf_odo', label: 'Odometer', type: 'number', value: 112480 },
+                { custom_field: 'cf_coupled', label: 'Trailer coupled', type: 'boolean', value: false },
+                { custom_field: 'cf_photo', label: 'Body damage photo', type: 'file-upload', value: { id: 'file_1', url: 'https://x.test/p.jpg' } },
+            ],
+            files: [
+                { id: 'file_1', url: 'https://x.test/p.jpg', original_filename: 'p.jpg', content_type: 'image/jpeg', type: 'inspection_photo' },
+                { id: 'file_2', url: 'https://x.test/s.png', original_filename: 'signature.png', content_type: 'image/png', type: 'inspection_signature' },
+            ],
+        };
+        mockApi({ '/inspections/': rich });
+        const t = await mount(<InspectionDetailScreen submissionId={rich.id} seed={rich} />);
+        const ids = testIDs(t);
+        expect(ids).toContain('inspection-detail-values');
+        expect(ids).toContain('inspection-detail-value-cf_odo');
+        expect(ids).not.toContain('inspection-detail-value-cf_mirrors');
+        expect(ids).toContain('inspection-detail-files');
+        const text = textOf(t);
+        expect(text).toContain('112480');
+        expect(text).toContain('No');
+        await unmount(t);
+    });
+});
