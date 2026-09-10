@@ -500,6 +500,28 @@ Found by grep once there was an RTL pseudo-locale to matter for.
 i18n-js falls back by language; the settings row displayed the raw tag. Now
 `'system'`, resolved by `resolveLocale`, which also rescues the stale value.
 
+### FleetOps console, found by the owner opening the screens
+
+**F-67 — the inspection forms wrote to the model during render.** Both
+`inspection-form/form` and `inspection-submission/form` from fleetops#267 assigned
+`@resource.items` / `item_results` in their constructors. Glimmer refuses that
+once the template has read the attribute in the same pass, so *New* threw the
+"already used in the same computation" assertion on open. The server side of the
+PR had 100% line coverage; the console side had no tests and had never been
+opened. Fixed on fleetops#319 (5e984753): the model attribute is the single
+source of truth, replaced only from actions.
+
+**F-68 — text fields set their old value back.** `(fn this.updateItem index
+"label" item.label)` bound the rendered value as the argument, so every keystroke
+wrote the previous value. Event-driven updaters now.
+
+**F-69 — sidebar items were literals where keys were expected.** `createItem`
+translates its first argument; "Inspection Forms" rendered as *Missing
+translation*. Keys in all nine locales.
+
+> A server test suite at 100% says nothing about the console. Open every new
+> screen once before calling a PR reviewable.
+
 ## How these were found — and how two were nearly missed
 
 Worth keeping, because the method mattered more than the fixes.

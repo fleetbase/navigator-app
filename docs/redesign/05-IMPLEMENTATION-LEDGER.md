@@ -788,6 +788,17 @@ job; the outcome and detail screens show their identifiers when returned.
 
 Land in that order: fleetops → seed → postman.
 
+**2026-09-10 — first console run found three defects in #267's Ember layer**
+(F-67 to F-69 in the defect register): the forms wrote to the model during
+render, text fields bound stale values, and the sidebar items were untranslated
+literals. Fixed on the branch. The rest of the console layer was read end to end
+in the same pass: routes, controllers, services (`ResourceActionService`
+methods all exist), serializers (`item_results` embedded), the internal
+submission controller's `item_results` sync, the public `/inspection` virtual
+route, and the polymorphic `subject` cast — nothing else found broken. Labels
+in those screens are still English literals rather than intl keys, which is a
+consistency gap, not a defect.
+
 ---
 
 ## Auto-arrival (C6, passive half) and chat attachments (G1/G2)
