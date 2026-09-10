@@ -65,3 +65,16 @@ the seed and Postman PRs (both need the new fields added to their bodies).
 
 Inspection schedules per vehicle with compliance reporting, and the Fleetio
 "inspection item templates" library. Both are additive on top of this model.
+
+## Decisions taken 2026-09-10 (owner approved the visual plan)
+
+- `pass-fail`, `signature` and the inspection flavour of `file-upload` are
+  **FleetOps-owned**: rendered by FleetOps' own `inspection-field/input` and
+  `inspection-field/value` components, edited by a FleetOps field editor that
+  extends the platform's with the *On fail* section. No ember-ui change.
+- The console record gets **Overview, Photos and Audit** tabs (Audit is the
+  platform `ActivityLog`), plus the follow-up panel.
+- The fliit header columns (call sign, fire extinguisher, supplied equipment)
+  are not carried over. Odometer, fuel level and signature are ordinary fields.
+- The visual plan lives at https://claude.ai/code/artifact/43335246-2d54-4934-a5da-a4662c248958.
+
