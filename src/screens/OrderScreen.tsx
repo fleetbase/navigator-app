@@ -452,6 +452,8 @@ const OrderScreen = ({ route }) => {
         return () => {
             if (listenerRef.current) {
                 listenerRef.current.stop();
+                // Clear it so the effect re-subscribes when the socket is recreated (login, org switch, token change).
+                listenerRef.current = null;
             }
         };
     }, [listen, order.id]);
