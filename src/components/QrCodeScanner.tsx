@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCodeScanner, type Code } from 'react-native-vision-camera';
 
 type QrCodeScannerProps = {
-    onScan: (data: string) => void;
+    // The scanner's result object, not a string: read `code.value` for the scanned text.
+    onScan: (code: Code, codes: Code[]) => void;
     width?: number | string;
     height?: number | string;
     overlayStyle?: object;
@@ -31,7 +32,10 @@ export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '1
     }, []);
 
     const codeScanner = useCodeScanner({
-        codeTypes: ['qr'],
+        // Fleetbase labels print a QR code (a tracking url, or the owner uuid on older
+        // labels) and a Code 128 barcode (the bare tracking number). capture-qr accepts
+        // all of them, so either one on the label is enough.
+        codeTypes: ['qr', 'code-128'],
         onCodeScanned: (codes) => {
             if (!isScanning || codes.length === 0) return;
 
