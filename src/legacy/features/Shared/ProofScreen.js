@@ -80,7 +80,7 @@ const ProofScreen = ({ navigation, route }) => {
     };
 
     const codeScanner = useCodeScanner({
-        codeTypes: ['qr', 'ean-13'],
+        codeTypes: ['qr', 'ean-13', 'code-128'],
         onCodeScanned: (event) => {
             if (isCapturingCode) {
                 return;
