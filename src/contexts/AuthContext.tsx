@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useReducer, useMemo, useEffect, useCallback, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { EventRegister } from 'react-native-event-listeners';
 import { Driver } from '@fleetbase/sdk';
@@ -48,6 +48,9 @@ export const AuthProvider = ({ children }) => {
         driver: storedDriver ? new Driver(storedDriver, adapter) : null,
         phone: null,
     });
+    // Bumped whenever a driver session starts or ends (login, organization switch, logout) so dependants such as
+    // the realtime socket re-authenticate even when the API hands back the same bearer token.
+    const [sessionEpoch, setSessionEpoch] = useState(0);
     const organizationsLoadedRef = useRef(false);
     const loadOrganizationsPromiseRef = useRef();
 
@@ -281,6 +284,7 @@ export const AuthProvider = ({ children }) => {
         // setDriverDefaultLocation(driver);
         setDriver(driver);
         setAuthToken(driver.token);
+        setSessionEpoch((epoch) => epoch + 1);
 
         // run a callback with the driver instance
         const instance = new Driver(driver, adapter);
@@ -354,6 +358,7 @@ export const AuthProvider = ({ children }) => {
 
         // Clear storage/ cache
         clearSessionData();
+        setSessionEpoch((epoch) => epoch + 1);
 
         // Reset locale
         setLocale(navigatorConfig('defaultLocale', 'en'));
@@ -404,6 +409,7 @@ export const AuthProvider = ({ children }) => {
             syncDevice,
             registerDevice,
             authToken,
+            sessionEpoch,
         }),
         [
             state,
@@ -421,6 +427,7 @@ export const AuthProvider = ({ children }) => {
             organizations,
             storedDriver,
             authToken,
+            sessionEpoch,
         ]
     );
 
