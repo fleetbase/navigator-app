@@ -658,7 +658,7 @@ const OrderScreen = ({ route }) => {
                     <>
                         <SectionHeader title='Customer' />
                         <YStack px='$3' py='$4'>
-                            <OrderCustomerCard customer={order.getAttribute('customer')} />
+                            <OrderCustomerCard customer={order.getAttribute('customer')} order={order} />
                         </YStack>
                     </>
                 )}
