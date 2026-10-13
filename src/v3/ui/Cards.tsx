@@ -131,8 +131,10 @@ export function OrderCard({
 }
 
 /**
- * Ad-hoc offer. Distinct from OrderCard because the decision is time-boxed —
- * the countdown and the accept/decline pair are the whole point.
+ * An offer — ad-hoc (nearby, first to accept) or direct (assigned to this
+ * driver, waiting for an answer). Distinct from OrderCard because the decision
+ * is time-boxed — the countdown and the accept/decline pair are the whole
+ * point. Once `expired`, accepting is withdrawn: the server would refuse it.
  */
 export function OfferCard({
     trackingNumber,
@@ -141,65 +143,103 @@ export function OfferCard({
     distanceAwayM,
     payout,
     expiresIn,
+    expired = false,
+    direct = false,
+    accepting = false,
+    declining = false,
+    units,
     onAccept,
     onDecline,
+    onView,
     testID,
 }: {
     trackingNumber: string;
-    pickup: string;
-    dropoff: string;
+    pickup?: string;
+    dropoff?: string;
     distanceAwayM?: number;
     payout?: string;
     /** Formatted countdown, e.g. "01:54". */
     expiresIn?: string;
+    /** The offer window closed; accept is no longer offered. */
+    expired?: boolean;
+    /** Offered to this driver by name, rather than to everyone nearby. */
+    direct?: boolean;
+    accepting?: boolean;
+    declining?: boolean;
+    units?: DistanceUnit;
     onAccept?: () => void;
     onDecline?: () => void;
+    onView?: () => void;
     testID?: string;
 }) {
     const { t } = useTranslation();
+    const busy = accepting || declining;
     return (
         <Surface testID={testID} hero level="card" borderColor="$primaryBorder" backgroundColor="$primaryFill">
             <YStack padding={space[4]} gap={space[3]}>
-                <XStack alignItems="center" justifyContent="space-between">
-                    <Caption tone="brand">{t('ui.newOfferNearby')}</Caption>
-                    {expiresIn ? (
-                        <Micro tone="brand" tabular>
-                            expires in {expiresIn}
+                <XStack alignItems="center" justifyContent="space-between" gap={space[2]}>
+                    <Caption tone="brand">{direct ? t('ui.offeredToYou') : t('ui.newOfferNearby')}</Caption>
+                    {expired ? (
+                        <Micro tone="danger" testID={testID ? `${testID}-expired` : undefined}>
+                            {t('ui.offerExpired')}
+                        </Micro>
+                    ) : expiresIn ? (
+                        <Micro tone="brand" tabular testID={testID ? `${testID}-countdown` : undefined}>
+                            {t('ui.expiresIn', { time: expiresIn })}
                         </Micro>
                     ) : null}
                 </XStack>
 
                 <Identifier value={trackingNumber} />
 
-                <YStack gap={space[1]}>
-                    <Body fontSize={14} fontWeight="700">
-                        {pickup}
-                    </Body>
-                    <Secondary fontSize={13}>→ {dropoff}</Secondary>
-                </YStack>
+                {pickup || dropoff ? (
+                    <YStack gap={space[1]}>
+                        {pickup ? (
+                            <Body fontSize={14} fontWeight="700">
+                                {pickup}
+                            </Body>
+                        ) : null}
+                        {dropoff ? <Secondary fontSize={13}>{pickup ? `→ ${dropoff}` : dropoff}</Secondary> : null}
+                    </YStack>
+                ) : null}
 
-                <XStack gap={space[4]}>
-                    {distanceAwayM != null ? (
-                        <YStack>
-                            <Micro>AWAY</Micro>
-                            <Body fontWeight="800" tabular>
-                                {formatMeters(distanceAwayM)}
-                            </Body>
-                        </YStack>
-                    ) : null}
-                    {payout ? (
-                        <YStack>
-                            <Micro>{t('ui.payout')}</Micro>
-                            <Body fontWeight="800" tabular>
-                                {payout}
-                            </Body>
-                        </YStack>
-                    ) : null}
-                </XStack>
+                {distanceAwayM != null || payout ? (
+                    <XStack gap={space[4]}>
+                        {distanceAwayM != null ? (
+                            <YStack>
+                                <Micro>{t('ui.away')}</Micro>
+                                <Body fontWeight="800" tabular>
+                                    {formatMeters(distanceAwayM, units)}
+                                </Body>
+                            </YStack>
+                        ) : null}
+                        {payout ? (
+                            <YStack>
+                                <Micro>{t('ui.payout')}</Micro>
+                                <Body fontWeight="800" tabular>
+                                    {payout}
+                                </Body>
+                            </YStack>
+                        ) : null}
+                    </XStack>
+                ) : null}
 
                 <XStack gap={space[2]}>
-                    <Button flex={1} variant="ghost" onPress={onDecline}>{t('ui.decline')}</Button>
-                    <Button flex={2} onPress={onAccept}>{t('ui.accept')}</Button>
+                    {onView ? (
+                        <Button flex={1} variant="ghost" onPress={onView} testID={testID ? `${testID}-view` : undefined}>
+                            {t('offers.view')}
+                        </Button>
+                    ) : null}
+                    {onDecline && !expired ? (
+                        <Button flex={1} variant="ghost" loading={declining} disabled={busy} onPress={onDecline} testID={testID ? `${testID}-decline` : undefined}>
+                            {t('ui.decline')}
+                        </Button>
+                    ) : null}
+                    {onAccept && !expired ? (
+                        <Button flex={2} loading={accepting} disabled={busy} onPress={onAccept} testID={testID ? `${testID}-accept` : undefined}>
+                            {t('ui.accept')}
+                        </Button>
+                    ) : null}
                 </XStack>
             </YStack>
         </Surface>
