@@ -23,7 +23,6 @@ import {
     useAllOrders,
     useOrderQuery,
     useOrderNotices,
-    usePendingOffers,
     orderStore,
     customerNameOf,
     displayIdOf,
@@ -94,7 +93,7 @@ export function OrdersScreen({
 }: {
     driverId?: string;
     onOpenOrder?: (id: string) => void;
-    /** Opens the offers screen — direct offers awaiting an answer and ad-hoc ones nearby. */
+    /** Opens the offers screen: ad-hoc orders nearby that any driver can take. */
     onOpenOffers?: () => void;
 }) {
     const { t } = useTranslation();
@@ -112,7 +111,6 @@ export function OrdersScreen({
 
     const all = useAllOrders();
     const notices = useOrderNotices();
-    const pendingOffers = usePendingOffers(driverId);
 
     const rows = useMemo(
         () => all.filter((o) => segmentOf(o) === segment && matches(o, query)),
@@ -216,8 +214,8 @@ export function OrdersScreen({
                     />
                 ))}
                 {onOpenOffers ? (
-                    <Button variant={pendingOffers.length ? 'primary' : 'secondary'} onPress={onOpenOffers} testID="orders-open-offers">
-                        {pendingOffers.length ? t('ordersScreen.offersWaiting', { count: pendingOffers.length }) : t('ordersScreen.offers')}
+                    <Button variant="secondary" onPress={onOpenOffers} testID="orders-open-offers">
+                        {t('ordersScreen.offers')}
                     </Button>
                 ) : null}
                 <Segmented options={segments} value={segment} onChange={setSegment} testID="orders-segments" />

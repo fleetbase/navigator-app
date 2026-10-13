@@ -6,7 +6,7 @@
  * (`order.driver_unassigned`) to `driver.{public_id}` and `driver.{uuid}`, so
  * one subscription covers the session. The order the driver has *open* is also
  * followed on its own `order.{id}` channel (`useOrderChannel`), because some
- * events — an offer expiring, a lifecycle update — are only sent there.
+ * events — a lifecycle update — are only sent there.
  *
  * Order events go through `applyRealtimeEvent`: they bump the live-refresh
  * signal rather than writing to the store, except for the two facts the API
@@ -50,9 +50,8 @@ export function useDriverChannel(driverId?: string): DriverChannelState {
 }
 
 /**
- * Follows one order's own channel while it is on screen: `order.offer_expired`
- * and the lifecycle `order.updated` are broadcast there and not on the
- * driver's channel.
+ * Follows one order's own channel while it is on screen: the lifecycle
+ * `order.updated` is broadcast there and not on the driver's channel.
  */
 export function useOrderChannel(orderId?: string): void {
     const { listen } = useRealtime();

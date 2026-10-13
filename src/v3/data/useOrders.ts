@@ -40,11 +40,6 @@ export function useOrder(id: string | undefined, store: OrderStore = orderStore)
     return useStoreSelector(store, useCallback((s: OrderStore) => (id ? s.get(id) : undefined), [id]));
 }
 
-/** Orders offered to this driver by name and awaiting an answer (`meta.offer`). */
-export function usePendingOffers(driverId?: string, store: OrderStore = orderStore): OrderRecord[] {
-    return useStoreSelector(store, useCallback((s: OrderStore) => s.pendingOffers(driverId), [driverId]));
-}
-
 /** Notices about orders that left the store (reassigned), for the lists to show. */
 export function useOrderNotices(store: OrderStore = orderStore): OrderNotice[] {
     return useStoreSelector(store, useCallback((s: OrderStore) => s.notices(), []));

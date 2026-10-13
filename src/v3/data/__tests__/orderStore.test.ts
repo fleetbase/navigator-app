@@ -154,16 +154,3 @@ describe('order store — reassignment and reconciliation', () => {
         expect(s.notices()).toEqual([]);
     });
 });
-
-describe('order store — direct offers', () => {
-    it('lists orders offered to this driver and awaiting an answer', () => {
-        const s = new OrderStore({ byId: {}, allIds: [], version: 0 });
-        s.upsertMany([
-            order('mine', { meta: { offer: { driver: 'driver_me', status: 'offered', expires_at: '2026-10-13T12:05:00Z' } } }),
-            order('theirs', { meta: { offer: { driver: 'driver_other', status: 'offered' } } }),
-            order('accepted', { meta: { offer: { driver: 'driver_me', status: 'accepted' } } }),
-            order('plain'),
-        ]);
-        expect(s.pendingOffers('driver_me').map((o) => o.id)).toEqual(['mine']);
-    });
-});

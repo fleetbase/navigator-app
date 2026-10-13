@@ -40,7 +40,6 @@ import {
     orderConfigIdOf,
     payloadOf,
     isFinishedStatus,
-    isPendingOfferFor,
     cashOnDeliveryOf,
     customerContactOf,
     deliveryInstructionsOf,
@@ -59,7 +58,6 @@ import { formatClock, formatMeters } from '../format';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, changesDropoff } from '../realtime';
-import { DirectOfferCard } from './orderDetail/DirectOfferCard';
 import { BringChecklist, CashSection, ChangeBanner, ContactSection, HandoverSection, ItemRow } from './orderDetail/OrderSections';
 
 /** What the advance posts: the server's activity object when it gave one, else the code. */
@@ -67,7 +65,6 @@ type Advanceable = FlowActivity & { _resolved_status?: string | null };
 
 export function OrderDetailScreen({
     orderId,
-    driverId,
     reloadToken = 0,
     onOpenEntity,
     onOpenTimeline,
@@ -80,8 +77,6 @@ export function OrderDetailScreen({
     openUrl = (url: string) => Linking.openURL(url),
 }: {
     orderId: string;
-    /** The signed-in driver — decides whether a pending offer is theirs. */
-    driverId?: string;
     /** Bumped on screen focus: the order, tracker and next step are asked again. */
     reloadToken?: number;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
@@ -107,7 +102,6 @@ export function OrderDetailScreen({
     const screen = useScreenStyle();
     const { units } = useSettings();
     const { adapter } = useFleetbase();
-    const me = driverId ?? adapter.ownerId;
 
     /*
      * Fetched, not just read from the store: an order edited while the driver
@@ -173,7 +167,6 @@ export function OrderDetailScreen({
     const payload = payloadOf(order);
     const entities = useMemo(() => payload.entities ?? [], [payload.entities]);
     const cod = cashOnDeliveryOf(order);
-    const offerPending = isPendingOfferFor(order, me);
     /** Completing an order with cash still owed needs the driver to say they took it. */
     const needsCash = (activity?: Advanceable) => Boolean(activity?.complete && cod?.toCollect && !cashCollected);
 
@@ -306,8 +299,6 @@ export function OrderDetailScreen({
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="order-detail">
-            {offerPending ? <DirectOfferCard order={order} /> : null}
-
             {change ? (
                 <ChangeBanner change={change} t={t} onDismiss={() => dismissOrderChange(order.id)} onReopenNavigation={reopenNavigation} />
             ) : null}
@@ -472,9 +463,7 @@ export function OrderDetailScreen({
                     <ErrorState title={t('orderDetail.updateFailed')} body={advanceError} testID="advance-error" />
                 ) : null}
 
-                {offerPending ? (
-                    <Banner tone="neutral" message={t('orderDetail.acceptOfferFirst')} testID="accept-offer-first" />
-                ) : ambiguous ? (
+                {ambiguous ? (
                     <Banner tone="neutral" message={t('orderDetail.chooseWithDispatch')} testID="next-ambiguous" />
                 ) : next ? (
                     <YStack gap={space[2]}>

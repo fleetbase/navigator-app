@@ -100,14 +100,12 @@ describe('OffersScreen', () => {
          * Without it the query returns every unassigned adhoc order in the
          * company, which is a different and much worse screen.
          */
-        const t = await mount(<OffersScreen driverId="driver_1" />);
+        await mount(<OffersScreen driverId="driver_1" />);
         const url = String(queryCall()?.[0] ?? '');
         expect(url).toContain('nearby=driver_1');
         expect(url).toContain('adhoc=1');
         expect(url).toContain('unassigned=1');
         expect(url).toContain('dispatched=1');
-        // Left mounted, this tree kept rendering the store for every later test.
-        ReactTestRenderer.act(() => t.unmount());
     });
 
     it('shows what the job is and how far away', async () => {
@@ -156,79 +154,5 @@ describe('OffersScreen', () => {
         const t = await mount(<OffersScreen driverId="driver_1" />);
         expect(testIDs(t)).toContain('offers-empty');
         ReactTestRenderer.act(() => t.unmount());
-    });
-});
-
-describe('OffersScreen — direct offers (contract 1.4)', () => {
-    const inFuture = () => new Date(Date.now() + 5 * 60_000).toISOString();
-
-    it('lists orders offered to this driver with a countdown, and answers through accept/decline', async () => {
-        ReactTestRenderer.act(() => {
-            orderStore.upsert({
-                id: 'order_direct',
-                status: 'dispatched',
-                tracking_number: 'FLE-DIRECT',
-                meta: { offer: { driver: 'driver_1', status: 'offered', expires_at: inFuture() } },
-                payload: { pickup: { name: 'Depot' }, dropoff: { name: 'Clinic' } },
-            });
-        });
-        const onOpenOrder = jest.fn();
-        const t = await mount(<OffersScreen driverId="driver_1" onOpenOrder={onOpenOrder} />);
-        const ids = testIDs(t);
-        expect(ids).toContain('offers-direct');
-        expect(ids).toContain('direct-offer-order_direct-countdown');
-        expect(textOf(t)).toContain('FLE-DIRECT');
-
-        fetchMock.mockImplementation((url: string) =>
-            Promise.resolve({
-                ok: true,
-                status: 200,
-                statusText: 'OK',
-                json: async () => (String(url).includes('/decline') ? { id: 'order_direct' } : offers),
-            })
-        );
-        await ReactTestRenderer.act(async () => {
-            (byID(t, 'direct-offer-order_direct-decline').props as { onPress?: () => void }).onPress?.();
-            await Promise.resolve();
-        });
-        const decline = fetchMock.mock.calls.find(([url]) => String(url).includes('orders/order_direct/decline'));
-        expect((decline?.[1] as { method?: string }).method).toBe('POST');
-        // Declined: no longer the driver's, and not reported as a reassignment.
-        expect(orderStore.get('order_direct')).toBeUndefined();
-        expect(orderStore.notices()).toEqual([]);
-        await ReactTestRenderer.act(async () => t.unmount());
-    });
-
-    it('withdraws accept once the offer has expired', async () => {
-        ReactTestRenderer.act(() => {
-            orderStore.upsert({
-                id: 'order_late',
-                status: 'dispatched',
-                meta: { offer: { driver: 'driver_1', status: 'offered', expires_at: new Date(Date.now() - 1000).toISOString() } },
-            });
-        });
-        const t = await mount(<OffersScreen driverId="driver_1" />);
-        const ids = testIDs(t);
-        expect(ids).toContain('direct-offer-order_late-expired');
-        expect(ids).not.toContain('direct-offer-order_late-accept');
-        await ReactTestRenderer.act(async () => t.unmount());
-    });
-
-    it('says so when the server cannot take an answer yet', async () => {
-        ReactTestRenderer.act(() => {
-            orderStore.upsert({ id: 'order_x', status: 'dispatched', meta: { offer: { driver: 'driver_1', status: 'offered', expires_at: inFuture() } } });
-        });
-        const t = await mount(<OffersScreen driverId="driver_1" />);
-        fetchMock.mockImplementation((url: string) =>
-            String(url).includes('/accept')
-                ? Promise.resolve({ ok: false, status: 404, statusText: 'Not Found', json: async () => ({ error: 'Not found' }) })
-                : Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: async () => offers })
-        );
-        await ReactTestRenderer.act(async () => {
-            (byID(t, 'direct-offer-order_x-accept').props as { onPress?: () => void }).onPress?.();
-            await Promise.resolve();
-        });
-        expect(testIDs(t)).toContain('direct-offer-order_x-unsupported');
-        await ReactTestRenderer.act(async () => t.unmount());
     });
 });

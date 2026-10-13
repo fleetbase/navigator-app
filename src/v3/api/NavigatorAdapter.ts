@@ -77,13 +77,6 @@ const NEVER_QUEUE = [
      */
     /orders\/[^/]+\/start\b/,
     /*
-     * Same for a direct offer: accepting or declining one is an answer with a
-     * deadline (`meta.offer.expires_at`). Replayed after the window it would
-     * either be refused or, worse, land on an order already re-offered to
-     * someone else.
-     */
-    /orders\/[^/]+\/(?:accept|decline)\b/,
-    /*
      * Optimise re-sequences a route from a position. Replayed from a queue it
      * would reorder the driver's stops from wherever they were an hour ago,
      * and the preview they confirmed would no longer be what is applied.

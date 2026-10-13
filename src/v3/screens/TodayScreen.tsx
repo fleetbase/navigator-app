@@ -39,16 +39,13 @@ import {
     useOrderQuery,
     useTracker,
     useOrderNotices,
-    usePendingOffers,
     orderStore,
     chooseEta,
     currentStop,
     displayIdOf,
-    isPendingOfferFor,
     type OrderRecord,
 } from '../data';
 import { useLiveRefresh } from '../realtime/liveRefresh';
-import { DirectOfferCard } from './orderDetail/DirectOfferCard';
 import { formatDuration, formatMeters, formatClock } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
@@ -159,15 +156,12 @@ export function TodayScreen({
     reloadToken,
     onOpenOrder,
     onNavigate,
-    onOpenOffers,
 }: {
     driverId?: string;
     reloadToken?: number;
     onOpenOrder?: (orderId: string) => void;
     /** `orderId` lets the hand-off follow the order's current destination. */
     onNavigate?: (destination: { latitude: number; longitude: number; label?: string }, orderId?: string) => void;
-    /** Opens the offers screen. */
-    onOpenOffers?: () => void;
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
@@ -177,14 +171,10 @@ export function TodayScreen({
     // The query fills the store; the selector reads it. Same split as Orders,
     // so both surfaces show the same rows without fetching twice.
     const { state, error, retry } = useOrderQuery({ driver_assigned: driverId, limit: 50 }, { enabled: !!driverId });
-    const active = useActiveOrders();
-    const pendingOffers = usePendingOffers(driverId);
+    const orders = useActiveOrders();
     const notices = useOrderNotices();
-    // An offer awaiting an answer is not work in hand yet — it is shown as an
-    // offer above, not as the next stop.
-    const orders = active.filter((o) => !isPendingOfferFor(o, driverId));
     const current = orders[0];
-    const isLoading = state === 'loading' && active.length === 0;
+    const isLoading = state === 'loading' && orders.length === 0;
     const failed = state === 'error';
     // Re-asked when the server says something moved (a new drop-off changes the next stop).
     const revision = useLiveRefresh();
@@ -218,15 +208,6 @@ export function TodayScreen({
                     testID={`today-notice-${notice.orderId}`}
                 />
             ))}
-
-            {pendingOffers.length ? (
-                <DirectOfferCard order={pendingOffers[0]} onOpen={onOpenOrder} onAccepted={onOpenOrder} testID="today-offer" />
-            ) : null}
-            {onOpenOffers && pendingOffers.length ? (
-                <Button variant="ghost" onPress={onOpenOffers} testID="today-open-offers">
-                    {t('today.offers', { count: pendingOffers.length })}
-                </Button>
-            ) : null}
 
             {!current ? (
                 <EmptyState testID="today-empty" title={t('today.emptyTitle')} body={t('today.emptyBody')} />

@@ -13,7 +13,7 @@
  * **Offers arrive without asking.** `order.ping` on the driver's channel bumps
  * the live-refresh signal, so a new offer appears while this screen is open.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
@@ -32,19 +32,8 @@ import { trackingNumberOf, payloadOf } from '../data/accessors';
 import { currentDestination, stopLabel } from '../data/orderStops';
 import { formatMeters } from '../format';
 import type { OrderRecord } from '../data/orderStore';
-import { usePendingOffers } from '../data/useOrders';
-import { DirectOfferCard } from './orderDetail/DirectOfferCard';
 
-export function OffersScreen({
-    driverId,
-    reloadToken = 0,
-    onOpenOrder,
-}: {
-    driverId?: string;
-    /** Bumped on focus: nearby offers go stale fast. */
-    reloadToken?: number;
-    onOpenOrder?: (orderId: string) => void;
-}) {
+export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onOpenOrder?: (orderId: string) => void }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const { isOnline } = useSync();
@@ -52,21 +41,6 @@ export function OffersScreen({
     const { offers, isLoading, error, reload } = useOffers(driverId);
     const { accept, isAccepting } = useAcceptOffer(driverId);
     const [taken, setTaken] = useState<string | null>(null);
-    /*
-     * Orders put in this driver's name, awaiting a yes or no (contract 1.4).
-     * They come from the driver's own order list, which the store holds; the
-     * ad-hoc list below is everyone-nearby, first to accept.
-     */
-    const direct = usePendingOffers(driverId);
-
-    const firstFocus = useRef(true);
-    useEffect(() => {
-        if (firstFocus.current) {
-            firstFocus.current = false;
-            return;
-        }
-        void reload();
-    }, [reloadToken, reload]);
 
     const take = useCallback(
         async (order: OrderRecord) => {
@@ -102,16 +76,6 @@ export function OffersScreen({
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="offers-screen">
             {taken ? <Banner tone="neutral" message={t('offers.taken')} testID="offer-taken" /> : null}
-
-            {direct.length ? (
-                <YStack gap={space[3]} testID="offers-direct">
-                    <Caption>{t('offers.directHeading')}</Caption>
-                    {direct.map((order) => (
-                        <DirectOfferCard key={order.id} order={order} onOpen={onOpenOrder} onAccepted={onOpenOrder} />
-                    ))}
-                    {offers.length ? <Caption>{t('offers.nearbyHeading')}</Caption> : null}
-                </YStack>
-            ) : null}
 
             {offers.length ? (
                 offers.map((order) => {
@@ -158,7 +122,7 @@ export function OffersScreen({
                         </Surface>
                     );
                 })
-            ) : direct.length ? null : (
+            ) : (
                 <EmptyState testID="offers-empty" title={t('offers.emptyTitle')} body={t('offers.emptyBody')} />
             )}
 

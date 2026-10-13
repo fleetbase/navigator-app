@@ -624,24 +624,6 @@ describe('OrderDetailScreen — order operations', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
-    it('shows a pending offer and holds the flow until it is accepted', async () => {
-        mockRoutes([['orders/order_1/accept', { id: 'order_1', meta: { offer: { driver: 'driver_me', status: 'accepted' } } }]]);
-        ReactTestRenderer.act(() => {
-            orderStore.upsert(
-                order({ status: 'dispatched', meta: { offer: { driver: 'driver_me', status: 'offered', expires_at: new Date(Date.now() + 120_000).toISOString() } } })
-            );
-        });
-        const t = await renderWith({ driverId: 'driver_me' });
-        expect(testIDs(t)).toContain('direct-offer-order_1');
-        expect(testIDs(t)).toContain('accept-offer-first');
-        expect(testIDs(t)).not.toContain('advance-activity');
-
-        await press(t, 'direct-offer-order_1-accept');
-        expect(calls('orders/order_1/accept', 'POST')).toHaveLength(1);
-        expect(testIDs(t)).not.toContain('direct-offer-order_1');
-        ReactTestRenderer.act(() => t.unmount());
-    });
-
     it('leaves when the order is reassigned away from this driver', async () => {
         ReactTestRenderer.act(() => { orderStore.upsert(order()); });
         const onRemoved = jest.fn();

@@ -32,8 +32,6 @@ export type RealtimeEventKind =
     | 'order.updated'
     /** This driver was taken off the order (unassigned or reassigned). */
     | 'order.unassigned'
-    /** A direct offer to this driver lapsed without an answer. */
-    | 'order.offer_expired'
     /** A chat message (or log line) landed in a channel the driver is in. */
     | 'chat.message';
 
@@ -102,8 +100,6 @@ const KINDS: Record<string, RealtimeEventKind> = {
     'order.updated': 'order.updated',
     'order.driver_unassigned': 'order.unassigned',
     OrderDriverUnassigned: 'order.unassigned',
-    'order.offer_expired': 'order.offer_expired',
-    OrderOfferExpired: 'order.offer_expired',
     /*
      * Chat. core-api's resource lifecycle events broadcast `chat_message.created`
      * on `chat.{id}`; the ChatMessageReceived notification broadcasts
@@ -159,8 +155,8 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | undefined {
     const message = data.message as Record<string, unknown> | undefined;
 
     /*
-     * The order operations events (`order.changed`, `order.driver_unassigned`,
-     * `order.offer_expired`) and the resource lifecycle `order.updated` carry
+     * The order operations events (`order.changed`, `order.driver_unassigned`)
+     * and the resource lifecycle `order.updated` carry
      * the order's own id as `data.id`. Only trusted when it looks like one —
      * a chat message's `id` is the message's.
      */

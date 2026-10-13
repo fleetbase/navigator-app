@@ -123,11 +123,7 @@
         "noSearchResultsBody": "Nada coincide con “%{query}”.",
         "job": "Trabajo",
         "reassigned": "El pedido %{order} fue reasignado",
-        "offers": "Ofertas",
-        "offersWaiting": {
-            "one": "%{count} oferta te espera",
-            "other": "%{count} ofertas te esperan"
-        }
+        "offers": "Ofertas"
     },
     "orderDetail": {
         "trackingNumberLabel": "NÚMERO DE SEGUIMIENTO",
@@ -201,7 +197,6 @@
         },
         "reassigned": "Este pedido fue reasignado. Ya no es tuyo.",
         "proofCaptured": "Prueba capturada",
-        "acceptOfferFirst": "Acepta la oferta para empezar este pedido.",
         "noNextActivity": "Este pedido aún no tiene un siguiente paso. Pide a despacho que lo avance."
     },
     "editPayloadItem": {
@@ -685,11 +680,7 @@
         "hos": "Horas de servicio",
         "driveTime": "Tiempo de conducción restante",
         "break": "Descanso previsto",
-        "inspection": "Inspección del vehículo",
-        "offers": {
-            "one": "%{count} trabajo ofrecido",
-            "other": "%{count} trabajos ofrecidos"
-        }
+        "inspection": "Inspección del vehículo"
     },
     "otp": {
         "title": "Iniciar sesión con un código",
@@ -741,11 +732,7 @@
         "onTime": "A tiempo",
         "behind": "Con retraso",
         "manifestId": "MANIFIESTO",
-        "stopsOfTotal": "%{completed} de %{total} paradas",
-        "offeredToYou": "OFRECIDO A TI",
-        "offerExpired": "Oferta vencida",
-        "expiresIn": "vence en %{time}",
-        "away": "DISTANCIA"
+        "stopsOfTotal": "%{completed} de %{total} paradas"
     },
     "settings": {
         "appearance": "APARIENCIA",
@@ -914,12 +901,7 @@
         "taken": "Otra persona se quedó con ese.",
         "emptyTitle": "No hay ofertas ahora mismo",
         "emptyBody": "Los trabajos cercanos que necesiten conductor aparecerán aquí.",
-        "note": "Las ofertas llegan a todos los conductores cercanos. El primero en aceptar se queda el trabajo.",
-        "unsupported": "Este servidor aún no acepta respuestas a ofertas. Pide a despacho que confirme el trabajo.",
-        "expired": "Esa oferta ha vencido.",
-        "answerFailed": "No se pudo enviar tu respuesta. Inténtalo de nuevo.",
-        "directHeading": "Ofrecidos a ti",
-        "nearbyHeading": "Cerca"
+        "note": "Las ofertas llegan a todos los conductores cercanos. El primero en aceptar se queda el trabajo."
     },
     "route": {
         "title": "Ruta",

@@ -180,11 +180,7 @@
         "noSearchResultsBody": "Nothing matches “%{query}”.",
         "job": "Job",
         "reassigned": "Order %{order} was reassigned",
-        "offers": "Offers",
-        "offersWaiting": {
-            "one": "%{count} offer waiting for you",
-            "other": "%{count} offers waiting for you"
-        }
+        "offers": "Offers"
     },
     "orderDetail": {
         "trackingNumberLabel": "TRACKING NUMBER",
@@ -258,7 +254,6 @@
         },
         "reassigned": "This order was reassigned. It is no longer yours.",
         "proofCaptured": "Proof captured",
-        "acceptOfferFirst": "Accept the offer to start this order.",
         "noNextActivity": "There is no next step for this order yet. Ask dispatch to move it on."
     },
     "editPayloadItem": {
@@ -742,11 +737,7 @@
         "hos": "Hours of service",
         "driveTime": "Drive time left",
         "break": "Planned break",
-        "inspection": "Vehicle inspection",
-        "offers": {
-            "one": "%{count} job offered to you",
-            "other": "%{count} jobs offered to you"
-        }
+        "inspection": "Vehicle inspection"
     },
     "otp": {
         "title": "Sign in with a code",
@@ -798,11 +789,7 @@
         "onTime": "On time",
         "behind": "Behind",
         "manifestId": "MANIFEST",
-        "stopsOfTotal": "%{completed} of %{total} stops",
-        "offeredToYou": "OFFERED TO YOU",
-        "offerExpired": "Offer expired",
-        "expiresIn": "expires in %{time}",
-        "away": "AWAY"
+        "stopsOfTotal": "%{completed} of %{total} stops"
     },
     "settings": {
         "appearance": "APPEARANCE",
@@ -971,12 +958,7 @@
         "taken": "Someone else took that one.",
         "emptyTitle": "No offers right now",
         "emptyBody": "Jobs near you that need a driver will appear here.",
-        "note": "Offers go to every driver nearby. The first to accept gets the job.",
-        "unsupported": "This server can't take offer answers yet. Ask dispatch to confirm the job.",
-        "expired": "That offer has expired.",
-        "answerFailed": "Couldn't send your answer. Try again.",
-        "directHeading": "Offered to you",
-        "nearbyHeading": "Nearby"
+        "note": "Offers go to every driver nearby. The first to accept gets the job."
     },
     "route": {
         "title": "Route",

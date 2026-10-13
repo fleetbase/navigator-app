@@ -344,7 +344,6 @@ function OrdersHome({ navigation }: { navigation: Nav }) {
 
 function OrderDetail({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
     const orderId = route.params?.orderId;
-    const driverId = useDriverId();
     // Focus is a refetch: back from proof capture, from a chat, from the app
     // being backgrounded — the order may have changed meanwhile.
     const reloadToken = useFocusCount();
@@ -352,7 +351,6 @@ function OrderDetail({ route, navigation }: { route: { params?: { orderId?: stri
     return (
         <OrderDetailScreen
             orderId={String(orderId ?? '')}
-            driverId={driverId}
             reloadToken={reloadToken}
             onOpenEntity={({ id, entity }) => navigation.navigate('EntityDetail', { orderId, entityId: id, entity })}
             // The order id travels, not just the point: the hand-off reads the
@@ -539,7 +537,6 @@ function TodayHome({ navigation }: { navigation: Nav }) {
             reloadToken={reloadToken}
             onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId }, initial: false })}
             onNavigate={(destination, orderId) => navigation.navigate('NavigationHandoff', { destination, orderId })}
-            onOpenOffers={() => navigation.navigate('Orders', { screen: 'Offers', initial: false })}
         />
     );
 }
@@ -687,8 +684,7 @@ function ChangeVehicle({ route, navigation }: { route: { params?: { currentVehic
 
 function Offers({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
-    const reloadToken = useFocusCount();
-    return <OffersScreen driverId={driverId} reloadToken={reloadToken} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
+    return <OffersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
 }
 
 /* Header-wrapped screens. Declared once at module scope so the component

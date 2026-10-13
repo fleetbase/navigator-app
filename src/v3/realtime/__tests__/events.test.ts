@@ -77,9 +77,8 @@ describe('order operations events (contract 1.1–1.4)', () => {
         expect(event?.summary).toBe('Drop-off changed to 8 Marina View');
     });
 
-    it('maps reassignment, offer expiry and the lifecycle update', () => {
+    it('maps reassignment and the lifecycle update', () => {
         expect(parseRealtimeEvent({ event: 'order.driver_unassigned', data: { id: 'order_1' } })).toMatchObject({ kind: 'order.unassigned', orderId: 'order_1' });
-        expect(parseRealtimeEvent({ event: 'order.offer_expired', data: { id: 'order_2' } })).toMatchObject({ kind: 'order.offer_expired', orderId: 'order_2' });
         expect(parseRealtimeEvent({ event: 'order.updated', data: { id: 'order_3' } })).toMatchObject({ kind: 'order.updated', orderId: 'order_3' });
     });
 

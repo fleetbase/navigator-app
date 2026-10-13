@@ -19,8 +19,8 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useFleetbase } from '../api';
-import { isQueuedAck, type ApiError } from '../api/NavigatorAdapter';
-import { bumpLiveRefresh, useLiveRefresh } from '../realtime/liveRefresh';
+import { isQueuedAck } from '../api/NavigatorAdapter';
+import { useLiveRefresh } from '../realtime/liveRefresh';
 import { orderStore, type OrderRecord } from './orderStore';
 
 export type AcceptOutcome = 'accepted' | 'taken' | 'failed';
@@ -100,108 +100,4 @@ export function useAcceptOffer(driverId?: string) {
     );
 
     return { accept, isAccepting, error };
-}
-
-export type OfferAnswer = 'accepted' | 'declined' | 'expired' | 'unsupported' | 'failed';
-
-/**
- * Answering a *direct* offer (contract 1.4): `POST orders/{id}/accept` and
- * `POST orders/{id}/decline`. Distinct from the ad-hoc accept above, which
- * claims an unassigned order with `start` + `assign` — that path is unchanged.
- *
- * Never queued (see `NEVER_QUEUE`): an answer that could not be sent before
- * the offer expired is not an answer.
- *
- *   - `expired`     — the server says the window closed.
- *   - `unsupported` — the endpoint does not exist on this server yet (404/405).
- */
-export function useRespondToOffer() {
-    const { adapter } = useFleetbase();
-    const [pending, setPending] = useState<'accept' | 'decline' | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const respond = useCallback(
-        async (orderId: string, answer: 'accept' | 'decline'): Promise<OfferAnswer> => {
-            if (!orderId) return 'failed';
-            setPending(answer);
-            setError(null);
-            try {
-                const result = await adapter.post(`orders/${orderId}/${answer}`, {});
-                if (isQueuedAck(result)) return 'failed';
-                const order = (result as { data?: unknown })?.data ?? result;
-                if (answer === 'accept') {
-                    if (order && typeof order === 'object' && 'id' in order) orderStore.upsert(order as OrderRecord);
-                } else {
-                    // Declined: no longer this driver's. Not a reassignment —
-                    // they said no — so no notice.
-                    orderStore.remove(orderId);
-                }
-                bumpLiveRefresh();
-                return answer === 'accept' ? 'accepted' : 'declined';
-            } catch (err) {
-                const e = err as ApiError;
-                setError(e.message ?? null);
-                if (e.status === 404 || e.status === 405) return 'unsupported';
-                if (/expired/i.test(e.message ?? '')) {
-                    bumpLiveRefresh();
-                    return 'expired';
-                }
-                return 'failed';
-            } finally {
-                setPending(null);
-            }
-        },
-        [adapter]
-    );
-
-    return {
-        accept: useCallback((orderId: string) => respond(orderId, 'accept'), [respond]),
-        decline: useCallback((orderId: string) => respond(orderId, 'decline'), [respond]),
-        isAccepting: pending === 'accept',
-        isDeclining: pending === 'decline',
-        error,
-    };
-}
-
-/**
- * Seconds left until `expiresAt`, ticking once a second while there is time
- * left. `undefined` when there is no deadline; `0` once it has passed.
- */
-export function useCountdown(expiresAt?: string | null, now: () => number = Date.now): number | undefined {
-    const deadline = expiresAt ? Date.parse(expiresAt) : NaN;
-    const left = () => (Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - now()) / 1000)) : undefined);
-    const [seconds, setSeconds] = useState<number | undefined>(left);
-
-    useEffect(() => {
-        setSeconds(left());
-        if (!Number.isFinite(deadline)) return;
-        /*
-         * A timeout chain rather than an interval, guarded by `alive`: a tick
-         * already queued when the card unmounts must not set state on it.
-         */
-        let alive = true;
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const tick = () => {
-            if (!alive) return;
-            const next = left();
-            setSeconds(next);
-            if (next) timer = setTimeout(tick, 1000);
-        };
-        timer = setTimeout(tick, 1000);
-        return () => {
-            alive = false;
-            if (timer) clearTimeout(timer);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deadline]);
-
-    return seconds;
-}
-
-/** "04:59" — minutes and seconds, for an offer countdown. */
-export function formatCountdown(seconds?: number): string | undefined {
-    if (seconds == null) return undefined;
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }

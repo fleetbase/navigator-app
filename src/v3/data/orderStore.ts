@@ -330,15 +330,6 @@ export class OrderStore {
         return this.view('offers', (rows) => rows.filter((o) => o.adhoc === true && !o.driver_assigned));
     }
 
-    /**
-     * Orders directly offered to this driver and still awaiting an answer
-     * (`meta.offer.status === 'offered'`). The offer's own expiry is judged by
-     * the caller, which has a clock; the server expires it either way.
-     */
-    pendingOffers(driverId?: string): OrderRecord[] {
-        return this.view(`pending-offers:${driverId ?? ''}`, (rows) => rows.filter((o) => isPendingOfferFor(o, driverId)));
-    }
-
     private view(key: string, project: (rows: OrderRecord[]) => OrderRecord[]): OrderRecord[] {
         const cached = this.cache.get(key);
         if (cached && cached.version === this.state.version) return cached.value;
@@ -359,35 +350,6 @@ export class OrderStore {
     private notify() {
         for (const fn of this.listeners) fn();
     }
-}
-
-/** `meta.offer` (Fleet-Ops): a direct offer awaiting this driver's answer. */
-export interface OrderOffer {
-    driver?: string;
-    status?: 'offered' | 'accepted' | 'declined' | 'expired' | string;
-    offered_at?: string | null;
-    expires_at?: string | null;
-    accepted_at?: string | null;
-    declined_at?: string | null;
-}
-
-export function offerOf(order?: Partial<OrderRecord> | null): OrderOffer | undefined {
-    const offer = (order?.meta as { offer?: unknown } | null | undefined)?.offer;
-    return offer && typeof offer === 'object' ? (offer as OrderOffer) : undefined;
-}
-
-/**
- * Offered to this driver and not yet answered. An offer naming no driver is
- * read as this driver's when the order is assigned to them — a direct
- * assignment starts `offered` (contract 1.4).
- */
-export function isPendingOfferFor(order?: Partial<OrderRecord> | null, driverId?: string): boolean {
-    const offer = offerOf(order);
-    if (!offer || offer.status !== 'offered') return false;
-    if (!driverId) return true;
-    if (offer.driver) return offer.driver === driverId;
-    const assigned = assignedDriverIdOf(order);
-    return assigned == null || assigned === driverId;
 }
 
 export const orderStore = new OrderStore();
