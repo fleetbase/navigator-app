@@ -86,7 +86,9 @@
         "success": "Success",
         "unable": "Unable to complete",
         "warning": "Warning",
-        "waypoint_created": "Created"
+        "waypoint_created": "Created",
+        "booked": "Booked",
+        "provider_enroute": "On the way"
     },
     "BootScreen": {
         "missingRequiredConfigurationKeys": "Missing required configuration keys"
@@ -175,7 +177,14 @@
         "emptyCompletedTitle": "No completed orders yet",
         "emptyCompletedBody": "Orders you finish will be listed here.",
         "noSearchResultsTitle": "No matches",
-        "noSearchResultsBody": "Nothing matches “%{query}”."
+        "noSearchResultsBody": "Nothing matches “%{query}”.",
+        "job": "Job",
+        "reassigned": "Order %{order} was reassigned",
+        "offers": "Offers",
+        "offersWaiting": {
+            "one": "%{count} offer waiting for you",
+            "other": "%{count} offers waiting for you"
+        }
     },
     "orderDetail": {
         "trackingNumberLabel": "TRACKING NUMBER",
@@ -208,7 +217,49 @@
         "flowNotConfigured": "This order has no activity flow set up, so progress cannot be updated from the app. Ask dispatch.",
         "statusOffFlow": "This order is %{status}, which is not a step in its configured flow. Ask dispatch to move it on.",
         "chooseWithDispatch": "This order can go more than one way from here, and the choice depends on conditions the app cannot check. Ask dispatch to move it on.",
-        "changeDestination": "Change"
+        "changeDestination": "Change",
+        "changed": {
+            "title": "This order changed",
+            "noSummary": "Details on this order were updated.",
+            "by": "Changed by %{who}",
+            "reopenNavigation": "Re-open navigation",
+            "dismiss": "Got it"
+        },
+        "items": {
+            "quantity": "%{count} ×",
+            "quantityName": "%{count} × %{name}",
+            "unavailable": "Unavailable — not in this order",
+            "substituteFor": "Substitute for %{name}",
+            "note": "Note: %{note}"
+        },
+        "booking": {
+            "jobLabel": "JOB",
+            "slot": "Booked slot",
+            "bringHeading": "Bring to the job",
+            "packedCount": "%{count} of %{total} packed",
+            "packed": "Packed",
+            "toPack": "To pack"
+        },
+        "cod": {
+            "title": "Cash on delivery",
+            "toCollect": "To collect",
+            "settled": "Paid",
+            "confirm": "I collected %{amount}",
+            "collected": "Collected %{amount}",
+            "confirmFirst": "Confirm the cash is collected before completing this order."
+        },
+        "scheduled": "Scheduled",
+        "instructions": "Delivery instructions",
+        "orderNotes": "Order notes",
+        "contact": {
+            "call": "Call",
+            "messageCustomer": "Message customer",
+            "messageDispatch": "Message dispatch"
+        },
+        "reassigned": "This order was reassigned. It is no longer yours.",
+        "proofCaptured": "Proof captured",
+        "acceptOfferFirst": "Accept the offer to start this order.",
+        "noNextActivity": "There is no next step for this order yet. Ask dispatch to move it on."
     },
     "editPayloadItem": {
         "title": "Editing",
@@ -387,7 +438,8 @@
             "other": "%{count} people"
         },
         "emptyTitle": "No conversations",
-        "emptyBody": "Messages from dispatch and your team appear here."
+        "emptyBody": "Messages from dispatch and your team appear here.",
+        "aboutOrder": "Order %{order}"
     },
     "conversation": {
         "participants": {
@@ -420,7 +472,14 @@
         "attachmentsNeedConnection": "Photos need a connection to send. Text still goes when you are back online.",
         "attachmentFailed": "That photo could not be uploaded.",
         "attachment": "Attachment",
-        "uploading": "Uploading…"
+        "uploading": "Uploading…",
+        "role": {
+            "you": "You",
+            "store": "Store",
+            "customer": "Customer",
+            "driver": "Driver"
+        },
+        "aboutOrder": "Order %{order}"
     },
     "newConversation": {
         "title": "New conversation",
@@ -739,7 +798,11 @@
         "onTime": "On time",
         "behind": "Behind",
         "manifestId": "MANIFEST",
-        "stopsOfTotal": "%{completed} of %{total} stops"
+        "stopsOfTotal": "%{completed} of %{total} stops",
+        "offeredToYou": "OFFERED TO YOU",
+        "offerExpired": "Offer expired",
+        "expiresIn": "expires in %{time}",
+        "away": "AWAY"
     },
     "settings": {
         "appearance": "APPEARANCE",
@@ -908,7 +971,12 @@
         "taken": "Someone else took that one.",
         "emptyTitle": "No offers right now",
         "emptyBody": "Jobs near you that need a driver will appear here.",
-        "note": "Offers go to every driver nearby. The first to accept gets the job."
+        "note": "Offers go to every driver nearby. The first to accept gets the job.",
+        "unsupported": "This server can't take offer answers yet. Ask dispatch to confirm the job.",
+        "expired": "That offer has expired.",
+        "answerFailed": "Couldn't send your answer. Try again.",
+        "directHeading": "Offered to you",
+        "nearbyHeading": "Nearby"
     },
     "route": {
         "title": "Route",

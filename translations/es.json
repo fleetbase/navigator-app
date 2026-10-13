@@ -86,7 +86,9 @@
         "success": "Correcto",
         "unable": "No se pudo completar",
         "warning": "Aviso",
-        "waypoint_created": "Creado"
+        "waypoint_created": "Creado",
+        "booked": "Reservado",
+        "provider_enroute": "En camino"
     },
     "ordersScreen": {
         "title": "Pedidos",
@@ -118,7 +120,14 @@
         "emptyCompletedTitle": "Aún no hay pedidos completados",
         "emptyCompletedBody": "Los pedidos que termines se listarán aquí.",
         "noSearchResultsTitle": "Sin coincidencias",
-        "noSearchResultsBody": "Nada coincide con “%{query}”."
+        "noSearchResultsBody": "Nada coincide con “%{query}”.",
+        "job": "Trabajo",
+        "reassigned": "El pedido %{order} fue reasignado",
+        "offers": "Ofertas",
+        "offersWaiting": {
+            "one": "%{count} oferta te espera",
+            "other": "%{count} ofertas te esperan"
+        }
     },
     "orderDetail": {
         "trackingNumberLabel": "NÚMERO DE SEGUIMIENTO",
@@ -151,7 +160,49 @@
         "flowNotConfigured": "Este pedido no tiene un flujo de actividades configurado, así que el progreso no puede actualizarse desde la app. Consulta a despacho.",
         "statusOffFlow": "Este pedido está en %{status}, que no es un paso de su flujo configurado. Pide a despacho que lo avance.",
         "chooseWithDispatch": "Este pedido puede seguir más de un camino desde aquí, y la elección depende de condiciones que la app no puede comprobar. Pide a despacho que lo avance.",
-        "changeDestination": "Cambiar"
+        "changeDestination": "Cambiar",
+        "changed": {
+            "title": "Este pedido cambió",
+            "noSummary": "Se actualizaron los detalles de este pedido.",
+            "by": "Cambiado por %{who}",
+            "reopenNavigation": "Volver a abrir la navegación",
+            "dismiss": "Entendido"
+        },
+        "items": {
+            "quantity": "%{count} ×",
+            "quantityName": "%{count} × %{name}",
+            "unavailable": "No disponible — no va en este pedido",
+            "substituteFor": "Sustituye a %{name}",
+            "note": "Nota: %{note}"
+        },
+        "booking": {
+            "jobLabel": "TRABAJO",
+            "slot": "Horario reservado",
+            "bringHeading": "Lleva al trabajo",
+            "packedCount": "%{count} de %{total} preparados",
+            "packed": "Preparado",
+            "toPack": "Por preparar"
+        },
+        "cod": {
+            "title": "Pago contra entrega",
+            "toCollect": "Por cobrar",
+            "settled": "Pagado",
+            "confirm": "Cobré %{amount}",
+            "collected": "Cobrado %{amount}",
+            "confirmFirst": "Confirma que cobraste el efectivo antes de completar este pedido."
+        },
+        "scheduled": "Programado",
+        "instructions": "Instrucciones de entrega",
+        "orderNotes": "Notas del pedido",
+        "contact": {
+            "call": "Llamar",
+            "messageCustomer": "Escribir al cliente",
+            "messageDispatch": "Escribir a despacho"
+        },
+        "reassigned": "Este pedido fue reasignado. Ya no es tuyo.",
+        "proofCaptured": "Prueba capturada",
+        "acceptOfferFirst": "Acepta la oferta para empezar este pedido.",
+        "noNextActivity": "Este pedido aún no tiene un siguiente paso. Pide a despacho que lo avance."
     },
     "editPayloadItem": {
         "title": "Editando",
@@ -330,7 +381,8 @@
             "other": "%{count} personas"
         },
         "emptyTitle": "No hay conversaciones",
-        "emptyBody": "Los mensajes de despacho y de tu equipo aparecerán aquí."
+        "emptyBody": "Los mensajes de despacho y de tu equipo aparecerán aquí.",
+        "aboutOrder": "Pedido %{order}"
     },
     "conversation": {
         "participants": {
@@ -363,7 +415,14 @@
         "attachmentsNeedConnection": "Las fotos necesitan conexión para enviarse. El texto se envía igualmente cuando vuelvas a estar en línea.",
         "attachmentFailed": "No se pudo subir esa foto.",
         "attachment": "Adjunto",
-        "uploading": "Subiendo…"
+        "uploading": "Subiendo…",
+        "role": {
+            "you": "Tú",
+            "store": "Tienda",
+            "customer": "Cliente",
+            "driver": "Conductor"
+        },
+        "aboutOrder": "Pedido %{order}"
     },
     "newConversation": {
         "title": "Nueva conversación",
@@ -682,7 +741,11 @@
         "onTime": "A tiempo",
         "behind": "Con retraso",
         "manifestId": "MANIFIESTO",
-        "stopsOfTotal": "%{completed} de %{total} paradas"
+        "stopsOfTotal": "%{completed} de %{total} paradas",
+        "offeredToYou": "OFRECIDO A TI",
+        "offerExpired": "Oferta vencida",
+        "expiresIn": "vence en %{time}",
+        "away": "DISTANCIA"
     },
     "settings": {
         "appearance": "APARIENCIA",
@@ -851,7 +914,12 @@
         "taken": "Otra persona se quedó con ese.",
         "emptyTitle": "No hay ofertas ahora mismo",
         "emptyBody": "Los trabajos cercanos que necesiten conductor aparecerán aquí.",
-        "note": "Las ofertas llegan a todos los conductores cercanos. El primero en aceptar se queda el trabajo."
+        "note": "Las ofertas llegan a todos los conductores cercanos. El primero en aceptar se queda el trabajo.",
+        "unsupported": "Este servidor aún no acepta respuestas a ofertas. Pide a despacho que confirme el trabajo.",
+        "expired": "Esa oferta ha vencido.",
+        "answerFailed": "No se pudo enviar tu respuesta. Inténtalo de nuevo.",
+        "directHeading": "Ofrecidos a ti",
+        "nearbyHeading": "Cerca"
     },
     "route": {
         "title": "Ruta",
