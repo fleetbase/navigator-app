@@ -27,7 +27,7 @@ import { ConfigProvider, useConfig } from './src/contexts/ConfigContext';
 import useFleetbaseV2 from './src/hooks/use-fleetbase';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { LocationProvider, useLocation } from './src/contexts/LocationContext';
-import { NotificationProvider } from './src/contexts/NotificationContext';
+import { NotificationProvider, useNotification } from './src/contexts/NotificationContext';
 import { SocketClusterProvider } from './src/contexts/SocketClusterContext';
 import { TempStoreProvider } from './src/contexts/TempStoreContext';
 import { navigatorConfig } from './src/utils/navigator-config';
@@ -43,6 +43,7 @@ function DriverBridge(): React.JSX.Element {
     const { fleetbase } = useFleetbaseV2();
     const { unreadCount } = useChat();
     const { resolveConnectionConfig, setInstanceLinkConfig } = useConfig();
+    const { addNotificationListener, removeNotificationListener } = useNotification();
     // v2 already runs background geolocation for the whole app; v3 reads its
     // last fix rather than starting a second consumer of the same hardware.
     const { location } = useLocation();
@@ -63,6 +64,46 @@ function DriverBridge(): React.JSX.Element {
         [fleetbase, createDriverSession]
     );
 
+    /*
+     * The same SocketCluster connection config v2's SocketClusterProvider
+     * builds — env defaults, overridden by a linked self-hosted instance.
+     * Without it v3 mounted its SocketProvider disabled and never heard a
+     * single event. Memoised on the primitives so the socket is not torn
+     * down and rebuilt on every render.
+     */
+    const socketHost = resolveConnectionConfig('SOCKETCLUSTER_HOST');
+    const socketPort = resolveConnectionConfig('SOCKETCLUSTER_PORT');
+    const socketPath = resolveConnectionConfig('SOCKETCLUSTER_PATH');
+    const socketSecure = resolveConnectionConfig('SOCKETCLUSTER_SECURE');
+    const socket = useMemo(
+        () =>
+            socketHost
+                ? {
+                      hostname: String(socketHost),
+                      port: socketPort ? Number(socketPort) : undefined,
+                      path: socketPath ? String(socketPath) : undefined,
+                      secure: socketSecure === undefined ? undefined : Boolean(socketSecure),
+                  }
+                : undefined,
+        [socketHost, socketPort, socketPath, socketSecure]
+    );
+
+    /*
+     * v2's NotificationProvider owns the native listeners; v3 subscribes.
+     * Its add/remove functions are recreated on every provider render but act
+     * on one stable list, so they are read through a ref — a subscribe whose
+     * identity changed per render would re-register v3's listener constantly.
+     */
+    const notificationApi = React.useRef({ add: addNotificationListener, remove: removeNotificationListener });
+    notificationApi.current = { add: addNotificationListener, remove: removeNotificationListener };
+    const subscribeToPush = React.useCallback(
+        (listener: (notification: { payload?: Record<string, unknown> | null }, action: 'received' | 'opened') => void) => {
+            notificationApi.current.add(listener);
+            return () => notificationApi.current.remove(listener);
+        },
+        []
+    );
+
     // Organisation switches, read once: the config module is not reactive.
     const features = useMemo(() => ({ earnings: Boolean(navigatorConfig('features.earnings', false)) }), []);
 
@@ -74,6 +115,8 @@ function DriverBridge(): React.JSX.Element {
             // without being rebuilt, so a login or org switch no longer
             // invalidates every consumer the way v2's did.
             host={resolveConnectionConfig('FLEETBASE_HOST')}
+            socket={socket}
+            subscribeToPush={subscribeToPush}
             // FLEETBASE_KEY is the organisation's *API key* — an admin-scoped
             // credential that should never sit on a handset. The platform token
             // is the pre-auth one, scoped to onboarding.

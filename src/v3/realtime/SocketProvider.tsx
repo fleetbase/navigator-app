@@ -21,9 +21,10 @@
  * wrapped, because one thrown error inside an async iterator ends the loop and
  * the driver silently stops receiving anything.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import socketClusterClient from 'socketcluster-client';
 import { parseRealtimeEvent, type RealtimeEvent } from './events';
+import { bumpLiveRefresh } from './liveRefresh';
 
 export interface SocketConfig {
     hostname?: string;
@@ -36,12 +37,20 @@ type Handler = (event: RealtimeEvent) => void;
 
 interface SocketValue {
     isConnected: boolean;
+    /**
+     * True once a socket exists to subscribe on. `listen` changes identity
+     * when it flips, so an effect that depends on `listen` subscribes again —
+     * which is the whole fix for subscribers that mounted before the socket
+     * did and were handed a no-op.
+     */
+    isReady: boolean;
     /** Subscribe to a channel; returns an unsubscribe. */
     listen: (channel: string, handler: Handler) => () => void;
 }
 
 const SocketContext = createContext<SocketValue>({
     isConnected: false,
+    isReady: false,
     listen: () => () => {},
 });
 
@@ -72,18 +81,25 @@ export function SocketProvider({
     enabled?: boolean;
 }) {
     const [isConnected, setIsConnected] = useState(false);
-    const socketRef = useRef<ScSocket | null>(null);
+    /*
+     * State, not a ref. The socket is created in an effect, which runs after
+     * every child's effects — so a child subscribing on mount (the driver
+     * channel) found a null ref, got a no-op unsubscribe, and never tried
+     * again. Holding it in state re-renders the tree once it exists, `listen`
+     * is rebuilt around it, and every effect depending on `listen` re-runs.
+     */
+    const [socket, setSocket] = useState<ScSocket | null>(null);
 
     useEffect(() => {
         if (!enabled || !config?.hostname) return;
 
-        const socket = socketClusterClient.create({
+        const created = socketClusterClient.create({
             hostname: config.hostname,
             port: config.port,
             path: config.path ?? '/socketcluster/',
             secure: config.secure,
         }) as unknown as ScSocket;
-        socketRef.current = socket;
+        setSocket(created);
 
         let alive = true;
 
@@ -96,26 +112,40 @@ export function SocketProvider({
         const watch = async (name: string, onEvent: () => void) => {
             while (alive) {
                 try {
-                    await socket.listener(name).once();
+                    await created.listener(name).once();
                 } catch {
                     return;
                 }
                 if (alive) onEvent();
             }
         };
-        void watch('connect', () => setIsConnected(true));
+        /*
+         * Whatever was broadcast while the socket was down is gone for good, so
+         * a *re*connect asks every live query to look again rather than trust
+         * that nothing happened in the gap.
+         */
+        let connectedBefore = false;
+        void watch('connect', () => {
+            setIsConnected(true);
+            if (connectedBefore) bumpLiveRefresh();
+            connectedBefore = true;
+        });
         void watch('disconnect', () => setIsConnected(false));
 
         return () => {
             alive = false;
             setIsConnected(false);
-            socketRef.current = null;
-            socket.disconnect?.();
+            setSocket(null);
+            created.disconnect?.();
         };
     }, [enabled, config?.hostname, config?.port, config?.path, config?.secure]);
 
+    /*
+     * SocketCluster re-subscribes its channels by itself after a reconnect, so
+     * a subscription only has to be made again when the socket *object*
+     * changes — which is exactly what depending on `socket` does.
+     */
     const listen = useCallback((channelName: string, handler: Handler) => {
-        const socket = socketRef.current;
         if (!socket || !channelName) return () => {};
 
         let stopped = false;
@@ -152,9 +182,9 @@ export function SocketProvider({
             channel.unsubscribe?.();
             channel.close?.();
         };
-    }, []);
+    }, [socket]);
 
-    const value = useMemo<SocketValue>(() => ({ isConnected, listen }), [isConnected, listen]);
+    const value = useMemo<SocketValue>(() => ({ isConnected, isReady: !!socket, listen }), [isConnected, socket, listen]);
 
     return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 }

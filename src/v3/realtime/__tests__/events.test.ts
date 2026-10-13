@@ -5,7 +5,7 @@
  * broadcast on. Getting one wrong is invisible at build time and shows up as a
  * driver who silently never hears about an offer, so they are pinned here.
  */
-import { parseRealtimeEvent, affectsOrders } from '../events';
+import { parseRealtimeEvent, affectsOrders, changesDropoff } from '../events';
 
 describe('parseRealtimeEvent', () => {
     it('reads a geofence crossing on the driver channel', () => {
@@ -62,5 +62,53 @@ describe('affectsOrders', () => {
 
     it('is false for a geofence crossing, which changes no order data', () => {
         expect(affectsOrders('geofence.entered')).toBe(false);
+    });
+});
+
+describe('order operations events (contract 1.1–1.4)', () => {
+    it('reads order.changed with its summary and change list, the order id coming from data.id', () => {
+        const event = parseRealtimeEvent({
+            event: 'order.changed',
+            data: { id: 'order_42', changes: ['dropoff', 'items'], summary: 'Drop-off changed to 8 Marina View', changed_by: 'Jon (store)' },
+        });
+        expect(event?.kind).toBe('order.changed');
+        expect(event?.orderId).toBe('order_42');
+        expect(event?.changes).toEqual(['dropoff', 'items']);
+        expect(event?.summary).toBe('Drop-off changed to 8 Marina View');
+    });
+
+    it('maps reassignment, offer expiry and the lifecycle update', () => {
+        expect(parseRealtimeEvent({ event: 'order.driver_unassigned', data: { id: 'order_1' } })).toMatchObject({ kind: 'order.unassigned', orderId: 'order_1' });
+        expect(parseRealtimeEvent({ event: 'order.offer_expired', data: { id: 'order_2' } })).toMatchObject({ kind: 'order.offer_expired', orderId: 'order_2' });
+        expect(parseRealtimeEvent({ event: 'order.updated', data: { id: 'order_3' } })).toMatchObject({ kind: 'order.updated', orderId: 'order_3' });
+    });
+
+    it('recognises the assignment notification by its broadcast name', () => {
+        // OrderAssigned::toArray() sends `order.assigned_notification`, not the event class.
+        expect(parseRealtimeEvent({ event: 'order.assigned_notification', data: { id: 'order_9', type: 'order_assigned' } })).toMatchObject({
+            kind: 'order.assigned',
+            orderId: 'order_9',
+        });
+    });
+
+    it('does not mistake a non-order id for an order', () => {
+        expect(parseRealtimeEvent({ event: 'order.updated', data: { id: 'place_1' } })?.orderId).toBeUndefined();
+    });
+
+    it('reads chat messages from either broadcast and keeps the channel id', () => {
+        expect(parseRealtimeEvent({ event: 'chat_message.created', data: { id: 'chat_message_1', chat_channel: 'chat_channel_1' } })).toMatchObject({
+            kind: 'chat.message',
+            channelId: 'chat_channel_1',
+            orderId: undefined,
+        });
+        expect(
+            parseRealtimeEvent({ event: 'chat_participent.chat_message_received', data: { id: 'm', message: { channel: 'chat_channel_2' } } })?.channelId
+        ).toBe('chat_channel_2');
+    });
+
+    it('knows which changes move the destination', () => {
+        expect(changesDropoff(['items', 'dropoff'])).toBe(true);
+        expect(changesDropoff(['notes'])).toBe(false);
+        expect(changesDropoff(undefined)).toBe(false);
     });
 });
