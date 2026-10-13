@@ -483,3 +483,58 @@ describe('ConversationScreen — attachments', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 });
+
+describe('order threads (contract 5)', () => {
+    const orderThread: ChatChannelRecord = {
+        id: 'chat_order',
+        title: 'Order FLE123',
+        meta: { order_public_id: 'order_1', kind: 'group', storefront_order_uuid: 'uuid' },
+        participants: [
+            { id: 'p_me', user: ME, name: 'Ron', meta: { role: 'driver' } },
+            { id: 'p_store', user: 'user_store', name: 'Jon', meta: { role: 'store' } },
+            { id: 'p_cust', user: 'user_cust', name: 'Priya', meta: { role: 'customer' } },
+        ],
+        feed: [
+            {
+                type: 'message',
+                created_at: '2026-10-13T12:00:00Z',
+                data: { id: 'sys1', content: 'Drop-off changed to 8 Marina View', meta: { system: true, kind: 'order_updated' }, sender: { id: 'p_store', user: 'user_store', name: 'Jon', meta: { role: 'store' } } },
+            },
+            {
+                type: 'message',
+                created_at: '2026-10-13T12:01:00Z',
+                data: { id: 'm_store', content: 'New address, sorry!', sender: { id: 'p_store', user: 'user_store', name: 'Jon', meta: { role: 'store' } } },
+            },
+            {
+                type: 'message',
+                created_at: '2026-10-13T12:02:00Z',
+                data: { id: 'm_me', content: 'On my way', sender: { id: 'p_me', user: ME, name: 'Ron', meta: { role: 'driver' } } },
+            },
+        ],
+    };
+
+    beforeEach(() => mockApi([orderThread], orderThread));
+
+    it('renders a system message as a notice, not as somebody talking', async () => {
+        const t = await mount(<ConversationScreen channelId={orderThread.id} channel={orderThread} userId={ME} />);
+        const ids = testIDs(t);
+        expect(ids).toContain('system-sys1');
+        expect(ids).not.toContain('theirs-sys1');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('labels each side of the order thread', async () => {
+        const t = await mount(<ConversationScreen channelId={orderThread.id} channel={orderThread} userId={ME} />);
+        const text = textOf(t);
+        expect(text).toContain('Jon · Store');
+        expect(text).toContain('You');
+        expect(testIDs(t)).toContain('conversation-order');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('marks an order thread in the inbox', async () => {
+        const t = await mount(<InboxScreen userId={ME} />);
+        expect(testIDs(t)).toContain('channel-order-chat_order');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+});

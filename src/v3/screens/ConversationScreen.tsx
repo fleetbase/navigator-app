@@ -11,8 +11,12 @@
  *     array of ids, so this needs the upload half — `POST /v1/files` — and a
  *     picker. The composer therefore offers text and quick replies only, rather
  *     than showing an attachment button that does nothing.
- *   - **Order-context header.** A channel carries no order reference on the
- *     public resource, so there is nothing to tap through to.
+ *
+ * Order threads (contract 5) carry `meta.order_public_id` on the channel and a
+ * `role` on each participant (customer / driver / store / system). The header
+ * names the order, each bubble says which side wrote it — Store, Customer,
+ * You — and messages the platform wrote (`meta.system`) render as notices
+ * rather than as someone talking.
  *
  * Read receipts are shown where the API gives them: `receipts` on each message.
  */
@@ -34,6 +38,11 @@ import {
     channelTitle,
     headingNamesEveryone,
     otherParticipants,
+    participantRole,
+    isSystemMessage,
+    channelOrderId,
+    orderStore,
+    displayIdOf,
     type ChatChannelRecord,
     type FeedEntry,
 } from '../data';
@@ -59,10 +68,49 @@ function SystemLine({ text, at }: { text: string; at?: string }) {
     );
 }
 
+/**
+ * A message the platform wrote into an order thread — "Drop-off changed",
+ * "Customer says the address is wrong". Set apart from both sides of the
+ * conversation, because nobody in it said this.
+ */
+function SystemNotice({ text, at, testID }: { text: string; at?: string; testID?: string }) {
+    return (
+        <YStack alignItems="center" paddingVertical={space[2]} testID={testID}>
+            <YStack
+                maxWidth="90%"
+                paddingHorizontal={space[3]}
+                paddingVertical={space[2]}
+                borderRadius={radius.compact}
+                borderWidth={1}
+                borderColor="$warningBorder"
+                backgroundColor="$warningFill"
+                gap={2}
+            >
+                <Body fontSize={13} fontWeight="600" tone="warning" textAlign="center">
+                    {text}
+                </Body>
+                {at ? (
+                    <Micro tabular textAlign="center">
+                        {formatClock(at)}
+                    </Micro>
+                ) : null}
+            </YStack>
+        </YStack>
+    );
+}
+
+/** "Store", "Customer", "Driver", "You" — the side of an order thread a message came from. */
+export function roleLabel(role: string | undefined, mine: boolean, t: (key: string) => string): string | undefined {
+    if (mine) return role ? t('conversation.role.you') : undefined;
+    if (role === 'store' || role === 'customer' || role === 'driver') return t(`conversation.role.${role}`);
+    return undefined;
+}
+
 function Bubble({
     content,
     attachments,
     author,
+    role,
     at,
     mine,
     readBy,
@@ -72,6 +120,8 @@ function Bubble({
     content: string;
     attachments?: ChatAttachment[];
     author?: string;
+    /** Already translated: "Store", "Customer", "You". */
+    role?: string;
     at?: string;
     mine: boolean;
     readBy: number;
@@ -80,8 +130,16 @@ function Bubble({
 }) {
     return (
         <YStack alignItems={mine ? 'flex-end' : 'flex-start'} paddingVertical={space[1]} testID={testID}>
-            {/* Only the other side needs naming — the driver knows who they are. */}
-            {!mine && author ? <Micro paddingHorizontal={space[2]}>{author}</Micro> : null}
+            {/*
+              * Only the other side needs naming — the driver knows who they
+              * are. In an order thread the role says which side, and "You"
+              * marks the driver's own messages among three parties.
+              */}
+            {(!mine && author) || role ? (
+                <Micro paddingHorizontal={space[2]} testID={testID ? `${testID}-role` : undefined}>
+                    {[!mine ? author : undefined, role].filter(Boolean).join(' · ')}
+                </Micro>
+            ) : null}
 
             <YStack
                 maxWidth="82%"
@@ -189,12 +247,18 @@ export function ConversationScreen({
                 return text ? <SystemLine text={text} at={item.created_at ?? item.data.created_at} /> : null;
             }
 
+            if (isSystemMessage(item.data)) {
+                const text = item.data.content ?? '';
+                return text ? <SystemNotice text={text} at={item.created_at ?? item.data.created_at} testID={`system-${item.data.id}`} /> : null;
+            }
+
             const mine = !!userId && item.data.sender?.user === userId;
             return (
                 <Bubble
                     content={item.data.content ?? ''}
                     attachments={item.data.attachments}
                     author={item.data.sender?.name}
+                    role={roleLabel(participantRole(item.data.sender), mine, t)}
                     at={item.created_at ?? item.data.created_at}
                     mine={mine}
                     readBy={(item.data.receipts ?? []).length}
@@ -242,6 +306,12 @@ export function ConversationScreen({
                 <Body fontSize={15} fontWeight="800" numberOfLines={1}>
                     {heading}
                 </Body>
+                {channelOrderId(channel) ? (
+                    <Caption testID="conversation-order">{t('conversation.aboutOrder', {
+                            // The tracking number when the order is on the device; the id otherwise.
+                            order: orderStore.get(channelOrderId(channel) as string) ? displayIdOf(orderStore.get(channelOrderId(channel) as string)) : channelOrderId(channel),
+                        })}</Caption>
+                ) : null}
                 <XStack gap={space[2]} alignItems="center">
                     {/*
                      * The heading already lists everyone by name when the

@@ -16,7 +16,7 @@ import { FailureState } from '../ui/FailureState';
 import { space, radius } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
-import { useChatChannels, channelTitle, otherParticipants, type ChatChannelRecord } from '../data';
+import { useChatChannels, channelTitle, otherParticipants, channelOrderId, orderStore, displayIdOf, type ChatChannelRecord } from '../data';
 import { formatClock } from '../format';
 
 function UnreadDot({ count }: { count: number }) {
@@ -52,6 +52,9 @@ function ChannelRow({
     const title = channelTitle(channel, userId, t('inbox.untitled'));
     const preview = channel.last_message?.content;
     const others = otherParticipants(channel, userId);
+    // An order thread says which order — the tracking number when it is on the device.
+    const orderId = channelOrderId(channel);
+    const orderLabel = orderId ? (orderStore.get(orderId) ? displayIdOf(orderStore.get(orderId)) : orderId) : undefined;
 
     return (
         <YStack padding={space[3]} gap={space[2]} onPress={onPress} pressStyle={onPress ? { opacity: 0.7 } : undefined} testID={`channel-${channel.id}`}>
@@ -61,6 +64,12 @@ function ChannelRow({
                 </Body>
                 {unread ? <UnreadDot count={unread} /> : null}
             </XStack>
+
+            {orderLabel ? (
+                <Micro tone="brand" testID={`channel-order-${channel.id}`}>
+                    {t('inbox.aboutOrder', { order: orderLabel })}
+                </Micro>
+            ) : null}
 
             {preview ? (
                 <Secondary fontSize={13} numberOfLines={1}>

@@ -22,7 +22,7 @@ import V3App from './src/v3/App';
 import { V2App } from './App.v2';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { ChatProvider, useChat } from './src/contexts/ChatContext';
+import { ChatProvider } from './src/contexts/ChatContext';
 import { ConfigProvider, useConfig } from './src/contexts/ConfigContext';
 import useFleetbaseV2 from './src/hooks/use-fleetbase';
 import { LanguageProvider } from './src/contexts/LanguageContext';
@@ -41,7 +41,6 @@ import { navigatorConfig } from './src/utils/navigator-config';
 function DriverBridge(): React.JSX.Element {
     const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, logout, createDriverSession } = useAuth();
     const { fleetbase } = useFleetbaseV2();
-    const { unreadCount } = useChat();
     const { resolveConnectionConfig, setInstanceLinkConfig } = useConfig();
     const { addNotificationListener, removeNotificationListener } = useNotification();
     // v2 already runs background geolocation for the whole app; v3 reads its
@@ -147,7 +146,9 @@ function DriverBridge(): React.JSX.Element {
             isOnline={!!isOnline}
             onToggleOnline={(next) => toggleOnline(next)}
             breakSupported={false}
-            badges={{ Inbox: unreadCount || undefined }}
+            // The Inbox badge is v3's own now (chat-channels unread counts,
+            // kept live by the chat channels' events) rather than v2's
+            // ChatContext, which counted from a different source.
         >
             <Toasts extraInsets={{ bottom: 80 }} />
         </V3App>

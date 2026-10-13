@@ -46,8 +46,18 @@ import InspectionDetailScreen from '../screens/InspectionDetailScreen';
 import DestinationScreen from '../screens/DestinationScreen';
 import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
 import OffersScreen from '../screens/OffersScreen';
-import { vehicleOf, vehicleDescription } from '../data';
-import { useDriverChannel } from '../realtime';
+import { vehicleOf, vehicleDescription, useOrder, useOrderRemoval, currentDestination, payloadOf, stopLabel, useChatChannels, useChatUnreadTotal, setChatUnreadTotal } from '../data';
+import {
+    useDriverChannel,
+    useChatChannelSubscriptions,
+    usePushSubscribe,
+    parsePush,
+    pushToEvent,
+    destinationOf,
+    applyRealtimeEvent,
+} from '../realtime';
+import { fromGeoPoint, type Destination } from '../navigate/handoff';
+import { openConversation, openOrder, openOrdersList } from './navigationRef';
 import { getVersion, getBuildNumber } from 'react-native-device-info';
 import { useFleetbase } from '../api';
 import OrdersScreen from '../screens/OrdersScreen';
@@ -248,7 +258,26 @@ function Earnings() {
     return earnings ? <EarningsScreen reloadToken={reloadToken} /> : <NotEnabledScreen feature="earnings" />;
 }
 
-type Nav = { navigate: (route: string, params?: object) => void; goBack: () => void };
+type Nav = {
+    navigate: (route: string, params?: object) => void;
+    goBack: () => void;
+    popToTop?: () => void;
+};
+
+/**
+ * Leaves a screen whose order was taken off this driver (reassigned), back to
+ * the top of the stack — the list there says why. Only the focused screen
+ * leaves; the ones beneath it go with the pop.
+ */
+function useLeaveWhenRemoved(orderId: string | undefined, navigation: Nav) {
+    const removal = useOrderRemoval(orderId);
+    const isFocused = useIsFocused();
+    useEffect(() => {
+        if (!removal || !isFocused) return;
+        if (navigation.popToTop) navigation.popToTop();
+        else navigation.goBack();
+    }, [removal, isFocused, navigation]);
+}
 
 /* -- Route tab. ----------------------------------------------------------- */
 
@@ -304,20 +333,37 @@ function OptimisePreview({ route, navigation }: { route: { params?: { manifestId
 
 function OrdersHome({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
-    return <OrdersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
+    return (
+        <OrdersScreen
+            driverId={driverId}
+            onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })}
+            onOpenOffers={() => navigation.navigate('Offers')}
+        />
+    );
 }
 
 function OrderDetail({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
+    const orderId = route.params?.orderId;
+    const driverId = useDriverId();
+    // Focus is a refetch: back from proof capture, from a chat, from the app
+    // being backgrounded — the order may have changed meanwhile.
+    const reloadToken = useFocusCount();
+    useLeaveWhenRemoved(orderId, navigation);
     return (
         <OrderDetailScreen
-            orderId={String(route.params?.orderId ?? '')}
-            onOpenEntity={({ id, entity }) =>
-                navigation.navigate('EntityDetail', { orderId: route.params?.orderId, entityId: id, entity })
-            }
-            onNavigate={(destination: object) => navigation.navigate('NavigationHandoff', { destination })}
-            onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId: route.params?.orderId })}
+            orderId={String(orderId ?? '')}
+            driverId={driverId}
+            reloadToken={reloadToken}
+            onOpenEntity={({ id, entity }) => navigation.navigate('EntityDetail', { orderId, entityId: id, entity })}
+            // The order id travels, not just the point: the hand-off reads the
+            // order's *current* destination, so an edit made after this tap
+            // still lands the driver at the right door.
+            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination, orderId })}
+            onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId })}
             onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
-            onChangeDestination={() => navigation.navigate('Destination', { orderId: route.params?.orderId })}
+            onChangeDestination={() => navigation.navigate('Destination', { orderId })}
+            onOpenChannel={(channel) => navigation.navigate('Inbox', { screen: 'Conversation', params: { channel, channelId: channel.id }, initial: false })}
+            onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation', initial: false })}
         />
     );
 }
@@ -329,6 +375,7 @@ function EntityDetail({
     route: { params?: { orderId?: string; entityId?: string; entity?: Record<string, unknown> } };
     navigation: Nav;
 }) {
+    useLeaveWhenRemoved(route.params?.orderId, navigation);
     return (
         <ItemDetailScreen
             entityId={route.params?.entityId}
@@ -339,18 +386,42 @@ function EntityDetail({
     );
 }
 
-function OrderTimeline({ route }: { route: { params?: { orderId?: string } } }) {
+function OrderTimeline({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
+    useLeaveWhenRemoved(route.params?.orderId, navigation);
     return <OrderTimelineScreen orderId={String(route.params?.orderId ?? '')} />;
+}
+
+/**
+ * With an `orderId`, the destination is read from the order as it is now
+ * (`current_waypoint`, else the drop-off) — never the point captured when the
+ * button was tapped. A store moving the drop-off while this screen is open
+ * re-renders it with the new address. `destination` is the fallback, and the
+ * only input for stops that are not an order's (a manifest stop).
+ */
+export function useHandoffDestination(orderId?: string, fallback?: Destination): Destination | undefined {
+    const order = useOrder(orderId);
+    return useMemo(() => {
+        if (!order) return fallback;
+        const payload = payloadOf(order);
+        const stop = currentDestination(payload);
+        return (
+            fromGeoPoint(stop?.location, stopLabel(stop)) ??
+            fromGeoPoint(payload.dropoff?.location, payload.dropoff?.name ?? payload.dropoff?.address) ??
+            fallback
+        );
+    }, [order, fallback]);
 }
 
 function NavigationHandoff({
     route,
     navigation,
 }: {
-    route: { params?: { destination?: { latitude: number; longitude: number; label?: string } } };
+    route: { params?: { destination?: Destination; orderId?: string } };
     navigation: Nav;
 }) {
-    return <NavigationHandoffScreen destination={route.params?.destination} onDone={navigation.goBack} />;
+    useLeaveWhenRemoved(route.params?.orderId, navigation);
+    const destination = useHandoffDestination(route.params?.orderId, route.params?.destination);
+    return <NavigationHandoffScreen destination={destination} onDone={navigation.goBack} />;
 }
 
 function EditPayloadItem({
@@ -466,8 +537,9 @@ function TodayHome({ navigation }: { navigation: Nav }) {
         <TodayScreen
             driverId={driverId}
             reloadToken={reloadToken}
-            onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId } })}
-            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
+            onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId }, initial: false })}
+            onNavigate={(destination, orderId) => navigation.navigate('NavigationHandoff', { destination, orderId })}
+            onOpenOffers={() => navigation.navigate('Orders', { screen: 'Offers', initial: false })}
         />
     );
 }
@@ -517,10 +589,11 @@ function InboxHome({ navigation }: { navigation: Nav }) {
     );
 }
 
-function Conversation({ route }: { route: { params?: { channel?: ChatChannelRecord } } }) {
+function Conversation({ route }: { route: { params?: { channel?: ChatChannelRecord; channelId?: string } } }) {
     const userId = useDriverUserId();
     const channel = route.params?.channel;
-    return <ConversationScreen channelId={channel?.id} channel={channel} userId={userId} />;
+    // A push carries only the channel id; the screen fetches the rest.
+    return <ConversationScreen channelId={channel?.id ?? route.params?.channelId} channel={channel} userId={userId} />;
 }
 
 function NewConversation({ navigation }: { navigation: Nav }) {
@@ -559,6 +632,7 @@ function Help({ navigation }: { navigation: Nav }) {
 
 function ProofCapture({ route, navigation }: { route: { params?: { orderId?: string; activityCode?: string; activityLabel?: string; podMethod?: string | null; expected?: string[] } }; navigation: Nav }) {
     const p = route.params ?? {};
+    useLeaveWhenRemoved(p.orderId, navigation);
     return (
         <ProofCaptureScreen
             orderId={p.orderId ?? ''}
@@ -566,8 +640,9 @@ function ProofCapture({ route, navigation }: { route: { params?: { orderId?: str
             activityLabel={p.activityLabel ?? ''}
             podMethod={p.podMethod}
             expected={p.expected}
-            // Back to the order once the proof is captured or queued — the
-            // activity advance is the driver's next tap, and it is now unblocked.
+            // Back to the order once the proof is captured or queued. The
+            // capture is recorded against the activity (proofLedger), so the
+            // order advances on return rather than asking for proof again.
             onCaptured={() => navigation.goBack()}
             onCancel={() => navigation.goBack()}
         />
@@ -594,6 +669,7 @@ function MyVehicle({ navigation }: { navigation: Nav }) {
 }
 
 function Destination({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
+    useLeaveWhenRemoved(route.params?.orderId, navigation);
     return <DestinationScreen orderId={String(route.params?.orderId ?? '')} onDone={() => navigation.goBack()} />;
 }
 
@@ -611,7 +687,8 @@ function ChangeVehicle({ route, navigation }: { route: { params?: { currentVehic
 
 function Offers({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
-    return <OffersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
+    const reloadToken = useFocusCount();
+    return <OffersScreen driverId={driverId} reloadToken={reloadToken} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
 }
 
 /* Header-wrapped screens. Declared once at module scope so the component
@@ -762,6 +839,52 @@ function DriverChannel({ driverId }: { driverId?: string }) {
     return null;
 }
 
+/**
+ * Push notifications for the session. A push in the foreground is treated as
+ * the socket event it duplicates (refresh, or remove a reassigned order); a
+ * tapped one also opens what it is about. Navigation goes through the root
+ * ref, so this works from whichever tab the driver is on.
+ */
+function PushRouter() {
+    const subscribe = usePushSubscribe();
+    useEffect(() => {
+        if (!subscribe) return;
+        return subscribe((notification, action) => {
+            const push = parsePush(notification);
+            const event = pushToEvent(push);
+            if (event) applyRealtimeEvent(event);
+            if (action !== 'opened') return;
+            const destination = destinationOf(push);
+            if (destination?.kind === 'order') openOrder(destination.orderId);
+            else if (destination?.kind === 'orders') openOrdersList();
+            else if (destination?.kind === 'conversation') openConversation(destination.channelId);
+        });
+    }, [subscribe]);
+    return null;
+}
+
+/**
+ * The driver's chat channels for the session: their unread total feeds the
+ * Inbox badge (v3's own count, no longer v2's ChatContext), and each channel
+ * is followed on the socket so a new message refreshes the list, the badge and
+ * any open conversation without waiting for a pull-to-refresh.
+ */
+function ChatWatcher({ enabled }: { enabled: boolean }) {
+    const { channels, unreadTotal } = useChatChannels(0, { enabled });
+    useChatChannelSubscriptions(useMemo(() => (channels ?? []).map((c) => c.id), [channels]));
+    useEffect(() => {
+        setChatUnreadTotal(unreadTotal);
+    }, [unreadTotal]);
+    return null;
+}
+
+/** The tab bar with the live Inbox count merged in. */
+function BadgedTabBar(props: React.ComponentProps<typeof TabBar>) {
+    const unread = useChatUnreadTotal();
+    const badges = useMemo(() => ({ ...props.badges, Inbox: props.badges?.Inbox ?? (unread || undefined) }), [props.badges, unread]);
+    return <TabBar {...props} badges={badges} />;
+}
+
 export function DriverTabs({
     badges,
     driverId,
@@ -791,7 +914,7 @@ export function DriverTabs({
     const renderTabBar = useMemo(
         () =>
             function renderTabBar(props: React.ComponentProps<typeof TabBar>) {
-                return <TabBar {...props} badges={badges} />;
+                return <BadgedTabBar {...props} badges={badges} />;
             },
         [badges]
     );
@@ -805,6 +928,8 @@ export function DriverTabs({
               * crossings and offers are held for the surfaces that show them.
               */}
             <DriverChannel driverId={driverId} />
+            <PushRouter />
+            <ChatWatcher enabled={!!driverUserId} />
             <DriverUserIdContext.Provider value={driverUserId}>
                 <SignOutContext.Provider value={onSignOut}>
                     <OrganizationContext.Provider value={organizationValue}>
