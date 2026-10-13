@@ -21,9 +21,10 @@
  * `resolved_content` (`"Ron has created a new chat."`). Only the resolved form
  * is fit to show.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
+import { useChatRefresh } from '../realtime/liveRefresh';
 
 export interface ChatParticipant {
     id: string;
@@ -37,7 +38,12 @@ export interface ChatParticipant {
     avatar_url?: string;
     is_online?: boolean;
     last_seen_at?: string;
+    /** Order chat (contract 5): who this participant is *in the order*. */
+    role?: ParticipantRole | string;
+    meta?: { role?: ParticipantRole | string; [key: string]: unknown } | null;
 }
+
+export type ParticipantRole = 'customer' | 'driver' | 'store' | 'system';
 
 export interface ChatAttachment {
     id?: string;
@@ -55,6 +61,8 @@ export interface ChatMessage {
     attachments?: ChatAttachment[];
     receipts?: { id?: string; participant?: string }[];
     created_at?: string;
+    /** `{ system: true, kind }` marks a message the platform wrote, not a person. */
+    meta?: { system?: boolean; kind?: string; [key: string]: unknown } | null;
 }
 
 export interface ChatLog {
@@ -80,8 +88,86 @@ export interface ChatChannelRecord {
     last_message?: ChatMessage | null;
     participants?: ChatParticipant[];
     feed?: FeedEntry[];
+    /** Order-linked threads: `{ storefront_order_uuid, kind, order_public_id }`. */
+    meta?: ChatChannelMeta | null;
     updated_at?: string;
     created_at?: string;
+}
+
+/** Order chat kinds (contract 5): `driver` = driver + store staff; `group` = all three. */
+export type OrderChatKind = 'customer' | 'driver' | 'group';
+
+export interface ChatChannelMeta {
+    storefront_order_uuid?: string;
+    kind?: OrderChatKind | string;
+    order_public_id?: string;
+    [key: string]: unknown;
+}
+
+/** The role a participant plays in an order thread, if the server said. */
+export function participantRole(person?: ChatParticipant | null): string | undefined {
+    const role = person?.meta?.role ?? person?.role;
+    return typeof role === 'string' && role ? role : undefined;
+}
+
+/** A message the platform wrote — an edit notice, an address-change request. */
+export function isSystemMessage(message?: ChatMessage | null): boolean {
+    return Boolean(message?.meta?.system) || participantRole(message?.sender) === 'system';
+}
+
+/** The order this channel is about, when it is about one. */
+export function channelOrderId(channel?: ChatChannelRecord | null): string | undefined {
+    const id = channel?.meta?.order_public_id;
+    return typeof id === 'string' && id ? id : undefined;
+}
+
+export interface OrderThreads {
+    /** The driver ↔ store thread — "Message dispatch". */
+    dispatch?: ChatChannelRecord;
+    /** A thread the customer is in with the driver — "Message customer". */
+    customer?: ChatChannelRecord;
+}
+
+/**
+ * The threads linked to an order, by kind.
+ *
+ * Only threads the driver can already see: the chat-channels API returns the
+ * channels the signed-in user participates in, and there is no public route
+ * to open an order thread (POST chat-channels takes no `meta`). A `customer`
+ * thread is customer + store only, so the driver reaches the customer through
+ * a `group` thread; a linked thread with no kind is the pre-contract
+ * customer ↔ driver channel, which is that too.
+ */
+export function orderThreadsOf(channels: ChatChannelRecord[] | null | undefined, orderId?: string): OrderThreads {
+    if (!orderId || !channels?.length) return {};
+    const linked = channels.filter((c) => channelOrderId(c) === orderId);
+    return {
+        dispatch: linked.find((c) => c.meta?.kind === 'driver'),
+        customer: linked.find((c) => c.meta?.kind === 'group') ?? linked.find((c) => !c.meta?.kind),
+    };
+}
+
+/*
+ * The Inbox badge. Written by the session-level chat watcher (which keeps the
+ * channel list live), read by the tab bar — a tiny store so the count can
+ * change without re-rendering the navigator.
+ */
+let unreadTotalNow = 0;
+const unreadListeners = new Set<() => void>();
+export function setChatUnreadTotal(n: number): void {
+    if (n === unreadTotalNow) return;
+    unreadTotalNow = n;
+    for (const fn of unreadListeners) fn();
+}
+function subscribeUnread(fn: () => void): () => void {
+    unreadListeners.add(fn);
+    return () => {
+        unreadListeners.delete(fn);
+    };
+}
+const readUnread = () => unreadTotalNow;
+export function useChatUnreadTotal(): number {
+    return useSyncExternalStore(subscribeUnread, readUnread, readUnread);
 }
 
 /**
@@ -156,8 +242,10 @@ function unwrap(raw: unknown): unknown[] {
     return Array.isArray(data) ? data : [];
 }
 
-export function useChatChannels(reloadToken = 0) {
+export function useChatChannels(reloadToken = 0, { enabled = true }: { enabled?: boolean } = {}) {
     const { adapter } = useFleetbase();
+    // A message anywhere moves the list's unread counts and order.
+    const chatRevision = useChatRefresh();
     const [channels, setChannels] = useState<ChatChannelRecord[] | null>(null);
     const [state, setState] = useState<ChatLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
@@ -165,7 +253,7 @@ export function useChatChannels(reloadToken = 0) {
 
     const load = useCallback(
         async (mode: 'loading' | 'refreshing' = 'loading') => {
-            if (inFlight.current) return;
+            if (!enabled || inFlight.current) return;
             inFlight.current = true;
             setState(mode);
             setError(null);
@@ -182,7 +270,7 @@ export function useChatChannels(reloadToken = 0) {
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [adapter, reloadToken]
+        [adapter, reloadToken, chatRevision, enabled]
     );
 
     useEffect(() => {
@@ -210,6 +298,7 @@ export function useChatChannels(reloadToken = 0) {
 
 export function useChatChannel(channelId?: string, seed?: ChatChannelRecord | null) {
     const { adapter } = useFleetbase();
+    const chatRevision = useChatRefresh();
     const [channel, setChannel] = useState<ChatChannelRecord | null>(seed ?? null);
     const [state, setState] = useState<ChatLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
@@ -234,7 +323,7 @@ export function useChatChannel(channelId?: string, seed?: ChatChannelRecord | nu
 
     useEffect(() => {
         void load();
-    }, [load]);
+    }, [load, chatRevision]);
 
     return {
         channel,

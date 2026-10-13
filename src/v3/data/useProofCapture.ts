@@ -19,7 +19,7 @@
  * it — the queue preserves submission order, so replay reproduces the same
  * sequence offline that it would have online.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFleetbase } from '../api';
 import { isQueuedAck } from '../api/NavigatorAdapter';
 
@@ -81,6 +81,12 @@ export function useProofCapture(orderId?: string) {
     const { adapter } = useFleetbase();
     const [isCapturing, setIsCapturing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    /*
+     * The proof record's id, from the last capture that reached the server.
+     * The activity update sends it (`proof`), the way v2 did, so the server
+     * ties the two together. A queued capture has none yet.
+     */
+    const lastProofId = useRef<string | undefined>(undefined);
 
     const capture = useCallback(
         async (proof: ProofPayload, subjectId?: string): Promise<ProofOutcome> => {
@@ -90,10 +96,16 @@ export function useProofCapture(orderId?: string) {
             try {
                 const codes = proof.method === 'scan' ? proof.codes : [null];
                 let queued = false;
+                lastProofId.current = undefined;
                 for (const code of codes) {
                     const one: ProofPayload = proof.method === 'scan' ? { method: 'scan', codes: [code as string] } : proof;
                     const result = await adapter.post(pathFor(orderId, proof.method, subjectId), bodyFor(one));
-                    if (isQueuedAck(result)) queued = true;
+                    if (isQueuedAck(result)) {
+                        queued = true;
+                        continue;
+                    }
+                    const record = ((result as { data?: unknown })?.data ?? result) as { id?: unknown } | null;
+                    if (record && typeof record.id === 'string') lastProofId.current = record.id;
                 }
                 return queued ? 'queued' : 'sent';
             } catch (err) {
@@ -106,5 +118,5 @@ export function useProofCapture(orderId?: string) {
         [adapter, orderId]
     );
 
-    return { capture, isCapturing, error };
+    return { capture, isCapturing, error, lastProofId: useCallback(() => lastProofId.current, []) };
 }

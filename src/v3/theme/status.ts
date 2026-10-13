@@ -83,6 +83,12 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
     on_hold: 'on_hold',
     waypoint_created: 'created',
 
+    // ── service bookings (storefront-booking flow) ───────────────────────────
+    // booked → confirmed → provider_enroute → in_progress → completed.
+    // `confirmed` and `in_progress` are registered below already.
+    booked: 'created',
+    provider_enroute: 'driver_enroute',
+
     // ── generic / operational ────────────────────────────────────────────────
     live: 'completed',
     success: 'completed',
@@ -223,8 +229,19 @@ const LIFECYCLE_ORDER: Record<string, number> = {
     completed: 7,
 };
 
+/**
+ * Codes whose *tone* says the wrong thing about their *position*. A booking's
+ * `confirmed` is green like a completed one, but it is the second step of the
+ * job, not the last — ranked by tone it sorted after `in_progress`.
+ */
+const RANK_OVERRIDE: Record<string, number> = {
+    confirmed: 1,
+};
+
 /** Position in the canonical lifecycle, or `undefined` if we do not know it. */
 export function lifecycleRank(status: unknown): number | undefined {
-    const tone = TONE_BY_STATUS[normalizeStatus(status)];
+    const key = normalizeStatus(status);
+    if (key in RANK_OVERRIDE) return RANK_OVERRIDE[key];
+    const tone = TONE_BY_STATUS[key];
     return tone === undefined ? undefined : LIFECYCLE_ORDER[tone];
 }
