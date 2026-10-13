@@ -23,3 +23,4 @@ export * from './useWallet';
 export * from './useInspections';
 export * from './useAutoArrive';
 export * from './useFiles';
+export * from './orderStatus';
