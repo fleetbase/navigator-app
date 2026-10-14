@@ -21,8 +21,12 @@ export const IssueCategory = Object.freeze({
     all: () => [...VEHICLE, ...DRIVER, ...ROUTE, ...PAYLOAD_CARGO, ...SOFTWARE_TECHNICAL, ...OPERATIONAL, ...CUSTOMER, ...SECURITY, ...ENVIRONMENTAL_SUSTAINABILITY],
 });
 
-export function getIssueCategories(type) {
-    return IssueCategory[type] ?? [];
+export type IssueCategoryKey = Exclude<keyof typeof IssueCategory, 'all'>;
+
+export function getIssueCategories(type: IssueCategoryKey | string): readonly string[] {
+    return (IssueCategory as Record<string, readonly string[] | (() => string[])>)[type] instanceof Array
+        ? (IssueCategory as unknown as Record<string, readonly string[]>)[type]
+        : [];
 }
 
 export default IssueCategory;

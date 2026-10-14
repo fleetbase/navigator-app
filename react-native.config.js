@@ -1,4 +1,5 @@
 module.exports = {
+    assets: ['./assets/fonts'],
     dependencies: {
         '@bam.tech/react-native-image-resizer': {
             platforms: {
