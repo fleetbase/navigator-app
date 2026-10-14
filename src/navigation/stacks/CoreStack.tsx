@@ -1,8 +1,7 @@
 import BootScreen from '../../screens/BootScreen';
-import TestScreen from '../../screens/TestScreen';
 import LocationPermissionScreen from '../../screens/LocationPermissionScreen';
 import InstanceLinkScreen from '../../screens/InstanceLinkScreen';
-import { getTheme } from '../../utils';
+import { getTheme } from '../../utils/theme';
 import { Text } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -46,13 +45,8 @@ export const InstanceLink = {
     },
 };
 
-export const Test = {
-    screen: TestScreen,
-};
-
 const CoreStack = {
     Boot,
-    Test,
     LocationPermission,
     InstanceLink,
 };

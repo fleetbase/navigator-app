@@ -15,6 +15,8 @@ const OrderPayloadEntities = ({ order, onPress }) => {
     const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
     const entities = order.getAttribute('payload.entities', []) ?? [];
     const isMultiDropOrder = waypoints.length > 0;
+    // The order chat channel is with the order's customer, so only offer it on that customer's waypoints
+    const orderCustomerId = order.getAttribute('customer.id');
     const entitiesByDestination = useMemo(() => {
         // Return an empty array if there are no waypoints.
         if (!waypoints || waypoints.length === 0) {
@@ -90,7 +92,7 @@ const OrderPayloadEntities = ({ order, onPress }) => {
                     </YStack>
                     {group.waypoint.customer && (
                         <YStack px='$1' mb='$1'>
-                            <OrderCustomerCard customer={group.waypoint.customer} />
+                            <OrderCustomerCard customer={group.waypoint.customer} order={orderCustomerId && group.waypoint.customer.id === orderCustomerId ? order : null} />
                         </YStack>
                     )}
                     <YStack>

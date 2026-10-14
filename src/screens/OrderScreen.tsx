@@ -452,6 +452,8 @@ const OrderScreen = ({ route }) => {
         return () => {
             if (listenerRef.current) {
                 listenerRef.current.stop();
+                // Clear it so the effect re-subscribes when the socket is recreated (login, org switch, token change).
+                listenerRef.current = null;
             }
         };
     }, [listen, order.id]);
@@ -658,7 +660,7 @@ const OrderScreen = ({ route }) => {
                     <>
                         <SectionHeader title='Customer' />
                         <YStack px='$3' py='$4'>
-                            <OrderCustomerCard customer={order.getAttribute('customer')} />
+                            <OrderCustomerCard customer={order.getAttribute('customer')} order={order} />
                         </YStack>
                     </>
                 )}

@@ -10,8 +10,14 @@ import { toast, ToastPosition } from '../utils/toast';
 
 const MENU_BAR_HEIGHT = 160;
 
-interface CapturedPhoto {
+export interface CapturedPhoto {
     uri: string;
+    /**
+     * Base64 of the image. The component has always attached this — it reads
+     * the file immediately after capture — but the type declared only `uri`,
+     * so a consumer needing the bytes could not see they were already there.
+     */
+    base64?: string;
 }
 
 interface CameraCaptureScreenProps {

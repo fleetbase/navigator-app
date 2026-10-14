@@ -23,7 +23,7 @@ const getCurrentScreen = (tabNavigation) => {
 const DriverLayout = ({ children, state, descriptors, navigation: tabNavigation }) => {
     const navigation = useNavigation();
     const { fleetbase } = useFleetbase();
-    const { getChannel } = useChat();
+    const { getChannel, setCurrentChannel } = useChat();
     const { addNotificationListener, removeNotificationListener } = useNotification();
     const { reloadActiveOrders } = useOrderManager();
 
@@ -43,16 +43,19 @@ const DriverLayout = ({ children, state, descriptors, navigation: tabNavigation 
                 try {
                     const chatChannelId = payload.channel;
                     const channel = await getChannel(chatChannelId);
+                    if (!channel) throw new Error(`Chat channel ${chatChannelId} could not be loaded`);
                     const { tabName, screenName, screenParams } = getCurrentScreen(tabNavigation);
 
                     const isOnDriverChatTab = tabName === 'DriverChatTab';
                     const isOnSameChatChannel = screenName === 'ChatChannel' && screenParams?.channel?.uuid === chatChannelId;
 
                     if (!isOnDriverChatTab) {
-                        tabNavigation.navigate('DriverChatTab', { screen: 'ChatList' });
+                        tabNavigation.navigate('DriverChatTab', { screen: 'ChatHome' });
                     }
 
                     if (!isOnSameChatChannel) {
+                        // ChatChannelScreen renders the context's current channel rather than its route params
+                        setCurrentChannel(channel);
                         later(() => {
                             tabNavigation.navigate('DriverChatTab', {
                                 screen: 'ChatChannel',
@@ -104,7 +107,7 @@ const DriverLayout = ({ children, state, descriptors, navigation: tabNavigation 
         return () => {
             removeNotificationListener(handlePushNotification);
         };
-    }, [addNotificationListener, removeNotificationListener, fleetbase, tabNavigation, navigation]);
+    }, [addNotificationListener, removeNotificationListener, fleetbase, tabNavigation, navigation, getChannel, setCurrentChannel]);
 
     return <View style={{ width: '100%', height: '100%', flex: 1 }}>{children}</View>;
 };
