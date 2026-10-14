@@ -52,6 +52,9 @@ module.exports = {
         '^@gorhom/bottom-sheet$': '<rootDir>/__mocks__/gorhomBottomSheet.js',
         '\\.(ttf|otf|png|jpg|jpeg|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
     },
+    // Keep jest's haste map out of nested checkouts, which would otherwise
+    // collide with this one's package.json.
+    modulePathIgnorePatterns: ['<rootDir>/.claude/worktrees/', '<rootDir>/legacy/'],
     testPathIgnorePatterns: [
         '/node_modules/',
         '/ios/',

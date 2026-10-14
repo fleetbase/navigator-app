@@ -116,11 +116,22 @@ android {
     }
     signingConfigs {
         release {
-            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
-                storeFile file(MYAPP_UPLOAD_STORE_FILE)
-                storePassword MYAPP_UPLOAD_STORE_PASSWORD
-                keyAlias MYAPP_UPLOAD_KEY_ALIAS
-                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            def uploadStoreFile = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE")
+            def uploadStorePassword = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD")
+            def uploadKeyAlias = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS")
+            def uploadKeyPassword = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD")
+            def hasReleaseSigning = [uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword].every { it }
+            def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+
+            if (isReleaseBuild && !hasReleaseSigning) {
+                throw new GradleException("Android release signing requires all ANDROID_NAVIGATOR_APP_UPLOAD_* environment values.")
+            }
+
+            if (hasReleaseSigning) {
+                storeFile file(uploadStoreFile)
+                storePassword uploadStorePassword
+                keyAlias uploadKeyAlias
+                keyPassword uploadKeyPassword
             }
         }
         debug {

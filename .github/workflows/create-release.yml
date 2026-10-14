@@ -1,24 +1,25 @@
 name: Create Release
 on:
-  push:
-    tags:
-      - 'v*'
+    push:
+        tags:
+            - 'v*'
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  create:
-    runs-on: ubuntu-latest
-    steps:
-        - uses: actions/checkout@v4
-        - name: Publish GitHub Release
-          uses: softprops/action-gh-release@v2
-          with:
-            tag_name: ${{ github.ref_name }}
-            name: ${{ github.ref_name }}
-            generate_release_notes: true 
-            draft: false
-            prerelease: false
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    create:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - name: Publish GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  name: ${{ github.ref_name }}
+                  body_path: RELEASE.md
+                  generate_release_notes: true
+                  draft: false
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

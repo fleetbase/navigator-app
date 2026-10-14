@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Animated, SafeAreaView, Pressable, FlatList, LayoutAnimation, UIManager, Platform } from 'react-native';
-import { Spinner, Button, Text, YStack, XStack, Separator, useTheme } from 'tamagui';
+import { Button, Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faChevronRight, faCheck, faLocationDot } from '@fortawesome/free-solid-svg-icons';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
@@ -12,6 +12,7 @@ import PlaceMapView from './PlaceMapView';
 import Badge from './Badge';
 import Spacer from './Spacer';
 import useAppTheme from '../hooks/use-app-theme';
+import SafeSpinner from './SafeSpinner';
 
 const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapTo = '100%', isLoading = false, ...props }) => {
     const { isDarkMode } = useAppTheme();
@@ -48,7 +49,7 @@ const CurrentDestinationSelect = ({ onChange, destination, waypoints = [], snapT
                         <YStack flex={1} px='$3'>
                             {isLoading ? (
                                 <YStack flex={1} justifyContent='center'>
-                                    <Spinner size='lg' color='$blue-100' />
+                                    <SafeSpinner size={32} color={theme['$blue-100']?.val ?? theme['$textPrimary'].val} />
                                 </YStack>
                             ) : (
                                 <YStack>

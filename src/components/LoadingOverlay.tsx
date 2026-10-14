@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { YStack, Spinner, Text, useTheme } from 'tamagui';
+import { YStack, Text, useTheme } from 'tamagui';
 import LinearGradient from 'react-native-linear-gradient';
+import SafeSpinner from './SafeSpinner';
 
 interface LoadingOverlayProps {
     visible: boolean;
@@ -31,6 +32,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
             return ['#111827', '#1f2937', '#374151', '#4b5563'];
         }
     }, [bgColor, theme]);
+    const resolvedSpinnerColor = spinnerColor.startsWith('$') ? theme[spinnerColor]?.val ?? theme['$textPrimary'].val : spinnerColor;
 
     if (!visible) return <YStack />;
     return (
@@ -42,7 +44,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                 style={{ position: 'absolute', opacity: overlayOpacity, top: 0, left: 0, right: 0, bottom: 0 }}
             />
             <YStack flex={1} alignItems='center' justifyContent='center'>
-                <Spinner size={spinnerSize} color={spinnerColor} />
+                <SafeSpinner size={spinnerSize} color={resolvedSpinnerColor} />
                 {text && (
                     <Text
                         marginTop='$2'

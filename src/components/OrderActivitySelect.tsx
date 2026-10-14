@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { Animated, SafeAreaView, Pressable, FlatList, LayoutAnimation, UIManager, Platform } from 'react-native';
-import { Spinner, Button, Text, YStack, XStack, Separator, useTheme } from 'tamagui';
+import { Button, Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faLightbulb, faLocationDot } from '@fortawesome/free-solid-svg-icons';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
@@ -14,6 +14,7 @@ import useAppTheme from '../hooks/use-app-theme';
 import PlaceMapView from './PlaceMapView';
 import Spacer from './Spacer';
 import Badge from './Badge';
+import SafeSpinner from './SafeSpinner';
 
 const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], snapTo = '100%', isLoading = false, activityLoading, portalHost = 'MainPortal', ...props }, ref) => {
     const theme = useTheme();
@@ -60,7 +61,7 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                     <XStack alignItems='flex-start'>
                         {activityLoading === activity.code && (
                             <YStack mt='$1' mr='$2'>
-                                <Spinner color={fontColor} />
+                                <SafeSpinner color={theme[fontColor]?.val ?? theme['$textPrimary'].val} />
                             </YStack>
                         )}
                         <YStack flex={1} space='$1'>
@@ -133,7 +134,7 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                             )}
                             {isLoading ? (
                                 <YStack alignItems='center' justifyContent='center' height={200} width='100%'>
-                                    <Spinner color='$textPrimary' size='$6' />
+                                    <SafeSpinner color={theme['$textPrimary'].val} size='$6' />
                                 </YStack>
                             ) : (
                                 <BottomSheetFlatList

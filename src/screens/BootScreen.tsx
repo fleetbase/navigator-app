@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Platform } from 'react-native';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { Image, Spinner, XStack, Text, YStack, useTheme } from 'tamagui';
+import { check, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { Image, Spinner, XStack, YStack } from 'tamagui';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'react-native-linear-gradient';
-import { setI18nConfig } from '../utils/localize';
 import { config, toArray, isArray, later } from '../utils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,10 +12,7 @@ import useFleetbase from '../hooks/use-fleetbase';
 import BootSplash from 'react-native-bootsplash';
 import SetupWarningScreen from './SetupWarningScreen';
 
-const APP_NAME = config('APP_NAME');
-const BootScreen = ({ route }) => {
-    const params = route.params ?? {};
-    const theme = useTheme();
+const BootScreen = () => {
     const navigation = useNavigation();
     const { hasFleetbaseConfig } = useFleetbase();
     const { isAuthenticated } = useAuth();
@@ -24,8 +20,6 @@ const BootScreen = ({ route }) => {
     const [error, setError] = useState<Error | null>(null);
     const backgroundColor = toArray(config('BOOTSCREEN_BACKGROUND_COLOR', '$background'));
     const isGradientBackground = isArray(backgroundColor) && backgroundColor.length > 1;
-    const locationEnabled = params.locationEnabled;
-
     useFocusEffect(
         useCallback(() => {
             const checkLocationPermission = async () => {
@@ -36,12 +30,7 @@ const BootScreen = ({ route }) => {
                     initializeNavigator();
                 } else {
                     later(() => BootSplash.hide(), 300);
-                    // If the locationEnabled flag is set meaning not null or undefined then initialize navigator
-                    if (locationEnabled !== undefined && locationEnabled !== null) {
-                        initializeNavigator();
-                    } else {
-                        navigation.navigate('LocationPermission');
-                    }
+                    navigation.navigate('LocationPermission');
                 }
             };
 
