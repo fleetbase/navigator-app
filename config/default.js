@@ -1,5 +1,5 @@
 import { mergeConfigs, config, toBoolean } from '../src/utils/config';
-import { toArray } from '../src/utils';
+import { toArray } from '../src/utils/array';
 
 export const DefaultConfig = {
     theme: config('APP_THEME', 'blue'),
@@ -10,6 +10,15 @@ export const DefaultConfig = {
     defaultLocale: config('DEFAULT_LOCALE', 'en'),
     colors: {
         loginBackground: config('LOGIN_BG_COLOR', '#111827'),
+    },
+    /**
+     * Organisation-level switches for v3 surfaces that have no honest data
+     * until a backend piece lands. Off by default; an off surface renders its
+     * "not enabled" state rather than a plausible-looking zero.
+     */
+    features: {
+        // Driver wallet earnings via the ledger extension (design H2).
+        earnings: toBoolean(config('FEATURE_EARNINGS', false)),
     },
 };
 

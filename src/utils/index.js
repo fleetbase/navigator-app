@@ -3,24 +3,32 @@ import { Platform, ActionSheetIOS, Alert, Image } from 'react-native';
 import { Collection, lookup } from '@fleetbase/sdk';
 import storage, { getString } from './storage';
 import { capitalize } from './format';
-import { themes } from '../../tamagui.config';
-import { APP_THEME_KEY } from '../hooks/use-app-theme';
 import { pluralize } from 'inflected';
 import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
-import NavigatorConfig from '../../navigator.config';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
+import { isArray, toArray } from './array';
 
-// Image.getSize is callback based, so wrap it to be awaitable. Resolves null
-// instead of rejecting so callers can decide how to degrade, matching how the
-// other promise wrappers in this app handle failure.
-function getImageSize(uri: string): Promise<{ width: number, height: number } | null> {
+/**
+ * Image.getSize is callback based, so wrap it to be awaitable. Resolves null
+ * instead of rejecting so callers can decide how to degrade, matching how the
+ * other promise wrappers in this app handle failure.
+ *
+ * @param {string} uri
+ * @returns {Promise<{ width: number, height: number } | null>}
+ */
+function getImageSize(uri) {
     return new Promise((resolve) => {
         Image.getSize(uri, (width, height) => resolve({ width, height }), () => resolve(null));
     });
 }
 
-export async function resizePhoto(uri: string, maxSize = 1024): Promise<string> {
+/**
+ * @param {string} uri
+ * @param {number} [maxSize]
+ * @returns {Promise<string>}
+ */
+export async function resizePhoto(uri, maxSize = 1024) {
     const MAX_DIMENSION = maxSize;
 
     // Measure the photo itself, not the device screen
@@ -51,10 +59,6 @@ export async function resizePhoto(uri: string, maxSize = 1024): Promise<string> 
     );
 
     return resized.uri;
-}
-
-export function navigatorConfig(key, defaultValue = null) {
-    return get(NavigatorConfig, key, defaultValue);
 }
 
 export function get(target, path, defaultValue = null) {
@@ -110,21 +114,7 @@ export function last(array = []) {
     return array[array.length - 1];
 }
 
-export function isArray(target) {
-    return Array.isArray(target);
-}
-
-export function toArray(target, delimiter = ',') {
-    if (isArray(target)) {
-        return target;
-    }
-
-    if (typeof target === 'string') {
-        return target.split(delimiter);
-    }
-
-    return Array.from(target);
-}
+export { isArray, toArray };
 
 export function isObject(target) {
     return target && typeof target === 'object' && Object.prototype.toString.call(target) === '[object Object]';
@@ -193,17 +183,6 @@ export function config(key, defaultValue) {
 
 export function uniqueArray(array) {
     return [...new Set(array)];
-}
-
-export function getTheme(key = null) {
-    const themeName = getString(APP_THEME_KEY);
-    if (themeName) {
-        const targetTheme = themes[themeName];
-        if (targetTheme) {
-            return key ? targetTheme[key] : targetTheme;
-        }
-    }
-    return {};
 }
 
 export function defaults(object, defs) {
