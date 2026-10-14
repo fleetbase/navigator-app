@@ -122,6 +122,13 @@ export interface V3AppProps {
      */
     socket?: SocketConfig;
     /**
+     * Bumped by the host whenever a driver session starts or ends. The socket
+     * authenticates as the driver (`userToken`) and is rebuilt when this, the
+     * token, the driver or the organisation changes — the API can return the
+     * same bearer across a sign-in, and the handshake must still be redone.
+     */
+    socketSession?: string | number;
+    /**
      * Push notifications, from the host's notification provider. v3 decides
      * what a push means (refresh, remove a reassigned order, open the order or
      * conversation); the host owns the native registration.
@@ -201,6 +208,7 @@ function ThemedRoot({ scheme, children }: { scheme?: SchemeName; children: (s: S
 
 export function V3App({
     socket,
+    socketSession,
     subscribeToPush,
     scheme,
     organizationName,
@@ -255,7 +263,16 @@ export function V3App({
                                     queue={queue}
                                     isConnected={isConnected}
                                 >
-                                    <SocketProvider config={socket} enabled={!!socket?.hostname}>
+                                    <SocketProvider
+                                        config={socket}
+                                        enabled={!!socket?.hostname}
+                                        // Signed out, there is no token and the socket connects anonymously.
+                                        auth={{
+                                            host,
+                                            authToken: userToken,
+                                            session: `${socketSession ?? ''}|${driverId ?? ''}|${organizationId ?? ''}`,
+                                        }}
+                                    >
                                     <PushContext.Provider value={subscribeToPush}>
                                     <QueueBoundSync isConnected={isConnected} queue={queue}>
                                         <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
