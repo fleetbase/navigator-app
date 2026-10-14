@@ -127,9 +127,7 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app may need to use your camera for your profile picture</string>
-	<key>NSContactsUsageDescription</key>
-	<string>This app may need to access your contacts for sharing</string>
+	<string>Navigator uses the camera to take proof-of-delivery photos and to scan package barcodes when you complete a stop.</string>
 	<key>NSLocalUsageDescription</key>
 	<string>This app requires access to send you notifications about order status updates and other important information.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -141,9 +139,9 @@
 	<key>NSMotionUsageDescription</key>
 	<string>Navigator uses motion data to enhance navigation and track physical activity for improved task management.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>This app allows you to download photos to your photo library</string>
+	<string>Navigator saves proof-of-delivery photos to your photo library so you keep a copy of what you captured.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app allows you to upload photos from your photo library</string>
+	<string>Navigator attaches photos from your library as proof of delivery or evidence on an issue you report.</string>
 	<key>NSUserAuthenticationUsageDescription</key>
 	<string>Sign in with Apple is used to authenticate your account.</string>
 	<key>RCTNewArchEnabled</key>
@@ -171,5 +169,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Archivo-Regular.ttf</string>
+		<string>JetBrainsMono-Regular.ttf</string>
+		<string>Archivo-SemiBold.ttf</string>
+		<string>Archivo-Medium.ttf</string>
+		<string>JetBrainsMono-SemiBold.ttf</string>
+		<string>Archivo-Bold.ttf</string>
+		<string>Archivo-ExtraBold.ttf</string>
+		<string>JetBrainsMono-Medium.ttf</string>
+	</array>
 </dict>
 </plist>

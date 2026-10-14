@@ -1,9 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import socketClusterClient from 'socketcluster-client';
+import DeviceInfo from 'react-native-device-info';
 import { consumeAsyncIterator } from '../utils';
 import { useConfig } from './ConfigContext';
+import { useAuth } from './AuthContext';
+import useFleetbase from '../hooks/use-fleetbase';
+import { createSocketAuth, socketClientTag } from '../services/socket-auth';
 
 const SocketClusterContext = createContext(null);
+
+// Auth session of each socket, so channel bookkeeping always lands on the session of the socket it belongs to.
+const socketAuthBySocket = new WeakMap();
 
 /**
  * SocketClusterProvider component that initializes the socket connection
@@ -11,20 +18,37 @@ const SocketClusterContext = createContext(null);
  */
 export const SocketClusterProvider = ({ children }) => {
     const { resolveConnectionConfig } = useConfig();
+    const { authToken, sessionEpoch } = useAuth();
+    const { adapter } = useFleetbase();
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState(null);
 
+    const socketHost = resolveConnectionConfig('SOCKETCLUSTER_HOST');
+    const socketPort = resolveConnectionConfig('SOCKETCLUSTER_PORT');
+    const socketPath = resolveConnectionConfig('SOCKETCLUSTER_PATH');
+    const socketSecure = resolveConnectionConfig('SOCKETCLUSTER_SECURE');
+    const apiHost = adapter?.host ?? resolveConnectionConfig('FLEETBASE_HOST');
+    const apiNamespace = adapter?.namespace ?? 'v1';
+
+    // (Re)create the socket whenever the instance, the driver session or its organization changes, so the
+    // handshake always carries a socket token for the current driver (or none when signed out).
     useEffect(() => {
+        const socketAuth = createSocketAuth({ host: apiHost, namespace: apiNamespace, authToken });
+
         // Initialize the socket connection
         const options = {
-            hostname: resolveConnectionConfig('SOCKETCLUSTER_HOST'),
-            port: resolveConnectionConfig('SOCKETCLUSTER_PORT'),
-            path: resolveConnectionConfig('SOCKETCLUSTER_PATH'),
-            secure: resolveConnectionConfig('SOCKETCLUSTER_SECURE'),
+            hostname: socketHost,
+            port: socketPort,
+            path: socketPath,
+            secure: socketSecure,
+            authEngine: socketAuth.authEngine,
+            query: { client: socketClientTag(DeviceInfo.getVersion()) },
         };
 
         const scSocket = socketClusterClient.create(options);
+        socketAuth.attach(scSocket);
+        socketAuthBySocket.set(scSocket, socketAuth);
 
         // Define handlers for socket events
         const handleConnect = () => {
@@ -61,10 +85,14 @@ export const SocketClusterProvider = ({ children }) => {
             stopDisconnect();
             stopError();
 
+            socketAuth.destroy();
+            socketAuthBySocket.delete(scSocket);
+
             scSocket.disconnect();
+            setIsConnected(false);
             console.log('Socket connection closed.');
         };
-    }, []);
+    }, [socketHost, socketPort, socketPath, socketSecure, apiHost, apiNamespace, authToken, sessionEpoch]);
 
     /**
      * Subscribes to a specific channel.
@@ -79,14 +107,26 @@ export const SocketClusterProvider = ({ children }) => {
             }
 
             try {
+                socketAuthBySocket.get(socket)?.track(channelName);
                 const channel = socket.subscribe(channelName);
                 if (channel.isSubscribed()) {
                     console.log(`Already subscribed to channel "${channelName}".`);
                     return channel;
                 }
 
-                await channel.listener('subscribe').once();
-                console.log(`Subscribed to channel "${channelName}".`);
+                // Wait for the subscription to settle either way. On failure the channel is still returned:
+                // the socket auth session retries it with a fresh token and data then flows to the same iterator.
+                const subscribed = await Promise.race([
+                    channel
+                        .listener('subscribe')
+                        .once()
+                        .then(() => true),
+                    channel
+                        .listener('subscribeFail')
+                        .once()
+                        .then(() => false),
+                ]);
+                console.log(subscribed ? `Subscribed to channel "${channelName}".` : `Subscription to channel "${channelName}" was rejected; retrying with a fresh token.`);
                 return channel;
             } catch (err) {
                 console.warn(`Failed to subscribe to channel "${channelName}":`, err);
@@ -107,6 +147,7 @@ export const SocketClusterProvider = ({ children }) => {
                 return;
             }
 
+            socketAuthBySocket.get(socket)?.untrack(channelName);
             try {
                 await socket.closeChannel(channelName);
                 console.log(`Gracefully closed channel "${channelName}".`);
@@ -128,6 +169,7 @@ export const SocketClusterProvider = ({ children }) => {
                 return;
             }
 
+            socketAuthBySocket.get(socket)?.untrack(channelName);
             try {
                 await socket.killChannel(channelName);
                 console.log(`Forcefully killed channel "${channelName}".`);
@@ -147,6 +189,7 @@ export const SocketClusterProvider = ({ children }) => {
             return;
         }
 
+        socketAuthBySocket.get(socket)?.untrackAll();
         try {
             await socket.closeAllChannels();
             console.log('Gracefully closed all channels.');
@@ -164,6 +207,7 @@ export const SocketClusterProvider = ({ children }) => {
             return;
         }
 
+        socketAuthBySocket.get(socket)?.untrackAll();
         try {
             await socket.killAllChannels();
             console.log('Forcefully killed all channels.');

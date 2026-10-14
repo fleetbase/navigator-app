@@ -25,7 +25,8 @@
         "adb:reverse": "adb reverse tcp:8081 tcp:8081",
         "adb:devmenu": "adb shell input keyevent 82",
         "generate:app-icon": "npx app-icon generate -i ./assets/app-icon.png && node scripts/fix-android-app-icons.js --input ./assets/app-icon.png",
-        "generate:launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background=#111827 --logo-width=100 --flavor=main && node scripts/fix-android-launch-screen.js --input ./assets/splash-screen.png"
+        "generate:launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background=#111827 --logo-width=100 --flavor=main && node scripts/fix-android-launch-screen.js --input ./assets/splash-screen.png",
+        "typecheck": "tsc -p tsconfig.v3.json"
     },
     "dependencies": {
         "@babel/plugin-proposal-async-generator-functions": "^7.20.7",
@@ -152,15 +153,5 @@
         "react-native-i18n@^2.0.15": "patch:react-native-i18n@npm%3A2.0.15#./.yarn/patches/react-native-i18n-npm-2.0.15-7f3cf7cee6.patch",
         "react-native-launch-navigator@^1.0.9": "patch:react-native-launch-navigator@npm%3A1.0.9#./.yarn/patches/react-native-launch-navigator-npm-1.0.9-f069a6b5fd.patch",
         "react-native-notifications@^5.1.0": "patch:react-native-notifications@npm%3A5.1.0#./.yarn/patches/react-native-notifications-npm-5.1.0-3e3b2ea3f8.patch"
-    },
-    "jest": {
-        "preset": "react-native",
-        "setupFiles": [
-            "react-native-gesture-handler/jestSetup.js"
-        ],
-        "modulePathIgnorePatterns": [
-            "<rootDir>/.claude/worktrees/",
-            "<rootDir>/legacy/"
-        ]
     }
 }

@@ -1,16 +1,18 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useTheme } from 'tamagui';
 import { format } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
 import { useAuth } from './AuthContext';
 import useFleetbase from '../hooks/use-fleetbase';
 import useStorage from '../hooks/use-storage';
 import { isArray } from '../utils';
+import { findOrderChatChannel } from '../utils/chat';
 
 const ChatContext = createContext(null);
 
 export const ChatProvider: React.FC = ({ children }) => {
-    const theme = useTheme();
+    // v2 called useTheme() here and never used the result. That dead call made
+    // ChatProvider require a TamaguiProvider ancestor, which broke the v3 root
+    // where the data providers deliberately sit outside the theme provider.
     const { driver } = useAuth();
     const { adapter, fleetbase } = useFleetbase();
     const [channels, setChannels] = useStorage(`${driver?.id ?? 'anon'}_chat_channels`, []);
@@ -31,6 +33,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             getChannelsPromiseRef.current = adapter.get('chat-channels', { sort: '-created_at' });
             const channels = await getChannelsPromiseRef.current;
             setChannels(channels);
+            return channels;
         } catch (err) {
             console.warn('Error loading chat channels:', err);
         } finally {
@@ -112,6 +115,18 @@ export const ChatProvider: React.FC = ({ children }) => {
             }
         },
         [adapter]
+    );
+
+    const getOrderChannel = useCallback(
+        async (order) => {
+            const channel = findOrderChatChannel(channels, order);
+            if (channel) return channel;
+
+            // The order channel is created when a driver is assigned, which may be after channels were last loaded
+            const reloadedChannels = await getChannels();
+            return findOrderChatChannel(reloadedChannels, order);
+        },
+        [channels, getChannels]
     );
 
     const createChannelWithCustomer = useCallback(
@@ -282,6 +297,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             unreadCount,
             sendMessage,
             getChannel,
+            getOrderChannel,
             createChannel,
             updateChannel,
             deleteChannel,
@@ -301,6 +317,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             getChannels,
             sendMessage,
             getChannel,
+            getOrderChannel,
             reloadChannel,
             createChannel,
             updateChannel,
