@@ -20,9 +20,21 @@
  * **A handler must not be able to kill the connection.** Every callback is
  * wrapped, because one thrown error inside an async iterator ends the loop and
  * the driver silently stops receiving anything.
+ *
+ * **The socket is authenticated as the driver.** The handshake carries a
+ * short-lived socket token minted for the signed-in driver
+ * (`POST {host}/{namespace}/socket/token`), through the same in-memory auth
+ * session v2 uses (`services/socket-auth`). The token is refreshed a minute
+ * before it expires; when the server drops the authentication, kicks the
+ * socket out of a channel or refuses a subscription, a fresh token is fetched
+ * and every channel `listen` still holds is subscribed again. A server without
+ * the route (404) and a signed-out app connect anonymously, as before. The
+ * token lives in memory only — never in storage and never in the socket URL.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import socketClusterClient from 'socketcluster-client';
+import { getVersion } from 'react-native-device-info';
+import { createSocketAuth, socketClientTag, type SocketAuth } from '../../services/socket-auth';
 import { parseRealtimeEvent, type RealtimeEvent } from './events';
 import { bumpLiveRefresh } from './liveRefresh';
 
@@ -31,6 +43,24 @@ export interface SocketConfig {
     port?: number;
     path?: string;
     secure?: boolean;
+}
+
+/**
+ * Who the socket connects as. Every field is a primitive so the connection is
+ * rebuilt exactly when one of them changes — and only then.
+ */
+export interface SocketAuthConfig {
+    /** API host the socket token is minted from. */
+    host?: string;
+    namespace?: string;
+    /** Driver bearer token. Absent, the socket connects anonymously. */
+    authToken?: string;
+    /**
+     * Changes whenever a driver session starts or ends, or the organisation
+     * changes. The API can hand back the same bearer across those, and the
+     * handshake still has to be made again for the new session.
+     */
+    session?: string | number;
 }
 
 type Handler = (event: RealtimeEvent) => void;
@@ -70,15 +100,33 @@ interface ScSocket {
     disconnect?: () => void;
 }
 
+/** One socket, the auth session that belongs to it, and how often each channel is held. */
+interface Connection {
+    socket: ScSocket;
+    auth: SocketAuth;
+    holds: Map<string, number>;
+}
+
+function clientVersion(): string | undefined {
+    try {
+        return getVersion();
+    } catch {
+        return undefined;
+    }
+}
+
 export function SocketProvider({
     children,
     config,
     /** Disables the connection entirely — used by tests and by a host that has none. */
     enabled = true,
+    auth,
 }: {
     children: React.ReactNode;
     config?: SocketConfig;
     enabled?: boolean;
+    /** Absent, the socket connects anonymously. */
+    auth?: SocketAuthConfig;
 }) {
     const [isConnected, setIsConnected] = useState(false);
     /*
@@ -88,18 +136,46 @@ export function SocketProvider({
      * again. Holding it in state re-renders the tree once it exists, `listen`
      * is rebuilt around it, and every effect depending on `listen` re-runs.
      */
-    const [socket, setSocket] = useState<ScSocket | null>(null);
+    const [connection, setConnection] = useState<Connection | null>(null);
+    const socket = connection?.socket ?? null;
 
+    const authHost = auth?.host;
+    const authNamespace = auth?.namespace;
+    const authToken = auth?.authToken;
+    const authSession = auth?.session;
+
+    /*
+     * Rebuilt on login, logout, organisation switch (`authToken`, `session`)
+     * and instance reconfiguration (the API host or the socket config), so the
+     * handshake always carries a token for the current driver — or none.
+     */
     useEffect(() => {
         if (!enabled || !config?.hostname) return;
 
-        const created = socketClusterClient.create({
+        // One auth session per socket; it never outlives it.
+        const socketAuth = createSocketAuth({
+            host: authHost ?? '',
+            namespace: authNamespace ?? 'v1',
+            authToken: authToken ?? null,
+        });
+
+        const options = {
             hostname: config.hostname,
             port: config.port,
             path: config.path ?? '/socketcluster/',
             secure: config.secure,
-        }) as unknown as ScSocket;
-        setSocket(created);
+            // In memory only: the token is never written to storage.
+            authEngine: socketAuth.authEngine,
+            // Identifies the client, never the driver — the token is not in the URL.
+            query: { client: socketClientTag(clientVersion()) },
+        };
+        const created = socketClusterClient.create(options as unknown as Parameters<typeof socketClusterClient.create>[0]) as unknown as ScSocket;
+        try {
+            socketAuth.attach(created);
+        } catch {
+            // Without its listeners the socket still works; it just cannot recover its auth.
+        }
+        setConnection({ socket: created, auth: socketAuth, holds: new Map() });
 
         let alive = true;
 
@@ -135,28 +211,43 @@ export function SocketProvider({
         return () => {
             alive = false;
             setIsConnected(false);
-            setSocket(null);
+            setConnection(null);
+            socketAuth.destroy();
             created.disconnect?.();
         };
-    }, [enabled, config?.hostname, config?.port, config?.path, config?.secure]);
+    }, [enabled, config?.hostname, config?.port, config?.path, config?.secure, authHost, authNamespace, authToken, authSession]);
 
     /*
      * SocketCluster re-subscribes its channels by itself after a reconnect, so
      * a subscription only has to be made again when the socket *object*
-     * changes — which is exactly what depending on `socket` does.
+     * changes — which is exactly what depending on `connection` does. A
+     * kick-out or a refused subscription is not a reconnect; the auth session
+     * subscribes those channels again itself, and data keeps reaching the loop
+     * below because SocketCluster routes it by channel name.
      */
     const listen = useCallback((channelName: string, handler: Handler) => {
-        if (!socket || !channelName) return () => {};
+        if (!connection || !channelName) return () => {};
+        const { socket: current, auth: socketAuth, holds } = connection;
+
+        /*
+         * The auth session resubscribes what it tracks after a kick-out or a
+         * refused subscription. Counted, so one of two listeners on a channel
+         * letting go neither closes it under the other nor stops it being
+         * recovered.
+         */
+        holds.set(channelName, (holds.get(channelName) ?? 0) + 1);
+        socketAuth.track(channelName);
 
         let stopped = false;
-        const channel = socket.subscribe(channelName);
+        const channel = current.subscribe(channelName);
 
         void (async () => {
             while (!stopped) {
                 let value: unknown;
                 try {
                     const next = await channel.next();
-                    if (next.done) break;
+                    // Released while waiting; the channel may live on for another listener.
+                    if (stopped || next.done) break;
                     value = next.value;
                 } catch {
                     // The channel ended or errored; stop rather than spin.
@@ -179,10 +270,17 @@ export function SocketProvider({
 
         return () => {
             stopped = true;
+            const remaining = (holds.get(channelName) ?? 1) - 1;
+            if (remaining > 0) {
+                holds.set(channelName, remaining);
+                return;
+            }
+            holds.delete(channelName);
+            socketAuth.untrack(channelName);
             channel.unsubscribe?.();
             channel.close?.();
         };
-    }, [socket]);
+    }, [connection]);
 
     const value = useMemo<SocketValue>(() => ({ isConnected, isReady: !!socket, listen }), [isConnected, socket, listen]);
 

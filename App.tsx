@@ -39,7 +39,7 @@ import { navigatorConfig } from './src/utils/navigator-config';
  * throws. Phase 2 replaces it; the screens that need it are Phase 3 and 4b.
  */
 function DriverBridge(): React.JSX.Element {
-    const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, logout, createDriverSession } = useAuth();
+    const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, sessionEpoch, logout, createDriverSession } = useAuth();
     const { fleetbase } = useFleetbaseV2();
     const { resolveConnectionConfig, setInstanceLinkConfig } = useConfig();
     const { addNotificationListener, removeNotificationListener } = useNotification();
@@ -115,6 +115,9 @@ function DriverBridge(): React.JSX.Element {
             // invalidates every consumer the way v2's did.
             host={resolveConnectionConfig('FLEETBASE_HOST')}
             socket={socket}
+            // The socket authenticates as the driver with `userToken`; this
+            // re-handshakes it on every sign-in, sign-out and org switch.
+            socketSession={sessionEpoch}
             subscribeToPush={subscribeToPush}
             // FLEETBASE_KEY is the organisation's *API key* — an admin-scoped
             // credential that should never sit on a handset. The platform token
