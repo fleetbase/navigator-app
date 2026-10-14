@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import useFleetbase from '../hooks/use-fleetbase';
 import useStorage from '../hooks/use-storage';
 import { isArray } from '../utils';
+import { findOrderChatChannel } from '../utils/chat';
 
 const ChatContext = createContext(null);
 
@@ -32,6 +33,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             getChannelsPromiseRef.current = adapter.get('chat-channels', { sort: '-created_at' });
             const channels = await getChannelsPromiseRef.current;
             setChannels(channels);
+            return channels;
         } catch (err) {
             console.warn('Error loading chat channels:', err);
         } finally {
@@ -113,6 +115,18 @@ export const ChatProvider: React.FC = ({ children }) => {
             }
         },
         [adapter]
+    );
+
+    const getOrderChannel = useCallback(
+        async (order) => {
+            const channel = findOrderChatChannel(channels, order);
+            if (channel) return channel;
+
+            // The order channel is created when a driver is assigned, which may be after channels were last loaded
+            const reloadedChannels = await getChannels();
+            return findOrderChatChannel(reloadedChannels, order);
+        },
+        [channels, getChannels]
     );
 
     const createChannelWithCustomer = useCallback(
@@ -283,6 +297,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             unreadCount,
             sendMessage,
             getChannel,
+            getOrderChannel,
             createChannel,
             updateChannel,
             deleteChannel,
@@ -302,6 +317,7 @@ export const ChatProvider: React.FC = ({ children }) => {
             getChannels,
             sendMessage,
             getChannel,
+            getOrderChannel,
             reloadChannel,
             createChannel,
             updateChannel,
