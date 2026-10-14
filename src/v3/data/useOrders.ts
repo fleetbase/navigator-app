@@ -7,7 +7,7 @@
  * `React.memo` on the row components actually holds.
  */
 import { useCallback, useSyncExternalStore } from 'react';
-import { OrderStore, orderStore, dayKey, type OrderRecord } from './orderStore';
+import { OrderStore, orderStore, dayKey, type OrderRecord, type OrderNotice, type RemovalReason } from './orderStore';
 
 function useStoreSelector<T>(store: OrderStore, select: (s: OrderStore) => T): T {
     const getSnapshot = useCallback(() => select(store), [store, select]);
@@ -38,6 +38,16 @@ export function useOrdersOnDay(day: string | Date = new Date(), store: OrderStor
 
 export function useOrder(id: string | undefined, store: OrderStore = orderStore): OrderRecord | undefined {
     return useStoreSelector(store, useCallback((s: OrderStore) => (id ? s.get(id) : undefined), [id]));
+}
+
+/** Notices about orders that left the store (reassigned), for the lists to show. */
+export function useOrderNotices(store: OrderStore = orderStore): OrderNotice[] {
+    return useStoreSelector(store, useCallback((s: OrderStore) => s.notices(), []));
+}
+
+/** Why this order was removed this session, if it was — screens holding it leave. */
+export function useOrderRemoval(id?: string, store: OrderStore = orderStore): RemovalReason | undefined {
+    return useStoreSelector(store, useCallback((s: OrderStore) => s.removalOf(id), [id]));
 }
 
 /** Count for the Orders tab badge. */

@@ -11,14 +11,26 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl } from 'react-native';
 import { YStack, useTheme } from 'tamagui';
-import { EmptyState, Skeleton } from '../ui/Banner';
+import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { Button } from '../ui/Button';
 import { FailureState } from '../ui/FailureState';
 import { OrderCard, type OrderCardStop } from '../ui/Cards';
 import { Field } from '../ui/Field';
 import { Segmented } from '../ui/Field';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useAllOrders, useOrderQuery, customerNameOf, displayIdOf, payloadOf, trackingNumberOf } from '../data';
+import {
+    useAllOrders,
+    useOrderQuery,
+    useOrderNotices,
+    orderStore,
+    customerNameOf,
+    displayIdOf,
+    payloadOf,
+    trackingNumberOf,
+    isOrderFinished,
+    isBookingOrder,
+} from '../data';
 import { useSync } from '../shell';
 import { formatClock } from '../format';
 import { useSettings } from '../settings';
@@ -26,11 +38,10 @@ import type { OrderRecord } from '../data';
 
 type Segment = 'active' | 'scheduled' | 'completed';
 
-const TERMINAL = new Set(['completed', 'order_completed', 'canceled', 'order_canceled', 'failed']);
-
 function segmentOf(order: OrderRecord): Segment {
-    const status = String(order.status ?? '').toLowerCase();
-    if (TERMINAL.has(status)) return 'completed';
+    // The order config's `complete` flag decides (see data/orderStatus), so a
+    // booking that ends on its own code lands here rather than staying active.
+    if (isOrderFinished(order)) return 'completed';
     // Scheduled but not yet dispatched or started.
     if (!order.started_at && !order.dispatched_at && order.scheduled_at) return 'scheduled';
     return 'active';
@@ -75,7 +86,16 @@ function toStops(order: OrderRecord, t: ReturnType<typeof useTranslation>['t']):
     return stops;
 }
 
-export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onOpenOrder?: (id: string) => void }) {
+export function OrdersScreen({
+    driverId,
+    onOpenOrder,
+    onOpenOffers,
+}: {
+    driverId?: string;
+    onOpenOrder?: (id: string) => void;
+    /** Opens the offers screen: ad-hoc orders nearby that any driver can take. */
+    onOpenOffers?: () => void;
+}) {
     const { t } = useTranslation();
     const theme = useTheme();
     const { units } = useSettings();
@@ -90,6 +110,7 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
     );
 
     const all = useAllOrders();
+    const notices = useOrderNotices();
 
     const rows = useMemo(
         () => all.filter((o) => segmentOf(o) === segment && matches(o, query)),
@@ -118,9 +139,11 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
                         status={item.status}
                         stops={toStops(item, t)}
                         summary={
-                            waypointCount > 1
-                                ? `${t('ordersScreen.waypointCount', { count: waypointCount })} · ${t('ordersScreen.multiStop')}`
-                                : undefined
+                            isBookingOrder(item)
+                                ? t('ordersScreen.job')
+                                : waypointCount > 1
+                                  ? `${t('ordersScreen.waypointCount', { count: waypointCount })} · ${t('ordersScreen.multiStop')}`
+                                  : undefined
                         }
                         distanceM={item.distance}
                         durationS={item.time}
@@ -177,6 +200,24 @@ export function OrdersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
     return (
         <YStack flex={1} backgroundColor="$background" testID="orders-screen">
             <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={space[3]}>
+                {/*
+                  * A reassigned order disappears from the list; this says so,
+                  * rather than leaving the driver to wonder where it went.
+                  */}
+                {notices.map((notice) => (
+                    <Banner
+                        key={notice.orderId}
+                        tone="warning"
+                        message={t('ordersScreen.reassigned', { order: notice.label })}
+                        action={{ label: t('common.dismiss'), onPress: () => orderStore.dismissNotice(notice.orderId) }}
+                        testID={`order-notice-${notice.orderId}`}
+                    />
+                ))}
+                {onOpenOffers ? (
+                    <Button variant="secondary" onPress={onOpenOffers} testID="orders-open-offers">
+                        {t('ordersScreen.offers')}
+                    </Button>
+                ) : null}
                 <Segmented options={segments} value={segment} onChange={setSegment} testID="orders-segments" />
                 <Field
                     value={query}

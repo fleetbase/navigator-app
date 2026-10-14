@@ -30,6 +30,8 @@ export function liveRefreshRevision(): number {
 export function resetLiveRefresh(): void {
     revision = 0;
     listeners.clear();
+    chatRevision = 0;
+    chatListeners.clear();
 }
 
 function subscribe(listener: () => void): () => void {
@@ -45,4 +47,33 @@ function subscribe(listener: () => void): () => void {
  */
 export function useLiveRefresh(): number {
     return useSyncExternalStore(subscribe, liveRefreshRevision, liveRefreshRevision);
+}
+
+/*
+ * Chat has its own counter. A message is far more frequent than an order
+ * change, and refetching every order list because someone said "on my way"
+ * would spend the driver's data on nothing.
+ */
+let chatRevision = 0;
+const chatListeners = new Set<() => void>();
+
+/** A chat message arrived somewhere — inbox and open conversations look again. */
+export function bumpChatRefresh(): void {
+    chatRevision += 1;
+    for (const listener of chatListeners) listener();
+}
+
+function chatRevisionNow(): number {
+    return chatRevision;
+}
+
+function subscribeChat(listener: () => void): () => void {
+    chatListeners.add(listener);
+    return () => {
+        chatListeners.delete(listener);
+    };
+}
+
+export function useChatRefresh(): number {
+    return useSyncExternalStore(subscribeChat, chatRevisionNow, chatRevisionNow);
 }

@@ -5,7 +5,8 @@ import config, { SCHEMES, type SchemeName } from '../../theme';
 import { OrderDetailScreen } from '../OrderDetailScreen';
 import { FleetbaseProvider, MutationQueue } from '../../api';
 import { SyncProvider } from '../../shell';
-import { orderStore, clearOrderConfigCache, type OrderRecord } from '../../data';
+import { orderStore, clearOrderConfigCache, recordProof, resetProofLedger, type OrderRecord } from '../../data';
+import { recordOrderChange, resetOrderChanges, bumpLiveRefresh } from '../../realtime';
 import { clearV3 } from '../../api/storage';
 import { settingsStore } from '../../settings';
 
@@ -57,6 +58,8 @@ function mockConfig(flow: unknown[]) {
 beforeEach(() => {
     clearV3();
     orderStore.clear();
+    resetOrderChanges();
+    resetProofLedger();
     clearOrderConfigCache();
     settingsStore.reset();
     fetchMock = jest.fn();
@@ -436,6 +439,257 @@ describe('OrderDetailScreen', () => {
 
         expect(orderStore.get('order_1')?.status).toBe('driver_enroute');
         expect(testIDs(t)).toContain('advance-queued');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+});
+
+/* -- Order operations (contract 1, 4, 5, 6). ---------------------------- */
+
+const ok = (body: unknown) => Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(body) });
+
+/** Most specific fragment first: `orders/order_1` also matches its sub-routes. */
+function mockRoutes(routes: [string, unknown | ((url: string, init?: { method?: string; body?: string }) => unknown)][], flow: unknown[] = FLOWS.five) {
+    fetchMock.mockImplementation((url: string, init?: { method?: string; body?: string }) => {
+        const u = String(url);
+        for (const [fragment, body] of routes) {
+            if (u.includes(fragment)) return ok(typeof body === 'function' ? (body as (u: string, i?: unknown) => unknown)(u, init) : body);
+        }
+        return ok(u.includes('order-configs') ? { id: 'cfg_1', flow } : {});
+    });
+}
+
+const press = async (t: ReactTestRenderer.ReactTestRenderer, id: string) => {
+    await ReactTestRenderer.act(async () => {
+        (byID(t, id).props as { onPress?: () => void }).onPress?.();
+        await Promise.resolve();
+    });
+};
+
+const calls = (fragment: string, method?: string) =>
+    fetchMock.mock.calls.filter(([url, init]) => String(url).includes(fragment) && (!method || (init as { method?: string } | undefined)?.method === method));
+
+describe('OrderDetailScreen — order operations', () => {
+    const located = (lng: number, lat: number) => ({ type: 'Point', coordinates: [lng, lat] });
+
+    it('shows what changed, and offers to re-open navigation when the drop-off moved', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { dropoff: { id: 'place_d', name: '8 Marina View', location: located(103.85, 1.28) }, entities: [] } }));
+            recordOrderChange({ orderId: 'order_1', summary: 'Drop-off changed to 8 Marina View, Tower B', changes: ['dropoff'] });
+        });
+        const onNavigate = jest.fn();
+        const t = await renderWith({ onNavigate });
+        expect(textOf(t)).toContain('Drop-off changed to 8 Marina View, Tower B');
+        await press(t, 'order-changed-reopen-navigation');
+        expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ latitude: 1.28, longitude: 103.85 }));
+        expect(testIDs(t)).not.toContain('order-changed');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('does not offer navigation for a change that did not move the drop-off', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ payload: { dropoff: { name: 'X', location: located(1, 2) }, entities: [] } }));
+            recordOrderChange({ orderId: 'order_1', summary: 'Note added', changes: ['notes'] });
+        });
+        const t = await renderWith({ onNavigate: jest.fn() });
+        expect(testIDs(t)).toContain('order-changed');
+        expect(testIDs(t)).not.toContain('order-changed-reopen-navigation');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('navigates to the stop being headed to, not the final drop-off', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(
+                order({
+                    payload: {
+                        pickup: { id: 'place_p', name: 'Wareham Depot', location: located(10, 20) },
+                        dropoff: { id: 'place_d', name: 'Harbour View', location: located(30, 40) },
+                        current_waypoint: 'place_p',
+                        entities: [],
+                    },
+                })
+            );
+        });
+        const onNavigate = jest.fn();
+        const t = await renderWith({ onNavigate });
+        await press(t, 'navigate-to-dropoff');
+        expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ latitude: 20, longitude: 10 }));
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('refetches the order when the server says something moved', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const t = await render();
+        const exact = () => fetchMock.mock.calls.filter(([url]) => /\/orders\/order_1(\?|$)/.test(String(url))).length;
+        const before = exact();
+        await ReactTestRenderer.act(async () => {
+            bumpLiveRefresh();
+            await Promise.resolve();
+        });
+        expect(exact()).toBeGreaterThan(before);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('shows quantities, notes, unavailable items and substitutes', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(
+                order({
+                    payload: {
+                        dropoff: { name: 'X' },
+                        entities: [
+                            { internal_id: 'e1', name: 'Iced Latte', meta: { quantity: 2, note: 'No ice' } },
+                            { internal_id: 'e2', name: 'Croissant', meta: { unavailable: true } },
+                            { internal_id: 'e3', name: 'Pain au chocolat', meta: { substitute_for: 'e2' } },
+                        ],
+                    },
+                })
+            );
+        });
+        const t = await render();
+        const text = textOf(t);
+        expect(text).toContain('2 ×');
+        expect(text).toContain('Note: No ice');
+        expect(testIDs(t)).toContain('entity-e2-unavailable');
+        expect(text).toContain('Substitute for Croissant');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('holds completion until cash on delivery is confirmed as collected', async () => {
+        mockConfig(FLOWS.two);
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(
+                order({
+                    status: 'created',
+                    meta: { payment: { state: 'to_collect' } },
+                    payload: { dropoff: { name: 'X' }, entities: [], cod_amount: 5000, cod_currency: 'SGD' },
+                })
+            );
+        });
+        const t = await render();
+        expect(testIDs(t)).toContain('cod-to-collect');
+        expect(testIDs(t)).toContain('cod-confirm-first');
+        expect((byID(t, 'advance-activity').props as { disabled?: boolean }).disabled).toBe(true);
+
+        await press(t, 'cod-confirm');
+        expect(testIDs(t)).toContain('cod-collected');
+        expect((byID(t, 'advance-activity').props as { disabled?: boolean }).disabled).toBe(false);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('asks nothing when the payment summary says it is paid', async () => {
+        mockConfig(FLOWS.two);
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ status: 'created', meta: { payment: { state: 'paid' } }, payload: { dropoff: { name: 'X' }, entities: [], cod_amount: 5000 } }));
+        });
+        const t = await render();
+        expect(testIDs(t)).toContain('cod-settled');
+        expect(testIDs(t)).not.toContain('cod-confirm');
+        expect((byID(t, 'advance-activity').props as { disabled?: boolean }).disabled).toBe(false);
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('takes the next step from the server when it answers, resolving a branch instead of deferring it', async () => {
+        const flow = [
+            { code: 'arrived', status: 'Arrived', activities: ['completed', 'failed'] },
+            { code: 'completed', status: 'Order Completed', complete: true, sequence: 1 },
+            { code: 'failed', status: 'Failed', sequence: 2, logic: [{ type: 'and', conditions: [] }] },
+        ];
+        mockRoutes([['next-activity', [{ code: 'completed', status: 'Order Completed', complete: true }, { code: 'failed', status: 'Failed' }]]], flow);
+        ReactTestRenderer.act(() => { orderStore.upsert(order({ status: 'arrived' })); });
+        const t = await render();
+        await ReactTestRenderer.act(async () => { await Promise.resolve(); });
+        const ids = testIDs(t);
+        expect(ids).not.toContain('next-ambiguous');
+        expect(ids).toContain('advance-activity');
+        expect(ids).toContain('advance-activity-failed');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('advances with the captured proof instead of asking for it again', async () => {
+        mockConfig([
+            { code: 'dispatched', status: 'Order Dispatched', activities: ['completed'] },
+            { code: 'completed', status: 'Order Completed', complete: true, require_pod: true, pod_method: 'signature' },
+        ]);
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ status: 'dispatched' }));
+            recordProof('order_1', 'completed', { proofId: 'proof_9' });
+        });
+        const onCaptureProof = jest.fn();
+        const t = await renderWith({ onCaptureProof });
+        await ReactTestRenderer.act(async () => { await Promise.resolve(); });
+
+        expect(onCaptureProof).not.toHaveBeenCalled();
+        const updates = calls('update-activity', 'POST');
+        expect(updates).toHaveLength(1);
+        expect(JSON.parse(String((updates[0][1] as { body?: string }).body))).toMatchObject({ activity: 'completed', proof: 'proof_9' });
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('leaves when the order is reassigned away from this driver', async () => {
+        ReactTestRenderer.act(() => { orderStore.upsert(order()); });
+        const onRemoved = jest.fn();
+        const t = await renderWith({ onRemoved });
+        await ReactTestRenderer.act(async () => {
+            orderStore.remove('order_1', 'reassigned');
+        });
+        expect(onRemoved).toHaveBeenCalledWith('reassigned');
+        expect(testIDs(t)).toContain('order-detail-removed');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('labels a booking as a job, with its slot and a bring-to-the-job checklist', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(
+                order({
+                    meta: { is_booking: true, booking: { start: '2026-10-14T09:00:00Z', end: '2026-10-14T10:00:00Z', provider: 'driver_me' } },
+                    payload: { dropoff: { name: 'X' }, entities: [{ internal_id: 'p1', name: 'Pressure washer', meta: { quantity: 1 } }] },
+                })
+            );
+        });
+        const t = await render();
+        const ids = testIDs(t);
+        expect(ids).toContain('order-kind-job');
+        expect(ids).toContain('order-schedule');
+        expect(ids).toContain('bring-checklist');
+        expect(textOf(t)).toContain('Bring to the job');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('calls the customer, and messages them and dispatch through the order\'s threads', async () => {
+        const dispatchThread = { id: 'chat_channel_d', meta: { order_public_id: 'order_1', kind: 'driver' } };
+        const groupThread = { id: 'chat_channel_g', meta: { order_public_id: 'order_1', kind: 'group' } };
+        mockRoutes([['chat-channels', [dispatchThread, groupThread, { id: 'chat_channel_other', meta: { order_public_id: 'order_2', kind: 'driver' } }]]]);
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(order({ customer: { name: 'Priya Patel', phone: '+6590000000' } }));
+        });
+        const openUrl = jest.fn(() => Promise.resolve());
+        const onOpenChannel = jest.fn();
+        const t = await renderWith({ openUrl, onOpenChannel, onMessageDispatch: jest.fn() });
+        await ReactTestRenderer.act(async () => { await Promise.resolve(); });
+
+        await press(t, 'call-customer');
+        expect(openUrl).toHaveBeenCalledWith('tel:+6590000000');
+        await press(t, 'message-dispatch');
+        expect(onOpenChannel).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'chat_channel_d' }));
+        await press(t, 'message-customer');
+        expect(onOpenChannel).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'chat_channel_g' }));
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('shows delivery instructions and the scheduled window', async () => {
+        ReactTestRenderer.act(() => {
+            orderStore.upsert(
+                order({
+                    scheduled_at: '2026-10-14T09:00:00Z',
+                    notes: 'Ring twice',
+                    payload: { dropoff: { name: 'X', meta: { instructions: 'Leave with the concierge' } }, entities: [] },
+                })
+            );
+        });
+        const t = await render();
+        const text = textOf(t);
+        expect(text).toContain('Leave with the concierge');
+        expect(text).toContain('Ring twice');
+        expect(testIDs(t)).toContain('order-schedule');
         ReactTestRenderer.act(() => t.unmount());
     });
 });

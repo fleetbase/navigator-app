@@ -27,6 +27,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { useProofCapture, proofMethodOf, type ProofMethod, type ProofOutcome } from '../data/useProofCapture';
+import { recordProof } from '../data/proofLedger';
 import type { CapturedPhoto } from '../../components/CameraCapture';
 import { formatClock } from '../format';
 
@@ -69,7 +70,7 @@ export function ProofCaptureScreen({
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const method: ProofMethod = proofMethodOf(podMethod);
-    const { capture, isCapturing, error } = useProofCapture(orderId);
+    const { capture, isCapturing, error, lastProofId } = useProofCapture(orderId);
 
     const [scanned, setScanned] = useState<string[]>([]);
     const [photos, setPhotos] = useState<string[]>([]);
@@ -78,9 +79,17 @@ export function ProofCaptureScreen({
     const send = useCallback(
         async (payload: Parameters<typeof capture>[0]) => {
             const outcome = await capture(payload, subjectId);
-            if (outcome !== 'failed') onCaptured?.(outcome);
+            if (outcome === 'failed') return;
+            /*
+             * Recorded against the activity it was captured for, so the order
+             * screen advances on return instead of opening this screen again.
+             * Whole-order proof only — a per-item capture does not satisfy the
+             * activity.
+             */
+            if (!subjectId) recordProof(orderId, activityCode, { proofId: lastProofId(), queued: outcome === 'queued' });
+            onCaptured?.(outcome);
         },
-        [capture, onCaptured, subjectId]
+        [capture, onCaptured, subjectId, orderId, activityCode, lastProofId]
     );
 
     const onScan = useCallback(

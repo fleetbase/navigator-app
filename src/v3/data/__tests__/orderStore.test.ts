@@ -108,3 +108,49 @@ describe('dayKey', () => {
         expect(dayKey('not-a-date')).toBe('invalid');
     });
 });
+
+describe('order store — reassignment and reconciliation', () => {
+    const fresh = () => new OrderStore({ byId: {}, allIds: [], version: 0 });
+    const listed = (id: string, over: Partial<OrderRecord> = {}) => order(id, { _listed_for: 'driver_me', ...over });
+
+    it('removes what a full driver-scoped page no longer returns, and calls the active ones reassigned', () => {
+        const s = fresh();
+        s.upsertMany([listed('a'), listed('b'), listed('c', { status: 'completed' })]);
+        const removed = s.reconcile('driver_me', [listed('a')], { complete: true });
+        expect(removed.sort()).toEqual(['b', 'c']);
+        expect(s.get('b')).toBeUndefined();
+        expect(s.removalOf('b')).toBe('reassigned');
+        // A finished order dropping out is housekeeping, not news.
+        expect(s.removalOf('c')).toBeUndefined();
+        expect(s.notices().map((n) => n.orderId)).toEqual(['b']);
+    });
+
+    it('leaves rows a truncated page cannot vouch for', () => {
+        const s = fresh();
+        s.upsertMany([
+            listed('new', { created_at: '2026-08-20T12:00:00Z' }),
+            listed('gone', { created_at: '2026-08-20T11:00:00Z' }),
+            listed('old', { created_at: '2026-08-01T09:00:00Z' }),
+        ]);
+        // Page of 2 (= limit), oldest returned is 10:00 — `old` is outside the window.
+        s.reconcile('driver_me', [listed('new', { created_at: '2026-08-20T12:00:00Z' }), listed('x', { created_at: '2026-08-20T10:00:00Z' })], { complete: false });
+        expect(s.get('gone')).toBeUndefined();
+        expect(s.get('old')).toBeDefined();
+    });
+
+    it('never reconciles away an order this query did not list', () => {
+        const s = fresh();
+        // Opened from a manifest stop; never part of the driver's list.
+        s.upsert(order('from-route'));
+        s.reconcile('driver_me', [], { complete: true });
+        expect(s.get('from-route')).toBeDefined();
+    });
+
+    it('dismisses a notice', () => {
+        const s = fresh();
+        s.upsert(order('a'));
+        s.remove('a', 'reassigned');
+        s.dismissNotice('a');
+        expect(s.notices()).toEqual([]);
+    });
+});

@@ -27,14 +27,25 @@ import { Identifier } from '../ui/Identifier';
 import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Button } from '../ui/Button';
-import { EmptyState, Skeleton } from '../ui/Banner';
+import { Banner, EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { RouteProgress } from '../ui/Progress';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSettings } from '../settings';
 import { useSync } from '../shell';
-import { useActiveOrders, useOrderQuery, useTracker, chooseEta, currentStop, displayIdOf, type OrderRecord } from '../data';
+import {
+    useActiveOrders,
+    useOrderQuery,
+    useTracker,
+    useOrderNotices,
+    orderStore,
+    chooseEta,
+    currentStop,
+    displayIdOf,
+    type OrderRecord,
+} from '../data';
+import { useLiveRefresh } from '../realtime/liveRefresh';
 import { formatDuration, formatMeters, formatClock } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
@@ -54,7 +65,7 @@ function NextStopCard({
     units: 'metric' | 'imperial';
     t: (k: string, o?: Record<string, unknown>) => string;
     onOpenOrder?: (id: string) => void;
-    onNavigate?: (d: { latitude: number; longitude: number; label?: string }) => void;
+    onNavigate?: (d: { latitude: number; longitude: number; label?: string }, orderId?: string) => void;
 }) {
     const stop = currentStop(tracker);
     const eta = chooseEta(tracker);
@@ -128,7 +139,7 @@ function NextStopCard({
                     {onNavigate && stop?.latitude != null && stop?.longitude != null ? (
                         <Button
                             flex={1}
-                            onPress={() => onNavigate({ latitude: stop.latitude!, longitude: stop.longitude!, label: stop.address ?? undefined })}
+                            onPress={() => onNavigate({ latitude: stop.latitude!, longitude: stop.longitude!, label: stop.address ?? undefined }, order.id)}
                             testID="today-navigate"
                         >
                             {t('today.navigate')}
@@ -149,7 +160,8 @@ export function TodayScreen({
     driverId?: string;
     reloadToken?: number;
     onOpenOrder?: (orderId: string) => void;
-    onNavigate?: (destination: { latitude: number; longitude: number; label?: string }) => void;
+    /** `orderId` lets the hand-off follow the order's current destination. */
+    onNavigate?: (destination: { latitude: number; longitude: number; label?: string }, orderId?: string) => void;
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
@@ -160,10 +172,13 @@ export function TodayScreen({
     // so both surfaces show the same rows without fetching twice.
     const { state, error, retry } = useOrderQuery({ driver_assigned: driverId, limit: 50 }, { enabled: !!driverId });
     const orders = useActiveOrders();
+    const notices = useOrderNotices();
     const current = orders[0];
     const isLoading = state === 'loading' && orders.length === 0;
     const failed = state === 'error';
-    const { tracker, isLoading: trackerLoading, failed: trackerFailed } = useTracker(current?.id, reloadToken);
+    // Re-asked when the server says something moved (a new drop-off changes the next stop).
+    const revision = useLiveRefresh();
+    const { tracker, isLoading: trackerLoading, failed: trackerFailed } = useTracker(current?.id, (reloadToken ?? 0) + revision);
 
     if (isLoading) {
         return (
@@ -184,6 +199,15 @@ export function TodayScreen({
 
     return (
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="today">
+            {notices.map((notice) => (
+                <Banner
+                    key={notice.orderId}
+                    tone="warning"
+                    message={t('ordersScreen.reassigned', { order: notice.label })}
+                    action={{ label: t('common.dismiss'), onPress: () => orderStore.dismissNotice(notice.orderId) }}
+                    testID={`today-notice-${notice.orderId}`}
+                />
+            ))}
 
             {!current ? (
                 <EmptyState testID="today-empty" title={t('today.emptyTitle')} body={t('today.emptyBody')} />
