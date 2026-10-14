@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useTheme } from 'tamagui';
 import { format } from 'date-fns';
 import { Order } from '@fleetbase/sdk';
 import { useAuth } from './AuthContext';
@@ -11,7 +10,9 @@ import { findOrderChatChannel } from '../utils/chat';
 const ChatContext = createContext(null);
 
 export const ChatProvider: React.FC = ({ children }) => {
-    const theme = useTheme();
+    // v2 called useTheme() here and never used the result. That dead call made
+    // ChatProvider require a TamaguiProvider ancestor, which broke the v3 root
+    // where the data providers deliberately sit outside the theme provider.
     const { driver } = useAuth();
     const { adapter, fleetbase } = useFleetbase();
     const [channels, setChannels] = useStorage(`${driver?.id ?? 'anon'}_chat_channels`, []);

@@ -1,5 +1,5 @@
 import { toast as reactNativeToast, ToastPosition as ReactNativeToastPosition } from '@backpackapp-io/react-native-toast';
-import { getTheme } from './index';
+import { getTheme } from './theme';
 
 export const ToastPosition = ReactNativeToastPosition;
 
