@@ -81,6 +81,22 @@ FLEETBASE_HOST=https://api.fleetbase.io
 FLEETBASE_KEY=
 ```
 
+### Android Release Signing
+
+Do not put signing credentials in `.env`. `react-native-config` compiles every `.env` key into the app (Android `BuildConfig` and string resources, iOS `GeneratedDotEnv.m`), so anything there ships readable inside the APK, AAB or IPA.
+
+Release builds read the upload keystore settings from `android/local.properties` (gitignored) or from environment variables:
+
+```
+# android/local.properties
+ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE=/absolute/path/to/upload.keystore
+ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD=
+ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS=
+ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD=
+```
+
+In CI, export the same four names as environment variables from your secret store instead of writing them to `.env`. A relative `STORE_FILE` path resolves against `android/app`. Debug builds don't need any of these.
+
 ### Running in Simulator
 
 Once you have completed the installation and environment configuration, you're all set to give your app a test-drive in the simulator so you can play around.
