@@ -4,6 +4,7 @@ on:
     pull_request:
         branches:
             - main
+            - 'release/v*'
             - 'dev-v*'
     push:
         branches: [main]
@@ -169,6 +170,10 @@ jobs:
 
             - name: Set up Android SDK 36
               uses: android-actions/setup-android@v3
+              with:
+                  # The default also requests the legacy "tools" package, which
+                  # current cmdline-tools no longer provide (sdkmanager exits 1).
+                  packages: platform-tools
 
             - name: Install Android SDK components
               run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
