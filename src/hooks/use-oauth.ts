@@ -6,7 +6,6 @@ import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { Settings as FacebookSDKSettings, LoginManager as FacebookLoginManager, Profile as FacebookProfile } from 'react-native-fbsdk-next';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const APP_LINK_PREFIX = config('APP_LINK_PREFIX');
@@ -21,12 +20,6 @@ const useOAuth = () => {
     const login = async (provider) => {
         if (provider === 'apple') {
             const result = await appleLogin();
-            setAuthState(result);
-            return result;
-        }
-
-        if (provider === 'facebook') {
-            const result = await facebookLogin();
             setAuthState(result);
             return result;
         }
@@ -78,52 +71,6 @@ const useOAuth = () => {
         }
     };
 
-    const facebookLogin = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const currentProfile = await FacebookProfile.getCurrentProfile();
-            if (currentProfile) {
-                return authenticateWithFacebookProfile(currentProfile);
-            }
-
-            // Perform Facebook Sign-In
-            const facebookAuthResponse = await FacebookLoginManager.logInWithPermissions(['public_profile', 'email']);
-            console.log('[facebookAuthResponse]', facebookAuthResponse);
-            if (facebookAuthResponse.isCancelled) {
-                console.log('Facebook Sign-In was Canceled');
-                return setLoading(false);
-            }
-
-            // Authenticate with Storefront
-            const profile = await FacebookProfile.getCurrentProfile();
-            if (profile) {
-                return authenticateWithFacebookProfile(profile);
-            }
-
-            return facebookAuthResponse;
-        } catch (err) {
-            setError(err.message);
-            setLoading(false);
-            console.warn('Facebook Sign-In error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const authenticateWithFacebookProfile = async (profile) => {
-        const customerJson = await adapter.post('customers/login-with-facebook', {
-            facebookUserId: profile.userID,
-            email: profile.email,
-            name: profile.name,
-            avatarUrl: profile.imageURL,
-        });
-
-        const customer = createCustomerSession(customerJson);
-        return customer;
-    };
-
     const googleLogin = async () => {
         setLoading(true);
         setError(null);
@@ -159,18 +106,7 @@ const useOAuth = () => {
         if (provider === 'google') {
             return typeof config('GOOGLE_CLIENT_ID') === 'string';
         }
-
-        if (provider === 'facebook') {
-            return typeof config('FACEBOOK_APP_ID') === 'string' && typeof config('FACEBOOK_CLIENT_TOKEN') === 'string';
-        }
     };
-
-    useEffect(() => {
-        if (loginSupported('facebook')) {
-            FacebookSDKSettings.setAppID(config('FACEBOOK_APP_ID'));
-            FacebookSDKSettings.initializeSDK();
-        }
-    }, []);
 
     useEffect(() => {
         if (loginSupported('google')) {
@@ -191,7 +127,6 @@ const useOAuth = () => {
         loginSupported,
         appleLoginIsSupported: loginSupported('apple'),
         googleLoginIsSupported: loginSupported('google'),
-        facebookLoginIsSupported: loginSupported('facebook'),
     };
 };
 

@@ -1,4 +1,0 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="facebook_app_id" tools:ignore="ResourceCycle">@string/facebook_app_id</string>
-    <string name="facebook_client_token" tools:ignore="ResourceCycle">@string/facebook_client_token</string>
-</resources>
