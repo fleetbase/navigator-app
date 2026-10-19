@@ -116,15 +116,25 @@ android {
     }
     signingConfigs {
         release {
-            def uploadStoreFile = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE")
-            def uploadStorePassword = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD")
-            def uploadKeyAlias = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS")
-            def uploadKeyPassword = project.env.get("ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD")
+            // Signing secrets must not live in .env: react-native-config compiles every .env key
+            // into BuildConfig and string resources, so they would ship readable in the APK/AAB.
+            // Prefer android/local.properties (gitignored) or CI environment variables.
+            def localProperties = new Properties()
+            def localPropertiesFile = rootProject.file("local.properties")
+            if (localPropertiesFile.exists()) {
+                localPropertiesFile.withInputStream { localProperties.load(it) }
+            }
+            def signingValue = { key -> project.env.get(key) ?: localProperties.getProperty(key) ?: System.getenv(key) }
+
+            def uploadStoreFile = signingValue("ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE")
+            def uploadStorePassword = signingValue("ANDROID_NAVIGATOR_APP_UPLOAD_STORE_PASSWORD")
+            def uploadKeyAlias = signingValue("ANDROID_NAVIGATOR_APP_UPLOAD_KEY_ALIAS")
+            def uploadKeyPassword = signingValue("ANDROID_NAVIGATOR_APP_UPLOAD_KEY_PASSWORD")
             def hasReleaseSigning = [uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword].every { it }
             def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
 
             if (isReleaseBuild && !hasReleaseSigning) {
-                throw new GradleException("Android release signing requires all ANDROID_NAVIGATOR_APP_UPLOAD_* environment values.")
+                throw new GradleException("Android release signing requires ANDROID_NAVIGATOR_APP_UPLOAD_STORE_FILE, _STORE_PASSWORD, _KEY_ALIAS and _KEY_PASSWORD. Set them in android/local.properties or as environment variables, not in .env (react-native-config compiles .env values into the app binary).")
             }
 
             if (hasReleaseSigning) {
