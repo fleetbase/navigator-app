@@ -8,7 +8,7 @@ import { faPlug } from '@fortawesome/free-solid-svg-icons';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import { titleize } from '../utils/format';
 import { navigatorConfig } from '../utils';
-import { PhoneLoginButton, AppleLoginButton, FacebookLoginButton, GoogleLoginButton } from '../components/Buttons';
+import { PhoneLoginButton, AppleLoginButton, GoogleLoginButton } from '../components/Buttons';
 import useOAuth from '../hooks/use-oauth';
 import LinearGradient from 'react-native-linear-gradient';
 import DeviceInfo from 'react-native-device-info';

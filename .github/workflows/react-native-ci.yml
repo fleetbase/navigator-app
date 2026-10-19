@@ -4,6 +4,7 @@ on:
     pull_request:
         branches:
             - main
+            - 'release/v*'
             - 'dev-v*'
     push:
         branches: [main]
@@ -65,8 +66,6 @@ jobs:
                   echo "APP_LINK_PREFIX=flbnavigator" >> .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" >> .env
                   echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
-                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
-                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
                   echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
                   echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
                   echo "TRANSISTORSOFT_LICENSE_KEY_ANDROID=$TRANSISTORSOFT_LICENSE_KEY_ANDROID" >> .env
@@ -121,8 +120,6 @@ jobs:
                   echo "APP_LINK_PREFIX=flbnavigator" >> .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" >> .env
                   echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
-                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
-                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
                   echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
                   echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
                   echo "TRANSISTORSOFT_LICENSE_KEY_ANDROID=$TRANSISTORSOFT_LICENSE_KEY_ANDROID" >> .env
@@ -173,6 +170,10 @@ jobs:
 
             - name: Set up Android SDK 36
               uses: android-actions/setup-android@v3
+              with:
+                  # The default also requests the legacy "tools" package, which
+                  # current cmdline-tools no longer provide (sdkmanager exits 1).
+                  packages: platform-tools
 
             - name: Install Android SDK components
               run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
@@ -259,8 +260,6 @@ jobs:
                   echo "APP_LINK_PREFIX=flbnavigator" >> .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" >> .env
                   echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
-                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
-                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
                   echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
                   echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
                   echo "TRANSISTORSOFT_LICENSE_KEY_IOS=$TRANSISTORSOFT_LICENSE_KEY_IOS" >> .env

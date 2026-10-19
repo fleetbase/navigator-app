@@ -2454,7 +2454,6 @@ __metadata:
     react-native-device-info: ^14.0.4
     react-native-event-listeners: ^1.0.7
     react-native-fast-image: ^8.6.3
-    react-native-fbsdk-next: ^13.4.0
     react-native-file-viewer: ^2.1.5
     react-native-fs: ^2.20.0
     react-native-gesture-handler: ^2.20.2
@@ -15062,19 +15061,6 @@ __metadata:
     react: ^17 || ^18
     react-native: ">=0.60.0"
   checksum: 29289cb6b2eae0983c8922b22e2d9de3be07322bb7991c5def19f95eadefaedb0e308ff0b38cc1d0444e8bd4fe94a7621a99a2d3d9298100bcb60b3144677234
-  languageName: node
-  linkType: hard
-
-"react-native-fbsdk-next@npm:^13.4.0":
-  version: 13.4.3
-  resolution: "react-native-fbsdk-next@npm:13.4.3"
-  peerDependencies:
-    expo: ">=47.0.0"
-    react-native: ">=0.63.3"
-  peerDependenciesMeta:
-    expo:
-      optional: true
-  checksum: 87b10aa5cf09a20df9f7b915181c0f0d844853912c2e98fae561612ccd3658de21c7f55da64d106eef5a3cab60e3551ccee4c84f3efaed48fa2aca1b0b86c1f5
   languageName: node
   linkType: hard
 
