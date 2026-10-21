@@ -14,12 +14,11 @@
  *    ships a resolved `Fill` / `Border` / `Text` triple per scheme, so components
  *    read one token and never ask what scheme they're in.
  */
-import { config, parseConfigObjectString } from '../../utils/tamagui';
+import { getBuildBranding } from '../branding/build-branding';
 import {
     SCHEMES,
     type SchemeName,
     schemePalettes,
-    brandPresets,
     nightPrimary,
     feedbackHues,
     statusHues,
@@ -35,25 +34,13 @@ function camel(key: string): string {
 }
 
 /**
- * Resolve the brand once, at module load. A white-label build ships one brand,
- * which is why there are four themes rather than four-per-brand.
- *
- * NAVIGATOR_BRAND_PRIMARY (raw hex) wins over NAVIGATOR_BRAND / APP_THEME (preset
- * name). APP_THEME is the v2 env var, honoured so existing builds keep their accent.
+ * The brand, resolved once at module load from the build's branding
+ * (brand/navigator.brand.ts over the legacy env keys — see src/v3/branding). A
+ * white-label build ships one brand, which is why there are four themes rather
+ * than four-per-brand.
  */
-function resolveBrand() {
-    const presetName = config('NAVIGATOR_BRAND', config('APP_THEME', 'fleetbase'));
-    const preset = brandPresets[String(presetName).toLowerCase()] ?? brandPresets.fleetbase;
-
-    const explicitPrimary = config('NAVIGATOR_BRAND_PRIMARY', '');
-    if (typeof explicitPrimary === 'string' && /^#[0-9a-f]{6}$/i.test(explicitPrimary)) {
-        return { ...preset, primary: explicitPrimary, sunlightPrimary: explicitPrimary };
-    }
-
-    return preset;
-}
-
-const brand = resolveBrand();
+const branding = getBuildBranding().branding;
+const brand = branding.colors;
 
 /** Feedback + status tint colours are derived, not hand-authored per scheme. */
 function feedbackFamily(scheme: SchemeName) {
@@ -181,20 +168,12 @@ function buildScheme(scheme: SchemeName) {
 }
 
 /**
- * Env overrides, applied LAST so they can actually reach a semantic token.
- * Format is the v2 one: `key:value,key2:value2`.
- *
- * Note the parser splits on `,` and `:`, so values containing either are not
- * expressible — fine for hex, not for rgba(). Keep to hex.
+ * Token overrides from branding (`colors.tokens`, and the legacy CUSTOM_COLORS*
+ * env keys), applied LAST so they can actually reach a semantic token — shared,
+ * then per mode, then per scheme.
  */
 function overridesFor(scheme: SchemeName): Record<string, string> {
-    const shared = parseConfigObjectString(config('CUSTOM_COLORS', ''));
-    const perMode = schemePalettes[scheme].isDark
-        ? parseConfigObjectString(config('CUSTOM_COLORS_DARK', ''))
-        : parseConfigObjectString(config('CUSTOM_COLORS_LIGHT', ''));
-    const perScheme = parseConfigObjectString(config(`CUSTOM_COLORS_${scheme.toUpperCase()}`, ''));
-
-    return { ...shared, ...perMode, ...perScheme };
+    return branding.colors.tokens[scheme] ?? {};
 }
 
 export type WaypointTheme = ReturnType<typeof buildScheme>;

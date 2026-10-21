@@ -9,6 +9,7 @@
  */
 import { readJSON, writeJSON } from '../api/storage';
 import type { SchemeName } from '../theme';
+import { getBuildBranding } from '../branding/build-branding';
 
 /** `system` follows the OS; the rest pin a scheme. */
 export type ThemePreference = 'system' | SchemeName;
@@ -27,8 +28,11 @@ export interface Settings {
     notifyNearbyOffers: boolean;
 }
 
+const appearance = getBuildBranding().branding.appearance;
+
 export const DEFAULT_SETTINGS: Settings = {
-    theme: 'system',
+    // The build's default (branding `appearance.defaultScheme`); `system` unless a brand says otherwise.
+    theme: appearance.defaultScheme,
     units: 'metric',
     navigationApp: 'apple',
     language: 'system',
@@ -76,7 +80,14 @@ export const settingsStore = new SettingsStore();
  * `system` maps to dark/light only — night and sunlight are deliberate
  * driver choices, never inferred.
  */
-export function resolveScheme(pref: ThemePreference, systemIsDark: boolean): SchemeName {
-    if (pref === 'system') return systemIsDark ? 'dark' : 'light';
-    return pref;
+export function resolveScheme(pref: ThemePreference, systemIsDark: boolean, brand = appearance): SchemeName {
+    // A brand that fixes the scheme, or doesn't offer the one stored, wins over the preference.
+    const effective = !brand.allowUserToggle || !isOffered(pref, brand.schemes) ? brand.defaultScheme : pref;
+    if (effective === 'system') return systemIsDark ? 'dark' : 'light';
+    return effective;
+}
+
+/** Whether a theme preference is one this build offers (`system` needs both dark and light). */
+export function isOffered(pref: ThemePreference, schemes: SchemeName[] = appearance.schemes): boolean {
+    return pref === 'system' ? schemes.includes('dark') && schemes.includes('light') : schemes.includes(pref);
 }

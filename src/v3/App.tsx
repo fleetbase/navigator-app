@@ -29,6 +29,7 @@ import { FleetbaseProvider, mutationQueue, useQueue, useReachable, type Mutation
 import { SocketProvider, PushContext, type SocketConfig, type PushSubscribe } from './realtime';
 import { navigationRef, flushPendingNavigation } from './navigation/navigationRef';
 import { useActiveOrderCount } from './data';
+import { preloadInitialScreens } from './extensions/app-screen-registry';
 
 
 /**
@@ -200,8 +201,14 @@ function ThemedRoot({ scheme, children }: { scheme?: SchemeName; children: (s: S
     // which the v3 tree does not mount — without this the app sits on the splash
     // forever. Runs once the themed tree has committed, so there is no flash of
     // an unthemed frame.
+    //
+    // The first screens, component overrides and custom routes load before the
+    // splash goes (they load through `import()`, see src/v3/extensions), so the
+    // first frame a driver sees is never a blank loading frame. Capped, so a slow
+    // device still leaves the splash.
     React.useEffect(() => {
-        void BootSplash.hide({ fade: true }).catch(() => {});
+        const cap = new Promise((resolve) => setTimeout(resolve, 1500));
+        void Promise.race([preloadInitialScreens(), cap]).then(() => BootSplash.hide({ fade: true }).catch(() => {}));
     }, []);
     return children(scheme ?? resolved);
 }

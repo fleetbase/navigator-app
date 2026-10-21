@@ -100,3 +100,6 @@ navigator.config.js
 .tamagui
 vendor
 *.pxd
+
+# Written by scripts/link-brand.js from brand/ (or the root templates)
+src/v3/generated/

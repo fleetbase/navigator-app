@@ -10,10 +10,25 @@
         "jsx": "react-jsx",
         "allowJs": true,
         "checkJs": false,
-        "types": ["jest", "node", "react", "react-native"],
+        "types": [
+            "jest",
+            "node",
+            "react",
+            "react-native"
+        ],
         "paths": {
-            "@fleetbase/sdk": ["node_modules/@fleetbase/sdk/types/fleetbase.d.ts"]
+            "@fleetbase/sdk": [
+                "node_modules/@fleetbase/sdk/types/fleetbase.d.ts"
+            ]
         }
     },
-    "include": ["src/v3/**/*.ts", "src/v3/**/*.tsx"]
+    "include": [
+        "src/v3/**/*.ts",
+        "src/v3/**/*.tsx",
+        "navigator.brand.ts",
+        "navigator.extensions.ts",
+        "brand/**/*.ts",
+        "brand/**/*.tsx"
+    ],
+    "//brand": "brand/ is a client build's own folder (never shipped upstream); it is type-checked with the app so an upgrade that changes a screen id, params or a branding field fails here rather than at runtime."
 }

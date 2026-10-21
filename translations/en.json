@@ -1414,5 +1414,11 @@
                 "signature": "Signature"
             }
         }
+    },
+    "extensions": {
+        "loadError": {
+            "title": "This screen could not be shown",
+            "body": "Something went wrong loading it. Go back and try again; if it keeps happening, tell dispatch."
+        }
     }
 }

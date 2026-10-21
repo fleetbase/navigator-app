@@ -18,6 +18,7 @@
  * passes `activity.code` straight through) silently missed.
  */
 import { statusHues, type StatusTone, type StatusShape } from './palette';
+import { getBuildBranding } from '../branding/build-branding';
 
 export type { StatusTone, StatusShape };
 
@@ -147,12 +148,21 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
  */
 export const FALLBACK_TONE: StatusTone = 'created';
 
+/**
+ * A build's own statuses (branding `statuses`): custom FleetOps order-config
+ * statuses mapped onto the design's tones, so they keep a glyph and shape.
+ * Checked before the built-in table, so a build can also re-tone a known status.
+ */
+const brandStatuses = getBuildBranding().branding.statuses;
+
 export function isKnownStatus(status: unknown): boolean {
-    return normalizeStatus(status) in TONE_BY_STATUS;
+    const key = normalizeStatus(status);
+    return key in brandStatuses || key in TONE_BY_STATUS;
 }
 
 export function toneFor(status: unknown): StatusTone {
-    return TONE_BY_STATUS[normalizeStatus(status)] ?? FALLBACK_TONE;
+    const key = normalizeStatus(status);
+    return brandStatuses[key]?.tone ?? TONE_BY_STATUS[key] ?? FALLBACK_TONE;
 }
 
 const descriptorCache = new Map<string, StatusDescriptor>();
@@ -177,12 +187,14 @@ export function describeStatus(status: unknown): StatusDescriptor {
         textToken: `$${name}Text`,
         glyph,
         shape,
-        // A recognised status uses the design's label; an unrecognised one is
-        // humanised so it is at least readable rather than raw snake_case.
-        defaultLabel: isKnownStatus(key) ? label : humanizeStatus(key),
+        // A recognised status uses the design's label; an unrecognised one — or
+        // a build's own — is humanised so it is at least readable rather than
+        // raw snake_case.
+        defaultLabel: key in TONE_BY_STATUS && !(key in brandStatuses) ? label : humanizeStatus(key),
         // Reuse the existing (currently dead) orderStatuses.* namespace in
         // translations/en.json; unknown keys fall back to the humanised string.
-        labelKey: `orderStatuses.${key || 'unknown'}`,
+        // A build's own status may name its own key (brand/translations).
+        labelKey: brandStatuses[key]?.labelKey ?? `orderStatuses.${key || 'unknown'}`,
     };
 
     descriptorCache.set(key, descriptor);

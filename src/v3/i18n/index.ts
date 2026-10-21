@@ -17,6 +17,7 @@ import { I18nManager } from 'react-native';
 import I18n from 'i18n-js';
 import en from '../../../translations/en.json';
 import es from '../../../translations/es.json';
+import brandTranslations from '../generated/brand-translations';
 import { pseudolocalize } from './pseudo';
 import { DEFAULT_LOCALE, isRtlLocale, localeInfo } from './locales';
 
@@ -24,15 +25,41 @@ export * from './locales';
 export * from './direction';
 export { pseudolocalize, pseudolocalizeString } from './pseudo';
 
-export const catalogues: Record<string, object> = { en, es };
+/**
+ * Deep-merges a build's strings over a catalogue: a brand may replace any key or
+ * add its own (by convention under `Brand.*`) without copying the file.
+ */
+export function mergeCatalogue(base: object, overrides: object): object {
+    const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    for (const [key, value] of Object.entries(overrides ?? {})) {
+        const current = out[key];
+        out[key] =
+            value && typeof value === 'object' && !Array.isArray(value) && current && typeof current === 'object' && !Array.isArray(current)
+                ? mergeCatalogue(current, value)
+                : value;
+    }
+    return out;
+}
+
+/*
+ * brand/translations/<locale>.json (linked by scripts/link-brand.js) merge over
+ * the shipped catalogues; a locale the app doesn't ship is added as is, and is
+ * offered once it is in LOCALES (locales.ts).
+ */
+const shipped: Record<string, object> = { en, es };
+for (const [locale, strings] of Object.entries(brandTranslations)) {
+    shipped[locale] = shipped[locale] ? mergeCatalogue(shipped[locale], strings) : strings;
+}
+
+export const catalogues: Record<string, object> = shipped;
 
 /*
  * The pseudo-locales are built, not shipped: a development build gets them
  * for free and a release build never carries them. See locales.ts.
  */
 if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    catalogues['en-XA'] = pseudolocalize(en);
-    catalogues['ar-XB'] = pseudolocalize(en, { rtl: true });
+    catalogues['en-XA'] = pseudolocalize(catalogues.en);
+    catalogues['ar-XB'] = pseudolocalize(catalogues.en, { rtl: true });
 }
 
 I18n.fallbacks = true;

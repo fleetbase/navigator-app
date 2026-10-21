@@ -24,29 +24,10 @@
  * Screen-scoped values therefore travel by context (`DriverIdContext`), never by
  * closing over a prop.
  */
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import { useEffect, useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { YStack } from 'tamagui';
-import { ScreenHeader } from '../ui/ScreenHeader';
-import { useTranslation } from '../i18n/useTranslation';
-import SettingsScreen from '../screens/SettingsScreen';
-import HelpScreen from '../screens/HelpScreen';
-import ProofCaptureScreen from '../screens/ProofCaptureScreen';
-import MyVehicleScreen from '../screens/MyVehicleScreen';
-import TrailerDetailScreen from '../screens/TrailerDetailScreen';
-import NotEnabledScreen from '../screens/NotEnabledScreen';
-import EarningsScreen from '../screens/EarningsScreen';
-import InspectionScreen from '../screens/InspectionScreen';
-import InspectionChecklistScreen from '../screens/InspectionChecklistScreen';
-import InspectionReviewScreen from '../screens/InspectionReviewScreen';
-import InspectionResultScreen from '../screens/InspectionResultScreen';
-import InspectionDetailScreen from '../screens/InspectionDetailScreen';
-import DestinationScreen from '../screens/DestinationScreen';
-import ChangeVehicleScreen from '../screens/ChangeVehicleScreen';
-import OffersScreen from '../screens/OffersScreen';
-import { vehicleOf, vehicleDescription, useOrder, useOrderRemoval, currentDestination, payloadOf, stopLabel, useChatChannels, useChatUnreadTotal, setChatUnreadTotal } from '../data';
+import { useChatChannels, useChatUnreadTotal, setChatUnreadTotal } from '../data';
 import {
     useDriverChannel,
     useChatChannelSubscriptions,
@@ -56,674 +37,93 @@ import {
     destinationOf,
     applyRealtimeEvent,
 } from '../realtime';
-import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { openConversation, openOrder, openOrdersList } from './navigationRef';
-import { getVersion, getBuildNumber } from 'react-native-device-info';
-import { useFleetbase } from '../api';
-import OrdersScreen from '../screens/OrdersScreen';
-import OrderDetailScreen from '../screens/OrderDetailScreen';
-import EditPayloadItemScreen from '../screens/EditPayloadItemScreen';
-import ItemDetailScreen from '../screens/ItemDetailScreen';
-import OrderTimelineScreen from '../screens/OrderTimelineScreen';
-import FuelLogScreen from '../screens/FuelLogScreen';
-import FuelReportScreen from '../screens/FuelReportScreen';
-import FuelReportCreateScreen from '../screens/FuelReportCreateScreen';
-import IssuesScreen from '../screens/IssuesScreen';
-import IssueDetailScreen from '../screens/IssueDetailScreen';
-import IssueCreateScreen from '../screens/IssueCreateScreen';
-import AccountScreen from '../screens/AccountScreen';
-import OrgSwitcherScreen from '../screens/OrgSwitcherScreen';
-import ProfileEditScreen from '../screens/ProfileEditScreen';
-import NavigationHandoffScreen from '../screens/NavigationHandoffScreen';
-import PermissionsPrimerScreen from '../screens/PermissionsPrimerScreen';
-import SyncQueueScreen from '../screens/SyncQueueScreen';
-import TodayScreen from '../screens/TodayScreen';
-import RouteScreen from '../screens/RouteScreen';
-import StopDetailScreen from '../screens/StopDetailScreen';
-import StopExecutionScreen from '../screens/StopExecutionScreen';
-import OptimisePreviewScreen from '../screens/OptimisePreviewScreen';
-import InboxScreen from '../screens/InboxScreen';
-import ConversationScreen from '../screens/ConversationScreen';
-import NewConversationScreen from '../screens/NewConversationScreen';
-import { useDriver } from '../data';
-import type { FuelReportRecord, IssueRecord, ChatChannelRecord, TrailerRecord, InspectionFormRecord, InspectionSubmissionRecord } from '../data';
 import { TabBar, type TabBadges } from './TabBar';
+import { tabIcons, type TabIconName } from '../ui/Icon';
+import { withHeader } from './withHeader';
+import { PermissionsPrimer } from './routes/fixed';
+import {
+    DriverIdContext,
+    DriverUserIdContext,
+    FeaturesContext,
+    OrganizationContext,
+    SignOutContext,
+    type Features,
+} from './session';
+import { screenSlot } from '../extensions/screens/screen-slot';
+import { AppScreenRegistryProvider } from '../extensions/app-screen-registry';
+import { customRoutesFor, orderTabs, routeComponent, type CustomTab, type StackRoute } from '../extensions/navigation';
+import { customNavigation } from '../extensions/build-navigation';
+import { CORE_TABS, type CoreTab } from '../extensions/tabs';
+import { getBuildBranding } from '../branding/build-branding';
+
+// Session values and shared route hooks live in ./session; re-exported so
+// existing imports of them from here keep working.
+export { useDriverId, useDriverUserId, useSignOut, useFeatures, useOrganization, useHandoffDestination, type Features } from './session';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-
 const screenOptions = { headerShown: false } as const;
 const modalOptions = { presentation: 'modal' } as const;
 
-/**
- * Wraps a pushed screen with our own title bar and back control.
- *
- * Every route was `headerShown: false`, so a driver who tapped into a fuel
- * report, an issue, an item or the sync queue had no title telling them where
- * they were and no visible way back — only the iOS edge-swipe, which is
- * invisible and unusable with gloves on.
- *
- * The header is composed *inside* the screen rather than passed as the
- * navigator's `header` option, which was the first attempt: react-native-screens
- * hosts a custom header in its own native subtree, outside the Tamagui
- * provider, and every themed component in it threw "No theme and no parent?".
- * A wrapper keeps the header in the same tree as the screen it belongs to, and
- * the shell's own header stays where it is, above the navigator.
+/*
+ * Every overridable screen is a slot (src/v3/extensions): the navigator names a
+ * stable screen id, and the registry renders the default, a client override or a
+ * selected variant. Declared once at module scope so the component identity is
+ * stable — an inline wrapper would remount on every render. Header-wrapped
+ * screens wrap the *slot*, so an override keeps the title bar and back control.
  */
-function withHeader<P extends object>(titleKey: string, Screen: React.ComponentType<P>) {
-    function Headered(props: P & { navigation?: { goBack: () => void; canGoBack?: () => boolean } }) {
-        const { t } = useTranslation();
-        const nav = props.navigation;
-        const canGoBack = nav?.canGoBack ? nav.canGoBack() : Boolean(nav);
-        return (
-            <YStack flex={1} backgroundColor="$background">
-                <ScreenHeader title={t(titleKey)} onBack={canGoBack && nav ? () => nav.goBack() : undefined} />
-                <Screen {...(props as P)} />
-            </YStack>
-        );
-    }
-    Headered.displayName = `withHeader(${titleKey})`;
-    return Headered;
-}
+const TodayHome = screenSlot('today.home');
+const RouteHome = screenSlot('route.home');
+const OrdersHome = screenSlot('orders.list');
+const InboxHome = screenSlot('inbox.list');
+const AccountHome = screenSlot('account.home');
 
-/** The signed-in driver's public id, for screens that scope a query by it. */
-const DriverIdContext = createContext<string | undefined>(undefined);
-export const useDriverId = () => useContext(DriverIdContext);
-
-/** The driver's *user* id — chat identifies people by user, not by driver. */
-const DriverUserIdContext = createContext<string | undefined>(undefined);
-export const useDriverUserId = () => useContext(DriverUserIdContext);
-
-/** Explicit sign-out, handed down from the host app. */
-const SignOutContext = createContext<(() => void) | undefined>(undefined);
-export const useSignOut = () => useContext(SignOutContext);
-
-/**
- * Organisation-level feature switches. Every entry defaults to off, and an
- * off surface renders its "not enabled" state — never fake data (invariant 8).
- */
-export interface Features {
-    /** H2: driver wallet earnings via the ledger extension. */
-    earnings?: boolean;
-}
-const FeaturesContext = createContext<Features>({});
-export const useFeatures = () => useContext(FeaturesContext);
-
-/** Current organisation, and the host's handler for a completed switch. */
-const OrganizationContext = createContext<{ id?: string; onSwitched?: (driver: unknown) => void }>({});
-export const useOrganization = () => useContext(OrganizationContext);
-
-/* -- Inspections (E2–E5). ------------------------------------------------- */
-
-type InspectionParams = {
-    route: { params?: { formId?: string; vehicleId?: string; vehicleName?: string; form?: InspectionFormRecord; afterSwap?: boolean } };
-    navigation: Nav;
-};
-
-/** The assigned vehicle, from the driver record, like My vehicle does it. */
-function useAssignedVehicle() {
-    const driverId = useDriverId();
-    const { driver } = useDriver(driverId);
-    const vehicle = vehicleOf(driver);
-    return { driverId, driver, vehicleId: vehicle?.id, vehicleName: vehicleDescription(vehicle) ?? vehicle?.name ?? undefined, odometer: vehicle?.odometer };
-}
-
-function Inspection({ route, navigation }: InspectionParams) {
-    const { driverId, vehicleId, vehicleName } = useAssignedVehicle();
-    const reloadToken = useFocusCount();
-    return (
-        <InspectionScreen
-            driverId={driverId}
-            vehicleId={route.params?.vehicleId ?? vehicleId}
-            vehicleName={route.params?.vehicleName ?? vehicleName}
-            afterSwap={route.params?.afterSwap}
-            reloadToken={reloadToken}
-            onStart={(form, forVehicle) =>
-                navigation.navigate('InspectionChecklist', { formId: form.id, form, vehicleId: forVehicle, vehicleName: route.params?.vehicleName ?? vehicleName })
-            }
-            onOpenSubmission={(submission) => navigation.navigate('InspectionDetail', { submissionId: submission.id, submission })}
-        />
-    );
-}
-
-function InspectionChecklist({ route, navigation }: InspectionParams) {
-    const p = route.params ?? {};
-    return (
-        <InspectionChecklistScreen
-            formId={String(p.formId ?? '')}
-            vehicleId={p.vehicleId}
-            vehicleName={p.vehicleName}
-            seedForm={p.form}
-            onPause={navigation.goBack}
-            onReview={(formId, vehicleId) => navigation.navigate('InspectionReview', { formId, vehicleId, form: p.form, vehicleName: p.vehicleName })}
-        />
-    );
-}
-
-function InspectionReview({ route, navigation }: InspectionParams) {
-    const p = route.params ?? {};
-    const { driverId, driver, odometer } = useAssignedVehicle();
-    const odometerSeed = Number(odometer);
-    return (
-        <InspectionReviewScreen
-            formId={String(p.formId ?? '')}
-            vehicleId={p.vehicleId}
-            vehicleName={p.vehicleName}
-            driverId={driverId}
-            driverName={driver?.name ?? undefined}
-            seedForm={p.form}
-            odometerSeed={Number.isFinite(odometerSeed) ? odometerSeed : undefined}
-            onSubmitted={(outcome, _form, unsafe) => {
-                if (outcome.kind === 'failed') return;
-                const submission = outcome.kind === 'sent' ? outcome.submission : outcome.receipt;
-                navigation.navigate('InspectionResult', { submission, vehicleName: p.vehicleName, unsafe });
-            }}
-        />
-    );
-}
-
-function InspectionResult({
-    route,
-    navigation,
-}: {
-    route: { params?: { submission?: InspectionSubmissionRecord; vehicleName?: string; unsafe?: boolean } };
-    navigation: Nav;
-}) {
-    const submission = route.params?.submission;
-    if (!submission) return null;
-    return (
-        <InspectionResultScreen
-            submission={submission}
-            vehicleName={route.params?.vehicleName}
-            unsafe={route.params?.unsafe}
-            onChooseVehicle={() => navigation.navigate('ChangeVehicle', {})}
-            onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation' })}
-            onDone={() => navigation.navigate('Inspection', {})}
-        />
-    );
-}
-
-function InspectionDetail({ route }: { route: { params?: { submissionId?: string; submission?: InspectionSubmissionRecord } } }) {
-    return <InspectionDetailScreen submissionId={String(route.params?.submissionId ?? '')} seed={route.params?.submission} />;
-}
-
-/* -- Not enabled yet: honest states, not build-time placeholders. --------- */
-function Documents() {
-    return <NotEnabledScreen feature="documents" />;
-}
-function Earnings() {
-    const { earnings } = useFeatures();
-    const reloadToken = useFocusCount();
-    return earnings ? <EarningsScreen reloadToken={reloadToken} /> : <NotEnabledScreen feature="earnings" />;
-}
-
-type Nav = {
-    navigate: (route: string, params?: object) => void;
-    goBack: () => void;
-    popToTop?: () => void;
-};
-
-/**
- * Leaves a screen whose order was taken off this driver (reassigned), back to
- * the top of the stack — the list there says why. Only the focused screen
- * leaves; the ones beneath it go with the pop.
- */
-function useLeaveWhenRemoved(orderId: string | undefined, navigation: Nav) {
-    const removal = useOrderRemoval(orderId);
-    const isFocused = useIsFocused();
-    useEffect(() => {
-        if (!removal || !isFocused) return;
-        if (navigation.popToTop) navigation.popToTop();
-        else navigation.goBack();
-    }, [removal, isFocused, navigation]);
-}
-
-/* -- Route tab. ----------------------------------------------------------- */
-
-type StopParams = { route: { params?: { manifestId?: string; stopId?: string } }; navigation: Nav };
-
-/** Orders live in their own tab; a stop's order is opened there. */
-const openOrderFrom = (navigation: Nav) => (orderId: string) =>
-    navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId } });
-
-function RouteHome({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const reloadToken = useFocusCount();
-    return (
-        <RouteScreen
-            driverId={driverId}
-            reloadToken={reloadToken}
-            onOpenStop={(manifestId, stopId) => navigation.navigate('StopDetail', { manifestId, stopId })}
-            onOptimise={(manifestId) => navigation.navigate('OptimisePreview', { manifestId })}
-            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
-        />
-    );
-}
-
-function StopDetail({ route, navigation }: StopParams) {
-    return (
-        <StopDetailScreen
-            manifestId={String(route.params?.manifestId ?? '')}
-            stopId={String(route.params?.stopId ?? '')}
-            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
-            onOpenOrder={openOrderFrom(navigation)}
-            onComplete={(manifestId, stopId) => navigation.navigate('StopExecution', { manifestId, stopId })}
-        />
-    );
-}
-
-function StopExecution({ route, navigation }: StopParams) {
-    return (
-        <StopExecutionScreen
-            manifestId={String(route.params?.manifestId ?? '')}
-            stopId={String(route.params?.stopId ?? '')}
-            onOpenOrder={openOrderFrom(navigation)}
-            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
-            onDone={() => navigation.navigate('RouteHome')}
-        />
-    );
-}
-
-function OptimisePreview({ route, navigation }: { route: { params?: { manifestId?: string } }; navigation: Nav }) {
-    return <OptimisePreviewScreen manifestId={String(route.params?.manifestId ?? '')} onDone={navigation.goBack} />;
-}
-
-/* -- Orders tab. ---------------------------------------------------------- */
-
-function OrdersHome({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    return (
-        <OrdersScreen
-            driverId={driverId}
-            onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })}
-            onOpenOffers={() => navigation.navigate('Offers')}
-        />
-    );
-}
-
-function OrderDetail({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
-    const orderId = route.params?.orderId;
-    // Focus is a refetch: back from proof capture, from a chat, from the app
-    // being backgrounded — the order may have changed meanwhile.
-    const reloadToken = useFocusCount();
-    useLeaveWhenRemoved(orderId, navigation);
-    return (
-        <OrderDetailScreen
-            orderId={String(orderId ?? '')}
-            reloadToken={reloadToken}
-            onOpenEntity={({ id, entity }) => navigation.navigate('EntityDetail', { orderId, entityId: id, entity })}
-            // The order id travels, not just the point: the hand-off reads the
-            // order's *current* destination, so an edit made after this tap
-            // still lands the driver at the right door.
-            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination, orderId })}
-            onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId })}
-            onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
-            onChangeDestination={() => navigation.navigate('Destination', { orderId })}
-            onOpenChannel={(channel) => navigation.navigate('Inbox', { screen: 'Conversation', params: { channel, channelId: channel.id }, initial: false })}
-            onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation', initial: false })}
-        />
-    );
-}
-
-function EntityDetail({
-    route,
-    navigation,
-}: {
-    route: { params?: { orderId?: string; entityId?: string; entity?: Record<string, unknown> } };
-    navigation: Nav;
-}) {
-    useLeaveWhenRemoved(route.params?.orderId, navigation);
-    return (
-        <ItemDetailScreen
-            entityId={route.params?.entityId}
-            entity={route.params?.entity}
-            onBack={navigation.goBack}
-            onEdit={(entity) => navigation.navigate('EditPayloadItem', { orderId: route.params?.orderId, entity })}
-        />
-    );
-}
-
-function OrderTimeline({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
-    useLeaveWhenRemoved(route.params?.orderId, navigation);
-    return <OrderTimelineScreen orderId={String(route.params?.orderId ?? '')} />;
-}
-
-/**
- * With an `orderId`, the destination is read from the order as it is now
- * (`current_waypoint`, else the drop-off) — never the point captured when the
- * button was tapped. A store moving the drop-off while this screen is open
- * re-renders it with the new address. `destination` is the fallback, and the
- * only input for stops that are not an order's (a manifest stop).
- */
-export function useHandoffDestination(orderId?: string, fallback?: Destination): Destination | undefined {
-    const order = useOrder(orderId);
-    return useMemo(() => {
-        if (!order) return fallback;
-        const payload = payloadOf(order);
-        const stop = currentDestination(payload);
-        return (
-            fromGeoPoint(stop?.location, stopLabel(stop)) ??
-            fromGeoPoint(payload.dropoff?.location, payload.dropoff?.name ?? payload.dropoff?.address) ??
-            fallback
-        );
-    }, [order, fallback]);
-}
-
-function NavigationHandoff({
-    route,
-    navigation,
-}: {
-    route: { params?: { destination?: Destination; orderId?: string } };
-    navigation: Nav;
-}) {
-    useLeaveWhenRemoved(route.params?.orderId, navigation);
-    const destination = useHandoffDestination(route.params?.orderId, route.params?.destination);
-    return <NavigationHandoffScreen destination={destination} onDone={navigation.goBack} />;
-}
-
-function EditPayloadItem({
-    route,
-    navigation,
-}: {
-    route: { params?: { orderId?: string; entity?: { id: string } } };
-    navigation: Nav;
-}) {
-    return (
-        <EditPayloadItemScreen
-            orderId={String(route.params?.orderId ?? '')}
-            entity={route.params?.entity ?? { id: '' }}
-            onDone={navigation.goBack}
-        />
-    );
-}
-
-/* -- Account: fuel log. ---------------------------------------------------- */
-
-/**
- * Counts arrivals at a screen, so it can refetch on return without knowing
- * anything about navigation. Incremented in an effect rather than during
- * render — a ref bumped mid-render is a side effect, and double-counts.
- */
-function useFocusCount(): number {
-    const isFocused = useIsFocused();
-    const [count, setCount] = useState(0);
-    useEffect(() => {
-        if (isFocused) setCount((n) => n + 1);
-    }, [isFocused]);
-    return count;
-}
-
-function FuelLog({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const reloadToken = useFocusCount();
-    return (
-        <FuelLogScreen
-            driverId={driverId}
-            reloadToken={reloadToken}
-            onOpenReport={({ report, previous }) => navigation.navigate('FuelReport', { report, previous })}
-            onCreate={() => navigation.navigate('FuelReportCreate', {})}
-        />
-    );
-}
-
-function FuelReport({ route }: { route: { params?: { report?: FuelReportRecord; previous?: FuelReportRecord } } }) {
-    const report = route.params?.report;
-    if (!report) return null;
-    return <FuelReportScreen report={report} previous={route.params?.previous} />;
-}
-
-function FuelReportCreate({ route, navigation }: { route: { params?: { last?: FuelReportRecord; currency?: string } }; navigation: Nav }) {
-    const driverId = useDriverId();
-    return (
-        <FuelReportCreateScreen
-            driverId={driverId}
-            lastReport={route.params?.last}
-            currency={route.params?.currency}
-            onDone={() => navigation.goBack()}
-        />
-    );
-}
-
-/* -- Account: issues. ------------------------------------------------------ */
-
-function Issues({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const reloadToken = useFocusCount();
-    return (
-        <IssuesScreen
-            driverId={driverId}
-            reloadToken={reloadToken}
-            onOpenIssue={(issue) => navigation.navigate('IssueDetail', { issue })}
-            onCreate={() => navigation.navigate('IssueCreate', {})}
-        />
-    );
-}
-
-function IssueDetail({ route }: { route: { params?: { issue?: IssueRecord } } }) {
-    const issue = route.params?.issue;
-    if (!issue) return null;
-    return <IssueDetailScreen issue={issue} />;
-}
-
-function IssueCreate({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    return <IssueCreateScreen driverId={driverId} onDone={() => navigation.goBack()} />;
-}
-
-/* -- Account. -------------------------------------------------------------- */
-
-function AccountHome({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const reloadToken = useFocusCount();
-    const signOut = useSignOut();
-    return (
-        <AccountScreen
-            driverId={driverId}
-            reloadToken={reloadToken}
-            features={useFeatures()}
-            onNavigate={(route) => navigation.navigate(route, {})}
-            onSignOut={signOut}
-        />
-    );
-}
-
-function TodayHome({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const reloadToken = useFocusCount();
-    return (
-        <TodayScreen
-            driverId={driverId}
-            reloadToken={reloadToken}
-            onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId }, initial: false })}
-            onNavigate={(destination, orderId) => navigation.navigate('NavigationHandoff', { destination, orderId })}
-        />
-    );
-}
-
-function SyncQueue() {
-    return <SyncQueueScreen />;
-}
-
-function PermissionsPrimer({ navigation }: { navigation: Nav }) {
-    return <PermissionsPrimerScreen onDone={navigation.goBack} />;
-}
-
-function ProfileEdit({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const { driver } = useDriver(driverId);
-    return <ProfileEditScreen driverId={driverId} driver={driver} onSaved={navigation.goBack} onCancel={navigation.goBack} />;
-}
-
-function OrgSwitcher({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const { id, onSwitched } = useOrganization();
-    return (
-        <OrgSwitcherScreen
-            driverId={driverId}
-            currentOrganizationId={id}
-            onSwitched={(driver) => {
-                onSwitched?.(driver);
-                navigation.goBack();
-            }}
-            onDone={navigation.goBack}
-        />
-    );
-}
-
-/* -- Inbox. ---------------------------------------------------------------- */
-
-function InboxHome({ navigation }: { navigation: Nav }) {
-    const userId = useDriverUserId();
-    const reloadToken = useFocusCount();
-    return (
-        <InboxScreen
-            userId={userId}
-            reloadToken={reloadToken}
-            onOpenChannel={(channel) => navigation.navigate('Conversation', { channel })}
-            onCompose={() => navigation.navigate('NewConversation', {})}
-        />
-    );
-}
-
-function Conversation({ route }: { route: { params?: { channel?: ChatChannelRecord; channelId?: string } } }) {
-    const userId = useDriverUserId();
-    const channel = route.params?.channel;
-    // A push carries only the channel id; the screen fetches the rest.
-    return <ConversationScreen channelId={channel?.id ?? route.params?.channelId} channel={channel} userId={userId} />;
-}
-
-function NewConversation({ navigation }: { navigation: Nav }) {
-    const userId = useDriverUserId();
-    return (
-        <NewConversationScreen
-            userId={userId}
-            onCancel={navigation.goBack}
-            // Replace, so Back from the new conversation returns to the inbox
-            // rather than to the picker that created it.
-            onCreated={(channel) => navigation.navigate('Conversation', { channel })}
-        />
-    );
-}
-
-/* -- Stacks. -------------------------------------------------------------- */
-
-function Help({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const { adapter } = useFleetbase();
-    // The native build's version, not package.json's — a bug report has to name
-    // the binary the driver is actually running.
-    const appVersion = `${getVersion()} (${getBuildNumber()})`;
-    return (
-        <HelpScreen
-            driverId={driverId}
-            appVersion={appVersion}
-            host={adapter.host}
-            // Dispatch is reached through the Inbox — there is no separate
-            // support channel in FleetOps, and inventing one would put driver
-            // questions somewhere nobody reads.
-            onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation' })}
-        />
-    );
-}
-
-function ProofCapture({ route, navigation }: { route: { params?: { orderId?: string; activityCode?: string; activityLabel?: string; podMethod?: string | null; expected?: string[] } }; navigation: Nav }) {
-    const p = route.params ?? {};
-    useLeaveWhenRemoved(p.orderId, navigation);
-    return (
-        <ProofCaptureScreen
-            orderId={p.orderId ?? ''}
-            activityCode={p.activityCode ?? ''}
-            activityLabel={p.activityLabel ?? ''}
-            podMethod={p.podMethod}
-            expected={p.expected}
-            // Back to the order once the proof is captured or queued. The
-            // capture is recorded against the activity (proofLedger), so the
-            // order advances on return rather than asking for proof again.
-            onCaptured={() => navigation.goBack()}
-            onCancel={() => navigation.goBack()}
-        />
-    );
-}
-
-function TrailerDetail({ route }: { route: { params?: { trailerId?: string; trailer?: TrailerRecord } } }) {
-    return <TrailerDetailScreen trailerId={String(route.params?.trailerId ?? '')} seed={route.params?.trailer} />;
-}
-
-function MyVehicle({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    const { driver } = useDriver(driverId);
-    // The driver record already carries the assignment; the screen fetches the
-    // full vehicle from it rather than asking dispatch what is assigned.
-    const vehicle = vehicleOf(driver);
-    return (
-        <MyVehicleScreen
-            vehicleId={vehicle?.id}
-            onChangeVehicle={() => navigation.navigate('ChangeVehicle', { currentVehicleId: vehicle?.id })}
-            onOpenTrailer={(trailer) => navigation.navigate('TrailerDetail', { trailerId: trailer.id, trailer })}
-        />
-    );
-}
-
-function Destination({ route, navigation }: { route: { params?: { orderId?: string } }; navigation: Nav }) {
-    useLeaveWhenRemoved(route.params?.orderId, navigation);
-    return <DestinationScreen orderId={String(route.params?.orderId ?? '')} onDone={() => navigation.goBack()} />;
-}
-
-function ChangeVehicle({ route, navigation }: { route: { params?: { currentVehicleId?: string } }; navigation: Nav }) {
-    const driverId = useDriverId();
-    return (
-        <ChangeVehicleScreen
-            driverId={driverId}
-            currentVehicleId={route.params?.currentVehicleId}
-            onDone={() => navigation.goBack()}
-            onAssigned={(vehicle) => navigation.navigate('Inspection', { vehicleId: vehicle.id, vehicleName: vehicleDescription(vehicle) ?? vehicle.name ?? undefined, afterSwap: true })}
-        />
-    );
-}
-
-function Offers({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    return <OffersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
-}
-
-/* Header-wrapped screens. Declared once at module scope so the component
-   identity is stable — an inline wrapper would remount on every render. */
-const NavigationHandoffH = withHeader('nav.navigationHandoff', NavigationHandoff);
-const StopDetailH = withHeader('nav.stopDetail', StopDetail);
-const StopExecutionH = withHeader('nav.stopExecution', StopExecution);
-const OptimisePreviewH = withHeader('nav.optimisePreview', OptimisePreview);
-const OrderDetailH = withHeader('nav.orderDetail', OrderDetail);
-const EntityDetailH = withHeader('nav.itemDetail', EntityDetail);
-const OrderTimelineH = withHeader('nav.orderTimeline', OrderTimeline);
-const ConversationH = withHeader('nav.conversation', Conversation);
-const NewConversationH = withHeader('nav.newConversation', NewConversation);
-const FuelLogH = withHeader('nav.fuelLog', FuelLog);
-const FuelReportH = withHeader('nav.fuelReport', FuelReport);
-const IssuesH = withHeader('nav.issues', Issues);
-const IssueDetailH = withHeader('nav.issueDetail', IssueDetail);
-const IssueCreateH = withHeader('nav.issueCreate', IssueCreate);
-const MyVehicleH = withHeader('nav.myVehicle', MyVehicle);
-const TrailerDetailH = withHeader('nav.trailerDetail', TrailerDetail);
-const InspectionH = withHeader('nav.inspection', Inspection);
-const InspectionChecklistH = withHeader('nav.inspectionChecklist', InspectionChecklist);
-const InspectionReviewH = withHeader('nav.inspectionReview', InspectionReview);
-const InspectionResultH = withHeader('nav.inspectionResult', InspectionResult);
-const InspectionDetailH = withHeader('nav.inspectionDetail', InspectionDetail);
-const DocumentsH = withHeader('nav.documents', Documents);
-const EarningsH = withHeader('nav.earnings', Earnings);
-const ProfileEditH = withHeader('nav.profileEdit', ProfileEdit);
+const NavigationHandoffH = withHeader('nav.navigationHandoff', screenSlot('navigation.handoff'));
+const StopDetailH = withHeader('nav.stopDetail', screenSlot('route.stopDetail'));
+const StopExecutionH = withHeader('nav.stopExecution', screenSlot('route.stopExecution'));
+const OptimisePreviewH = withHeader('nav.optimisePreview', screenSlot('route.optimise'));
+const OrderDetailH = withHeader('nav.orderDetail', screenSlot('order.detail'));
+const EntityDetailH = withHeader('nav.itemDetail', screenSlot('order.entityDetail'));
+const OrderTimelineH = withHeader('nav.orderTimeline', screenSlot('order.timeline'));
+const ConversationH = withHeader('nav.conversation', screenSlot('inbox.conversation'));
+const NewConversationH = withHeader('nav.newConversation', screenSlot('inbox.newConversation'));
+const FuelLogH = withHeader('nav.fuelLog', screenSlot('fuel.log'));
+const FuelReportH = withHeader('nav.fuelReport', screenSlot('fuel.report'));
+const IssuesH = withHeader('nav.issues', screenSlot('issues.list'));
+const IssueDetailH = withHeader('nav.issueDetail', screenSlot('issues.detail'));
+const IssueCreateH = withHeader('nav.issueCreate', screenSlot('issues.create'));
+const MyVehicleH = withHeader('nav.myVehicle', screenSlot('vehicle.mine'));
+const TrailerDetailH = withHeader('nav.trailerDetail', screenSlot('vehicle.trailer'));
+const InspectionH = withHeader('nav.inspection', screenSlot('inspection.start'));
+const InspectionChecklistH = withHeader('nav.inspectionChecklist', screenSlot('inspection.checklist'));
+const InspectionReviewH = withHeader('nav.inspectionReview', screenSlot('inspection.review'));
+const InspectionResultH = withHeader('nav.inspectionResult', screenSlot('inspection.result'));
+const InspectionDetailH = withHeader('nav.inspectionDetail', screenSlot('inspection.detail'));
+const DocumentsH = withHeader('nav.documents', screenSlot('account.documents'));
+const EarningsH = withHeader('nav.earnings', screenSlot('account.earnings'));
+const ProfileEditH = withHeader('nav.profileEdit', screenSlot('account.profile'));
+// Not a slot: the permissions primer carries the store-mandated location disclosure.
 const PermissionsPrimerH = withHeader('nav.permissions', PermissionsPrimer);
-const OrgSwitcherH = withHeader('nav.orgSwitcher', OrgSwitcher);
-const SettingsScreenH = withHeader('nav.settings', SettingsScreen);
-const HelpH = withHeader('nav.help', Help);
-const ProofCaptureH = withHeader('nav.proofCapture', ProofCapture);
-const DestinationH = withHeader('nav.destination', Destination);
-const ChangeVehicleH = withHeader('nav.changeVehicle', ChangeVehicle);
-const OffersH = withHeader('nav.offers', Offers);
-const SyncQueueH = withHeader('nav.syncQueue', SyncQueue);
-const EditPayloadItemH = withHeader('nav.editItem', EditPayloadItem);
-const FuelReportCreateH = withHeader('nav.fuelReportCreate', FuelReportCreate);
+const OrgSwitcherH = withHeader('nav.orgSwitcher', screenSlot('account.orgSwitcher'));
+const SettingsScreenH = withHeader('nav.settings', screenSlot('account.settings'));
+const HelpH = withHeader('nav.help', screenSlot('account.help'));
+const ProofCaptureH = withHeader('nav.proofCapture', screenSlot('order.proof'));
+const DestinationH = withHeader('nav.destination', screenSlot('order.destination'));
+const ChangeVehicleH = withHeader('nav.changeVehicle', screenSlot('vehicle.change'));
+const OffersH = withHeader('nav.offers', screenSlot('offers.list'));
+const SyncQueueH = withHeader('nav.syncQueue', screenSlot('account.syncQueue'));
+const EditPayloadItemH = withHeader('nav.editItem', screenSlot('order.editPayloadItem'));
+const FuelReportCreateH = withHeader('nav.fuelReportCreate', screenSlot('fuel.create'));
+
+/** A build's custom routes, per stack (src/v3/extensions/navigation.tsx). */
+const customRoutes = (stack: string): StackRoute[] => customRoutesFor(stack, customNavigation.routes);
+const TODAY_ROUTES = customRoutes('Today');
+const ROUTE_ROUTES = customRoutes('Route');
+const ORDERS_ROUTES = customRoutes('Orders');
+const INBOX_ROUTES = customRoutes('Inbox');
+const ACCOUNT_ROUTES = customRoutes('Account');
 
 function TodayStack() {
     return (
@@ -732,6 +132,9 @@ function TodayStack() {
             {/* Registered here as well as under Orders — `navigate` resolves
                 within the current stack, so a shared route needs both. */}
             <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
+            {TODAY_ROUTES.map((route) => (
+                <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />
+            ))}
         </Stack.Navigator>
     );
 }
@@ -745,6 +148,9 @@ function RouteStack() {
             <Stack.Screen name="OptimisePreview" component={OptimisePreviewH} />
             {/* Shared with Today and Orders — `navigate` resolves within the stack. */}
             <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
+            {ROUTE_ROUTES.map((route) => (
+                <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />
+            ))}
         </Stack.Navigator>
     );
 }
@@ -761,6 +167,9 @@ function OrdersStack() {
             <Stack.Screen name="OrderTimeline" component={OrderTimelineH} />
             <Stack.Screen name="ProofCapture" component={ProofCaptureH} />
             <Stack.Screen name="Destination" component={DestinationH} />
+            {ORDERS_ROUTES.map((route) => (
+                <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />
+            ))}
         </Stack.Navigator>
     );
 }
@@ -771,6 +180,9 @@ function InboxStack() {
             <Stack.Screen name="InboxHome" component={InboxHome} />
             <Stack.Screen name="Conversation" component={ConversationH} />
             <Stack.Screen name="NewConversation" component={NewConversationH} />
+            {INBOX_ROUTES.map((route) => (
+                <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />
+            ))}
         </Stack.Navigator>
     );
 }
@@ -808,8 +220,34 @@ function AccountStack() {
             <Stack.Screen name="Settings" component={SettingsScreenH} />
             <Stack.Screen name="Help" component={HelpH} />
             <Stack.Screen name="SyncQueue" component={SyncQueueH} />
+            {ACCOUNT_ROUTES.map((route) => (
+                <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />
+            ))}
         </Stack.Navigator>
     );
+}
+
+/**
+ * The stack behind a custom tab: its own route first, then the build's other
+ * routes for that tab, and the hand-off every tab that starts a drive needs.
+ * Built once per tab at module scope, so its identity is stable.
+ */
+function customTabStack(name: string, tab: CustomTab) {
+    // The tab's own route always opens it, whatever that route's `tabs` say.
+    const initial: StackRoute = { name: tab.initialRoute, component: routeComponent(tab.initialRoute, customNavigation.routes[tab.initialRoute]) };
+    const others = customRoutes(name).filter((route) => route.name !== tab.initialRoute);
+    function CustomTabStack() {
+        return (
+            <Stack.Navigator screenOptions={screenOptions} initialRouteName={tab.initialRoute}>
+                {[initial, ...others].map((route) => (
+                    <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />
+                ))}
+                <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
+            </Stack.Navigator>
+        );
+    }
+    CustomTabStack.displayName = `CustomTabStack(${name})`;
+    return CustomTabStack;
 }
 
 /**
@@ -817,13 +255,66 @@ function AccountStack() {
  * follow a language change; `tabBarLabel` itself would be baked in English
  * at module load.
  */
-const TAB_OPTIONS = {
-    Today: { tabBarLabel: 'nav.tabs.today' },
-    Route: { tabBarLabel: 'nav.tabs.route' },
-    Orders: { tabBarLabel: 'nav.tabs.orders' },
-    Inbox: { tabBarLabel: 'nav.tabs.inbox' },
-    Account: { tabBarLabel: 'nav.tabs.account' },
-} as const;
+const TAB_LABELS: Record<CoreTab, string> = {
+    Today: 'nav.tabs.today',
+    Route: 'nav.tabs.route',
+    Orders: 'nav.tabs.orders',
+    Inbox: 'nav.tabs.inbox',
+    Account: 'nav.tabs.account',
+};
+
+const CORE_STACKS: Record<CoreTab, React.ComponentType<any>> = {
+    Today: TodayStack,
+    Route: RouteStack,
+    Orders: OrdersStack,
+    Inbox: InboxStack,
+    Account: AccountStack,
+};
+
+type TabEntry = { name: string; component: React.ComponentType<any>; options: { tabBarLabel?: string; title?: string; tabBarIcon?: (p: { focused: boolean; color: string; size: number }) => React.ReactNode } };
+
+/**
+ * The tab bar this build shows, worked out once: branding's `navigation.tabs`
+ * (order, and which core tabs appear), the build's custom tabs, and branding's
+ * per-tab icon and label overrides. Options are static objects — no hooks,
+ * nothing recomputed per navigation state change.
+ */
+function buildTabs(): { tabs: TabEntry[]; initialTab: string } {
+    const navigation = getBuildBranding().branding.navigation;
+    const custom = Object.entries(customNavigation.tabs);
+    const available = new Set<string>([...CORE_TABS, ...custom.map(([name]) => name)]);
+    const order = orderTabs(navigation.tabs, custom, available);
+    if (order.length > 5 && typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn(`[navigation] ${order.length} tabs; the tab bar is designed for at most 5. Hide a core tab with branding navigation.tabs.`);
+    }
+
+    const tabs = order.map((name): TabEntry => {
+        const customTab = customNavigation.tabs[name];
+        if (customTab) {
+            return { name, component: customTabStack(name, customTab), options: { tabBarLabel: customTab.labelKey, title: customTab.label ?? name, tabBarIcon: customTab.icon } };
+        }
+        const core = name as CoreTab;
+        const override = navigation.tabOverrides[core];
+        const Icon = override?.icon ? tabIcons[override.icon as TabIconName] : undefined;
+        return {
+            name,
+            component: CORE_STACKS[core],
+            options: {
+                tabBarLabel: override?.labelKey ?? TAB_LABELS[core],
+                ...(Icon ? { tabBarIcon: ({ color, size }: { color: string; size: number }) => <Icon size={size} color={color} /> } : {}),
+            },
+        };
+    });
+
+    const initial = custom.find(([name, tab]) => tab.initial && order.includes(name))?.[0];
+    const initialTab = initial ?? (order.includes(navigation.defaultTab) ? navigation.defaultTab : order[0]);
+    return { tabs, initialTab };
+}
+
+const { tabs: TABS, initialTab: INITIAL_TAB } = buildTabs();
+
+/** Branding's feature switches; the host may turn one on too, never off. */
+const BRAND_FEATURES = getBuildBranding().branding.features;
 
 /**
  * Subscribes to the driver's own realtime channel for as long as they are
@@ -898,7 +389,7 @@ export function DriverTabs({
     onOrganizationSwitched?: (driver: unknown) => void;
     features?: Features;
 }) {
-    const featuresValue = useMemo<Features>(() => ({ ...features }), [features]);
+    const featuresValue = useMemo<Features>(() => ({ ...features, earnings: Boolean(BRAND_FEATURES.earnings || features?.earnings) }), [features]);
     // `tabBar` is a render prop, not `component`, so re-creating it re-renders
     // the bar rather than remounting it — which is why the badges may close
     // over `badges` while the screens above may not.
@@ -916,6 +407,7 @@ export function DriverTabs({
     );
 
     return (
+        <AppScreenRegistryProvider>
         <DriverIdContext.Provider value={driverId}>
           <FeaturesContext.Provider value={featuresValue}>
             {/*
@@ -930,22 +422,20 @@ export function DriverTabs({
                 <SignOutContext.Provider value={onSignOut}>
                     <OrganizationContext.Provider value={organizationValue}>
             <Tab.Navigator
-                // Options are static objects — no hooks, nothing recomputed per
-                // navigation state change.
                 screenOptions={screenOptions}
                 tabBar={renderTabBar}
+                initialRouteName={INITIAL_TAB}
             >
-                <Tab.Screen name="Today" component={TodayStack} options={TAB_OPTIONS.Today} />
-                <Tab.Screen name="Route" component={RouteStack} options={TAB_OPTIONS.Route} />
-                <Tab.Screen name="Orders" component={OrdersStack} options={TAB_OPTIONS.Orders} />
-                <Tab.Screen name="Inbox" component={InboxStack} options={TAB_OPTIONS.Inbox} />
-                <Tab.Screen name="Account" component={AccountStack} options={TAB_OPTIONS.Account} />
+                {TABS.map((tab) => (
+                    <Tab.Screen key={tab.name} name={tab.name} component={tab.component} options={tab.options} />
+                ))}
             </Tab.Navigator>
                     </OrganizationContext.Provider>
                 </SignOutContext.Provider>
             </DriverUserIdContext.Provider>
           </FeaturesContext.Provider>
         </DriverIdContext.Provider>
+        </AppScreenRegistryProvider>
     );
 }
 

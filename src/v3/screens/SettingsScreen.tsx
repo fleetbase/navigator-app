@@ -23,6 +23,8 @@ import { useSettings, useSetSetting } from '../settings';
 import { useTranslation } from '../i18n/useTranslation';
 import { applyLocale, deviceLanguageTags, resolveLocale, selectableLocales, type LocaleInfo } from '../i18n';
 import type { ThemePreference, UnitPreference } from '../settings';
+import { isOffered } from '../settings/settingsStore';
+import { getBuildBranding } from '../branding/build-branding';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { useState } from 'react';
 
@@ -34,6 +36,11 @@ const THEME_OPTIONS: { value: ThemePreference; labelKey: string }[] = [
     { value: 'night', labelKey: 'settings.themeNight' },
     { value: 'sunlight', labelKey: 'settings.themeSunlight' },
 ];
+
+const appearance = getBuildBranding().branding.appearance;
+/** The schemes this build offers, in the two groups the picker shows. */
+const primaryThemes = THEME_OPTIONS.slice(0, 3).filter((o) => isOffered(o.value, appearance.schemes));
+const drivingThemes = THEME_OPTIONS.slice(3).filter((o) => isOffered(o.value, appearance.schemes));
 
 const UNIT_OPTIONS: { value: UnitPreference; labelKey: string }[] = [
     { value: 'metric', labelKey: 'settings.unitsMetric' },
@@ -177,6 +184,9 @@ export function SettingsScreen({
             ) : null}
 
             <Section title={t('settings.appearance')}>
+                {/* A brand may fix the scheme (branding `appearance.allowUserToggle`) or offer fewer. */}
+                {appearance.allowUserToggle ? (
+                <>
                 <YStack padding={space[4]} gap={space[3]}>
                     <XStack justifyContent="space-between" alignItems="center">
                         <Body fontSize={15}>{t('settings.theme')}</Body>
@@ -192,21 +202,27 @@ export function SettingsScreen({
                           * Sunlight light up System instead, so the choice
                           * looked like it had not taken.
                           */}
-                        <Segmented
-                            options={THEME_OPTIONS.slice(0, 3).map((o) => ({ value: o.value, label: t(o.labelKey) }))}
-                            value={settings.theme}
-                            onChange={(v) => set('theme', v)}
-                            testID="theme-primary"
-                        />
-                        <Segmented
-                            options={THEME_OPTIONS.slice(3).map((o) => ({ value: o.value, label: t(o.labelKey) }))}
-                            value={settings.theme}
-                            onChange={(v) => set('theme', v)}
-                            testID="theme-driving"
-                        />
+                        {primaryThemes.length ? (
+                            <Segmented
+                                options={primaryThemes.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+                                value={settings.theme}
+                                onChange={(v) => set('theme', v)}
+                                testID="theme-primary"
+                            />
+                        ) : null}
+                        {drivingThemes.length ? (
+                            <Segmented
+                                options={drivingThemes.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+                                value={settings.theme}
+                                onChange={(v) => set('theme', v)}
+                                testID="theme-driving"
+                            />
+                        ) : null}
                     </YStack>
                 </YStack>
                 <Divider />
+                </>
+                ) : null}
                 <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={2}>
                     <Body fontSize={15}>{t('settings.language')}</Body>
                     <Micro>{t('settings.languageHint')}</Micro>

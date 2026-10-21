@@ -6,6 +6,7 @@
  * mixed `fontSize='$2'` with `fontSize={16}` and nothing was enforced. These are
  * the design's actual scales, named so a screen can only reach for a real step.
  */
+import { getBuildBranding } from '../branding/build-branding';
 
 /** 4dp grid. */
 export const space = {
@@ -19,14 +20,18 @@ export const space = {
     7: 48,
 } as const;
 
+/** Branding's radii and type scale (brand/navigator.brand.ts `shape`, `typography.scale`). */
+const brandShape = getBuildBranding().branding.shape;
+const typeScale = getBuildBranding().branding.typography.scale;
+
 export const radius = {
-    /** Chips, inputs, small cards. */
-    compact: 10,
-    /** Hero cards, sheets, map overlays. */
-    hero: 18,
+    /** Chips, inputs, small cards. Design: 10. */
+    compact: brandShape.radius.compact,
+    /** Hero cards, sheets, map overlays. Design: 18. */
+    hero: brandShape.radius.hero,
     /** Pills and fully-round controls. */
     pill: 999,
-} as const;
+};
 
 /**
  * Minimum interactive target. The design mandates 48dp for buttons and 44dp for
@@ -48,14 +53,18 @@ export interface TypeStep {
     lineHeight: number;
 }
 
+/** Scales a step by branding's `typography.scale`; 1 returns the design's step unchanged. */
+const scaled = (step: TypeStep): TypeStep =>
+    typeScale === 1 ? step : { ...step, size: Math.round(step.size * typeScale), lineHeight: Math.round(step.lineHeight * typeScale) };
+
 export const type = {
-    display: { size: 34, weight: '800', letterSpacing: -0.68, lineHeight: 40 },
-    title: { size: 28, weight: '700', letterSpacing: -0.42, lineHeight: 34 },
-    heading: { size: 22, weight: '700', letterSpacing: -0.22, lineHeight: 28 },
-    body: { size: 17, weight: '500', letterSpacing: 0, lineHeight: 24 },
-    secondary: { size: 15, weight: '500', letterSpacing: 0, lineHeight: 21 },
-    caption: { size: 13, weight: '600', letterSpacing: 0.13, lineHeight: 18 },
-    micro: { size: 11, weight: '700', letterSpacing: 0.66, lineHeight: 15 },
+    display: scaled({ size: 34, weight: '800', letterSpacing: -0.68, lineHeight: 40 }),
+    title: scaled({ size: 28, weight: '700', letterSpacing: -0.42, lineHeight: 34 }),
+    heading: scaled({ size: 22, weight: '700', letterSpacing: -0.22, lineHeight: 28 }),
+    body: scaled({ size: 17, weight: '500', letterSpacing: 0, lineHeight: 24 }),
+    secondary: scaled({ size: 15, weight: '500', letterSpacing: 0, lineHeight: 21 }),
+    caption: scaled({ size: 13, weight: '600', letterSpacing: 0.13, lineHeight: 18 }),
+    micro: scaled({ size: 11, weight: '700', letterSpacing: 0.66, lineHeight: 15 }),
 } satisfies Record<string, TypeStep>;
 
 /**

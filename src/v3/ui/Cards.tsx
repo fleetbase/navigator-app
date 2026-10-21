@@ -15,6 +15,7 @@ import { Button } from './Button';
 import { radius, space } from '../theme/tokens';
 import { formatDuration, formatMeters, type DistanceUnit } from '../format';
 import { useTranslation } from '../i18n/useTranslation';
+import { componentSlot } from '../extensions/components/component-slot';
 
 export interface OrderCardStop {
     name: string;
@@ -43,7 +44,7 @@ export interface OrderCardProps {
     testID?: string;
 }
 
-export function OrderCard({
+function OrderCardBase({
     trackingNumber,
     status,
     stops,
@@ -355,3 +356,6 @@ export function ManifestCard({
         </Surface>
     );
 }
+
+/** A component slot: a client build may replace it (`orders.orderCard`). */
+export const OrderCard = componentSlot('orders.orderCard', OrderCardBase);

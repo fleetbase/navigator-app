@@ -15,9 +15,11 @@
  */
 import { createFont } from 'tamagui';
 import { type, glanceable } from './tokens';
+import { getBuildBranding } from '../branding/build-branding';
+import type { FontFamily } from '../branding/schema';
 
 /** PostScript names — must match the `postScript` field of the shipped TTFs. */
-export const fontFaces = {
+export const designFontFaces = {
     ui: {
         400: 'Archivo-Regular',
         500: 'Archivo-Medium',
@@ -32,19 +34,41 @@ export const fontFaces = {
     },
 } as const;
 
-const uiFace = {
-    400: { normal: fontFaces.ui[400] },
-    500: { normal: fontFaces.ui[500] },
-    600: { normal: fontFaces.ui[600] },
-    700: { normal: fontFaces.ui[700] },
-    800: { normal: fontFaces.ui[800] },
+type Weight = 400 | 500 | 600 | 700 | 800;
+
+/**
+ * A brand family's face for each weight the app uses: the face it names, or the
+ * nearest one it does (heavier first on a tie, so emphasis never reads lighter).
+ */
+function facesFor(family: FontFamily | undefined, weights: Weight[], fallback: Partial<Record<Weight, string>>): Record<Weight, string> {
+    const named = Object.entries(family?.faces ?? {}).map(([w, face]) => [Number(w), face] as const);
+    const out = {} as Record<Weight, string>;
+    for (const weight of weights) {
+        if (!named.length) {
+            out[weight] = fallback[weight] as string;
+            continue;
+        }
+        const [, face] = [...named].sort((a, b) => Math.abs(a[0] - weight) - Math.abs(b[0] - weight) || b[0] - a[0])[0];
+        out[weight] = face;
+    }
+    return out;
+}
+
+const typography = getBuildBranding().branding.typography;
+
+/** The faces in use: branding's (`typography.body/heading/mono`, files in brand/fonts), else the design's. */
+export const fontFaces = {
+    ui: facesFor(typography.body, [400, 500, 600, 700, 800], designFontFaces.ui),
+    heading: facesFor(typography.heading ?? typography.body, [400, 500, 600, 700, 800], designFontFaces.ui),
+    mono: facesFor(typography.mono, [400, 500, 600], designFontFaces.mono),
 };
 
-const monoFace = {
-    400: { normal: fontFaces.mono[400] },
-    500: { normal: fontFaces.mono[500] },
-    600: { normal: fontFaces.mono[600] },
-};
+const faceOf = (faces: Partial<Record<Weight, string>>) =>
+    Object.fromEntries(Object.entries(faces).map(([weight, face]) => [weight, { normal: face }])) as Record<string, { normal: string }>;
+
+const uiFace = faceOf(fontFaces.ui);
+const headingFace = faceOf(fontFaces.heading);
+const monoFace = faceOf(fontFaces.mono);
 
 /**
  * Named steps rather than an anonymous numeric ramp — a screen should have to
@@ -116,12 +140,12 @@ export const bodyFont = createFont({
 });
 
 export const headingFont = createFont({
-    family: fontFaces.ui[700],
+    family: fontFaces.heading[700],
     size,
     lineHeight,
     letterSpacing,
     weight,
-    face: uiFace,
+    face: headingFace,
 });
 
 /**

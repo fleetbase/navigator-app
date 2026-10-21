@@ -30,6 +30,8 @@ import { useQueue, useFleetbase } from '../api';
 import { useDriver, useCurrentOrganization, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { chevron } from '../i18n/direction';
+import { getBuildBranding } from '../branding/build-branding';
+import { customAccountLinks } from '../extensions/build-navigation';
 
 export interface AccountLink {
     route: string;
@@ -54,6 +56,28 @@ const LINKS: AccountLink[] = [
     { route: 'Settings', labelKey: 'account.settings' },
     { route: 'Help', labelKey: 'account.help' },
 ];
+
+/**
+ * The menu this build shows: the app's entries minus the ones branding hides
+ * (`account.hiddenLinks`), plus the build's own (extensions `accountLinks`), each
+ * at its `position` or just before Settings.
+ */
+export function accountLinks(
+    links: AccountLink[] = LINKS,
+    hidden: string[] = getBuildBranding().branding.account.hiddenLinks,
+    added: { route: string; labelKey: string; position?: number }[] = customAccountLinks
+): AccountLink[] {
+    const menu = links.filter((link) => !hidden.includes(link.route));
+    for (const link of added) {
+        if (menu.some((existing) => existing.route === link.route)) continue;
+        const settings = menu.findIndex((existing) => existing.route === 'Settings');
+        const at = typeof link.position === 'number' ? Math.max(0, Math.min(menu.length, Math.floor(link.position))) : settings >= 0 ? settings : menu.length;
+        menu.splice(at, 0, { route: link.route, labelKey: link.labelKey });
+    }
+    return menu;
+}
+
+const MENU = accountLinks();
 
 function Avatar({ url, name }: { url?: string | null; name?: string }) {
     if (url) {
@@ -207,7 +231,7 @@ export function AccountScreen({
             )}
 
             <Surface testID="account-links">
-                {LINKS.map((raw, i) => {
+                {MENU.map((raw, i) => {
                     const link = raw.feature && features?.[raw.feature] ? { ...raw, blockedKey: undefined } : raw;
                     return (
                     <YStack key={link.route}>

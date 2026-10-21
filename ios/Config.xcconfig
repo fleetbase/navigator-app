@@ -1,1 +1,7 @@
+// The bundle identifier comes from APP_IDENTIFIER in .env (react-native-config writes
+// tmp.xcconfig before each build), as Android's applicationId does, so a client
+// build sets its identity without committing a project file. This is the default
+// when .env doesn't set it.
+APP_IDENTIFIER = io.fleetbase.navigator
+
 #include? "tmp.xcconfig"

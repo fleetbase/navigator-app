@@ -1357,5 +1357,11 @@
                 "signature": "Firma"
             }
         }
+    },
+    "extensions": {
+        "loadError": {
+            "title": "No se pudo mostrar esta pantalla",
+            "body": "Algo falló al cargarla. Vuelve atrás e inténtalo de nuevo; si sigue pasando, avisa a despacho."
+        }
     }
 }

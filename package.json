@@ -8,7 +8,8 @@
     "scripts": {
         "android": "react-native run-android",
         "ios": "react-native run-ios",
-        "postinstall": "node scripts/patch-react-native-packages.js",
+        "postinstall": "node scripts/patch-react-native-packages.js && node scripts/link-brand.js",
+        "brand:link": "node scripts/link-brand.js",
         "start": "react-native start",
         "web": "webpack serve --config webpack.config.js",
         "pod:install": "cd ios && PATH=/opt/homebrew/bin:$HOME/.rbenv/shims:$PATH RCT_NEW_ARCH_ENABLED=1 bundle exec pod install",
@@ -24,9 +25,9 @@
         "android:clean": "cd android && ./gradlew clean && cd ../",
         "adb:reverse": "adb reverse tcp:8081 tcp:8081",
         "adb:devmenu": "adb shell input keyevent 82",
-        "generate:app-icon": "npx app-icon generate -i ./assets/app-icon.png && node scripts/fix-android-app-icons.js --input ./assets/app-icon.png",
-        "generate:launch-screen": "npx react-native generate-bootsplash ./assets/splash-screen.png --background=#111827 --logo-width=100 --flavor=main && node scripts/fix-android-launch-screen.js --input ./assets/splash-screen.png",
-        "typecheck": "tsc -p tsconfig.v3.json"
+        "generate:app-icon": "node scripts/generate-app-assets.js icon",
+        "generate:launch-screen": "node scripts/generate-app-assets.js launch",
+        "typecheck": "node scripts/link-brand.js && tsc -p tsconfig.v3.json"
     },
     "dependencies": {
         "@babel/plugin-proposal-async-generator-functions": "^7.20.7",
@@ -106,10 +107,12 @@
         "recyclerlistview": "^4.2.1",
         "socketcluster-client": "^19.2.3",
         "tamagui": "1.125.20",
-        "yarn": "^1.22.22"
+        "yarn": "^1.22.22",
+        "zod": "^3.25.76"
     },
     "devDependencies": {
         "@babel/core": "^7.25.2",
+        "@babel/plugin-transform-dynamic-import": "^7.29.7",
         "@babel/preset-env": "^7.26.0",
         "@babel/preset-react": "^7.25.9",
         "@babel/runtime": "^7.25.0",

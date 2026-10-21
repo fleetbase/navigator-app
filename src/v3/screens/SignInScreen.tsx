@@ -23,6 +23,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useScreenStyle } from '../ui/useScreenStyle';
+import { componentSlot } from '../extensions/components/component-slot';
+import { BrandLogo } from '../branding/BrandLogo';
 
 export type AuthMethod = 'phone' | 'sso' | 'qr';
 
@@ -46,7 +48,7 @@ export interface SignInScreenProps {
     onChangeServer?: () => void;
 }
 
-export function SignInScreen({
+function SignInScreenBase({
     onSignIn,
     methods = [],
     onSelectMethod,
@@ -92,6 +94,8 @@ export function SignInScreen({
             testID="sign-in-screen"
         >
             <YStack gap={space[1]}>
+                {/* The build's logo (brand/logo.png or branding assets.logo); nothing when there is none. */}
+                <BrandLogo />
                 <Display fontSize={30}>{t('signIn.title')}</Display>
                 {organizationName || host ? (
                     <Secondary fontSize={13}>
@@ -187,5 +191,8 @@ export function SignInScreen({
         </ScrollView>
     );
 }
+
+/** A component slot: a client build may replace it (`auth.signIn`). */
+export const SignInScreen = componentSlot('auth.signIn', SignInScreenBase);
 
 export default SignInScreen;

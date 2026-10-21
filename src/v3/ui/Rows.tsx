@@ -14,6 +14,7 @@ import { radius, space } from '../theme/tokens';
 import { formatDuration, formatMeters, type DistanceUnit } from '../format';
 import { useTranslation } from '../i18n/useTranslation';
 import { chevron } from '../i18n/direction';
+import { componentSlot } from '../extensions/components/component-slot';
 
 export type StopState = 'current' | 'pending' | 'completed' | 'failed';
 
@@ -72,7 +73,7 @@ function Chip({ label, color, border }: { label: string; color?: string; border?
     );
 }
 
-export function StopRow({
+function StopRowBase({
     sequence,
     name,
     address,
@@ -254,3 +255,6 @@ export function ListRow({
         </XStack>
     );
 }
+
+/** A component slot: a client build may replace it (`route.stopRow`). */
+export const StopRow = componentSlot('route.stopRow', StopRowBase);

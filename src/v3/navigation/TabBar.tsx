@@ -18,6 +18,7 @@ import { XStack, YStack, useTheme } from 'tamagui';
 import { Micro } from '../ui/Text';
 import { tabIcons, type TabIconName } from '../ui/Icon';
 import { hitTarget, space } from '../theme/tokens';
+import { componentSlot } from '../extensions/components/component-slot';
 
 export interface TabBadges {
     /** Active stops/orders outstanding. */
@@ -27,7 +28,7 @@ export interface TabBadges {
     Route?: number;
 }
 
-export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTabBarProps & { badges?: TabBadges }) {
+function TabBarBase({ state, descriptors, navigation, badges = {} }: BottomTabBarProps & { badges?: TabBadges }) {
     const { t } = useTranslation();
     const theme = useTheme();
     const insets = useSafeAreaInsets();
@@ -45,7 +46,12 @@ export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTa
             {state.routes.map((route, index) => {
                 const focused = state.index === index;
                 const { options } = descriptors[route.key];
-                const label = t((options.tabBarLabel as string) ?? options.title ?? route.name, { defaultValue: route.name });
+                // A translation key when there is one; a custom tab may give a plain `title` instead.
+                const label =
+                    typeof options.tabBarLabel === 'string' ? t(options.tabBarLabel, { defaultValue: options.title ?? route.name }) : (options.title ?? route.name);
+                // A custom tab, or a branding icon override, draws through
+                // `tabBarIcon`; the core tabs fall back to the design's set.
+                const renderIcon = options.tabBarIcon;
                 const Icon = tabIcons[route.name as TabIconName];
                 const badge = badges[route.name as keyof TabBadges];
 
@@ -75,7 +81,7 @@ export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTa
                         testID={`tab-${route.name}`}
                     >
                         <YStack>
-                            {Icon ? <Icon size={20} color={color} /> : null}
+                            {renderIcon ? renderIcon({ focused, color, size: 20 }) : Icon ? <Icon size={20} color={color} /> : null}
                             {badge ? (
                                 <XStack
                                     position="absolute"
@@ -104,5 +110,8 @@ export function TabBar({ state, descriptors, navigation, badges = {} }: BottomTa
         </XStack>
     );
 }
+
+/** A component slot: a client build may replace it (`shell.tabBar`). */
+export const TabBar = componentSlot('shell.tabBar', TabBarBase);
 
 export default TabBar;

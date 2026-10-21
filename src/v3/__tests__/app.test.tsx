@@ -14,6 +14,18 @@ import { SCHEMES, type SchemeName } from '../theme';
 import { MutationQueue } from '../api';
 import { clearV3 } from '../api/storage';
 
+/*
+ * Screens load through the screen registry (src/v3/extensions), which suspends
+ * the first time each one renders. Loading them up front — as the app does at
+ * boot — keeps every render synchronous, so nothing resolves after a test ends.
+ */
+beforeAll(async () => {
+    const { appScreenRegistry } = require('../extensions/app-screen-registry');
+    const { SCREEN_IDS } = require('../extensions/screens/screen-ids');
+    await appScreenRegistry.preload([...SCREEN_IDS]);
+});
+
+
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 
 beforeEach(() => clearV3());

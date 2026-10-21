@@ -12,23 +12,19 @@ import { Body, Micro } from '../ui/Text';
 import { radius, space } from '../theme/tokens';
 import { DutyPill } from './DutyPill';
 import type { DutyState } from './DutyContext';
+import { componentSlot } from '../extensions/components/component-slot';
 
-export function AppHeader({
-    organizationName,
-    /** Optional second line — driver name, vehicle, or nothing. */
-    subtitle,
-    duty,
-    isChanging,
-    onDutyPress,
-    testID,
-}: {
+export interface AppHeaderProps {
     organizationName: string;
+    /** Optional second line — driver name, vehicle, or nothing. */
     subtitle?: string;
     duty: DutyState;
     isChanging?: boolean;
     onDutyPress?: () => void;
     testID?: string;
-}) {
+}
+
+function AppHeaderBase({ organizationName, subtitle, duty, isChanging, onDutyPress, testID }: AppHeaderProps) {
     // Brand mark: first letter of the organisation, so a white-label build needs
     // no asset to look intentional.
     const letter = (organizationName?.trim()?.[0] ?? '?').toUpperCase();
@@ -66,5 +62,8 @@ export function AppHeader({
         </XStack>
     );
 }
+
+/** A component slot: a client build may replace it (`shell.appHeader`). */
+export const AppHeader = componentSlot('shell.appHeader', AppHeaderBase);
 
 export default AppHeader;
