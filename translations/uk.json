@@ -1,0 +1,88 @@
+{
+    "common": {
+        "fleetbase": "Fleetbase",
+        "navigator": "Navigator",
+        "apiKey": "API Key",
+        "cancel": "Скасувати",
+        "new": "Новий",
+        "create": "Створити",
+        "save": "Зберегти",
+        "delete": "Видалити",
+        "edit": "Редагувати",
+        "update": "Оновити",
+        "service": "Сервіс",
+        "retry": "Повторити",
+        "loading": "Завантаження...",
+        "confirm": "Підтвердити",
+        "confirmation": "Підтвердження",
+        "ok": "ОК",
+        "done": "Готово",
+        "tryAgain": "Спробувати знову"
+    },
+    "orderStatuses": {
+        "created": "Створено",
+        "preparing": "Готується",
+        "dispatched": "Відправлено",
+        "driver_enroute": "Водій у дорозі",
+        "pending": "Очікує",
+        "in_progress": "У процесі",
+        "completed": "Завершено"
+    },
+    "BootScreen": {
+        "missingRequiredConfigurationKeys": "Відсутні обов’язкові ключі конфігурації"
+    },
+    "AccountScreen": {
+        "changeProfilePhotoOptions": {
+            "takePhoto": "Зробити фото",
+            "photoLibrary": "Галерея",
+            "deleteProfilePhoto": "Видалити фото профілю"
+        },
+        "profilePhoto": "Фото профілю",
+        "email": "Електронна пошта",
+        "phoneNumber": "Номер телефону",
+        "name": "Ім’я",
+        "language": "Мова",
+        "theme": "Тема",
+        "deleteAccount": "Видалити обліковий запис",
+        "termsOfService": "Умови використання",
+        "privacyPolicy": "Політика конфіденційності",
+        "tracking": "Відстеження",
+        "account": "Обліковий запис",
+        "dataProtection": "Захист даних",
+        "clearCache": "Очистити кеш",
+        "signOut": "Вийти",
+        "signedOut": "Вийшли з системи.",
+        "cacheCleared": "Кеш очищено.",
+        "schemeChanged": "Використовується режим {{selectedScheme}}.",
+        "languageChanged": "Використовується мова {{selectedLanguage}}.",
+        "photoChanged": "Фото профілю змінено.",
+        "photoRemoved": "Фото профілю видалено."
+    },
+    "ProfileScreen": {
+        "organizationChanged": "Переключено на організацію {{selectedOrganization}}."
+    },
+    "AddNewLocationScreen": {
+        "addNewAddress": "Додати нову адресу",
+        "streetName": "Вулиця та номер будинку",
+        "weThinkYoureAroundHere": "Здається, ви десь тут",
+        "cantFindYourAddress": "Не можете знайти свою адресу?",
+        "useMapInstead": "Використовуйте карту замість цього"
+    },
+    "SetupWarningScreen": {
+        "configurationMissing": "Відсутня конфігурація!",
+        "unconfiguredApp": "Схоже, ваш додаток не налаштовано належним чином.",
+        "envMissing": "відсутній у середовищі (environment)!"
+    },
+    "DriverReportScreen": {},
+    "LocationPermissionScreen": {
+        "enableLocationServices": "Розкриття інформації про геопозицію",
+        "enableLocationPrompt": "Fleetbase Navigator збирає точні дані про місцезнаходження, щоб забезпечити відстеження водія в реальному часі та оновлення статусу замовлення для диспетчерів вашої організації, навіть коли додаток закрито або він не використовується. Геопозиція збирається, поки ви в мережі, і безпечно надсилається до Fleetbase.",
+        "shareAndContinue": "Дозволити геопозицію та продовжити",
+        "privacyPolicy": "Політика конфіденційності",
+        "permissionNeededTitle": "Потрібен доступ до геопозиції",
+        "enableInSettingsTitle": "Увімкніть геопозицію в Налаштуваннях",
+        "permissionDeniedPrompt": "Доступ до місцезнаходження потрібен перед входом. Бажаєте надати доступ зараз?",
+        "locationBlockedPrompt": "Доступ до місцезнаходження заблоковано. Будь ласка, відкрийте Налаштування та увімкніть його, щоб продовжити.",
+        "goToSettings": "Перейти до Налаштувань"
+    }
+}
