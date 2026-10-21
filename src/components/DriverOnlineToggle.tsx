@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Switch, Label, XStack } from 'tamagui';
 import { useAuth } from '../contexts/AuthContext';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DriverOnlineToggle = ({ showLabel = false, ...props }) => {
     const { isDarkMode } = useAppTheme();
+    const { t } = useLanguage();
     const { isOnline, toggleOnline, isUpdating } = useAuth();
     const [checked, setChecked] = useState(isOnline);
 
@@ -39,7 +41,7 @@ const DriverOnlineToggle = ({ showLabel = false, ...props }) => {
             </Switch>
             {showLabel === true && (
                 <Label htmlFor='driverOnline' color='$gray-500' size='$2' lineHeight='$4'>
-                    {checked ? 'Online' : 'Offline'}
+                    {checked ? t('DriverOnlineToggle.online') : t('DriverOnlineToggle.offline')}
                 </Label>
             )}
         </XStack>

@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faKey, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { isValidPhoneNumber } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import PhoneInput from '../components/PhoneInput';
 import BackButton from '../components/BackButton';
 import Input from '../components/Input';
@@ -16,6 +17,7 @@ const CreateAccountScreen = ({ route }) => {
     const params = route.params || {};
     const navigation = useNavigation();
     const theme = useTheme();
+    const { t } = useLanguage();
     const { requestCreationCode, isSendingCode, phone: phoneState } = useAuth();
     const [phone, setPhone] = useState(phoneState);
     const [name, setName] = useState(params.name);
@@ -26,7 +28,7 @@ const CreateAccountScreen = ({ route }) => {
         }
 
         if (!isValidPhoneNumber(phone)) {
-            return toast.error('Invalid phone number provided.');
+            return toast.error(t('CreateAccountScreen.invalidPhoneNumber'));
         }
 
         try {
@@ -49,17 +51,17 @@ const CreateAccountScreen = ({ route }) => {
                     <XStack space='$3' alignItems='center' mb='$5'>
                         <BackButton size={40} />
                         <Text color='$textPrimary' fontWeight='bold' fontSize='$8'>
-                            Create Account
+                            {t('CreateAccountScreen.createAccount')}
                         </Text>
                     </XStack>
                     <YStack space='$3'>
-                        <Input value={name} onChangeText={(text) => setName(text)} placeholder='Enter your name' />
+                        <Input value={name} onChangeText={(text) => setName(text)} placeholder={t('CreateAccountScreen.enterYourName')} />
                         <PhoneInput value={phone} onChange={(phoneNumber) => setPhone(phoneNumber)} />
                     </YStack>
                     <Button size='$5' mt='$2' onPress={handleSendVerificationCode} bg='$primary' width='100%' opacity={isSendingCode ? 0.75 : 1} disabled={isSendingCode} rounded>
                         <Button.Icon>{isSendingCode ? <Spinner color='$white' /> : <FontAwesomeIcon icon={faPaperPlane} color={theme.white.val} />}</Button.Icon>
                         <Button.Text color='$white' fontWeight='bold'>
-                            Send Verification Code
+                            {t('CreateAccountScreen.sendVerificationCode')}
                         </Button.Text>
                     </Button>
                 </YStack>
@@ -71,7 +73,7 @@ const CreateAccountScreen = ({ route }) => {
                 <YStack space='$3' width='100%' padding='$5'>
                     <Button size='$5' onPress={handleLogin} bg='$secondary' width='100%' opacity={isSendingCode ? 0.75 : 1} disabled={isSendingCode} rounded>
                         <Button.Text color='$textPrimary' fontWeight='bold'>
-                            Have an account already? Login
+                            {t('CreateAccountScreen.haveAccountLogin')}
                         </Button.Text>
                     </Button>
                 </YStack>

@@ -8,6 +8,7 @@ import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { Portal } from '@gorhom/portal';
 import { debounce } from '../utils';
 import { currencies, getCurrency } from '../utils/currencies';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MoneyInput = ({
     value: _value,
@@ -17,7 +18,7 @@ const MoneyInput = ({
     type = 'volume',
     snapTo = '100%',
     backgroundColor = '$surface',
-    placeholder = 'Input amount',
+    placeholder,
     wrapperProps = {},
     portalHost = 'MainPortal',
     onBottomSheetPositionChanged,
@@ -25,6 +26,7 @@ const MoneyInput = ({
     onBottomSheetClosed,
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const [selectedCurrency, setSelectedCurrency] = useState(defaultCurrency);
     const [value, setValue] = useState(_value);
     const [searchTerm, setSearchTerm] = useState('');
@@ -122,7 +124,7 @@ const MoneyInput = ({
                 <Input
                     ref={valueInputRef}
                     flex={1}
-                    placeholder={placeholder}
+                    placeholder={placeholder ?? t('MoneyInput.placeholder')}
                     keyboardType='phone-pad'
                     value={value}
                     onChangeText={setValue}
@@ -179,7 +181,7 @@ const MoneyInput = ({
                     <YStack px='$2'>
                         <BottomSheetTextInput
                             ref={searchInputRef}
-                            placeholder='Search currencies'
+                            placeholder={t('MoneyInput.searchCurrencies')}
                             onChangeText={setSearchTerm}
                             autoCapitalize='none'
                             autoComplete='off'

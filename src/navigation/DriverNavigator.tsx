@@ -44,6 +44,8 @@ import DriverProfileScreen from '../screens/DriverProfileScreen';
 import DriverAccountScreen from '../screens/DriverAccountScreen';
 import { useOrderManager } from '../contexts/OrderManagerContext';
 import { useChat } from '../contexts/ChatContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translate } from '../utils/localize';
 import useAppTheme from '../hooks/use-app-theme';
 import DriverLayout from '../layouts/DriverLayout';
 import DriverOnlineToggle from '../components/DriverOnlineToggle';
@@ -81,17 +83,22 @@ function createTabScreens() {
     const screens = {
         DriverDashboardTab: {
             screen: DriverDashboardTab,
-            options: {
-                tabBarLabel: config('DRIVER_DASHBOARD_TAB_LABEL', 'Dash'),
+            options: () => {
+                const { t } = useLanguage();
+
+                return {
+                    tabBarLabel: config('DRIVER_DASHBOARD_TAB_LABEL', t('DriverNavigator.dashboardTab')),
+                };
             },
         },
         DriverTaskTab: {
             screen: DriverTaskTab,
             options: () => {
                 const { allActiveOrders } = useOrderManager();
+                const { t } = useLanguage();
 
                 return {
-                    tabBarLabel: config('DRIVER_ORDER_TAB_LABEL', 'Orders'),
+                    tabBarLabel: config('DRIVER_ORDER_TAB_LABEL', t('DriverNavigator.ordersTab')),
                     tabBarBadge: allActiveOrders.length,
                     tabBarBadgeStyle: {
                         marginRight: -5,
@@ -103,8 +110,10 @@ function createTabScreens() {
         DriverReportTab: {
             screen: DriverReportTab,
             options: () => {
+                const { t } = useLanguage();
+
                 return {
-                    tabBarLabel: config('DRIVER_REPORT_TAB_LABEL', 'Reports'),
+                    tabBarLabel: config('DRIVER_REPORT_TAB_LABEL', t('DriverNavigator.reportsTab')),
                 };
             },
         },
@@ -112,9 +121,10 @@ function createTabScreens() {
             screen: DriverChatTab,
             options: () => {
                 const { unreadCount } = useChat();
+                const { t } = useLanguage();
 
                 return {
-                    tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', 'Chat'),
+                    tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', t('DriverNavigator.chatTab')),
                     tabBarBadge: unreadCount,
                     tabBarBadgeStyle: {
                         marginRight: -5,
@@ -126,8 +136,10 @@ function createTabScreens() {
         DriverAccountTab: {
             screen: DriverAccountTab,
             options: () => {
+                const { t } = useLanguage();
+
                 return {
-                    tabBarLabel: config('DRIVER_ACCOUNT_TAB_LABEL', 'Account'),
+                    tabBarLabel: config('DRIVER_ACCOUNT_TAB_LABEL', t('DriverNavigator.accountTab')),
                 };
             },
         },
@@ -306,7 +318,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Create a new Fuel Report
+                            {translate('DriverNavigator.createFuelReport')}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -328,7 +340,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            Edit Fuel Report from {format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')}
+                            {translate('DriverNavigator.editFuelReportFrom', { date: format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm') })}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -370,7 +382,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Create a new Issue
+                            {translate('DriverNavigator.createIssue')}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -392,7 +404,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            Edit Issue from {format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')}
+                            {translate('DriverNavigator.editIssueFrom', { date: format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm') })}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,

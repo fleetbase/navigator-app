@@ -8,6 +8,7 @@ import { APP_THEME_KEY } from '../hooks/use-app-theme';
 import { pluralize } from 'inflected';
 import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
+import { translate } from './localize';
 import NavigatorConfig from '../../navigator.config';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
@@ -487,7 +488,7 @@ export function showActionSheet({ title, message, options, cancelButtonIndex, de
             style: index === cancelButtonIndex ? 'cancel' : index === destructiveButtonIndex ? 'destructive' : 'default',
         }));
 
-        Alert.alert(title || 'Choose an option', message || '', buttons, { cancelable: true });
+        Alert.alert(title || translate('common.chooseOption'), message || '', buttons, { cancelable: true });
     }
 }
 

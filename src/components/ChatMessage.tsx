@@ -7,11 +7,13 @@ import { abbreviateName } from '../utils';
 import { formatWhatsAppTimestamp } from '../utils/format';
 import { useChat } from '../contexts/ChatContext';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import ChatAttachment from './ChatAttachment';
 
 const ChatMessage = ({ record, participant }) => {
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
+    const { t } = useLanguage();
     const { createReadReceipt } = useChat();
     const isSender = participant.id === record.sender.id;
     const background = isDarkMode ? (isSender ? '$green-900' : '$gray-900') : isSender ? '$green-800' : '$gray-300';
@@ -60,7 +62,7 @@ const ChatMessage = ({ record, participant }) => {
                 <XStack px='$2' pt='$2' alignItems='center' justifyContent='space-between'>
                     <YStack flex={1}>
                         <Text color='$textSecondary' fontSize={10}>
-                            {record.id === 'temp' ? 'Sending...' : formatWhatsAppTimestamp(new Date(record.created_at))}
+                            {record.id === 'temp' ? t('ChatMessage.sending') : formatWhatsAppTimestamp(new Date(record.created_at))}
                         </Text>
                     </YStack>
                     <XStack flex={1} justifyContent='flex-end' space='$1'>

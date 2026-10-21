@@ -8,6 +8,8 @@ import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { Portal } from '@gorhom/portal';
 import { debounce } from '../utils';
 import unit from '../constants/Units';
+import { translateLabel } from '../utils/localize';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const getDefaultUnit = (type, defaultValue) => {
     if (typeof type === 'string' && type.startsWith('volume')) {
@@ -30,7 +32,7 @@ const UnitInput = ({
     type = 'volume',
     snapTo = '100%',
     backgroundColor = '$surface',
-    placeholder = 'Input volume',
+    placeholder,
     wrapperProps = {},
     portalHost = 'MainPortal',
     onBottomSheetPositionChanged,
@@ -38,6 +40,7 @@ const UnitInput = ({
     onBottomSheetClosed,
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const [selectedUnit, setSelectedUnit] = useState(getDefaultUnit(type, defaultUnit));
     const [value, setValue] = useState(_value);
     const [searchTerm, setSearchTerm] = useState('');
@@ -69,7 +72,7 @@ const UnitInput = ({
     const filteredUnits = useMemo(() => {
         const lowerSearch = searchTerm.toLowerCase();
         return units.filter((unit) => {
-            return unit.name.toLowerCase().includes(lowerSearch) || unit.value.toLowerCase().includes(lowerSearch);
+            return unit.name.toLowerCase().includes(lowerSearch) || unit.value.toLowerCase().includes(lowerSearch) || translateLabel('units', unit.name).toLowerCase().includes(lowerSearch);
         });
     }, [searchTerm, units]);
 
@@ -141,7 +144,7 @@ const UnitInput = ({
                 <Input
                     ref={valueInputRef}
                     flex={1}
-                    placeholder={placeholder}
+                    placeholder={placeholder ?? t('UnitInput.placeholder')}
                     keyboardType='phone-pad'
                     value={value}
                     onChangeText={setValue}
@@ -169,7 +172,7 @@ const UnitInput = ({
                             <FontAwesomeIcon icon={faPenToSquare} color={theme.infoText.val} />
                         </Button.Icon>
                         <Button.Text color='$infoText' fontSize={15} numberOfLines={1}>
-                            {selectedUnitObject?.name || ''}
+                            {translateLabel('units', selectedUnitObject?.name) || ''}
                         </Button.Text>
                     </Button>
                 </YStack>
@@ -197,7 +200,7 @@ const UnitInput = ({
                     <YStack px='$2'>
                         <BottomSheetTextInput
                             ref={searchInputRef}
-                            placeholder='Search unit'
+                            placeholder={t('UnitInput.searchUnit')}
                             onChangeText={setSearchTerm}
                             autoCapitalize='none'
                             autoComplete='off'
@@ -246,7 +249,7 @@ const UnitInput = ({
                                     }}
                                 >
                                     <XStack alignItems='center' space='$2'>
-                                        <Text color='$textPrimary'>{item.name}</Text>
+                                        <Text color='$textPrimary'>{translateLabel('units', item.name)}</Text>
                                         <Text color='$textPrimary' textTransform='italic'>
                                             ({item.value})
                                         </Text>

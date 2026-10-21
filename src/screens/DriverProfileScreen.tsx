@@ -54,10 +54,10 @@ const DriverProfileScreen = () => {
 
     const menuItems = useMemo(() => {
         const items = [
-            { id: '1', title: 'Account', screen: 'DriverAccount' },
+            { id: '1', title: t('ProfileScreen.account'), screen: 'DriverAccount' },
             {
                 id: '2',
-                title: 'Organization',
+                title: t('ProfileScreen.organization'),
                 handler: () => handleSelectOrganization(),
                 rightComponent: (
                     <Text color='$textSecondary' fontSize={13} numberOfLines={1}>
@@ -68,7 +68,7 @@ const DriverProfileScreen = () => {
         ];
 
         return items.filter((item) => !item.hidden);
-    }, [driver]);
+    }, [driver, t]);
 
     const renderMenuItem = ({ item }) => (
         <Pressable

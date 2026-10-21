@@ -1,6 +1,7 @@
 import getCurrency from './currencies';
 import countryLocaleMap from 'country-locale-map';
 import { isNone, isArray, isObject, defaults } from './';
+import { translate } from './localize';
 import { isToday, isYesterday, isThisWeek, isThisYear, format, differenceInMinutes, differenceInHours } from 'date-fns';
 
 export const defaultCurrenyOptions = {
@@ -157,7 +158,7 @@ export function formatCurrency(amount = 0, currency = 'USD', currencyDisplay = '
 
 export function formatMeters(meters) {
     if (meters < 1000) {
-        return `${meters} meters`;
+        return translate('Format.meters', { meters });
     } else {
         const km = meters / 1000;
         // Round to one decimal place
@@ -171,10 +172,10 @@ export function formatMiles(meters) {
     const miles = meters / 1609.344;
     if (miles < 1) {
         // Use two decimals for values under 1 mile
-        return `${miles.toFixed(2)} miles`;
+        return translate('Format.miles', { miles: miles.toFixed(2) });
     } else {
         // Use one decimal place for values 1 mile or more
-        return `${miles.toFixed(1)} miles`;
+        return translate('Format.miles', { miles: miles.toFixed(1) });
     }
 }
 
@@ -378,12 +379,12 @@ export function formatWhatsAppTimestamp(date) {
 
     // Less than 1 minute ago
     if (minutesDiff < 1) {
-        return 'Just now';
+        return translate('Format.justNow');
     }
 
     // Less than 60 minutes ago
     if (minutesDiff < 60) {
-        return `${minutesDiff} minute${minutesDiff > 1 ? 's' : ''} ago`;
+        return translate(minutesDiff > 1 ? 'Format.minutesAgo' : 'Format.minuteAgo', { count: minutesDiff });
     }
 
     // Same day
@@ -393,12 +394,12 @@ export function formatWhatsAppTimestamp(date) {
 
     // Yesterday
     if (isYesterday(date)) {
-        return 'Yesterday';
+        return translate('Format.yesterday');
     }
 
     // Within the current week (not including today or yesterday)
     if (isThisWeek(date, { weekStartsOn: 1 })) {
-        return format(date, 'EEEE'); // Day of the week, e.g., "Tuesday"
+        return translate(`common.weekdays.${format(date, 'EEEE').toLowerCase()}`); // Day of the week, e.g., "Tuesday"
     }
 
     // Within this year

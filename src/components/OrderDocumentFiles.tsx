@@ -11,10 +11,12 @@ import FastImage from 'react-native-fast-image';
 import FileViewer from 'react-native-file-viewer';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DOCUMENT_COLUMN_WIDTH = 100;
 const OrderDocumentFiles = ({ order }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const files = order.getAttribute('files', []);
 
     const isImageFile = (file) => {
@@ -53,17 +55,17 @@ const OrderDocumentFiles = ({ order }) => {
                 if (isImageFile(file)) {
                     // Save image to the Photos Gallery using CameraRoll
                     await CameraRoll.save(localFile, { type: 'photo' });
-                    Alert.alert('Download Complete', 'Image saved to your Photos Gallery.');
+                    Alert.alert(t('OrderDocumentFiles.downloadComplete'), t('OrderDocumentFiles.imageSaved'));
                 } else {
                     // For non-image files, open the share dialog so the user can choose what to do
                     await Share.open({ url: 'file://' + localFile });
                 }
             } else {
-                Alert.alert('Download Failed', `Status Code: ${downloadResult.statusCode}`);
+                Alert.alert(t('OrderDocumentFiles.downloadFailed'), t('OrderDocumentFiles.statusCode', { statusCode: downloadResult.statusCode }));
             }
         } catch (error) {
             console.warn('Error downloading file:', error);
-            Alert.alert('Error', 'There was an error downloading the file.');
+            Alert.alert(t('common.error'), t('OrderDocumentFiles.downloadError'));
         }
     };
 
@@ -71,7 +73,7 @@ const OrderDocumentFiles = ({ order }) => {
     if (files.length === 0) {
         return (
             <YStack py='$5' alignItems='center' justifyContent='center'>
-                <Text color='$textSecondary'>No Documents or Files.</Text>
+                <Text color='$textSecondary'>{t('OrderDocumentFiles.noDocuments')}</Text>
             </YStack>
         );
     }
@@ -106,13 +108,13 @@ const OrderDocumentFiles = ({ order }) => {
                                 <Button.Icon>
                                     <FontAwesomeIcon icon={faEye} color={theme.defaultText.val} />
                                 </Button.Icon>
-                                <Button.Text color='$defaultText'>View</Button.Text>
+                                <Button.Text color='$defaultText'>{t('OrderDocumentFiles.view')}</Button.Text>
                             </Button>
                             <Button size='$2' onPress={() => downloadFile(file)} bg='$info' borderWidth={1} borderColor='$infoBorder' justifyContent='flex-start'>
                                 <Button.Icon>
                                     <FontAwesomeIcon icon={faDownload} color={theme.infoText.val} />
                                 </Button.Icon>
-                                <Button.Text color='$infoText'>Download</Button.Text>
+                                <Button.Text color='$infoText'>{t('OrderDocumentFiles.download')}</Button.Text>
                             </Button>
                         </YStack>
                     </YStack>

@@ -8,10 +8,12 @@ import FastImage from 'react-native-fast-image';
 import { WaypointCircle } from './OrderWaypointList';
 import OrderCustomerCard from './OrderCustomerCard';
 import { formatCurrency } from '../utils/format';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ENTITY_COLUMN_WIDTH = 100;
 const OrderPayloadEntities = ({ order, onPress }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const waypoints = order.getAttribute('payload.waypoints', []) ?? [];
     const entities = order.getAttribute('payload.entities', []) ?? [];
     const isMultiDropOrder = waypoints.length > 0;
@@ -48,7 +50,7 @@ const OrderPayloadEntities = ({ order, onPress }) => {
     if (entities.length === 0 && entitiesByDestination.length === 0) {
         return (
             <YStack py='$5' alignItems='center' justifyContent='center'>
-                <Text color='$textSecondary'>Empty Payload.</Text>
+                <Text color='$textSecondary'>{t('OrderPayloadEntities.emptyPayload')}</Text>
             </YStack>
         );
     }

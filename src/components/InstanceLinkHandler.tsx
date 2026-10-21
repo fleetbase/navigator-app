@@ -5,6 +5,7 @@ import { useConfig } from '../contexts/ConfigContext';
 import { setString } from '../hooks/use-storage';
 import { get } from '../utils';
 import { toast } from '../utils/toast';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function getUrlParams(url) {
     const params = {};
@@ -29,6 +30,7 @@ function getUrlParams(url) {
 const InstanceLinkHandler = ({}) => {
     const { logout } = useAuth();
     const { setInstanceLinkConfig } = useConfig();
+    const { t } = useLanguage();
 
     const handleSetupInstanceLink = useCallback(
         (url) => {
@@ -45,7 +47,7 @@ const InstanceLinkHandler = ({}) => {
             logout();
 
             // Notify
-            toast.success('Instance link was successful!');
+            toast.success(t('InstanceLinkHandler.instanceLinked'));
         },
         [logout, setInstanceLinkConfig]
     );

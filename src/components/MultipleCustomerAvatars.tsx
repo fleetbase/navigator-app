@@ -1,5 +1,6 @@
 import React from 'react';
 import { Avatar, XStack, Text, useTheme } from 'tamagui';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface MultipleCustomerAvatarsProps {
     customers: Customer[];
@@ -7,11 +8,13 @@ interface MultipleCustomerAvatarsProps {
 }
 
 export const MultipleCustomerAvatars: React.FC<MultipleCustomerAvatarsProps> = ({ customers = [], size = 25 }) => {
+    const { t } = useLanguage();
+
     // Display a friendly message when no customers exist
     if (customers.length === 0) {
         return (
             <XStack alignItems='center'>
-                <Text color='$textPrimary'>No customers</Text>
+                <Text color='$textPrimary'>{t('MultipleCustomerAvatars.noCustomers')}</Text>
             </XStack>
         );
     }

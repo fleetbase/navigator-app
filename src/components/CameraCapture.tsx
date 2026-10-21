@@ -7,6 +7,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import useDimensions from '../hooks/use-dimensions';
 import { toast, ToastPosition } from '../utils/toast';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MENU_BAR_HEIGHT = 160;
 
@@ -22,6 +23,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
     const cameraRef = useRef<CameraRef>(null);
     const device = useCameraDevice('back');
     const { screenHeight } = useDimensions();
+    const { t } = useLanguage();
     const [hasPermission, setHasPermission] = useState<boolean>(false);
     const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
     const [showGalleryOverlay, setShowGalleryOverlay] = useState<boolean>(false);
@@ -46,7 +48,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
                 flash: 'off',
                 qualityPrioritization: 'balanced',
             });
-            toast.info('Photo captured.', { position: ToastPosition.TOP });
+            toast.info(t('CameraCapture.photoCaptured'), { position: ToastPosition.TOP });
 
             const filePath = (Platform.OS === 'ios' ? '' : 'file://') + photo.path;
             const base64Data = await RNFS.readFile(filePath, 'base64');
@@ -72,17 +74,19 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
 
             if (result.didCancel) return;
             if (result.errorCode) {
-                throw new Error(result.errorMessage ?? `Unable to select photos (${result.errorCode}).`);
+                throw new Error(result.errorMessage ?? t('CameraCapture.unableToSelectPhotosWithCode', { code: result.errorCode }));
             }
 
             const selectedPhotos = (result.assets ?? []).flatMap((asset) => (asset.uri ? [{ uri: asset.uri }] : []));
             if (selectedPhotos.length === 0) return;
 
             setPhotos((prev) => [...prev, ...selectedPhotos]);
-            toast.info(`${selectedPhotos.length} photo${selectedPhotos.length === 1 ? '' : 's'} added from gallery.`, { position: ToastPosition.TOP });
+            toast.info(t(selectedPhotos.length === 1 ? 'CameraCapture.photoAddedFromGallery' : 'CameraCapture.photosAddedFromGallery', { count: selectedPhotos.length }), {
+                position: ToastPosition.TOP,
+            });
         } catch (error) {
             console.warn('Error selecting from camera roll:', error);
-            toast.error(error instanceof Error ? error.message : 'Unable to select photos.', { position: ToastPosition.TOP });
+            toast.error(error instanceof Error ? error.message : t('CameraCapture.unableToSelectPhotos'), { position: ToastPosition.TOP });
         }
     }, []);
 
@@ -106,7 +110,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
     if (!device || !hasPermission) {
         return (
             <YStack flex={1} justifyContent='center' alignItems='center'>
-                <Text color='$textSecondary'>Loading camera or awaiting permission...</Text>
+                <Text color='$textSecondary'>{t('CameraCapture.loadingCamera')}</Text>
             </YStack>
         );
     }
@@ -119,21 +123,21 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
             <YStack width='100%' height={MENU_BAR_HEIGHT} bg='$background' py='$3' space='$4' borderTopWidth={1} borderColor='$borderColorWithShadow'>
                 <XStack ai='center' jc='space-between' px='$4'>
                     <Button onPress={handleSelectFromCameraRoll}>
-                        <Button.Text>Gallery</Button.Text>
+                        <Button.Text>{t('CameraCapture.gallery')}</Button.Text>
                     </Button>
                     <Button onPress={handleTakePhoto} size='$6' circular bg='$blue-500' borderWidth={5} borderColor='$blue-700'>
                         <Button.Text fontSize={14} color='$white'>
-                            Snap
+                            {t('CameraCapture.snap')}
                         </Button.Text>
                     </Button>
                     <Button onPress={openGalleryOverlay}>
-                        <Button.Text>{photos.length} Photos</Button.Text>
+                        <Button.Text>{t('CameraCapture.photosCount', { count: photos.length })}</Button.Text>
                     </Button>
                 </XStack>
                 <YStack px='$5'>
                     <Button width='100%' bg='$success' borderWidth={1} borderColor='$successBorder' onPress={handleDone}>
                         <Button.Text fontSize={15} color='$successText'>
-                            Done
+                            {t('common.done')}
                         </Button.Text>
                     </Button>
                 </YStack>
@@ -143,7 +147,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
                 <YStack pos='absolute' top={0} left={0} w='100%' h='100%' bg='$surface' opacity={0.95}>
                     <XStack jc='flex-end' p='$4'>
                         <Button size='$3' onPress={closeGalleryOverlay} bg='$default' borderWidth={1} borderColor='$defaultBorder'>
-                            <Button.Text color='$defaultText'>Close</Button.Text>
+                            <Button.Text color='$defaultText'>{t('CameraCapture.close')}</Button.Text>
                         </Button>
                     </XStack>
 

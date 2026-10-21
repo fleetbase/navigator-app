@@ -4,6 +4,7 @@ import { SafeAreaView, Pressable, Keyboard, StyleSheet } from 'react-native';
 import { Spinner, Text, YStack, XStack, Button, useTheme } from 'tamagui';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { usePromiseWithLoading } from '../hooks/use-promise-with-loading';
 import BackButton from '../components/BackButton';
 import PhoneInput from '../components/PhoneInput';
@@ -25,6 +26,7 @@ const EditAccountPropertyScreen = ({ route }) => {
     const property = route.params.property;
     const theme = useTheme();
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const { customer, setCustomer } = useAuth();
     const { runWithLoading, isLoading } = usePromiseWithLoading();
     const [value, setValue] = useState(customer.getAttribute(property.key));
@@ -34,7 +36,7 @@ const EditAccountPropertyScreen = ({ route }) => {
         try {
             const updatedCustomer = await runWithLoading(customer.update({ [property.key]: value }));
             setCustomer(updatedCustomer);
-            toast.success(`${property.name} changes saved.`);
+            toast.success(t('EditAccountPropertyScreen.changesSaved', { property: property.name }));
             navigation.goBack();
         } catch (error) {
             toast.error(error.message);
@@ -60,7 +62,7 @@ const EditAccountPropertyScreen = ({ route }) => {
                     <Button onPress={handleUpdateProperty} size='$5' bg='$primary' flex={1} opacity={mutated ? 1 : 0.75} disabled={!mutated}>
                         <Button.Icon>{isLoading() && <Spinner color='$textPrimary' />}</Button.Icon>
                         <Button.Text color='$textPrimary' fontWeight='bold' fontSize='$5'>
-                            Save
+                            {t('common.save')}
                         </Button.Text>
                     </Button>
                 </XStack>

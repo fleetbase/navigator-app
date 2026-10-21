@@ -5,6 +5,7 @@ import BackgroundFetch from 'react-native-background-fetch';
 import { check, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { Place, Point } from '@fleetbase/sdk';
 import { isEmpty } from '../utils';
+import { translate } from '../utils/localize';
 import { useAuth } from './AuthContext';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
@@ -165,11 +166,10 @@ export const LocationProvider = ({ children }) => {
         BackgroundGeolocation.ready(
             {
                 backgroundPermissionRationale: {
-                    title: 'Allow Fleetbase Navigator to access your location',
-                    message:
-                        'Fleetbase Navigator collects precise location data to enable real-time driver tracking and order progress updates for your organization’s dispatchers and operations team, even when the app is closed or not in use. Location is collected while you are online and is sent securely to Fleetbase.',
-                    positiveAction: 'Allow',
-                    negativeAction: 'Deny',
+                    title: translate('LocationContext.backgroundPermissionTitle'),
+                    message: translate('LocationPermissionScreen.enableLocationPrompt'),
+                    positiveAction: translate('LocationContext.allow'),
+                    negativeAction: translate('LocationContext.deny'),
                 },
                 desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
                 distanceFilter: 10,
