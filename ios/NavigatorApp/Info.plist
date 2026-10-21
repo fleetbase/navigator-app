@@ -34,7 +34,6 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>$(APP_LINK_PREFIX)</string>
-				<string>fb$(FACEBOOK_APP_ID)</string>
 				<string>$(APP_IDENTIFIER)</string>
 				<string>com.googleusercontent.apps.$(GOOGLE_IOS_CLIENT_ID)</string>
 			</array>
@@ -42,12 +41,6 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>FacebookAppID</key>
-	<string>$(FACEBOOK_APP_ID)</string>
-	<key>FacebookClientToken</key>
-	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
-	<key>FacebookDisplayName</key>
-	<string>$(APP_NAME)</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 	<key>GIDClientID</key>

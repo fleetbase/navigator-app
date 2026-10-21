@@ -65,8 +65,6 @@ jobs:
                   echo "APP_LINK_PREFIX=flbnavigator" >> .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" >> .env
                   echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
-                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
-                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
                   echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
                   echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
                   echo "TRANSISTORSOFT_LICENSE_KEY_ANDROID=$TRANSISTORSOFT_LICENSE_KEY_ANDROID" >> .env
@@ -121,8 +119,6 @@ jobs:
                   echo "APP_LINK_PREFIX=flbnavigator" >> .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" >> .env
                   echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
-                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
-                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
                   echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
                   echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
                   echo "TRANSISTORSOFT_LICENSE_KEY_ANDROID=$TRANSISTORSOFT_LICENSE_KEY_ANDROID" >> .env
@@ -259,8 +255,6 @@ jobs:
                   echo "APP_LINK_PREFIX=flbnavigator" >> .env
                   echo "FLEETBASE_KEY=${{ secrets.FLEETBASE_KEY }}" >> .env
                   echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env
-                  echo "FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}" >> .env
-                  echo "FACEBOOK_CLIENT_TOKEN=${{ secrets.FACEBOOK_CLIENT_TOKEN }}" >> .env
                   echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
                   echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
                   echo "TRANSISTORSOFT_LICENSE_KEY_IOS=$TRANSISTORSOFT_LICENSE_KEY_IOS" >> .env

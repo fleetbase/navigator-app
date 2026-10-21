@@ -8,7 +8,6 @@ import useStorage, { storage } from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useLanguage } from './LanguageContext';
 import { useNotification } from './NotificationContext';
-import { LoginManager as FacebookLoginManager } from 'react-native-fbsdk-next';
 
 const AuthContext = createContext();
 
@@ -257,9 +256,6 @@ export const AuthProvider = ({ children }) => {
         storage.removeItem('_driver_token');
         storage.removeItem('organizations');
         storage.removeItem('driver');
-
-        // If logged in with facebook
-        FacebookLoginManager.logOut();
     };
 
     // Verify code
