@@ -10,9 +10,12 @@ import { uppercase } from '../utils/format';
 import { getIssueTypes, getIssuePriorities, getIssueStatuses, getIssueCategories, IssueStatus, IssuePriority } from '../constants/Enums';
 import BottomSheetSelect from '../components/BottomSheetSelect';
 import TextAreaSheet from '../components/TextAreaSheet';
+import { translateLabel } from '../utils/localize';
+import { useLanguage } from '../contexts/LanguageContext';
 
-const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'Publish Issue' }) => {
+const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const [issue, setIssue] = useState({
@@ -56,7 +59,7 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
             <YStack py='$3' space='$4'>
                 <YStack px='$3' space='$2'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                        Issue Type
+                        {t('IssueForm.issueType')}
                     </Text>
                     <BottomSheetSelect
                         value={issue.type}
@@ -64,8 +67,9 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                         optionLabel='value'
                         optionValue='key'
                         onChange={(value) => handleUpdateIssue('type', value)}
-                        title='Select Issue Type'
+                        title={t('IssueForm.selectIssueType')}
                         humanize={true}
+                        formatLabel={(label, option) => translateLabel('issueTypes', option?.key ?? option, label)}
                         portalHost='IssueFormPortal'
                         snapTo='100%'
                         onBottomSheetPositionChanged={setIsBottomSheetPresenting}
@@ -73,14 +77,15 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                 </YStack>
                 <YStack px='$3' space='$2'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                        Issue Category
+                        {t('IssueForm.issueCategory')}
                     </Text>
                     <BottomSheetSelect
                         value={issue.category}
                         options={getIssueCategories(uppercase(underscore(issue.type)))}
                         onChange={(value) => handleUpdateIssue('category', value)}
-                        title='Select Issue Category'
+                        title={t('IssueForm.selectIssueCategory')}
                         humanize={true}
+                        formatLabel={(label, option) => translateLabel('issueCategories', option, label)}
                         portalHost='IssueFormPortal'
                         snapTo='100%'
                         onBottomSheetPositionChanged={setIsBottomSheetPresenting}
@@ -88,7 +93,7 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                 </YStack>
                 <YStack px='$3' space='$2'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                        Issue Priority
+                        {t('IssueForm.issuePriority')}
                     </Text>
                     <BottomSheetSelect
                         value={issue.priority}
@@ -96,8 +101,9 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                         optionLabel='value'
                         optionValue='key'
                         onChange={(value) => handleUpdateIssue('priority', value)}
-                        title='Select Issue Priority'
+                        title={t('IssueForm.selectIssuePriority')}
                         humanize={true}
+                        formatLabel={(label, option) => translateLabel('statuses', option?.key ?? option, label)}
                         portalHost='IssueFormPortal'
                         snapTo='100%'
                         onBottomSheetPositionChanged={setIsBottomSheetPresenting}
@@ -105,7 +111,7 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                 </YStack>
                 <YStack px='$3' space='$2'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                        Issue Status
+                        {t('IssueForm.issueStatus')}
                     </Text>
                     <BottomSheetSelect
                         value={issue.status}
@@ -113,8 +119,9 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                         optionLabel='value'
                         optionValue='key'
                         onChange={(value) => handleUpdateIssue('status', value)}
-                        title='Select Issue Status'
+                        title={t('IssueForm.selectIssueStatus')}
                         humanize={true}
+                        formatLabel={(label, option) => translateLabel('statuses', option?.key ?? option, label)}
                         portalHost='IssueFormPortal'
                         snapTo='100%'
                         onBottomSheetPositionChanged={setIsBottomSheetPresenting}
@@ -122,13 +129,13 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                 </YStack>
                 <YStack px='$3' space='$2'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                        Issue Report
+                        {t('IssueForm.issueReport')}
                     </Text>
                     <TextAreaSheet
                         value={issue.report}
                         onChange={(value) => handleUpdateIssue('report', value)}
-                        title='Issue Report'
-                        placeholder='Type your issue report...'
+                        title={t('IssueForm.issueReport')}
+                        placeholder={t('IssueForm.issueReportPlaceholder')}
                         portalHost='IssueFormPortal'
                         snapTo='100%'
                         onBottomSheetPositionChanged={setIsBottomSheetPresenting}
@@ -148,7 +155,7 @@ const IssueForm = ({ value = {}, onSubmit, isSubmitting = false, submitText = 'P
                     >
                         <Button.Icon>{isSubmitting ? <Spinner color='$infoText' /> : <FontAwesomeIcon icon={faSave} color={theme['$infoText'].val} size={16} />}</Button.Icon>
                         <Button.Text color='$infoText' fontSize={15}>
-                            {submitText}
+                            {submitText ?? t('IssueForm.publishIssue')}
                         </Button.Text>
                     </Button>
                 </YStack>

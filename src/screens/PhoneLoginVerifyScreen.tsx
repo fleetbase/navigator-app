@@ -7,12 +7,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCheck, faArrowRotateRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { OtpInput } from 'react-native-otp-entry';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { navigatorConfig } from '../utils';
 import LinearGradient from 'react-native-linear-gradient';
 
 const PhoneLoginVerifyScreen = () => {
     const navigation = useNavigation();
     const theme = useTheme();
+    const { t } = useLanguage();
     const { phone, verifyCode, isVerifyingCode, loginMethod } = useAuth();
     const [code, setCode] = useState(null);
 
@@ -39,7 +41,7 @@ const PhoneLoginVerifyScreen = () => {
             <YStack flex={1} space='$3' padding='$5'>
                 <YStack mb='$4'>
                     <Text color='$gray-300' fontSize={20} fontWeight='bold'>
-                        Code sent to {phone}
+                        {t('PhoneLoginVerifyScreen.codeSentTo', { phone })}
                     </Text>
                 </YStack>
                 <OtpInput
@@ -52,7 +54,7 @@ const PhoneLoginVerifyScreen = () => {
                 <Button size='$5' onPress={() => handleVerifyCode(code)} bg='$primary' width='100%' opacity={isVerifyingCode ? 0.75 : 1} disabled={isVerifyingCode} rounded>
                     <Button.Icon>{isVerifyingCode ? <Spinner color='$white' /> : <FontAwesomeIcon icon={faCheck} color={theme.white.val} />}</Button.Icon>
                     <Button.Text color='$gray-200' fontWeight='bold'>
-                        Verify Code
+                        {t('PhoneLoginVerifyScreen.verifyCode')}
                     </Button.Text>
                 </Button>
                 <Button size='$5' onPress={handleRetry} bg='$secondary' width='100%' rounded>
@@ -60,7 +62,7 @@ const PhoneLoginVerifyScreen = () => {
                         <FontAwesomeIcon icon={faArrowRotateRight} color={theme['gray-500'].val} />
                     </Button.Icon>
                     <Button.Text color='$textPrimary' fontWeight='bold'>
-                        Retry
+                        {t('common.retry')}
                     </Button.Text>
                 </Button>
                 {loginMethod === 'email' && (
@@ -71,10 +73,10 @@ const PhoneLoginVerifyScreen = () => {
                             </YStack>
                             <YStack flex={1}>
                                 <Text fontSize={15} color='$infoText' fontWeight='bold'>
-                                    Unable to send SMS.
+                                    {t('PhoneLoginVerifyScreen.unableToSendSms')}
                                 </Text>
                                 <Text fontSize={15} color='$infoText'>
-                                    Your verification code was sent via <Text fontWeight='bold'>{loginMethod}</Text>.
+                                    {t('PhoneLoginVerifyScreen.codeSentVia')} <Text fontWeight='bold'>{loginMethod}</Text>.
                                 </Text>
                             </YStack>
                         </XStack>

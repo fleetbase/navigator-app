@@ -3,12 +3,14 @@ import { useNavigation } from '@react-navigation/native';
 import { YStack } from 'tamagui';
 import { useAuth } from '../contexts/AuthContext';
 import { useTempStore } from '../contexts/TempStoreContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { later } from '../utils';
 import useFleetbase from '../hooks/use-fleetbase';
 import IssueForm from '../components/IssueForm';
 
 const EditIssueScreen = () => {
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const {
         setValue,
         store: { issue },
@@ -39,7 +41,7 @@ const EditIssueScreen = () => {
 
     return (
         <YStack flex={1} bg='$background'>
-            <IssueForm value={issue} onSubmit={handleSaveIssue} isSubmitting={isLoading} submitText='Save Issue' />
+            <IssueForm value={issue} onSubmit={handleSaveIssue} isSubmitting={isLoading} submitText={t('EditIssueScreen.saveIssue')} />
         </YStack>
     );
 };

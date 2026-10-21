@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useMemo, ReactNode } from 'react';
 import { getLangNameFromCode } from 'language-name-map';
 import { navigatorConfig } from '../utils';
 import { getAvailableLocales } from '../utils/localize';
@@ -39,9 +39,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         setLocaleState(newLocale);
     };
 
-    useEffect(() => {
+    // Apply the selected locale before children render. react-native-i18n initializes
+    // I18n.locale with the device language, which must not leak into the first render.
+    if (I18n.locale !== locale) {
         I18n.locale = locale;
-    }, []);
+    }
 
     const t = (key: string, options?: Record<string, any>) => I18n.t(key, options);
 

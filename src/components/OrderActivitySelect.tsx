@@ -11,6 +11,7 @@ import { Portal } from '@gorhom/portal';
 import { formattedAddressFromPlace, formatAddressSecondaryIdentifier } from '../utils/location';
 import { getColorFromStatus } from '../utils/format';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import PlaceMapView from './PlaceMapView';
 import Spacer from './Spacer';
 import Badge from './Badge';
@@ -20,6 +21,7 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
     const theme = useTheme();
     const navigation = useNavigation();
     const { isDarkMode } = useAppTheme();
+    const { t } = useLanguage();
     const bottomSheetRef = useRef(null);
     const snapPoints = useMemo(() => [snapTo], [snapTo]);
 
@@ -86,7 +88,7 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                                     space='$2'
                                 >
                                     <FontAwesomeIcon icon={faLightbulb} color={theme['$warningText'].val} />
-                                    <Text color='$warningText'>Requires proof of delivery</Text>
+                                    <Text color='$warningText'>{t('OrderActivitySelect.requiresProofOfDelivery')}</Text>
                                 </XStack>
                             )}
                         </YStack>
@@ -116,13 +118,13 @@ const OrderActivitySelect = forwardRef(({ onChange, waypoint, activities = [], s
                         <YStack>
                             <XStack alignItems='center' justifyContent='space-between' px='$5' mb='$4'>
                                 <Text fontSize='$6' color='$textPrimary' fontWeight='bold'>
-                                    Select activity
+                                    {t('OrderActivitySelect.selectActivity')}
                                 </Text>
                             </XStack>
                             {waypoint && (
                                 <YStack px='$3' pt='$4' mb='$4' borderTopWidth={1} borderBottomWidth={1} borderColor='$infoBorder' bg='$info'>
                                     <Text color='$infoText' fontWeight={17} fontWeight='bold' mb='$2' textTransform='uppercase'>
-                                        Updating activity for:
+                                        {t('OrderActivitySelect.updatingActivityFor')}
                                     </Text>
                                     <WaypointItem
                                         waypoint={waypoint.serialize()}

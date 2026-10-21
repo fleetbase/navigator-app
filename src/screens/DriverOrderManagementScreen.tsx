@@ -9,6 +9,7 @@ import { formatDuration, formatMeters } from '../utils/format';
 import { useOrderManager } from '../contexts/OrderManagerContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import InsetShadow from 'react-native-inset-shadow';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import useAppTheme from '../hooks/use-app-theme';
@@ -43,6 +44,7 @@ const REFRESH_ORDERS_MS = 6000 * 15; // 15 mins
 const DriverOrderManagementScreen = () => {
     const theme = useTheme();
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const calendar = useRef();
     const listenerRef = useRef();
     const { isDarkMode } = useAppTheme();
@@ -183,7 +185,7 @@ const DriverOrderManagementScreen = () => {
             <YStack>
                 <YStack px='$1'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold'>
-                        Active Orders: {allActiveOrders.length}
+                        {t('DriverOrderManagementScreen.activeOrdersCount', { count: allActiveOrders.length })}
                     </Text>
                 </YStack>
                 <YStack>
@@ -211,7 +213,7 @@ const DriverOrderManagementScreen = () => {
                     <XStack alignItems='center' bg='$info' borderWidth={1} borderColor='$infoBorder' space='$2' px='$3' py='$2' borderRadius='$5' width='100%' flexWrap='wrap'>
                         <FontAwesomeIcon icon={faInfoCircle} color={theme['$infoText'].val} />
                         <Text color='$infoText' fontSize={16}>
-                            No current orders for {format(new Date(currentDate), 'yyyy-MM-dd')}
+                            {t('DriverOrderManagementScreen.noCurrentOrders', { date: format(new Date(currentDate), 'yyyy-MM-dd') })}
                         </Text>
                     </XStack>
                 </YStack>
@@ -261,17 +263,17 @@ const DriverOrderManagementScreen = () => {
             </YStack>
             <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor={isDarkMode ? '$borderColor' : '$borderColorWithShadow'}>
                 <Text color='$textPrimary' fontSize='$8' fontWeight='bold' mb='$1'>
-                    {todayString} orders
+                    {t('DriverOrderManagementScreen.dayOrders', { day: t(`common.weekdays.${todayString.toLowerCase()}`) })}
                 </Text>
                 <XStack space='$2' alignItems='center'>
                     <Text color='$textSecondary' fontSize='$5'>
-                        {currentOrders.length} {currentOrders.length > 1 ? 'orders' : 'order'}
+                        {t(currentOrders.length > 1 ? 'DriverOrderManagementScreen.ordersCount' : 'DriverOrderManagementScreen.orderCount', { count: currentOrders.length })}
                     </Text>
                     <Text color='$textSecondary' fontSize='$5'>
                         •
                     </Text>
                     <Text color='$textSecondary' fontSize='$5'>
-                        {stops} {stops > 1 ? 'stops' : 'stop'} left
+                        {t(stops > 1 ? 'DriverOrderManagementScreen.stopsLeft' : 'DriverOrderManagementScreen.stopLeft', { count: stops })}
                     </Text>
                     <Text color='$textSecondary' fontSize='$5'>
                         •

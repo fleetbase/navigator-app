@@ -5,16 +5,18 @@ import { faInstagram, faGoogle, faApple } from '@fortawesome/free-brands-svg-ico
 import { faPhone } from '@fortawesome/free-solid-svg-icons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from 'tamagui';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const PhoneLoginButton = ({ onPress, ...props }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
 
     return (
         <Button onPress={onPress} bg='$subsurface' borderWidth={1} borderColor='$borderColor' width='100%' {...props} rounded>
             <Button.Icon>
                 <FontAwesomeIcon icon={faPhone} color={theme['$textPrimary'].val} />
             </Button.Icon>
-            <Button.Text color='$textPrimary'>Continue with Phone</Button.Text>
+            <Button.Text color='$textPrimary'>{t('Buttons.continueWithPhone')}</Button.Text>
         </Button>
     );
 };

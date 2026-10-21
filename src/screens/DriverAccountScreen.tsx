@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { showActionSheet, abbreviateName } from '../utils';
 import { titleize } from '../utils/format';
+import { translateLabel } from '../utils/localize';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import useAppTheme from '../hooks/use-app-theme';
@@ -138,7 +139,7 @@ const DriverAccountScreen = () => {
     };
 
     const handleSelectScheme = () => {
-        const options = [...schemes.map((scheme) => titleize(scheme)), t('common.cancel')];
+        const options = [...schemes.map((scheme) => translateLabel('AccountScreen.schemes', scheme, titleize(scheme))), t('common.cancel')];
         showActionSheet({
             options,
             cancelButtonIndex: options.length - 1,
@@ -146,7 +147,7 @@ const DriverAccountScreen = () => {
                 if (buttonIndex !== options.length - 1) {
                     const selectedScheme = schemes[buttonIndex];
                     changeScheme(selectedScheme);
-                    toast.success(t('AccountScreen.schemeChanged', { selectedScheme }), {
+                    toast.success(t('AccountScreen.schemeChanged', { selectedScheme: translateLabel('AccountScreen.schemes', selectedScheme) }), {
                         position: ToastPosition.BOTTOM,
                     });
                 }
@@ -243,7 +244,7 @@ const DriverAccountScreen = () => {
             onPress: () => navigation.navigate('EditAccountProperty', { property: { name: t('AccountScreen.name'), key: 'name', component: 'input' } }),
         },
         {
-            title: 'Language',
+            title: t('AccountScreen.language'),
             rightComponent: (
                 <Text color='$textSecondary' opacity={0.5}>
                     {language.native}
@@ -255,7 +256,7 @@ const DriverAccountScreen = () => {
             title: t('AccountScreen.theme'),
             rightComponent: (
                 <Text color='$textSecondary' opacity={0.5}>
-                    {titleize(userColorScheme)}
+                    {translateLabel('AccountScreen.schemes', userColorScheme, titleize(userColorScheme))}
                 </Text>
             ),
             onPress: handleSelectScheme,

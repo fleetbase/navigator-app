@@ -4,10 +4,12 @@ import { YStack, XStack, Text, Button, Spinner, TextArea, useTheme } from 'tamag
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faRotate } from '@fortawesome/free-solid-svg-icons';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import Comment from './Comment';
 
 const CommentThread = ({ comments: initialComments = [], subject, onReloadComments, isReloading }) => {
     const { isDarkMode } = useAppTheme();
+    const { t } = useLanguage();
     const theme = useTheme();
     const [comments, setComments] = useState(initialComments);
     const [input, setInput] = useState('');
@@ -21,7 +23,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
 
     const isCommentInvalid = (comment) => {
         if (!comment || comment.trim().length < 2) {
-            Alert.alert('Invalid Comment', 'Comment must be at least 2 characters.');
+            Alert.alert(t('CommentThread.invalidComment'), t('CommentThread.commentTooShort'));
             return true;
         }
         return false;
@@ -52,7 +54,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
             <YStack>
                 <TextArea
                     value={input}
-                    placeholder='Write a comment...'
+                    placeholder={t('CommentThread.commentPlaceholder')}
                     onChangeText={setInput}
                     width='100%'
                     bg={isDarkMode ? '$secondary' : '$white'}
@@ -77,7 +79,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
                         <Button.Icon>
                             <FontAwesomeIcon icon={faPaperPlane} color={theme['$infoText'].val} />
                         </Button.Icon>
-                        <Button.Text color='$infoText'>Publish Comment</Button.Text>
+                        <Button.Text color='$infoText'>{t('CommentThread.publishComment')}</Button.Text>
                     </Button>
                 </XStack>
             </YStack>

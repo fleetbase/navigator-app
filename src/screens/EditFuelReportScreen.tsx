@@ -4,12 +4,14 @@ import { YStack } from 'tamagui';
 import { underscore } from 'inflected';
 import { useAuth } from '../contexts/AuthContext';
 import { useTempStore } from '../contexts/TempStoreContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { later } from '../utils';
 import useFleetbase from '../hooks/use-fleetbase';
 import FuelReportForm from '../components/FuelReportForm';
 
 const EditFuelReportScreen = () => {
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const {
         setValue,
         store: { fuelReport },
@@ -41,7 +43,7 @@ const EditFuelReportScreen = () => {
 
     return (
         <YStack flex={1} bg='$background'>
-            <FuelReportForm value={fuelReport} onSubmit={handleUpdateReport} isSubmitting={isLoading} submitText='Update Fuel Report' />
+            <FuelReportForm value={fuelReport} onSubmit={handleUpdateReport} isSubmitting={isLoading} submitText={t('EditFuelReportScreen.updateFuelReport')} />
         </YStack>
     );
 };

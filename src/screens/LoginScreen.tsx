@@ -8,6 +8,7 @@ import { faPlug } from '@fortawesome/free-solid-svg-icons';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import { titleize } from '../utils/format';
 import { navigatorConfig } from '../utils';
+import { useLanguage } from '../contexts/LanguageContext';
 import { PhoneLoginButton, AppleLoginButton, GoogleLoginButton } from '../components/Buttons';
 import useOAuth from '../hooks/use-oauth';
 import LinearGradient from 'react-native-linear-gradient';
@@ -16,6 +17,7 @@ import DeviceInfo from 'react-native-device-info';
 const LoginScreen = () => {
     const navigation = useNavigation();
     const theme = useTheme();
+    const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const windowHeight = Dimensions.get('window').height;
     const { login, loginSupported, loading } = useOAuth();
@@ -27,7 +29,7 @@ const LoginScreen = () => {
     const handleOAuthLogin = async (provider) => {
         try {
             const response = await login(provider);
-            toast.success(`Logged in with ${titleize(provider)}`);
+            toast.success(t('LoginScreen.loggedInWith', { provider: titleize(provider) }));
         } catch (err) {
             console.warn('Error attempting OAuth login:', err);
         }

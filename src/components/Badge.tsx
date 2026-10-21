@@ -1,6 +1,8 @@
 import React from 'react';
 import { XStack, YStack, Text } from 'tamagui';
 import { titleize, getColorFromStatus } from '../utils/format';
+import { translateLabel } from '../utils/localize';
+import { useLanguage } from '../contexts/LanguageContext';
 
 /**
  * Given a base color and whether it's inverted or not,
@@ -37,6 +39,7 @@ function getColorScheme(color, inverted = false) {
  * - children: string | ReactNode - the text or content inside the badge
  */
 const Badge = ({ status, color, inverted = false, icon, iconPlacement = 'left', px = '$3', py = '$2', fontSize = '$2', borderRadius = '$4', numberOfLines, children, ...props }) => {
+    useLanguage(); // re-render when the language changes
     let baseColor = color;
 
     if (!baseColor && status && typeof status === 'string') {
@@ -61,7 +64,7 @@ const Badge = ({ status, color, inverted = false, icon, iconPlacement = 'left', 
             {iconPlacement === 'left' && iconElement}
             {status && (
                 <Text color={text} fontWeight='bold' fontSize={fontSize} numberOfLines={numberOfLines}>
-                    {titleize(status)}
+                    {translateLabel('statuses', status, titleize(status))}
                 </Text>
             )}
             {children}

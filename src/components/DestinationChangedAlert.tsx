@@ -5,6 +5,7 @@ import { YStack, XStack, Text, Button, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import WaypointList from './WaypointList';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DestinationChangedAlertProps {
     visible: boolean;
@@ -16,6 +17,7 @@ interface DestinationChangedAlertProps {
 
 const DestinationChangedAlert: React.FC<DestinationChangedAlertProps> = ({ visible, previousDestination, currentDestination, onClose }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const prevAddress = previousDestination?.getAttribute('address');
     const currAddress = currentDestination?.getAttribute('address');
 
@@ -27,16 +29,16 @@ const DestinationChangedAlert: React.FC<DestinationChangedAlertProps> = ({ visib
                         <XStack space='$2' px='$4' py='$4' alignItems='center' borderBottomWidth={1} borderColor='$infoBorder'>
                             <FontAwesomeIcon icon={faCheck} color={theme['$green-500'].val} />
                             <Text fontSize='$6' fontWeight='bold' color='$textPrimary'>
-                                Waypoint Completed
+                                {t('OrderScreen.waypointCompleted')}
                             </Text>
                         </XStack>
                         <YStack py='$2'>
                             <YStack mt='$3' space='$2' px='$4'>
                                 <Text fontSize='$4' color='$textSecondary'>
-                                    Activity for waypoint <Text color='$infoText'>{prevAddress}</Text> is complete.
+                                    {t('DestinationChangedAlert.activityCompleteBefore')} <Text color='$infoText'>{prevAddress}</Text> {t('DestinationChangedAlert.activityCompleteAfter')}
                                 </Text>
                                 <Text fontSize='$4' color='$textSecondary'>
-                                    Your current destination has changed to <Text color='$infoText'>{currAddress}</Text>.
+                                    {t('DestinationChangedAlert.destinationChangedTo')} <Text color='$infoText'>{currAddress}</Text>.
                                 </Text>
                             </YStack>
                             <YStack mt='$5' px='$4'>
@@ -48,7 +50,7 @@ const DestinationChangedAlert: React.FC<DestinationChangedAlertProps> = ({ visib
                     <YStack mt='$4' borderTopWidth={1} borderColor='$infoBorder' alignItems='center' justifyContent='center'>
                         <Button onPress={onClose} width='100%' height='$5'>
                             <Button.Text fontSize='$5' fontWeight='bold'>
-                                Continue
+                                {t('common.continue')}
                             </Button.Text>
                         </Button>
                     </YStack>

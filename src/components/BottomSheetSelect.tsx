@@ -5,6 +5,7 @@ import { useTheme, View, Text, Button, XStack, YStack, Input } from 'tamagui';
 import { Portal } from '@gorhom/portal';
 import { titleize as titleizeString } from 'inflected';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BottomSheetSelect = forwardRef(
     (
@@ -16,8 +17,9 @@ const BottomSheetSelect = forwardRef(
             optionValue,
             optionLabel,
             renderOption,
-            placeholder = 'Select an option',
-            searchPlaceholder = 'Search options',
+            formatLabel,
+            placeholder,
+            searchPlaceholder,
             title,
             portalHost = 'MainPortal',
             snapTo = '90%',
@@ -32,11 +34,13 @@ const BottomSheetSelect = forwardRef(
     ) => {
         const theme = useTheme();
         const { isDarkMode } = useAppTheme();
+        const { t } = useLanguage();
         const [selected, setSelected] = useState(value);
         const [searchTerm, setSearchTerm] = useState('');
         const bottomSheetRef = useRef(null);
         const searchInputRef = useRef(null);
         const snapPoints = useMemo(() => [snapTo], [snapTo]);
+        const displayLabel = (label, option) => (typeof formatLabel === 'function' ? formatLabel(label, option) : label);
 
         // Expose bottomSheetRef to parent components
         useImperativeHandle(
@@ -54,7 +58,7 @@ const BottomSheetSelect = forwardRef(
                 const lowerSearch = searchTerm.toLowerCase();
                 if (lowerSearch) {
                     if (typeof option === 'string') {
-                        return option.toLowerCase().includes(lowerSearch);
+                        return option.toLowerCase().includes(lowerSearch) || String(displayLabel(option, option)).toLowerCase().includes(lowerSearch);
                     }
 
                     const optionLabel = typeof optionLabel === 'string' ? option[optionLabel] : '';
@@ -95,13 +99,13 @@ const BottomSheetSelect = forwardRef(
         const renderSelected = useCallback(() => {
             if (typeof selected === 'string') {
                 if (humanize === true) {
-                    return titleizeString(selected);
+                    return displayLabel(titleizeString(selected), selected);
                 }
-                return selected;
+                return displayLabel(selected, selected);
             }
 
             if (typeof optionLabel === 'string' && isObject(selected)) {
-                return selected[optionLabel];
+                return displayLabel(selected[optionLabel], selected);
             }
         }, [selected]);
 
@@ -150,7 +154,7 @@ const BottomSheetSelect = forwardRef(
                     <YStack px='$2'>
                         <BottomSheetTextInput
                             ref={searchInputRef}
-                            placeholder={searchPlaceholder}
+                            placeholder={searchPlaceholder ?? t('BottomSheetSelect.searchPlaceholder')}
                             onChangeText={setSearchTerm}
                             autoCapitalize={false}
                             autoComplete='off'
@@ -196,7 +200,7 @@ const BottomSheetSelect = forwardRef(
                                             opacity: 0.5,
                                         }}
                                     >
-                                        <Text>{typeof optionLabel === 'string' ? item[optionLabel] : item}</Text>
+                                        <Text>{displayLabel(typeof optionLabel === 'string' ? item[optionLabel] : item, item)}</Text>
                                     </Button>
                                 );
                             }}
@@ -218,7 +222,7 @@ const BottomSheetSelect = forwardRef(
                             </Button.Text>
                         ) : (
                             <Button.Text color='$textSecondary' fontSize={15}>
-                                {placeholder}
+                                {placeholder ?? t('BottomSheetSelect.placeholder')}
                             </Button.Text>
                         )}
                     </Button>

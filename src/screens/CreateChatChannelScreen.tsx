@@ -10,6 +10,7 @@ import { formatWhatsAppTimestamp } from '../utils/format';
 import { toast } from '../utils/toast';
 import { useChat } from '../contexts/ChatContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import ChatParticipantAvatar from '../components/ChatParticipantAvatar';
 import Spacer from '../components/Spacer';
@@ -17,6 +18,7 @@ import Spacer from '../components/Spacer';
 const CreateChatChannelScreen = ({ route }) => {
     const theme = useTheme();
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const { driver } = useAuth();
     const { createChannel, getAvailableParticipants } = useChat();
     const { listen } = useSocketClusterClient();
@@ -36,14 +38,14 @@ const CreateChatChannelScreen = ({ route }) => {
 
     const handleCreateChat = useCallback(async () => {
         if (!channelName.trim()) {
-            return Alert.alert('Chat channel name is required.');
+            return Alert.alert(t('CreateChatChannelScreen.channelNameRequired'));
         }
 
         setIsLoading(true);
 
         try {
             await createChannel({ name: channelName, participants: [driver.getAttribute('user'), ...selectedParticipants] });
-            toast.success(`New chat channel created: ${channelName}`);
+            toast.success(t('CreateChatChannelScreen.channelCreated', { channelName }));
             navigation.goBack();
         } catch (err) {
             console.warn('Error creating new chat channel:', err);
@@ -95,14 +97,14 @@ const CreateChatChannelScreen = ({ route }) => {
                                 <Button.Icon>
                                     <FontAwesomeIcon icon={faTimes} color={theme['$errorText'].val} />
                                 </Button.Icon>
-                                <Button.Text color='$errorText'>Unselect</Button.Text>
+                                <Button.Text color='$errorText'>{t('CreateChatChannelScreen.unselect')}</Button.Text>
                             </Button>
                         ) : (
                             <Button size='$2' bg='$success' borderWidth={1} borderColor='$successBorder' onPress={() => handleSelectParticipant(participant)}>
                                 <Button.Icon>
                                     <FontAwesomeIcon icon={faCheck} color={theme['$successText'].val} />
                                 </Button.Icon>
-                                <Button.Text color='$successText'>Select</Button.Text>
+                                <Button.Text color='$successText'>{t('CreateChatChannelScreen.select')}</Button.Text>
                             </Button>
                         )}
                     </YStack>
@@ -126,7 +128,7 @@ const CreateChatChannelScreen = ({ route }) => {
                             </YStack>
                             <YStack>
                                 <Text color='$textPrimary' fontSize={24} fontWeight='bold'>
-                                    Create new Chat
+                                    {t('CreateChatChannelScreen.createNewChat')}
                                 </Text>
                             </YStack>
                         </XStack>
@@ -134,12 +136,12 @@ const CreateChatChannelScreen = ({ route }) => {
                     <YStack mt='$5' pb='$2'>
                         <YStack px='$3' space='$2'>
                             <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                                Channel Name
+                                {t('CreateChatChannelScreen.channelName')}
                             </Text>
                             <Input
                                 value={channelName}
                                 onChangeText={setChannelName}
-                                placeholder='Input chat channel name...'
+                                placeholder={t('CreateChatChannelScreen.channelNamePlaceholder')}
                                 borderWidth={1}
                                 color='$textPrimary'
                                 borderColor='$borderColor'
@@ -150,7 +152,7 @@ const CreateChatChannelScreen = ({ route }) => {
                     </YStack>
                     <YStack mt='$4' px='$3' space='$2'>
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' px='$1'>
-                            Select Participants:
+                            {t('CreateChatChannelScreen.selectParticipants')}
                         </Text>
                     </YStack>
                 </YStack>
@@ -169,7 +171,7 @@ const CreateChatChannelScreen = ({ route }) => {
                 <YStack bg='$background' borderTopWidth={1} borderColor='$borderColorWithShadow' px='$3' py='$4'>
                     <Button size='$5' bg='$success' borderWidth={1} borderColor='$successBorder' onPress={handleCreateChat}>
                         <Button.Icon>{isLoading ? <Spinner /> : <FontAwesomeIcon icon={faSave} color={theme['$successText'].val} />}</Button.Icon>
-                        <Button.Text color='$successText'>Create new Chat</Button.Text>
+                        <Button.Text color='$successText'>{t('CreateChatChannelScreen.createNewChat')}</Button.Text>
                     </Button>
                     <Spacer height={25} />
                 </YStack>

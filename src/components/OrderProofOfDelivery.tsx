@@ -10,12 +10,14 @@ import { format } from 'date-fns';
 import FastImage from 'react-native-fast-image';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const PROOF_COLUMN_WIDTH = 160;
 
 const OrderProofOfDelivery = ({ order, subject }) => {
     const { adapter } = useFleetbase();
     const theme = useTheme();
+    const { t } = useLanguage();
     const insets = useSafeAreaInsets();
     const id = order.id ?? null;
     const [proofs, setProofs] = useStorage(`${id}_proofs`, []);
@@ -107,7 +109,7 @@ const OrderProofOfDelivery = ({ order, subject }) => {
     if (proofs.length === 0) {
         return (
             <YStack py='$5' alignItems='center' justifyContent='center'>
-                <Text color='$textSecondary'>No Proof of Delivery Captured.</Text>
+                <Text color='$textSecondary'>{t('OrderProofOfDelivery.noProof')}</Text>
             </YStack>
         );
     }
