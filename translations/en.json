@@ -958,7 +958,9 @@
         "taken": "Someone else took that one.",
         "emptyTitle": "No offers right now",
         "emptyBody": "Jobs near you that need a driver will appear here.",
-        "note": "Offers go to every driver nearby. The first to accept gets the job."
+        "note": "The first to accept gets the job. A job with a timer is offered to you alone until it runs out.",
+        "decline": "Decline",
+        "timeLeft": "%{time} left"
     },
     "route": {
         "title": "Route",

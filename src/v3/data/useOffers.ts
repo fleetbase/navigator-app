@@ -15,7 +15,12 @@
  * the controller honours only for an adhoc order and only for an id shaped like
  * a driver's. Losing the race is therefore a server-side refusal rather than
  * something the app has to arbitrate: two drivers can both tap accept, and the
- * second is told the order has already started.
+ * second is told the order was taken.
+ *
+ * The server only lists orders this driver can take. When an order is offered
+ * one driver at a time, it carries `adhoc_offer.expires_at`, and the driver can
+ * decline it with `POST /v1/orders/{id}/decline` so it moves to the next driver.
+ * `order.offer_closed` on the driver's channel says an offer ended without them.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useFleetbase } from '../api';
@@ -24,6 +29,19 @@ import { useLiveRefresh } from '../realtime/liveRefresh';
 import { orderStore, type OrderRecord } from './orderStore';
 
 export type AcceptOutcome = 'accepted' | 'taken' | 'failed';
+
+/** This driver's open offer for the order, if the server sent one. */
+export function offerOf(order: OrderRecord): { status: string; expires_at: string | null } | null {
+    const offer = (order as { adhoc_offer?: unknown }).adhoc_offer;
+    return offer && typeof offer === 'object' ? (offer as { status: string; expires_at: string | null }) : null;
+}
+
+/** Seconds until the driver's offer runs out, or null when it has no time limit. */
+export function secondsLeft(order: OrderRecord, now = Date.now()): number | null {
+    const expiresAt = offerOf(order)?.expires_at;
+    if (!expiresAt) return null;
+    return Math.max(0, Math.round((Date.parse(expiresAt) - now) / 1000));
+}
 
 export function useOffers(driverId?: string) {
     const { adapter } = useFleetbase();
@@ -90,8 +108,8 @@ export function useAcceptOffer(driverId?: string) {
             } catch (err) {
                 const message = (err as Error).message ?? '';
                 setError(message);
-                // The server's own words for losing the race.
-                return /already started|already been/i.test(message) ? 'taken' : 'failed';
+                // The server's own words for losing the race, or for an offer that moved on.
+                return /already started|already been|taken by another|no longer offered/i.test(message) ? 'taken' : 'failed';
             } finally {
                 setIsAccepting(false);
             }
@@ -100,4 +118,28 @@ export function useAcceptOffer(driverId?: string) {
     );
 
     return { accept, isAccepting, error };
+}
+
+export function useDeclineOffer() {
+    const { adapter } = useFleetbase();
+    const [isDeclining, setIsDeclining] = useState(false);
+
+    const decline = useCallback(
+        async (orderId: string): Promise<boolean> => {
+            if (!orderId) return false;
+            setIsDeclining(true);
+            try {
+                const result = await adapter.post(`orders/${orderId}/decline`, {});
+                // Like accepting, never queued: a decline replayed later would refuse a job that had already moved on.
+                return !isQueuedAck(result);
+            } catch {
+                return false;
+            } finally {
+                setIsDeclining(false);
+            }
+        },
+        [adapter]
+    );
+
+    return { decline, isDeclining };
 }

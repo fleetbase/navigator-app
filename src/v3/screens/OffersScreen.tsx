@@ -1,8 +1,10 @@
 /**
  * Ad-hoc offers — R2 D1.
  *
- * An order flagged `adhoc` with no driver is offered to everyone nearby at
- * once, so this screen is a race and is built like one.
+ * An order flagged `adhoc` with no driver is offered to drivers nearby: to
+ * everyone at once, or to one driver at a time with a countdown. The server
+ * only lists orders this driver can take, so this screen is a race and is
+ * built like one.
  *
  * **Nothing is hidden optimistically.** Tapping accept does not remove the card
  * or grey the others; the server decides who got it, and pretending otherwise
@@ -13,7 +15,7 @@
  * **Offers arrive without asking.** `order.ping` on the driver's channel bumps
  * the live-refresh signal, so a new offer appears while this screen is open.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
@@ -27,7 +29,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { useSync } from '../shell';
 import { useSettings } from '../settings';
-import { useOffers, useAcceptOffer } from '../data/useOffers';
+import { useOffers, useAcceptOffer, useDeclineOffer, secondsLeft } from '../data/useOffers';
 import { trackingNumberOf, payloadOf } from '../data/accessors';
 import { currentDestination, stopLabel } from '../data/orderStops';
 import { formatMeters } from '../format';
@@ -40,7 +42,28 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
     const { units } = useSettings();
     const { offers, isLoading, error, reload } = useOffers(driverId);
     const { accept, isAccepting } = useAcceptOffer(driverId);
+    const { decline, isDeclining } = useDeclineOffer();
     const [taken, setTaken] = useState<string | null>(null);
+    const [declined, setDeclined] = useState<string[]>([]);
+    const [now, setNow] = useState(() => Date.now());
+
+    // The countdown on a one-at-a-time offer ticks while any is on screen.
+    const timed = (offers ?? []).some((order) => secondsLeft(order) !== null);
+    useEffect(() => {
+        if (!timed) return undefined;
+        const tick = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(tick);
+    }, [timed]);
+
+    const refuse = useCallback(
+        async (order: OrderRecord) => {
+            if (await decline(order.id)) {
+                setDeclined((ids) => [...ids, order.id]);
+            }
+            void reload();
+        },
+        [decline, reload]
+    );
 
     const take = useCallback(
         async (order: OrderRecord) => {
@@ -77,18 +100,23 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
         <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="offers-screen">
             {taken ? <Banner tone="neutral" message={t('offers.taken')} testID="offer-taken" /> : null}
 
-            {offers.length ? (
-                offers.map((order) => {
+            {visible(offers, declined, now).length ? (
+                visible(offers, declined, now).map((order) => {
                     const payload = payloadOf(order);
                     const destination = stopLabel(currentDestination(payload));
                     const distance = (order as { adhoc_distance?: number }).adhoc_distance;
+                    const left = secondsLeft(order, now);
 
                     return (
                         <Surface key={order.id} padded testID={`offer-${order.id}`}>
                             <YStack gap={space[2]}>
                                 <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
                                     <Caption>{t('offers.available')}</Caption>
-                                    {typeof distance === 'number' ? (
+                                    {left !== null ? (
+                                        <Micro tabular tone="brand" testID={`offer-countdown-${order.id}`}>
+                                            {t('offers.timeLeft', { time: formatCountdown(left) })}
+                                        </Micro>
+                                    ) : typeof distance === 'number' ? (
                                         <Micro tabular testID={`offer-distance-${order.id}`}>
                                             {formatMeters(distance, units)}
                                         </Micro>
@@ -106,6 +134,9 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
                                 <Divider />
 
                                 <XStack gap={space[2]}>
+                                    <Button flex={1} variant="ghost" loading={isDeclining} onPress={() => void refuse(order)} testID={`offer-decline-${order.id}`}>
+                                        {t('offers.decline')}
+                                    </Button>
                                     <Button
                                         flex={1}
                                         variant="ghost"
@@ -129,6 +160,15 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
             <Secondary fontSize={13}>{t('offers.note')}</Secondary>
         </ScrollView>
     );
+}
+
+/** Offers still open to this driver: not declined here, and not out of time. */
+function visible(offers: OrderRecord[], declined: string[], now: number): OrderRecord[] {
+    return offers.filter((order) => !declined.includes(order.id) && secondsLeft(order, now) !== 0);
+}
+
+function formatCountdown(seconds: number): string {
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 export default OffersScreen;

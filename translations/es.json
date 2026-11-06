@@ -901,7 +901,9 @@
         "taken": "Otra persona se quedó con ese.",
         "emptyTitle": "No hay ofertas ahora mismo",
         "emptyBody": "Los trabajos cercanos que necesiten conductor aparecerán aquí.",
-        "note": "Las ofertas llegan a todos los conductores cercanos. El primero en aceptar se queda el trabajo."
+        "note": "El primero en aceptar se queda con el trabajo. Un trabajo con temporizador se te ofrece solo a ti hasta que se acabe el tiempo.",
+        "decline": "Rechazar",
+        "timeLeft": "Quedan %{time}"
     },
     "route": {
         "title": "Ruta",

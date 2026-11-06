@@ -26,6 +26,8 @@ export type RealtimeEventKind =
     | 'order.canceled'
     | 'order.failed'
     | 'order.offered'
+    /** This driver's offer for an order closed: it ran out, or the order was taken or canceled. */
+    | 'order.offer_closed'
     /** Something about the order was edited — address, items, schedule, notes, totals. */
     | 'order.changed'
     /** Generic resource lifecycle update; carries no summary, just "reload". */
@@ -88,6 +90,9 @@ const KINDS: Record<string, RealtimeEventKind> = {
      */
     'order.ping': 'order.offered',
     OrderPing: 'order.offered',
+    // The driver's offer closed without them taking it: the card leaves the list.
+    'order.offer_closed': 'order.offer_closed',
+    OrderOfferClosed: 'order.offer_closed',
     /*
      * The `OrderAssigned` *notification* broadcasts under its own name, not as
      * the event above — a directly assigned order reaches the driver as this.

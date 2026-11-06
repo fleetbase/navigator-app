@@ -76,6 +76,8 @@ const NEVER_QUEUE = [
      * that did not happen.
      */
     /orders\/[^/]+\/start\b/,
+    // Declining an offer is part of the same race: replayed later it would refuse a job that had moved on.
+    /orders\/[^/]+\/decline\b/,
     /*
      * Optimise re-sequences a route from a position. Replayed from a queue it
      * would reorder the driver's stops from wherever they were an hour ago,

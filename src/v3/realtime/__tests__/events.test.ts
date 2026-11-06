@@ -47,6 +47,13 @@ describe('parseRealtimeEvent', () => {
         }
     });
 
+    it('hears when this driver\'s offer closed, so the card leaves the list', () => {
+        const event = parseRealtimeEvent({ event: 'order.offer_closed', data: { id: 'order_9', status: 'expired' } });
+        expect(event?.kind).toBe('order.offer_closed');
+        expect(event?.orderId).toBe('order_9');
+        expect(affectsOrders('order.offer_closed')).toBe(true);
+    });
+
     it('recognises an ad-hoc offer by the name actually on the wire', () => {
         // OrderPing::broadcastType() is 'order.ping'. There is no OrderOffered.
         expect(parseRealtimeEvent({ event: 'order.ping', data: { order_id: 'order_9' } })?.kind).toBe('order.offered');

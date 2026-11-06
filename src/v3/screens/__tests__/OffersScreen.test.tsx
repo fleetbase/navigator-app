@@ -155,4 +155,74 @@ describe('OffersScreen', () => {
         expect(testIDs(t)).toContain('offers-empty');
         ReactTestRenderer.act(() => t.unmount());
     });
+
+    it('treats an offer that moved on as taken, not as an error', async () => {
+        const t = await mount(<OffersScreen driverId="driver_1" />);
+        fetchMock.mockImplementation((url: string) =>
+            String(url).includes('/start')
+                ? Promise.resolve({ ok: false, status: 409, statusText: 'Conflict', json: async () => ({ error: 'This order is no longer offered to you.' }) })
+                : Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: async () => offers })
+        );
+
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'offer-accept-order_offer1').props as { onPress?: () => void }).onPress?.();
+        });
+
+        expect(testIDs(t)).toContain('offer-taken');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('declines an offer so it goes to someone else, and drops it from the list', async () => {
+        const t = await mount(<OffersScreen driverId="driver_1" />);
+        fetchMock.mockImplementation((url: string) =>
+            String(url).includes('/decline')
+                ? Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: async () => ({ status: 'declined' }) })
+                : Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: async () => offers })
+        );
+
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'offer-decline-order_offer1').props as { onPress?: () => void }).onPress?.();
+        });
+
+        expect(fetchMock.mock.calls.some(([url, init]) => String(url).includes('orders/order_offer1/decline') && (init as { method?: string })?.method === 'POST')).toBe(true);
+        expect(testIDs(t)).not.toContain('offer-order_offer1');
+        expect(testIDs(t)).toContain('offer-order_offer2');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('keeps an offer on screen when the decline does not go through', async () => {
+        const t = await mount(<OffersScreen driverId="driver_1" />);
+        fetchMock.mockImplementation((url: string) =>
+            String(url).includes('/decline')
+                ? Promise.resolve({ ok: false, status: 409, statusText: 'Conflict', json: async () => ({ error: 'This order is not offered to you.' }) })
+                : Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: async () => offers })
+        );
+
+        await ReactTestRenderer.act(async () => {
+            (byID(t, 'offer-decline-order_offer1').props as { onPress?: () => void }).onPress?.();
+        });
+
+        expect(testIDs(t)).toContain('offer-order_offer1');
+        ReactTestRenderer.act(() => t.unmount());
+    });
+
+    it('counts down a one-at-a-time offer and drops it when time runs out', async () => {
+        jest.useFakeTimers();
+        const now = Date.now();
+        jest.setSystemTime(now);
+        const timed = [{ ...offers[0], adhoc_offer: { status: 'pending', expires_at: new Date(now + 15000).toISOString() } }, offers[1]];
+        fetchMock.mockResolvedValue({ ok: true, status: 200, statusText: 'OK', json: async () => timed });
+
+        const t = await mount(<OffersScreen driverId="driver_1" />);
+        expect(textOf(t)).toContain('0:15 left');
+
+        await ReactTestRenderer.act(async () => {
+            jest.advanceTimersByTime(16000);
+        });
+
+        expect(testIDs(t)).not.toContain('offer-order_offer1');
+        expect(testIDs(t)).toContain('offer-order_offer2');
+        ReactTestRenderer.act(() => t.unmount());
+        jest.useRealTimers();
+    });
 });
