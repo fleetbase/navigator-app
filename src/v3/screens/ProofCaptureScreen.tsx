@@ -16,7 +16,7 @@
  * never left holding an order marked delivered with no proof attached to it.
  */
 import { useCallback, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Surface } from '../ui/Surface';
@@ -118,10 +118,15 @@ export function ProofCaptureScreen({
 
             {method === 'scan' ? (
                 <YStack gap={space[3]} testID="proof-scan">
-                    <View style={{ height: 280 }}>
-                        {(() => { const Scanner = lazyScanner(); return <Scanner onScan={onScan} />; })()}
+                    {/* The overlay's copy is white: it belongs on the feed, per its own contract. */}
+                    <View style={{ height: 360, backgroundColor: '#000', borderRadius: 12, overflow: 'hidden' }}>
+                        <View style={StyleSheet.absoluteFill}>
+                            {(() => { const Scanner = lazyScanner(); return <Scanner onScan={onScan} />; })()}
+                        </View>
+                        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                            <ScannerOverlay scanned={scanned.length} expected={expected.length} lastCode={scanned[scanned.length - 1]} feedback={scanned.length ? 'accepted' : 'idle'} />
+                        </View>
                     </View>
-                    <ScannerOverlay scanned={scanned.length} expected={expected.length} lastCode={scanned[scanned.length - 1]} feedback={scanned.length ? 'accepted' : 'idle'} />
                     {expected.length ? (
                         <Surface testID="proof-checklist">
                             {expected.map((code) => (

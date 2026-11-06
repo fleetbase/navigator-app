@@ -28,6 +28,7 @@ import type { Features } from './navigation/DriverTabs';
 import { FleetbaseProvider, mutationQueue, useQueue, useReachable, type MutationQueue } from './api';
 import { SocketProvider, PushContext, type SocketConfig, type PushSubscribe } from './realtime';
 import { navigationRef, flushPendingNavigation } from './navigation/navigationRef';
+import { linking } from './navigation/linking';
 import { useActiveOrderCount } from './data';
 import { preloadInitialScreens } from './extensions/app-screen-registry';
 
@@ -284,7 +285,7 @@ export function V3App({
                                     <QueueBoundSync isConnected={isConnected} queue={queue}>
                                         <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
                                             <LocationProvider location={location}>
-                                            <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
+                                            <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation} documentTitle={{ enabled: false }} linking={linking}>
                                                 {isAuthenticated ? (
                                                     <DriverSurface
                                                         organizationName={organizationName}

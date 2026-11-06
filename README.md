@@ -30,6 +30,7 @@ Open source order managemenr, geolocation tracking & navigation app for Fleetbas
 - [Running in Simulator](#running-in-simulator)
     - [Run the app in iOS Simulator](#run-the-app-in-ios-simulator)
     - [Run the app in Android Simulator](#run-the-app-in-android-simulator)
+- [Running in a Browser](#running-in-a-browser)
 - [Navigation using Mapbox](#navigation-using-mapbox)
 - [Documentation](#documentation)
 - [Roadmap](#roadmap)
@@ -96,6 +97,14 @@ yarn ios
 ```
 yarn android
 ```
+
+### Running in a Browser
+
+```bash
+yarn web
+```
+
+See [docs/web.md](docs/web.md) for production builds and what a browser can't do.
 
 ### Documentation
 

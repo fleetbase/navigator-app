@@ -1,12 +1,12 @@
-// index.web.tsx
-import { AppRegistry } from 'react-native';
-import App from './App';
-import { name as appName } from './app.json';
 import { createRoot } from 'react-dom/client';
+import App from './App.web';
+import { registerWebFonts } from './web/fonts';
+import './web/global.css';
+
+registerWebFonts();
 
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
-    const root = createRoot(rootElement);
-    root.render(<App />);
+    createRoot(rootElement).render(<App />);
 }

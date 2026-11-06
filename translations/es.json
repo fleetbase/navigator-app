@@ -1363,5 +1363,13 @@
             "title": "No se pudo mostrar esta pantalla",
             "body": "Algo falló al cargarla. Vuelve atrás e inténtalo de nuevo; si sigue pasando, avisa a despacho."
         }
+    },
+    "camera": {
+        "unavailable": "La cámara no está disponible. Permite el acceso a la cámara para este sitio o elige fotos de este dispositivo.",
+        "removePhoto": "Quitar foto",
+        "gallery": "Galería",
+        "snap": "Tomar foto",
+        "done": "Listo",
+        "scanUnavailable": "Permite el acceso a la cámara para este sitio para escanear."
     }
 }

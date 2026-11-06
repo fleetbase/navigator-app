@@ -1420,5 +1420,13 @@
             "title": "This screen could not be shown",
             "body": "Something went wrong loading it. Go back and try again; if it keeps happening, tell dispatch."
         }
+    },
+    "camera": {
+        "unavailable": "The camera is unavailable. Allow camera access for this site, or choose photos from this device.",
+        "removePhoto": "Remove photo",
+        "gallery": "Gallery",
+        "snap": "Take photo",
+        "done": "Done",
+        "scanUnavailable": "Allow camera access for this site to scan."
     }
 }

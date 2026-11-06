@@ -10,7 +10,7 @@
  * until then and the UI disables the option rather than faking it — the design's
  * rule is that config-driven surfaces degrade honestly.
  */
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type DutyState = 'off' | 'on' | 'break';
 
@@ -40,6 +40,11 @@ export function DutyProvider({ children, isOnline = false, onToggleOnline, break
     const [duty, setLocalDuty] = useState<DutyState>(isOnline ? 'on' : 'off');
     const [isChanging, setIsChanging] = useState(false);
     const [error, setError] = useState<Error | null>(null);
+
+    // The provider mounts before sign-in, so the driver's status arrives as a change.
+    useEffect(() => {
+        setLocalDuty((current) => (current === 'break' ? current : isOnline ? 'on' : 'off'));
+    }, [isOnline]);
 
     const setDuty = useCallback(
         async (next: DutyState) => {

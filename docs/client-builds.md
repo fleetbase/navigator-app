@@ -21,6 +21,8 @@ Every file in `brand/` is optional; a build with no `brand/` folder is the stock
 
 `scripts/link-brand.js` finds the brand files and writes `src/v3/generated/` (git-ignored) so Metro, Jest and `tsc` all resolve them the same way. It runs from `babel.config.js`, `metro.config.js`, `postinstall` and `yarn typecheck`, and on demand with `yarn brand:link`. **Restart Metro after adding or removing a file in `brand/`**; edits to an existing file are picked up as usual.
 
+Every client build can also ship to the browser: see [web.md](web.md).
+
 ## Setting up a client repository
 
 ```bash

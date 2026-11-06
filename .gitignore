@@ -103,3 +103,6 @@ vendor
 
 # Written by scripts/link-brand.js from brand/ (or the root templates)
 src/v3/generated/
+
+# Web build
+dist/

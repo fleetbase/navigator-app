@@ -77,6 +77,9 @@ jobs:
             - name: Run behavior tests
               run: yarn test --ci --runInBand --no-watchman
 
+            - name: Build for the web
+              run: yarn web:build
+
     android_build:
         runs-on: ubuntu-latest
         needs: install_and_test

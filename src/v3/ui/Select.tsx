@@ -202,7 +202,9 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
             [onBottomSheetPositionChanged, onBottomSheetOpened, onBottomSheetClosed]
         );
 
-        const RenderBottomSheet = () => {
+        // Called, not rendered: a component defined here is a new type on every render,
+        // so each keystroke in the search field would remount the sheet and close it.
+        const renderBottomSheet = () => {
             return (
                 <BottomSheet
                     ref={bottomSheetRef}
@@ -258,9 +260,13 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
 
                                 return (
                                     <Button
-                                        size='$4'
+                                        // Sized like the trigger, for the same reason (see below).
+                                        height={50}
                                         onPress={() => handleSelect(isObject(item) ? valueOf(item, optionValue) : item)}
                                         bg='$surface'
+                                        borderWidth={1}
+                                        borderColor="$border"
+                                        borderRadius={radius.compact + 2}
                                         justifyContent='space-between'
                                         space='$2'
                                         mb='$2'
@@ -299,7 +305,6 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
                         height={50}
                         paddingHorizontal={space[4]}
                         justifyContent='flex-start'
-                        textAlign='left'
                         onPress={openBottomSheet}
                         bg='$surface'
                         borderWidth={1}
@@ -319,10 +324,10 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
                 )}
 
                 {renderInPlace === true ? (
-                    <RenderBottomSheet />
+                    renderBottomSheet()
                 ) : (
                     <Portal hostName={portalHost}>
-                        <RenderBottomSheet />
+                        {renderBottomSheet()}
                     </Portal>
                 )}
             </YStack>
