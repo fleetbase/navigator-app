@@ -5,12 +5,14 @@ import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const APP_LINK_PREFIX = config('APP_LINK_PREFIX');
 
 const useOAuth = () => {
+    const { t } = useLanguage();
     const { adapter } = useFleetbase();
     const { createCustomerSession } = useAuth();
     const [authState, setAuthState] = useState(null);
@@ -39,7 +41,7 @@ const useOAuth = () => {
 
         try {
             if (!appleAuth.isSupported) {
-                return toast.error('Apple Sign-In is not supported on this device');
+                return toast.error(t('useOAuth.appleSignInNotSupported'));
             }
 
             // Perform Apple Sign-In
@@ -51,7 +53,7 @@ const useOAuth = () => {
 
             const { identityToken, authorizationCode, email, fullName, user: appleUserId } = appleAuthResponse;
             if (!identityToken || !authorizationCode) {
-                return toast.error('Apple Sign-In failed: Missing token or authorization code.');
+                return toast.error(t('useOAuth.appleSignInMissingToken'));
             }
 
             // Get the user's name

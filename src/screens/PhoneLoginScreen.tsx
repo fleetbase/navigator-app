@@ -10,8 +10,10 @@ import { useAuth } from '../contexts/AuthContext';
 import useAppTheme from '../hooks/use-app-theme';
 import PhoneInput from '../components/PhoneInput';
 import LinearGradient from 'react-native-linear-gradient';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const PhoneLoginScreen = () => {
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
@@ -24,7 +26,7 @@ const PhoneLoginScreen = () => {
         }
 
         if (!isValidPhoneNumber(phone)) {
-            return toast.error('Invalid phone number provided.');
+            return toast.error(t('PhoneLoginScreen.invalidPhoneNumber'));
         }
 
         try {
@@ -49,13 +51,13 @@ const PhoneLoginScreen = () => {
             <YStack flex={1} alignItems='center' space='$3'>
                 <YStack space='$2' width='100%' px='$5' pt='$5'>
                     <Text color='$gray-200' fontWeight='bold' fontSize='$8' mb='$3'>
-                        Login via SMS
+                        {t('PhoneLoginScreen.loginViaSms')}
                     </Text>
                     <PhoneInput value={phone} onChange={(phoneNumber) => setPhone(phoneNumber)} />
                     <Button size='$5' onPress={handleSendVerificationCode} bg='$primary' width='100%' opacity={isSendingCode ? 0.75 : 1} disabled={isSendingCode} rounded>
                         <Button.Icon>{isSendingCode ? <Spinner color='$white' /> : <FontAwesomeIcon icon={faPaperPlane} color={'#fff'} />}</Button.Icon>
                         <Button.Text color='$white' fontWeight='bold'>
-                            Send Verification Code
+                            {t('PhoneLoginScreen.sendVerificationCode')}
                         </Button.Text>
                     </Button>
                 </YStack>
@@ -70,7 +72,7 @@ const PhoneLoginScreen = () => {
                             <FontAwesomeIcon icon={faArrowLeft} color={isDarkMode ? theme['textPrimary'].val : theme['$gray-400'].val} />
                         </Button.Icon>
                         <Button.Text color={isDarkMode ? theme['textPrimary'].val : theme['$gray-400'].val} fontWeight='bold'>
-                            Home
+                            {t('PhoneLoginScreen.home')}
                         </Button.Text>
                     </Button>
                 </YStack>

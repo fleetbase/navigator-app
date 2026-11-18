@@ -162,6 +162,10 @@
         "activityComplete": "Activity for waypoint {{address}} is complete.",
         "destinationChanged": "Your current destination has changed to {{address}}."
     },
+    "PhoneInput": {
+        "enterPhoneNumber": "Enter phone number",
+        "searchCountry": "Search country"
+    },
     "OrderActivitySelect": {
         "requiresProofOfDelivery": "Requires proof of delivery",
         "selectActivity": "Select activity",
@@ -213,6 +217,38 @@
     "PastOrderCard": {
         "currentDestination": "Current Destination"
     },
+    "Buttons": {
+        "continueWithPhone": "Continue with Phone"
+    },
+    "InstanceLinkHandler": {
+        "success": "Instance link was successful!"
+    },
+    "PhoneLoginScreen": {
+        "invalidPhoneNumber": "Invalid phone number provided.",
+        "loginViaSms": "Login via SMS",
+        "sendVerificationCode": "Send Verification Code",
+        "home": "Home"
+    },
+    "CreateAccountScreen": {
+        "invalidPhoneNumber": "Invalid phone number provided.",
+        "createAccount": "Create Account",
+        "enterYourName": "Enter your name",
+        "sendVerificationCode": "Send Verification Code",
+        "haveAnAccountAlready": "Have an account already? Login"
+    },
+    "CreateAccountVerifyScreen": {
+        "codeSentTo": "Code sent to {{phone}}",
+        "verifyCode": "Verify Code"
+    },
+    "PhoneLoginVerifyScreen": {
+        "codeSentTo": "Code sent to {{phone}}",
+        "verifyCode": "Verify Code",
+        "unableToSendSms": "Unable to send SMS.",
+        "codeSentVia": "Your verification code was sent via {{method}}."
+    },
+    "LoginScreen": {
+        "loggedInWith": "Logged in with {{provider}}"
+    },
     "EntityScreen": {
         "details": "Details",
         "id": "ID",
@@ -222,6 +258,10 @@
         "type": "Type",
         "dimensions": "Dimensions (L x W x H)",
         "weight": "Weight"
+    },
+    "useOAuth": {
+        "appleSignInNotSupported": "Apple Sign-In is not supported on this device",
+        "appleSignInMissingToken": "Apple Sign-In failed: Missing token or authorization code."
     },
     "ProofOfDeliveryScreen": {
         "capturingProof": "Capturing Proof of Delivery...",
