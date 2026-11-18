@@ -513,5 +513,20 @@
         "minuteAgo": "{{count}} minute ago",
         "minutesAgo": "{{count}} minutes ago",
         "yesterday": "Yesterday"
+    },
+    "InstanceLinkScreen": {
+        "connectionConfig": "Connection Config",
+        "saved": "Instance connection config saved successfully.",
+        "reset": "Instance connection config reset successfully.",
+        "fleetbaseHost": "FLEETBASE HOST",
+        "fleetbaseKey": "FLEETBASE KEY",
+        "socketClusterHost": "SOCKETCLUSTER HOST",
+        "socketClusterPort": "SOCKETCLUSTER PORT",
+        "socketClusterSecure": "SOCKETCLUSTER SECURE",
+        "saveChanges": "Save Changes",
+        "inputFleetbaseHost": "Input host of Fleetbase instance...",
+        "inputFleetbaseKey": "Input API Key for Fleetbase instance...",
+        "inputSocketClusterHost": "Input SocketCluster host for Fleetbase instance...",
+        "inputSocketClusterPort": "Input SocketCluster port for Fleetbase instance..."
     }
 }

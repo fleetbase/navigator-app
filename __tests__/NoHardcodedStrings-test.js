@@ -24,6 +24,7 @@ describe('no hard-coded user-visible strings', () => {
         ['button text in an object', "const b = [{ text: 'Cancel' }];"],
         ['default parameter', "const A = ({ title = 'Select an option' }) => null;"],
         ['ternary shown on screen', "const A = () => <Text>{on ? 'Online' : 'Offline'}</Text>;"],
+        ['tab label', "const o = { tabBarLabel: 'Orders' };"],
         ['N/A fallback', "const A = () => <Text>{value ?? 'N/A'}</Text>;"],
     ])('catches %s', (_name, code) => {
         expect(findInSource(code).length).toBeGreaterThan(0);

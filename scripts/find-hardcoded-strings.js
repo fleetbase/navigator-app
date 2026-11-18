@@ -1,11 +1,23 @@
 /**
  * Finds user-visible English string literals in src/ that bypass translations/en.json.
- *
- * Flags: JSX text, string values of user-visible JSX props, user-visible object
- * properties (title, message, text, label, ...), and string arguments to toast.* and
- * Alert.alert. Used by __tests__/NoHardcodedStrings-test.js; run directly to list them:
+ * Used by __tests__/NoHardcodedStrings-test.js; run directly to list them:
  *
  *   node scripts/find-hardcoded-strings.js
+ *
+ * What it flags: JSX text; string values of user-visible JSX props and object properties
+ * (title, label, placeholder, text, message, tabBarLabel, headerBackTitle, ...); string
+ * arguments to toast.* and Alert.alert; default parameter values with those names; and a
+ * capitalised literal on either side of a ternary or `||`/`??` that is shown on screen.
+ *
+ * Known limits (it reads syntax, it does not know what reaches the screen):
+ *  - Not flagged: a literal kept in a variable (`let text = 'No messages'`), a `useState('...')`
+ *    initial value, a setter argument, a `return 'Just now'`, an `Error('...')` message that is
+ *    shown later, a string inside a constants file, or a literal passed to a helper function.
+ *  - Not flagged: text a native library draws on its own (see ProofOfDeliveryScreen, where the
+ *    signature pad's texts are passed as props), and server text.
+ *  - May flag prose in an object with a `message`/`title`/`text` key that nobody sees; if that
+ *    happens, move the wording to a name outside the list or add the file to EXCLUDED with a reason.
+ * So a green test means "none of the common patterns", not "everything is translated".
  */
 const fs = require('fs');
 const path = require('path');
@@ -14,15 +26,17 @@ const traverse = require('@babel/traverse').default;
 
 const SRC = path.join(__dirname, '..', 'src');
 
-// Not shipped to riders: unused stubs, the dev-only instance connection screen, and legacy code that nothing imports.
+// Skipped on purpose. Every entry needs a reason.
 const EXCLUDED = [
+    // Old copy of the app that nothing imports.
     'legacy/',
-    'screens/InstanceLinkScreen.tsx',
+    // Placeholder screens: Test ("Hello World") is registered in CoreStack but nothing navigates to it;
+    // Fleet, Vehicle and DriverFleet are imported nowhere.
     'screens/TestScreen.tsx',
     'screens/FleetScreen.tsx',
     'screens/VehicleScreen.tsx',
     'screens/DriverFleetScreen.tsx',
-    'navigation/stacks/CoreStack.tsx',
+    // Currency names and symbols: reference data, not UI text.
     'utils/currencies.js',
 ];
 
@@ -34,6 +48,9 @@ const TEXT_PROPS = new Set([
     'subtitle',
     'description',
     'headerTitle',
+    'headerBackTitle',
+    'tabBarLabel',
+    'drawerLabel',
     'message',
     'accessibilityLabel',
     'accessibilityHint',

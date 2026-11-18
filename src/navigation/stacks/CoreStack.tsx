@@ -3,6 +3,7 @@ import TestScreen from '../../screens/TestScreen';
 import LocationPermissionScreen from '../../screens/LocationPermissionScreen';
 import InstanceLinkScreen from '../../screens/InstanceLinkScreen';
 import { getTheme } from '../../utils';
+import { translate } from '../../utils/localize';
 import { Text } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -34,7 +35,7 @@ export const InstanceLink = {
             presentation: 'modal',
             headerLeft: (props) => (
                 <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                    Connection Config
+                    {translate('InstanceLinkScreen.connectionConfig')}
                 </Text>
             ),
             headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
