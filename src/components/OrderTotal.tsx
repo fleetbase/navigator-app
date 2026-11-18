@@ -36,6 +36,7 @@ const OrderTotal = ({ order }) => {
     const lineItems = useMemo(() => {
         const items = [
             {
+                key: 'subtotal',
                 name: t('OrderTotal.subtotal'),
                 value: subtotal,
             },
@@ -43,6 +44,7 @@ const OrderTotal = ({ order }) => {
 
         if (deliveryFee && !isPickup) {
             items.push({
+                key: 'deliveryFee',
                 name: t('OrderTotal.deliveryFee'),
                 value: deliveryFee,
             });
@@ -50,6 +52,7 @@ const OrderTotal = ({ order }) => {
 
         if (deliveryTip) {
             items.push({
+                key: 'deliveryTip',
                 name: t('OrderTotal.deliveryTip'),
                 value: calculateTip(deliveryTip, subtotal),
                 tip: deliveryTip,
@@ -58,6 +61,7 @@ const OrderTotal = ({ order }) => {
 
         if (tip) {
             items.push({
+                key: 'tip',
                 name: t('OrderTotal.tip'),
                 value: calculateTip(tip, subtotal),
                 tip,
@@ -65,12 +69,13 @@ const OrderTotal = ({ order }) => {
         }
 
         items.push({
-            name: t('OrderTotal.total'),
+            key: 'total',
+                name: t('OrderTotal.total'),
             value: total,
         });
 
         return items;
-    }, [order]);
+    }, [order, t]);
 
     return (
         <YStack bg='$surface' borderWidth={1} borderColor='$borderColorWithShadow' borderRadius='$4' space='$2'>
@@ -89,7 +94,7 @@ const OrderTotal = ({ order }) => {
                                 </Text>
                             </YStack>
                             <YStack justifyContent='flex-end'>
-                                <Text size='$5' color='$textPrimary' fontWeight={item.name === t('OrderTotal.total') ? 'bold' : 'normal'}>
+                                <Text size='$5' color='$textPrimary' fontWeight={item.key === 'total' ? 'bold' : 'normal'}>
                                     {formatCurrency(item.value, currency)} {typeof item.tip === 'string' && item.tip.endsWith('%') && `(${tip})`}
                                 </Text>
                             </YStack>
