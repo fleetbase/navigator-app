@@ -2,8 +2,11 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { BlurView } from '@react-native-community/blur';
 import { Spinner, YStack, Text, useTheme } from 'tamagui';
+import { useLanguage } from '../contexts/LanguageContext';
 
-const LoadingIndicator = ({ isLoading = false, loadingMessage = 'Loading...', spinnerSize = 'large', space = '$4', theme = 'basic', wrapperStyle = {}, wrapperProps = {} }) => {
+const LoadingIndicator = ({ isLoading = false, loadingMessage, spinnerSize = 'large', space = '$4', theme = 'basic', wrapperStyle = {}, wrapperProps = {} }) => {
+    const { t } = useLanguage();
+
     // Create a glass indicator style theme
     if (theme === 'glass') {
         wrapperProps = {
@@ -22,7 +25,7 @@ const LoadingIndicator = ({ isLoading = false, loadingMessage = 'Loading...', sp
             )}
             <Spinner size={spinnerSize} color='$color' />
             <Text fontSize={15} color='$color'>
-                {loadingMessage}
+                {loadingMessage ?? t('common.loading')}
             </Text>
         </YStack>
     );

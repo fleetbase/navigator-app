@@ -5,6 +5,7 @@ import { useTheme, View, Text, Button, XStack, YStack, Input } from 'tamagui';
 import { Portal } from '@gorhom/portal';
 import { titleize as titleizeString } from 'inflected';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BottomSheetSelect = forwardRef(
     (
@@ -16,8 +17,8 @@ const BottomSheetSelect = forwardRef(
             optionValue,
             optionLabel,
             renderOption,
-            placeholder = 'Select an option',
-            searchPlaceholder = 'Search options',
+            placeholder,
+            searchPlaceholder,
             title,
             portalHost = 'MainPortal',
             snapTo = '90%',
@@ -31,6 +32,7 @@ const BottomSheetSelect = forwardRef(
         ref
     ) => {
         const theme = useTheme();
+        const { t } = useLanguage();
         const { isDarkMode } = useAppTheme();
         const [selected, setSelected] = useState(value);
         const [searchTerm, setSearchTerm] = useState('');
@@ -150,7 +152,7 @@ const BottomSheetSelect = forwardRef(
                     <YStack px='$2'>
                         <BottomSheetTextInput
                             ref={searchInputRef}
-                            placeholder={searchPlaceholder}
+                            placeholder={searchPlaceholder ?? t('BottomSheetSelect.searchOptions')}
                             onChangeText={setSearchTerm}
                             autoCapitalize={false}
                             autoComplete='off'
@@ -218,7 +220,7 @@ const BottomSheetSelect = forwardRef(
                             </Button.Text>
                         ) : (
                             <Button.Text color='$textSecondary' fontSize={15}>
-                                {placeholder}
+                                {placeholder ?? t('BottomSheetSelect.selectAnOption')}
                             </Button.Text>
                         )}
                     </Button>

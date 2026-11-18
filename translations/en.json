@@ -27,7 +27,8 @@
         "reset": "Reset",
         "remove": "Remove",
         "notAvailable": "N/A",
-        "optional": "Optional"
+        "optional": "Optional",
+        "chooseAnOption": "Choose an option"
     },
     "orderStatuses": {
         "created": "Created",
@@ -278,6 +279,10 @@
     "EditIssueScreen": {
         "saveIssue": "Save Issue"
     },
+    "BottomSheetSelect": {
+        "searchOptions": "Search options",
+        "selectAnOption": "Select an option"
+    },
     "MoneyInput": {
         "inputAmount": "Input amount",
         "searchCurrencies": "Search currencies"
@@ -289,6 +294,19 @@
     "PhoneInput": {
         "enterPhoneNumber": "Enter phone number",
         "searchCountry": "Search country"
+    },
+    "ExpandableSelect": {
+        "selectOption": "Select {{title}}",
+        "toggleOptions": "Toggle options"
+    },
+    "AlertPromptBox": {
+        "confirmMessage": "Are you sure you want to proceed?"
+    },
+    "SafeSpinner": {
+        "loading": "Loading"
+    },
+    "QrCodeScanner": {
+        "noCameraAvailable": "No camera available"
     },
     "LocationPicker": {
         "addNewLocation": "Add New Location"
@@ -482,5 +500,18 @@
         "unableToUploadPhotos": "Unable to upload captured photos.",
         "clear": "Clear",
         "signAbove": "Sign above"
+    },
+    "Format": {
+        "meters": "{{count}} meters",
+        "kilometers": "{{count}} km",
+        "miles": "{{count}} miles",
+        "hoursShort": "{{count}}h",
+        "minutesShort": "{{count}}m",
+        "secondsShort": "{{count}}s",
+        "bytes": "Bytes",
+        "justNow": "Just now",
+        "minuteAgo": "{{count}} minute ago",
+        "minutesAgo": "{{count}} minutes ago",
+        "yesterday": "Yesterday"
     }
 }

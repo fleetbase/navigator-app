@@ -10,6 +10,7 @@ import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
 import NavigatorConfig from '../../navigator.config';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
+import { translate } from './localize';
 
 // Image.getSize is callback based, so wrap it to be awaitable. Resolves null
 // instead of rejecting so callers can decide how to degrade, matching how the
@@ -487,7 +488,7 @@ export function showActionSheet({ title, message, options, cancelButtonIndex, de
             style: index === cancelButtonIndex ? 'cancel' : index === destructiveButtonIndex ? 'destructive' : 'default',
         }));
 
-        Alert.alert(title || 'Choose an option', message || '', buttons, { cancelable: true });
+        Alert.alert(title || translate('common.chooseAnOption'), message || '', buttons, { cancelable: true });
     }
 }
 
