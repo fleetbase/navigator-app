@@ -12,6 +12,7 @@ import useStorage from '../hooks/use-storage';
 import useCurrentLocation from '../hooks/use-current-location';
 import useSavedLocations from '../hooks/use-saved-locations';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const LocationPicker = ({
     onPressAddNewLocation,
@@ -25,6 +26,7 @@ const LocationPicker = ({
     ...props
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const { isDarkMode } = useAppTheme();
     const { currentLocation, isCurrentLocationLoading, updateCurrentLocation, setCustomerDefaultLocation } = useCurrentLocation();
@@ -116,7 +118,7 @@ const LocationPicker = ({
                             triggerTextStyle,
                         ]}
                     >
-                        {currentLocation ? (currentLocation.isAttributeFilled('name') ? currentLocation.getAttribute('name') : formattedAddressFromPlace(currentLocation)) : 'Loading...'}
+                        {currentLocation ? (currentLocation.isAttributeFilled('name') ? currentLocation.getAttribute('name') : formattedAddressFromPlace(currentLocation)) : t('common.loading')}
                     </Text>
                     <Text style={[{ fontSize: 14, color: theme.textPrimary.val, opacity: 0.35 }, triggerArrowStyle]}>▼</Text>
                 </XStack>
@@ -196,7 +198,7 @@ const LocationPicker = ({
                                 >
                                     <XStack mb='$1' padding='$2'>
                                         <FontAwesomeIcon icon={faPlus} size={16} color={theme.textPrimary.val} style={{ marginRight: 6 }} />
-                                        <Text color='$textPrimary'>Add New Location</Text>
+                                        <Text color='$textPrimary'>{t('LocationPicker.addNewLocation')}</Text>
                                     </XStack>
                                 </Pressable>
                             </YStack>

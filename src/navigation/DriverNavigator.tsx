@@ -20,6 +20,8 @@ import {
 import { useTheme, Text, View, XStack, Image } from 'tamagui';
 import { navigatorConfig, get, config, toArray, getTheme } from '../utils';
 import { configCase } from '../utils/format';
+import { translate } from '../utils/localize';
+import { useLanguage } from '../contexts/LanguageContext';
 import { format } from 'date-fns';
 import { PortalHost } from '@gorhom/portal';
 import { useIsNotAuthenticated, useIsAuthenticated } from '../contexts/AuthContext';
@@ -81,17 +83,22 @@ function createTabScreens() {
     const screens = {
         DriverDashboardTab: {
             screen: DriverDashboardTab,
-            options: {
-                tabBarLabel: config('DRIVER_DASHBOARD_TAB_LABEL', 'Dash'),
+            options: () => {
+                const { t } = useLanguage();
+
+                return {
+                    tabBarLabel: config('DRIVER_DASHBOARD_TAB_LABEL', t('DriverNavigator.dash')),
+                };
             },
         },
         DriverTaskTab: {
             screen: DriverTaskTab,
             options: () => {
+                const { t } = useLanguage();
                 const { allActiveOrders } = useOrderManager();
 
                 return {
-                    tabBarLabel: config('DRIVER_ORDER_TAB_LABEL', 'Orders'),
+                    tabBarLabel: config('DRIVER_ORDER_TAB_LABEL', t('DriverNavigator.orders')),
                     tabBarBadge: allActiveOrders.length,
                     tabBarBadgeStyle: {
                         marginRight: -5,
@@ -103,18 +110,21 @@ function createTabScreens() {
         DriverReportTab: {
             screen: DriverReportTab,
             options: () => {
+                const { t } = useLanguage();
+
                 return {
-                    tabBarLabel: config('DRIVER_REPORT_TAB_LABEL', 'Reports'),
+                    tabBarLabel: config('DRIVER_REPORT_TAB_LABEL', t('DriverNavigator.reports')),
                 };
             },
         },
         DriverChatTab: {
             screen: DriverChatTab,
             options: () => {
+                const { t } = useLanguage();
                 const { unreadCount } = useChat();
 
                 return {
-                    tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', 'Chat'),
+                    tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', t('DriverNavigator.chat')),
                     tabBarBadge: unreadCount,
                     tabBarBadgeStyle: {
                         marginRight: -5,
@@ -126,8 +136,10 @@ function createTabScreens() {
         DriverAccountTab: {
             screen: DriverAccountTab,
             options: () => {
+                const { t } = useLanguage();
+
                 return {
-                    tabBarLabel: config('DRIVER_ACCOUNT_TAB_LABEL', 'Account'),
+                    tabBarLabel: config('DRIVER_ACCOUNT_TAB_LABEL', t('AccountScreen.account')),
                 };
             },
         },
@@ -175,12 +187,13 @@ function getDefaultTabIcon(routeName) {
 
 function getDriverNavigatorHeaderOptions({ route, navigation }) {
     const theme = useTheme();
+    const { t } = useLanguage();
 
     return {
         headerTitle: '',
         headerLeft: (props) => (
             <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                Navigator
+                {t('common.navigator')}
             </Text>
         ),
         headerRight: (props) => <DriverOnlineToggle {...props} />,
@@ -306,7 +319,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Create a new Fuel Report
+                            {translate('DriverNavigator.createFuelReport')}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -328,7 +341,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            Edit Fuel Report from {format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')}
+                            {translate('DriverNavigator.editFuelReportFrom', { date: format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm') })}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -370,7 +383,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Create a new Issue
+                            {translate('DriverNavigator.createIssue')}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -392,7 +405,7 @@ const DriverReportTab = createNativeStackNavigator({
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            Edit Issue from {format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')}
+                            {translate('DriverNavigator.editIssueFrom', { date: format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm') })}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -500,6 +513,7 @@ const DriverNavigator = createBottomTabNavigator({
     layout: DriverLayout,
     screenOptions: ({ route, navigation }) => {
         const theme = useTheme();
+        const { t } = useLanguage();
         const { isDarkMode } = useAppTheme();
         const focusedColor = theme.primary.val;
         const blurredColor = theme.tabIconBlur.val;
@@ -511,7 +525,7 @@ const DriverNavigator = createBottomTabNavigator({
                     <XStack alignItems='center'>
                         <Image source={require('../../assets/navigator-icon-transparent.png')} style={{ width: 18, height: 18, marginRight: 5 }} />
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Navigator
+                            {t('common.navigator')}
                         </Text>
                     </XStack>
                     <Text color='$textSecondary' fontSize={8} ml={25}>

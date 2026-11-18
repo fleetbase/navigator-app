@@ -52,6 +52,7 @@ jest.mock('../src/contexts/AuthContext', () => ({
 
 jest.mock('../src/hooks/use-storage', () => () => [{}, mockSetLocation]);
 jest.mock('../src/hooks/use-fleetbase', () => () => ({ adapter: mockAdapter }));
+jest.mock('../src/utils/localize', () => ({ translate: (key) => key }));
 jest.mock('../src/utils', () => ({
     isEmpty: (value) => !value || Object.keys(value).length === 0,
 }));

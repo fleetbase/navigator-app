@@ -5,6 +5,7 @@ import BackgroundFetch from 'react-native-background-fetch';
 import { check, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { Place, Point } from '@fleetbase/sdk';
 import { isEmpty } from '../utils';
+import { translate } from '../utils/localize';
 import { useAuth } from './AuthContext';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
@@ -82,8 +83,8 @@ export const LocationProvider = ({ children }) => {
             return new Place(
                 {
                     id: 'driver',
-                    name: 'Driver Location',
-                    street1: 'Driver Location',
+                    name: translate('LocationContext.driverLocation'),
+                    street1: translate('LocationContext.driverLocation'),
                     location: new Point(coords.latitude, coords.longitude),
                     ...attributes,
                 },
@@ -165,11 +166,10 @@ export const LocationProvider = ({ children }) => {
         BackgroundGeolocation.ready(
             {
                 backgroundPermissionRationale: {
-                    title: 'Allow Fleetbase Navigator to access your location',
-                    message:
-                        'Fleetbase Navigator collects precise location data to enable real-time driver tracking and order progress updates for your organization’s dispatchers and operations team, even when the app is closed or not in use. Location is collected while you are online and is sent securely to Fleetbase.',
-                    positiveAction: 'Allow',
-                    negativeAction: 'Deny',
+                    title: translate('LocationPermissionScreen.backgroundRationaleTitle'),
+                    message: translate('LocationPermissionScreen.enableLocationPrompt'),
+                    positiveAction: translate('LocationPermissionScreen.allow'),
+                    negativeAction: translate('LocationPermissionScreen.deny'),
                 },
                 desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
                 distanceFilter: 10,

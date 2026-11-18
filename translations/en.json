@@ -21,10 +21,13 @@
         "accept": "Accept",
         "continue": "Continue",
         "yes": "Yes",
+        "no": "No",
         "close": "Close",
         "select": "Select",
+        "reset": "Reset",
         "remove": "Remove",
-        "notAvailable": "N/A"
+        "notAvailable": "N/A",
+        "optional": "Optional"
     },
     "orderStatuses": {
         "created": "Created",
@@ -66,7 +69,8 @@
         "photoRemoved": "Profile photo removed."
     },
     "ProfileScreen": {
-        "organizationChanged": "Switched to {{selectedOrganization}} organization."
+        "organizationChanged": "Switched to {{selectedOrganization}} organization.",
+        "organization": "Organization"
     },
     "AddNewLocationScreen": {
         "addNewAddress": "Add new address",
@@ -109,7 +113,10 @@
         "enableInSettingsTitle": "Enable Location in Settings",
         "permissionDeniedPrompt": "Location access is required before you can sign in. Would you like to allow access now?",
         "locationBlockedPrompt": "Location access has been blocked. Please open Settings and enable it to continue.",
-        "goToSettings": "Go to Settings"
+        "goToSettings": "Go to Settings",
+        "backgroundRationaleTitle": "Allow Fleetbase Navigator to access your location",
+        "allow": "Allow",
+        "deny": "Deny"
     },
     "AdhocOrder": {
         "acceptTitle": "Accept Ad-Hoc order?",
@@ -160,6 +167,36 @@
         "currentEta": "Current ETA",
         "ect": "ECT"
     },
+    "EditLocationScreen": {
+        "addressSaved": "Address saved.",
+        "defaultLocationSet": "{{name}} is now your default location.",
+        "addressDeleted": "{{name}} was deleted.",
+        "unableToSelectLocationType": "Unable to select location type.",
+        "locationTypes": {
+            "apartment": "Apartment",
+            "house": "House",
+            "office": "Office",
+            "hotel": "Hotel",
+            "hospital": "Hospital",
+            "school": "School",
+            "other": "Other"
+        },
+        "address": "Address",
+        "locationType": "Location Type",
+        "addressDetails": "Address Details",
+        "addAdditionalAddressDetails": "Add additional address details.",
+        "addressLabelOrName": "Address label or name",
+        "streetAddressOrPoBox": "Street address or P.O. Box",
+        "aptSuiteEtc": "Apt, suite, unit, building, floor, etc.",
+        "neighborhood": "Neighborhood",
+        "cityOrTown": "City or town",
+        "postalOrZipCode": "Postal or zip code",
+        "additionalInstructions": "Additional instructions for the courier",
+        "whereShouldWeMeetYou": "Where exactly should we meet you?",
+        "makeDefaultAddress": "Make Default Address",
+        "deleteAddress": "Delete Address",
+        "saveAddress": "Save Address"
+    },
     "CameraCapture": {
         "photoCaptured": "Photo captured.",
         "photosAddedFromGallery": {
@@ -207,6 +244,10 @@
         "activityComplete": "Activity for waypoint {{address}} is complete.",
         "destinationChanged": "Your current destination has changed to {{address}}."
     },
+    "DriverOnlineToggle": {
+        "online": "Online",
+        "offline": "Offline"
+    },
     "FuelReportForm": {
         "publishFuelReport": "Publish Fuel Report",
         "status": "Status",
@@ -248,6 +289,12 @@
     "PhoneInput": {
         "enterPhoneNumber": "Enter phone number",
         "searchCountry": "Search country"
+    },
+    "LocationPicker": {
+        "addNewLocation": "Add New Location"
+    },
+    "MultipleCustomerAvatars": {
+        "noCustomers": "No customers"
     },
     "OrderActivitySelect": {
         "requiresProofOfDelivery": "Requires proof of delivery",
@@ -352,6 +399,12 @@
     "LoginScreen": {
         "loggedInWith": "Logged in with {{provider}}"
     },
+    "EditAccountPropertyScreen": {
+        "changesSaved": "{{name}} changes saved."
+    },
+    "EditLocationCoordScreen": {
+        "savePosition": "Save Position"
+    },
     "EntityScreen": {
         "details": "Details",
         "id": "ID",
@@ -361,6 +414,21 @@
         "type": "Type",
         "dimensions": "Dimensions (L x W x H)",
         "weight": "Weight"
+    },
+    "DriverDashboardScreen": {
+        "tracking": "Tracking:",
+        "location": "Location:",
+        "activeOrders": "Active Orders",
+        "speed": "Speed"
+    },
+    "DriverOrderManagementScreen": {
+        "activeOrdersCount": "Active Orders: {{count}}",
+        "noCurrentOrdersFor": "No current orders for {{date}}",
+        "dayOrders": "{{day}} orders",
+        "orderCountOne": "{{count}} order",
+        "orderCountMany": "{{count}} orders",
+        "stopsLeftOne": "{{count}} stop left",
+        "stopsLeftMany": "{{count}} stops left"
     },
     "IssueScreen": {
         "confirmDeletion": "Confirm Deletion",
@@ -386,6 +454,22 @@
         "cost": "Cost:",
         "status": "Status:",
         "reportLocation": "Report Location:"
+    },
+    "DriverNavigator": {
+        "dash": "Dash",
+        "orders": "Orders",
+        "reports": "Reports",
+        "chat": "Chat",
+        "createFuelReport": "Create a new Fuel Report",
+        "createIssue": "Create a new Issue",
+        "editFuelReportFrom": "Edit Fuel Report from {{date}}",
+        "editIssueFrom": "Edit Issue from {{date}}"
+    },
+    "OrderStack": {
+        "orderHistory": "Order History"
+    },
+    "LocationContext": {
+        "driverLocation": "Driver Location"
     },
     "useOAuth": {
         "appleSignInNotSupported": "Apple Sign-In is not supported on this device",

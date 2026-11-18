@@ -243,7 +243,7 @@ const DriverAccountScreen = () => {
             onPress: () => navigation.navigate('EditAccountProperty', { property: { name: t('AccountScreen.name'), key: 'name', component: 'input' } }),
         },
         {
-            title: 'Language',
+            title: t('AccountScreen.language'),
             rightComponent: (
                 <Text color='$textSecondary' opacity={0.5}>
                     {language.native}
