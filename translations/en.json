@@ -17,7 +17,12 @@
         "confirmation": "Confirmation",
         "ok": "OK",
         "done": "Done",
-        "tryAgain": "Try Again"
+        "tryAgain": "Try Again",
+        "accept": "Accept",
+        "continue": "Continue",
+        "yes": "Yes",
+        "close": "Close",
+        "notAvailable": "N/A"
     },
     "orderStatuses": {
         "created": "Created",
@@ -73,7 +78,6 @@
         "unconfiguredApp": "Looks like you haven't properly configured your app.",
         "envMissing": "is missing from environment!"
     },
-    "DriverReportScreen": {},
     "LocationPermissionScreen": {
         "enableLocationServices": "Location Data Disclosure",
         "enableLocationPrompt": "Fleetbase Navigator collects precise location data to enable real-time driver tracking and order progress updates for your organization’s dispatchers and operations team, even when the app is closed or not in use. Location is collected while you are online and is sent securely to Fleetbase.",
@@ -84,5 +88,147 @@
         "permissionDeniedPrompt": "Location access is required before you can sign in. Would you like to allow access now?",
         "locationBlockedPrompt": "Location access has been blocked. Please open Settings and enable it to continue.",
         "goToSettings": "Go to Settings"
+    },
+    "AdhocOrder": {
+        "acceptTitle": "Accept Ad-Hoc order?",
+        "acceptMessage": "By accepting this ad-hoc order it will become assigned to you and the order will start immediatley.",
+        "dismissTitle": "Dismiss Ad-Hoc order?",
+        "dismissMessage": "By dimissing this ad-hoc order it will no longer display as an available order.",
+        "acceptOrder": "Accept Order",
+        "dismissOrder": "Dismiss Order"
+    },
+    "AdhocOrderCard": {
+        "acceptingAndAssigning": "Accepting and assigning order...",
+        "orderAvailableNearby": "Order Available Nearby: {{distance}}",
+        "away": "{{distance}} away",
+        "pickupDestination": "Pickup Destination"
+    },
+    "OrderScreen": {
+        "waypointCompleted": "Waypoint Completed",
+        "waypointCompletedMessage": "Waypoint activity completed for destination {{previousDestination}}. Your current destination is now {{currentDestination}}. You can change the destination at anytime by pressing the \"Current Destination\" button.",
+        "notDispatchedTitle": "Order Not Dispatched Yet",
+        "notDispatchedWarning": "Warning!",
+        "notDispatchedMessage": "This order is not yet dispatched, are you sure you want to continue?",
+        "updatingActivity": "Updating Activity: {{status}}",
+        "orderStatusUpdated": "Order status updated to: {{status}}",
+        "startOrder": "Start Order",
+        "updateActivity": "Update Activity",
+        "startNavigation": "Start Navigation",
+        "orderInformation": "Order Information",
+        "orderRoute": "Order Route",
+        "orderProgress": "Order Progress",
+        "orderNotes": "Order Notes",
+        "orderProof": "Order Proof",
+        "orderPayload": "Order Payload",
+        "customer": "Customer",
+        "orderDocumentsAndFiles": "Order Documents & Files",
+        "orderComments": "Order Comments",
+        "id": "ID",
+        "internalId": "Internal ID",
+        "trackingNumber": "Tracking Number",
+        "proofOfDelivery": "Proof of Delivery",
+        "type": "Type",
+        "dateCreated": "Date Created",
+        "dateScheduled": "Date Scheduled",
+        "dateDispatched": "Date Dispatched",
+        "currentDestination": "Current Destination",
+        "nextDestination": "Next Destination",
+        "totalDistance": "Total Distance",
+        "startTime": "Start Time",
+        "currentEta": "Current ETA",
+        "ect": "ECT"
+    },
+    "CameraCapture": {
+        "photoCaptured": "Photo captured.",
+        "photosAddedFromGallery": {
+            "one": "{{count}} photo added from gallery.",
+            "other": "{{count}} photos added from gallery."
+        },
+        "unableToSelectPhotosWithCode": "Unable to select photos ({{code}}).",
+        "unableToSelectPhotos": "Unable to select photos.",
+        "loadingCamera": "Loading camera or awaiting permission...",
+        "gallery": "Gallery",
+        "snap": "Snap",
+        "photosCount": "{{count}} Photos"
+    },
+    "CurrentDestinationSelect": {
+        "currentDestination": "Current Destination",
+        "id": "ID: {{id}}",
+        "selectDestination": "Select destination",
+        "destinationMarker": "(Destination)"
+    },
+    "DestinationChangedAlert": {
+        "waypointCompleted": "Waypoint Completed",
+        "activityComplete": "Activity for waypoint {{address}} is complete.",
+        "destinationChanged": "Your current destination has changed to {{address}}."
+    },
+    "OrderActivitySelect": {
+        "requiresProofOfDelivery": "Requires proof of delivery",
+        "selectActivity": "Select activity",
+        "updatingActivityFor": "Updating activity for:"
+    },
+    "OrderCard": {
+        "customers": "Customers:",
+        "customer": "Customer:",
+        "dateScheduled": "Date Scheduled:",
+        "podRequired": "POD Required:",
+        "dispatchedAt": "Dispatched At:",
+        "eta": "ETA:",
+        "ect": "ECT:"
+    },
+    "OrderCustomerCard": {
+        "call": "Call",
+        "email": "Email",
+        "chat": "Chat"
+    },
+    "OrderDocumentFiles": {
+        "downloadComplete": "Download Complete",
+        "imageSaved": "Image saved to your Photos Gallery.",
+        "downloadFailed": "Download Failed",
+        "statusCode": "Status Code: {{statusCode}}",
+        "error": "Error",
+        "downloadError": "There was an error downloading the file.",
+        "noDocumentsOrFiles": "No Documents or Files.",
+        "view": "View",
+        "download": "Download"
+    },
+    "OrderPayloadEntities": {
+        "emptyPayload": "Empty Payload."
+    },
+    "OrderProofOfDelivery": {
+        "noProofCaptured": "No Proof of Delivery Captured."
+    },
+    "OrderTotal": {
+        "subtotal": "Subtotal",
+        "deliveryFee": "Delivery Fee",
+        "deliveryTip": "Delivery Tip",
+        "tip": "Tip",
+        "total": "Total"
+    },
+    "OrderWaypointList": {
+        "tapToExpand": "Tap to expand",
+        "tapToCollapse": "Tap to collapse",
+        "moreWaypoints": "{{count}} more waypoints"
+    },
+    "PastOrderCard": {
+        "currentDestination": "Current Destination"
+    },
+    "EntityScreen": {
+        "details": "Details",
+        "id": "ID",
+        "internalId": "Internal ID",
+        "trackingNumber": "Tracking Number",
+        "sku": "SKU",
+        "type": "Type",
+        "dimensions": "Dimensions (L x W x H)",
+        "weight": "Weight"
+    },
+    "ProofOfDeliveryScreen": {
+        "capturingProof": "Capturing Proof of Delivery...",
+        "unableToValidateQrCode": "Unable to validate captured QR Code.",
+        "unableToSaveSignature": "Something went wrong saving the signature.",
+        "unableToUploadPhotos": "Unable to upload captured photos.",
+        "clear": "Clear",
+        "signAbove": "Sign above"
     }
 }

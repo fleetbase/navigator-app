@@ -4,6 +4,7 @@ import { FlatList } from 'react-native';
 import { Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { formatCurrency, numbersOnly } from '../utils/format';
 import { percentage } from '../utils/math';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const calculateTip = (tip, subtotal) => {
     let amount = tip;
@@ -23,6 +24,7 @@ const calculateTotal = (lineItems = []) => {
 
 const OrderTotal = ({ order }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const currency = order.getAttribute('meta.currency');
     const subtotal = order.getAttribute('meta.subtotal');
     const deliveryFee = order.getAttribute('meta.delivery_fee');
@@ -34,21 +36,21 @@ const OrderTotal = ({ order }) => {
     const lineItems = useMemo(() => {
         const items = [
             {
-                name: 'Subtotal',
+                name: t('OrderTotal.subtotal'),
                 value: subtotal,
             },
         ];
 
         if (deliveryFee && !isPickup) {
             items.push({
-                name: 'Delivery Fee',
+                name: t('OrderTotal.deliveryFee'),
                 value: deliveryFee,
             });
         }
 
         if (deliveryTip) {
             items.push({
-                name: 'Delivery Tip',
+                name: t('OrderTotal.deliveryTip'),
                 value: calculateTip(deliveryTip, subtotal),
                 tip: deliveryTip,
             });
@@ -56,14 +58,14 @@ const OrderTotal = ({ order }) => {
 
         if (tip) {
             items.push({
-                name: 'Tip',
+                name: t('OrderTotal.tip'),
                 value: calculateTip(tip, subtotal),
                 tip,
             });
         }
 
         items.push({
-            name: 'Total',
+            name: t('OrderTotal.total'),
             value: total,
         });
 
@@ -87,7 +89,7 @@ const OrderTotal = ({ order }) => {
                                 </Text>
                             </YStack>
                             <YStack justifyContent='flex-end'>
-                                <Text size='$5' color='$textPrimary' fontWeight={item.name === 'Total' ? 'bold' : 'normal'}>
+                                <Text size='$5' color='$textPrimary' fontWeight={item.name === t('OrderTotal.total') ? 'bold' : 'normal'}>
                                     {formatCurrency(item.value, currency)} {typeof item.tip === 'string' && item.tip.endsWith('%') && `(${tip})`}
                                 </Text>
                             </YStack>

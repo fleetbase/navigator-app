@@ -15,10 +15,12 @@ import OrderWaypointList, { WaypointItem } from './OrderWaypointList';
 import MultipleCustomerAvatars from './MultipleCustomerAvatars';
 import LoadingText from './LoadingText';
 import Badge from './Badge';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const INFO_FIELD_VALUE_MIN_HEIGHT = 30;
 export const PastOrderCard = ({ order, onPress }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const { isDarkMode } = useAppTheme();
     const { trackerData } = useOrderResource(order, { loadEta: false });
 
@@ -85,7 +87,7 @@ export const PastOrderCard = ({ order, onPress }) => {
                             icon={faLocationDot}
                             iconColor={theme['$textPrimary'].val}
                             waypoint={destination.serialize()}
-                            title='Current Destination'
+                            title={t('PastOrderCard.currentDestination')}
                             titleStyle={{ fontWeight: 'bold', fontSize: 14, textTransform: 'uppercase' }}
                         />
                     </YStack>
