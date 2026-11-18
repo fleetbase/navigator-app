@@ -22,6 +22,8 @@
         "continue": "Continue",
         "yes": "Yes",
         "close": "Close",
+        "select": "Select",
+        "remove": "Remove",
         "notAvailable": "N/A"
     },
     "orderStatuses": {
@@ -171,6 +173,29 @@
         "snap": "Snap",
         "photosCount": "{{count}} Photos"
     },
+    "ChatKeyboard": {
+        "typeAMessage": "Type a message"
+    },
+    "ChatMessage": {
+        "sending": "Sending..."
+    },
+    "ChatParticipants": {
+        "noParticipants": "No participants"
+    },
+    "Comment": {
+        "deleteComment": "Delete Comment",
+        "confirmDeleteComment": "Are you sure you want to delete this comment?",
+        "reply": "Reply",
+        "writeAReply": "Write a reply...",
+        "publishReply": "Publish Reply"
+    },
+    "CommentThread": {
+        "invalidComment": "Invalid Comment",
+        "commentTooShort": "Comment must be at least 2 characters.",
+        "writeAComment": "Write a comment...",
+        "publishComment": "Publish Comment",
+        "currentUser": "Current User"
+    },
     "CurrentDestinationSelect": {
         "currentDestination": "Current Destination",
         "id": "ID: {{id}}",
@@ -280,6 +305,26 @@
     },
     "InstanceLinkHandler": {
         "success": "Instance link was successful!"
+    },
+    "ChatHomeScreen": {
+        "noMessages": "No messages",
+        "chats": "Chats"
+    },
+    "ChatParticipantsScreen": {
+        "confirmRemoveParticipant": "Are you sure you wish to remove this participant from the chat?",
+        "removeParticipant": "Remove Participant",
+        "participants": "Participants",
+        "addParticipant": "Add Participant",
+        "selectParticipant": "Select Participant"
+    },
+    "CreateChatChannelScreen": {
+        "channelNameRequired": "Chat channel name is required.",
+        "channelCreated": "New chat channel created: {{channelName}}",
+        "unselect": "Unselect",
+        "createNewChat": "Create new Chat",
+        "channelName": "Channel Name",
+        "inputChannelName": "Input chat channel name...",
+        "selectParticipants": "Select Participants:"
     },
     "PhoneLoginScreen": {
         "invalidPhoneNumber": "Invalid phone number provided.",
