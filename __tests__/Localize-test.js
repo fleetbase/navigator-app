@@ -15,4 +15,9 @@ describe('translate', () => {
     test.each([[undefined], [null], ['']])('an empty value (%p) leaves the placeholder empty, as the old inline text did', (name) => {
         expect(translate('EditLocationScreen.defaultLocationSet', { name })).toBe(' is now your default location.');
     });
+
+    test('hours keep their short English form for one and for several', () => {
+        expect(translate('Format.hoursShort', { count: 1 })).toBe('1h');
+        expect(translate('Format.hoursShort', { count: 3 })).toBe('3h');
+    });
 });

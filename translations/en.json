@@ -505,7 +505,10 @@
         "meters": "{{count}} meters",
         "kilometers": "{{count}} km",
         "miles": "{{count}} miles",
-        "hoursShort": "{{count}}h",
+        "hoursShort": {
+            "one": "{{count}}h",
+            "other": "{{count}}h"
+        },
         "minutesShort": "{{count}}m",
         "secondsShort": "{{count}}s",
         "bytes": "Bytes",
