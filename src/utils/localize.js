@@ -5,6 +5,9 @@ import en from '../../translations/en.json';
 // import mn from '../../translations/mn.json';
 import I18n from 'react-native-i18n';
 
+// i18n-js prints "[missing {{x}} value]" for an empty value; the old inline text printed nothing.
+I18n.missingPlaceholder = () => '';
+
 export const translations = {
     en,
     // mn,
