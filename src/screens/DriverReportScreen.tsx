@@ -4,7 +4,6 @@ import { Pressable, FlatList, RefreshControl } from 'react-native';
 import { Text, YStack, XStack, Button, Separator, Image, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
-import { singularize } from 'inflected';
 import { format } from 'date-fns';
 import { titleize, formatCurrency } from '../utils/format';
 import { later } from '../utils';
@@ -15,8 +14,10 @@ import Badge from '../components/Badge';
 import Spacer from '../components/Spacer';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DriverReportScreen = () => {
+    const { t } = useLanguage();
     const theme = useTheme();
     const navigation = useNavigation();
     const { driver } = useAuth();
@@ -27,8 +28,8 @@ const DriverReportScreen = () => {
     const [currentTab, setCurrentTab] = useStorage('current_reports_tab', 'issue');
     const [isRefreshing, setIsRefreshing] = useState(false);
     const reportOptions = [
-        { value: 'issue', label: 'Issues' },
-        { value: 'fuel-report', label: 'Fuel Reports' },
+        { value: 'issue', label: t('DriverReportScreen.issues'), singularLabel: t('DriverReportScreen.issue') },
+        { value: 'fuel-report', label: t('DriverReportScreen.fuelReports'), singularLabel: t('DriverReportScreen.fuelReport') },
     ];
     const currentIndex = reportOptions.findIndex((option) => option.value === currentTab);
     const content = useMemo(() => (currentTab === 'issue' ? issues : fuelReports), [currentTab, issues, fuelReports]);
@@ -98,7 +99,7 @@ const DriverReportScreen = () => {
                     <YStack borderWidth={1} borderColor='$borderColor' borderRadius='$4' gap='$3'>
                         <XStack bg='$surface' py='$3' px='$2' borderBottomWidth={1} borderColor='$borderColor' space='$2' borderTopLeftRadius='$4' borderTopRightRadius='$4'>
                             <Text size='$5' color='$textSecondary' fontWeight='bold' numberOfLines={1}>
-                                Issue on:
+                                {t('DriverReportScreen.issueOn')}
                             </Text>
                             <Text size='$5' color='$textPrimary' fontWeight='bold' numberOfLines={1}>
                                 {format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')}
@@ -107,16 +108,16 @@ const DriverReportScreen = () => {
                         <YStack pb='$2' px='$2' gap='$2'>
                             <XStack gap='$2'>
                                 <XStack gap='$2' alignItems='center'>
-                                    <Text fontWeight='bold'>Status:</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.status')}</Text>
                                     <Badge status={issue.status} alignSelf='flex-start' py='$1' px='$2' borderRadius='$3' numberOfLines={1} />
                                 </XStack>
                                 <XStack gap='$2' alignItems='center'>
-                                    <Text fontWeight='bold'>Priority:</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.priority')}</Text>
                                     <Badge status={issue.priority} alignSelf='flex-start' py='$1' px='$2' borderRadius='$3' numberOfLines={1} />
                                 </XStack>
                             </XStack>
                             <YStack flex={1} gap='$2'>
-                                <Text fontWeight='bold'>Report:</Text>
+                                <Text fontWeight='bold'>{t('DriverReportScreen.report')}</Text>
                                 <Text color='$textSecondary' numberOfLines={3}>
                                     {issue.report}
                                 </Text>
@@ -126,23 +127,23 @@ const DriverReportScreen = () => {
                         <YStack bg='$background' pb='$2' gap='$2' borderBottomLeftRadius='$4' borderBottomRightRadius='$4'>
                             <YStack gap='$3'>
                                 <XStack gap='$2' px='$3' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Type:</Text>
-                                    <Text numberOfLines={1}>{titleize(issue.type) ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.type')}</Text>
+                                    <Text numberOfLines={1}>{titleize(issue.type) ?? t('common.notAvailable')}</Text>
                                 </XStack>
                                 <Separator />
                                 <XStack gap='$2' px='$3' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Category:</Text>
-                                    <Text numberOfLines={1}>{titleize(issue.category) ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.category')}</Text>
+                                    <Text numberOfLines={1}>{titleize(issue.category) ?? t('common.notAvailable')}</Text>
                                 </XStack>
                                 <Separator />
                                 <XStack gap='$2' px='$3' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Vehicle:</Text>
-                                    <Text numberOfLines={1}>{issue.vehicle_name ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.vehicle')}</Text>
+                                    <Text numberOfLines={1}>{issue.vehicle_name ?? t('common.notAvailable')}</Text>
                                 </XStack>
                                 <Separator />
                                 <XStack gap='$2' px='$3' pb='$2' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Reporter:</Text>
-                                    <Text numberOfLines={1}>{issue.reporter_name ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.reporter')}</Text>
+                                    <Text numberOfLines={1}>{issue.reporter_name ?? t('common.notAvailable')}</Text>
                                 </XStack>
                             </YStack>
                         </YStack>
@@ -171,7 +172,7 @@ const DriverReportScreen = () => {
                         >
                             <XStack space='$2'>
                                 <Text size='$5' color='$textSecondary' fontWeight='bold' numberOfLines={1}>
-                                    Fuel Reported:
+                                    {t('DriverReportScreen.fuelReported')}
                                 </Text>
                                 <Text size='$5' color='$textPrimary' fontWeight='bold' numberOfLines={1}>
                                     {format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')}
@@ -181,7 +182,7 @@ const DriverReportScreen = () => {
                         </XStack>
                         <YStack px='$2' gap='$3'>
                             <XStack gap='$2' alignItems='center'>
-                                <Text fontWeight='bold'>Status:</Text>
+                                <Text fontWeight='bold'>{t('DriverReportScreen.status')}</Text>
                                 <Badge status={fuelReport.status} alignSelf='flex-start' py='$1' px='$2' borderRadius='$3' numberOfLines={1} />
                             </XStack>
                             <XStack space='$2'>
@@ -200,18 +201,18 @@ const DriverReportScreen = () => {
                         <YStack bg='$background' pb='$2' gap='$2' borderBottomLeftRadius='$4' borderBottomRightRadius='$4'>
                             <YStack gap='$3'>
                                 <XStack gap='$2' px='$3' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Odometer:</Text>
-                                    <Text numberOfLines={1}>{fuelReport.odometer ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.odometer')}</Text>
+                                    <Text numberOfLines={1}>{fuelReport.odometer ?? t('common.notAvailable')}</Text>
                                 </XStack>
                                 <Separator />
                                 <XStack gap='$2' px='$3' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Volume:</Text>
-                                    <Text numberOfLines={1}>{`${fuelReport.volume} ${fuelReport.metric_unit}` ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.volume')}</Text>
+                                    <Text numberOfLines={1}>{`${fuelReport.volume} ${fuelReport.metric_unit}` ?? t('common.notAvailable')}</Text>
                                 </XStack>
                                 <Separator />
                                 <XStack gap='$2' px='$3' pb='$2' justifyContent='space-between'>
-                                    <Text fontWeight='bold'>Cost:</Text>
-                                    <Text numberOfLines={1}>{formatCurrency(fuelReport.amount, fuelReport.currency) ?? 'N/A'}</Text>
+                                    <Text fontWeight='bold'>{t('DriverReportScreen.cost')}</Text>
+                                    <Text numberOfLines={1}>{formatCurrency(fuelReport.amount, fuelReport.currency) ?? t('common.notAvailable')}</Text>
                                 </XStack>
                             </YStack>
                         </YStack>
@@ -247,7 +248,7 @@ const DriverReportScreen = () => {
                 ListEmptyComponent={
                     <YStack height={500} width='100%' flex={1} alignItems='center' justifyContent='center'>
                         <Text color='$textSecondary' fontSize={22}>
-                            No {reportOptions[currentIndex].label}
+                            {t('DriverReportScreen.noItems', { label: reportOptions[currentIndex].label })}
                         </Text>
                     </YStack>
                 }
@@ -261,7 +262,7 @@ const DriverReportScreen = () => {
                             <FontAwesomeIcon icon={faPenToSquare} color={theme['$infoText'].val} size={16} />
                         </Button.Icon>
                         <Button.Text color='$infoText' fontSize={15}>
-                            Create a new {singularize(reportOptions[currentIndex].label)}
+                            {t('DriverReportScreen.createNew', { label: reportOptions[currentIndex].singularLabel })}
                         </Button.Text>
                     </Button>
                 </YStack>

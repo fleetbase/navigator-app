@@ -12,8 +12,10 @@ import { useAuth } from '../contexts/AuthContext';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import ChatParticipantAvatar from '../components/ChatParticipantAvatar';
 import BottomSheetSelect from '../components/BottomSheetSelect';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ChatParticipantsScreen = ({ route }) => {
+    const { t } = useLanguage();
     const theme = useTheme();
     const navigation = useNavigation();
     const { sendMessage, reloadChannel, removeParticipant, addParticipant, getAvailableParticipants, getChannelCurrentParticipant } = useChat();
@@ -54,15 +56,15 @@ const ChatParticipantsScreen = ({ route }) => {
     const handleRemoveParticipant = useCallback(
         (participant) => {
             Alert.alert(
-                'Confirmation',
-                'Are you sure you wish to remove this participant from the chat?',
+                t('common.confirmation'),
+                t('ChatParticipantsScreen.confirmRemoveParticipant'),
                 [
                     {
-                        text: 'Cancel',
+                        text: t('common.cancel'),
                         style: 'cancel',
                     },
                     {
-                        text: 'Remove Participant',
+                        text: t('ChatParticipantsScreen.removeParticipant'),
                         onPress: async () => {
                             synchronouslyRemoveParticipant(participant);
                             await removeParticipant(channel, participant);
@@ -127,7 +129,7 @@ const ChatParticipantsScreen = ({ route }) => {
                                     <Button.Icon>
                                         <FontAwesomeIcon icon={faTrash} color={theme['$errorText'].val} />
                                     </Button.Icon>
-                                    <Button.Text color='$errorText'>Remove</Button.Text>
+                                    <Button.Text color='$errorText'>{t('common.remove')}</Button.Text>
                                 </Button>
                             </YStack>
                         )}
@@ -151,7 +153,7 @@ const ChatParticipantsScreen = ({ route }) => {
                         </YStack>
                         <YStack>
                             <Text color='$textPrimary' fontSize={24} fontWeight='bold'>
-                                Participants
+                                {t('ChatParticipantsScreen.participants')}
                             </Text>
                         </YStack>
                     </XStack>
@@ -160,7 +162,7 @@ const ChatParticipantsScreen = ({ route }) => {
                             <Button.Icon>
                                 <FontAwesomeIcon icon={faPlus} color={theme['$infoText'].val} />
                             </Button.Icon>
-                            <Button.Text color='$infoText'>Add Participant</Button.Text>
+                            <Button.Text color='$infoText'>{t('ChatParticipantsScreen.addParticipant')}</Button.Text>
                         </Button>
                     </YStack>
                 </XStack>
@@ -201,7 +203,7 @@ const ChatParticipantsScreen = ({ route }) => {
                         </Pressable>
                     );
                 }}
-                title='Select Participant'
+                title={t('ChatParticipantsScreen.selectParticipant')}
                 virtual={true}
                 renderInPlace={false}
                 portalHost='ChatParticipantsPortal'

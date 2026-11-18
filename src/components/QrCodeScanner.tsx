@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type QrCodeScannerProps = {
     onScan: (data: string) => void;
@@ -11,6 +12,7 @@ type QrCodeScannerProps = {
 };
 
 export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '100%', height = '100%', overlayStyle = {}, scanCooldown = 3000 }) => {
+    const { t } = useLanguage();
     const device = useCameraDevice('back');
     const [isScanning, setIsScanning] = useState(true);
     const cooldownRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,7 +53,7 @@ export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '1
     if (!device) {
         return (
             <View style={[styles.noCamera, { width, height }]}>
-                <Text style={{ color: '#fff' }}>No camera available</Text>
+                <Text style={{ color: '#fff' }}>{t('QrCodeScanner.noCameraAvailable')}</Text>
             </View>
         );
     }

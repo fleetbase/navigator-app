@@ -8,6 +8,7 @@ import { usePromiseWithLoading } from '../hooks/use-promise-with-loading';
 import BackButton from '../components/BackButton';
 import PhoneInput from '../components/PhoneInput';
 import Input from '../components/Input';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const RenderAccountProperty = ({ property, value, onChange }) => {
     return (
@@ -22,6 +23,7 @@ const RenderAccountProperty = ({ property, value, onChange }) => {
 };
 
 const EditAccountPropertyScreen = ({ route }) => {
+    const { t } = useLanguage();
     const property = route.params.property;
     const theme = useTheme();
     const navigation = useNavigation();
@@ -34,7 +36,7 @@ const EditAccountPropertyScreen = ({ route }) => {
         try {
             const updatedCustomer = await runWithLoading(customer.update({ [property.key]: value }));
             setCustomer(updatedCustomer);
-            toast.success(`${property.name} changes saved.`);
+            toast.success(t('EditAccountPropertyScreen.changesSaved', { name: property.name }));
             navigation.goBack();
         } catch (error) {
             toast.error(error.message);
@@ -60,7 +62,7 @@ const EditAccountPropertyScreen = ({ route }) => {
                     <Button onPress={handleUpdateProperty} size='$5' bg='$primary' flex={1} opacity={mutated ? 1 : 0.75} disabled={!mutated}>
                         <Button.Icon>{isLoading() && <Spinner color='$textPrimary' />}</Button.Icon>
                         <Button.Text color='$textPrimary' fontWeight='bold' fontSize='$5'>
-                            Save
+                            {t('common.save')}
                         </Button.Text>
                     </Button>
                 </XStack>

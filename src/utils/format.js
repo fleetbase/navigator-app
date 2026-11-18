@@ -1,6 +1,7 @@
 import getCurrency from './currencies';
 import countryLocaleMap from 'country-locale-map';
 import { isNone, isArray, isObject, defaults } from './';
+import { translate } from './localize';
 import { isToday, isYesterday, isThisWeek, isThisYear, format, differenceInMinutes, differenceInHours } from 'date-fns';
 
 export const defaultCurrenyOptions = {
@@ -157,12 +158,12 @@ export function formatCurrency(amount = 0, currency = 'USD', currencyDisplay = '
 
 export function formatMeters(meters) {
     if (meters < 1000) {
-        return `${meters} meters`;
+        return translate('Format.meters', { count: meters });
     } else {
         const km = meters / 1000;
         // Round to one decimal place
         const roundedKm = Math.round(km * 10) / 10;
-        return `${roundedKm} km`;
+        return translate('Format.kilometers', { count: roundedKm });
     }
 }
 
@@ -171,10 +172,10 @@ export function formatMiles(meters) {
     const miles = meters / 1609.344;
     if (miles < 1) {
         // Use two decimals for values under 1 mile
-        return `${miles.toFixed(2)} miles`;
+        return translate('Format.miles', { count: miles.toFixed(2) });
     } else {
         // Use one decimal place for values 1 mile or more
-        return `${miles.toFixed(1)} miles`;
+        return translate('Format.miles', { count: miles.toFixed(1) });
     }
 }
 
@@ -294,30 +295,30 @@ export function formatDuration(secs) {
     let parts = [];
 
     if (time.h) {
-        parts.push(`${time.h}h`);
+        parts.push(translate('Format.hoursShort', { count: time.h }));
     }
 
     if (time.m) {
-        parts.push(`${time.m}m`);
+        parts.push(translate('Format.minutesShort', { count: time.m }));
     }
 
     if (parts.length < 2 && time.s) {
-        parts.push(`${time.s}s`);
+        parts.push(translate('Format.secondsShort', { count: time.s }));
     }
 
     if (parts.length === 0) {
-        parts.push('0s');
+        parts.push(translate('Format.secondsShort', { count: 0 }));
     }
 
     return parts.join(' ');
 }
 
 export function formatBytes(bytes, decimals = 2) {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return `0 ${translate('Format.bytes')}`;
 
     const k = 1024; // or 1000 for decimal-based conversion
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const sizes = [translate('Format.bytes'), 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
@@ -378,12 +379,12 @@ export function formatWhatsAppTimestamp(date) {
 
     // Less than 1 minute ago
     if (minutesDiff < 1) {
-        return 'Just now';
+        return translate('Format.justNow');
     }
 
     // Less than 60 minutes ago
     if (minutesDiff < 60) {
-        return `${minutesDiff} minute${minutesDiff > 1 ? 's' : ''} ago`;
+        return minutesDiff > 1 ? translate('Format.minutesAgo', { count: minutesDiff }) : translate('Format.minuteAgo', { count: minutesDiff });
     }
 
     // Same day
@@ -393,7 +394,7 @@ export function formatWhatsAppTimestamp(date) {
 
     // Yesterday
     if (isYesterday(date)) {
-        return 'Yesterday';
+        return translate('Format.yesterday');
     }
 
     // Within the current week (not including today or yesterday)

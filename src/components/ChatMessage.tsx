@@ -6,10 +6,12 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { abbreviateName } from '../utils';
 import { formatWhatsAppTimestamp } from '../utils/format';
 import { useChat } from '../contexts/ChatContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import useAppTheme from '../hooks/use-app-theme';
 import ChatAttachment from './ChatAttachment';
 
 const ChatMessage = ({ record, participant }) => {
+    const { t } = useLanguage();
     const theme = useTheme();
     const { isDarkMode } = useAppTheme();
     const { createReadReceipt } = useChat();
@@ -60,7 +62,7 @@ const ChatMessage = ({ record, participant }) => {
                 <XStack px='$2' pt='$2' alignItems='center' justifyContent='space-between'>
                     <YStack flex={1}>
                         <Text color='$textSecondary' fontSize={10}>
-                            {record.id === 'temp' ? 'Sending...' : formatWhatsAppTimestamp(new Date(record.created_at))}
+                            {record.id === 'temp' ? t('ChatMessage.sending') : formatWhatsAppTimestamp(new Date(record.created_at))}
                         </Text>
                     </YStack>
                     <XStack flex={1} justifyContent='flex-end' space='$1'>

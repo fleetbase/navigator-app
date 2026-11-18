@@ -18,6 +18,7 @@ import PastOrderCard from '../components/PastOrderCard';
 import AdhocOrderCard from '../components/AdhocOrderCard';
 import Spacer from '../components/Spacer';
 import useStorage from '../hooks/use-storage';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const isAndroid = Platform.OS === 'android';
 
@@ -41,6 +42,7 @@ const sumDistance = (orders = []) =>
 const REFRESH_NEARBY_ORDERS_MS = 6000 * 5; // 5 mins
 const REFRESH_ORDERS_MS = 6000 * 15; // 15 mins
 const DriverOrderManagementScreen = () => {
+    const { t } = useLanguage();
     const theme = useTheme();
     const navigation = useNavigation();
     const calendar = useRef();
@@ -183,7 +185,7 @@ const DriverOrderManagementScreen = () => {
             <YStack>
                 <YStack px='$1'>
                     <Text color='$textPrimary' fontSize={18} fontWeight='bold'>
-                        Active Orders: {allActiveOrders.length}
+                        {t('DriverOrderManagementScreen.activeOrdersCount', { count: allActiveOrders.length })}
                     </Text>
                 </YStack>
                 <YStack>
@@ -211,7 +213,7 @@ const DriverOrderManagementScreen = () => {
                     <XStack alignItems='center' bg='$info' borderWidth={1} borderColor='$infoBorder' space='$2' px='$3' py='$2' borderRadius='$5' width='100%' flexWrap='wrap'>
                         <FontAwesomeIcon icon={faInfoCircle} color={theme['$infoText'].val} />
                         <Text color='$infoText' fontSize={16}>
-                            No current orders for {format(new Date(currentDate), 'yyyy-MM-dd')}
+                            {t('DriverOrderManagementScreen.noCurrentOrdersFor', { date: format(new Date(currentDate), 'yyyy-MM-dd') })}
                         </Text>
                     </XStack>
                 </YStack>
@@ -261,17 +263,17 @@ const DriverOrderManagementScreen = () => {
             </YStack>
             <YStack bg='$surface' px='$3' py='$4' borderBottomWidth={1} borderTopWidth={0} borderColor={isDarkMode ? '$borderColor' : '$borderColorWithShadow'}>
                 <Text color='$textPrimary' fontSize='$8' fontWeight='bold' mb='$1'>
-                    {todayString} orders
+                    {t('DriverOrderManagementScreen.dayOrders', { day: todayString })}
                 </Text>
                 <XStack space='$2' alignItems='center'>
                     <Text color='$textSecondary' fontSize='$5'>
-                        {currentOrders.length} {currentOrders.length > 1 ? 'orders' : 'order'}
+                        {currentOrders.length > 1 ? t('DriverOrderManagementScreen.orderCountMany', { count: currentOrders.length }) : t('DriverOrderManagementScreen.orderCountOne', { count: currentOrders.length })}
                     </Text>
                     <Text color='$textSecondary' fontSize='$5'>
                         •
                     </Text>
                     <Text color='$textSecondary' fontSize='$5'>
-                        {stops} {stops > 1 ? 'stops' : 'stop'} left
+                        {stops > 1 ? t('DriverOrderManagementScreen.stopsLeftMany', { count: stops }) : t('DriverOrderManagementScreen.stopsLeftOne', { count: stops })}
                     </Text>
                     <Text color='$textSecondary' fontSize='$5'>
                         •

@@ -2,9 +2,11 @@ import { YStack, XStack, Text, Avatar, Separator, Button, useTheme } from 'tamag
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPhone, faEnvelope, faMessage } from '@fortawesome/free-solid-svg-icons';
 import FastImage from 'react-native-fast-image';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const OrderCustomerCard = ({ customer }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
 
     return (
         <YStack space='$2' borderWidth={1} borderColor='$borderColor' borderRadius='$4'>
@@ -33,19 +35,19 @@ const OrderCustomerCard = ({ customer }) => {
                         <Button.Icon>
                             <FontAwesomeIcon icon={faPhone} color={theme.infoText.val} />
                         </Button.Icon>
-                        <Button.Text color='$infoText'>Call</Button.Text>
+                        <Button.Text color='$infoText'>{t('OrderCustomerCard.call')}</Button.Text>
                     </Button>
                     <Button bg='$info' size='$3' borderWidth={1} borderColor='$infoBorder'>
                         <Button.Icon>
                             <FontAwesomeIcon icon={faEnvelope} color={theme.infoText.val} />
                         </Button.Icon>
-                        <Button.Text color='$infoText'>Email</Button.Text>
+                        <Button.Text color='$infoText'>{t('OrderCustomerCard.email')}</Button.Text>
                     </Button>
                     <Button bg='$info' size='$3' borderWidth={1} borderColor='$infoBorder'>
                         <Button.Icon>
                             <FontAwesomeIcon icon={faMessage} color={theme.infoText.val} />
                         </Button.Icon>
-                        <Button.Text color='$infoText'>Chat</Button.Text>
+                        <Button.Text color='$infoText'>{t('OrderCustomerCard.chat')}</Button.Text>
                     </Button>
                 </XStack>
             </YStack>

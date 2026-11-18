@@ -3,6 +3,8 @@ import ReactTestRenderer from 'react-test-renderer';
 import { ActivityIndicator, Animated, View } from 'react-native';
 import SafeSpinner from '../src/components/SafeSpinner';
 
+jest.mock('../src/contexts/LanguageContext', () => ({ useLanguage: () => ({ t: (key) => key }) }));
+
 test('renders an animated view instead of the Android native progress indicator', async () => {
     const animation = { start: jest.fn(), stop: jest.fn() };
     jest.spyOn(Animated, 'loop').mockReturnValue(animation);

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type SafeSpinnerProps = {
     color?: string;
@@ -20,6 +21,7 @@ const getSpinnerSize = (size: SafeSpinnerProps['size']) => {
  * 0.86 can crash while Fabric measures that native component with null data.
  */
 const SafeSpinner: React.FC<SafeSpinnerProps> = ({ color = '#6b7280', size = 'small', style, testID }) => {
+    const { t } = useLanguage();
     const rotation = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -46,7 +48,7 @@ const SafeSpinner: React.FC<SafeSpinnerProps> = ({ color = '#6b7280', size = 'sm
     return (
         <Animated.View
             testID={testID}
-            accessibilityLabel='Loading'
+            accessibilityLabel={t('SafeSpinner.loading')}
             style={[
                 {
                     width: diameter,

@@ -8,6 +8,7 @@ import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { Portal } from '@gorhom/portal';
 import { debounce } from '../utils';
 import unit from '../constants/Units';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const getDefaultUnit = (type, defaultValue) => {
     if (typeof type === 'string' && type.startsWith('volume')) {
@@ -30,7 +31,7 @@ const UnitInput = ({
     type = 'volume',
     snapTo = '100%',
     backgroundColor = '$surface',
-    placeholder = 'Input volume',
+    placeholder,
     wrapperProps = {},
     portalHost = 'MainPortal',
     onBottomSheetPositionChanged,
@@ -38,6 +39,7 @@ const UnitInput = ({
     onBottomSheetClosed,
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const [selectedUnit, setSelectedUnit] = useState(getDefaultUnit(type, defaultUnit));
     const [value, setValue] = useState(_value);
     const [searchTerm, setSearchTerm] = useState('');
@@ -141,7 +143,7 @@ const UnitInput = ({
                 <Input
                     ref={valueInputRef}
                     flex={1}
-                    placeholder={placeholder}
+                    placeholder={placeholder ?? t('UnitInput.inputVolume')}
                     keyboardType='phone-pad'
                     value={value}
                     onChangeText={setValue}
@@ -197,7 +199,7 @@ const UnitInput = ({
                     <YStack px='$2'>
                         <BottomSheetTextInput
                             ref={searchInputRef}
-                            placeholder='Search unit'
+                            placeholder={t('UnitInput.searchUnit')}
                             onChangeText={setSearchTerm}
                             autoCapitalize='none'
                             autoComplete='off'

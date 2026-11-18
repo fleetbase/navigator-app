@@ -4,9 +4,11 @@ import { YStack, XStack, Text, Button, Spinner, TextArea, useTheme } from 'tamag
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPaperPlane, faRotate } from '@fortawesome/free-solid-svg-icons';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import Comment from './Comment';
 
 const CommentThread = ({ comments: initialComments = [], subject, onReloadComments, isReloading }) => {
+    const { t } = useLanguage();
     const { isDarkMode } = useAppTheme();
     const theme = useTheme();
     const [comments, setComments] = useState(initialComments);
@@ -21,7 +23,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
 
     const isCommentInvalid = (comment) => {
         if (!comment || comment.trim().length < 2) {
-            Alert.alert('Invalid Comment', 'Comment must be at least 2 characters.');
+            Alert.alert(t('CommentThread.invalidComment'), t('CommentThread.commentTooShort'));
             return true;
         }
         return false;
@@ -35,7 +37,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
             id: Date.now().toString(),
             content: input,
             author: {
-                name: 'Current User', // Replace with your current user data
+                name: t('CommentThread.currentUser'), // Replace with your current user data
                 avatar_url: 'https://example.com/default-avatar.png',
             },
             created_at: new Date(),
@@ -52,7 +54,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
             <YStack>
                 <TextArea
                     value={input}
-                    placeholder='Write a comment...'
+                    placeholder={t('CommentThread.writeAComment')}
                     onChangeText={setInput}
                     width='100%'
                     bg={isDarkMode ? '$secondary' : '$white'}
@@ -77,7 +79,7 @@ const CommentThread = ({ comments: initialComments = [], subject, onReloadCommen
                         <Button.Icon>
                             <FontAwesomeIcon icon={faPaperPlane} color={theme['$infoText'].val} />
                         </Button.Icon>
-                        <Button.Text color='$infoText'>Publish Comment</Button.Text>
+                        <Button.Text color='$infoText'>{t('CommentThread.publishComment')}</Button.Text>
                     </Button>
                 </XStack>
             </YStack>

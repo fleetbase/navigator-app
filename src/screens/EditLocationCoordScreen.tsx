@@ -9,6 +9,7 @@ import LocationMarker from '../components/LocationMarker';
 import useSavedLocations from '../hooks/use-saved-locations';
 import usePromiseWithLoading from '../hooks/use-promise-with-loading';
 import useFleetbase from '../hooks/use-fleetbase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const LOCATION_MARKER_SIZE = { height: 70, width: 40 };
 const styles = StyleSheet.create({
@@ -22,6 +23,7 @@ const styles = StyleSheet.create({
 });
 
 const EditLocationCoordScreen = ({ route }) => {
+    const { t } = useLanguage();
     const params = route.params || {};
     const navigation = useNavigation();
     const theme = useTheme();
@@ -138,12 +140,12 @@ const EditLocationCoordScreen = ({ route }) => {
                 <Button onPress={handleSave} size='$5' bg='$blue-700' flex={1}>
                     <Button.Icon>{isLoading() && <Spinner color='$blue-100' />}</Button.Icon>
                     <Button.Text color='$blue-100' fontWeight='bold' fontSize='$5'>
-                        Save Position
+                        {t('EditLocationCoordScreen.savePosition')}
                     </Button.Text>
                 </Button>
                 <Button onPress={handleReset} size='$5' bg='$secondary' flex={1}>
                     <Button.Text color='$textSecondary' fontWeight='bold' fontSize='$5'>
-                        Reset
+                        {t('common.reset')}
                     </Button.Text>
                 </Button>
             </XStack>

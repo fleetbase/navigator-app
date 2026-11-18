@@ -16,8 +16,10 @@ import BackButton from '../components/BackButton';
 import CustomHeader from '../components/CustomHeader';
 import LoadingOverlay from '../components/LoadingOverlay';
 import SignatureCanvas from 'react-native-signature-canvas';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ProofOfDeliveryScreen = ({ route }) => {
+    const { t } = useLanguage();
     const theme = useTheme();
     const navigation = useNavigation();
     const { isDarkMode } = useAppTheme();
@@ -25,7 +27,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
     const { setValue } = useTempStore();
     const { screenWidth, screenHeight } = useDimensions();
     const [isLoading, setIsLoading] = useState(false);
-    const [loadingOverlayMessage, setLoadingOverlayMessage] = useState('Capturing Proof of Delivery...');
+    const [loadingOverlayMessage, setLoadingOverlayMessage] = useState(t('ProofOfDeliveryScreen.capturingProof'));
     const signatureScreenRef = useRef();
     const params = route.params ?? {};
     const activity = params.activity;
@@ -52,7 +54,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
                 setValue('proof', { proof, activity, order: order.id, waypoint: waypoint?.id, entity: entity?.id });
                 navigation.goBack();
             } catch (err) {
-                toast.error(err.message ?? 'Unable to validate captured QR Code.');
+                toast.error(err.message ?? t('ProofOfDeliveryScreen.unableToValidateQrCode'));
                 console.warn('Error capturing QR code as proof:', err);
             } finally {
                 setIsLoading(false);
@@ -70,7 +72,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
                 setValue('proof', { proof, activity, order: order.id, waypoint: waypoint?.id, entity: entity?.id });
                 navigation.goBack();
             } catch (err) {
-                toast.error(err.message ?? 'Something went wrong saving the signature.');
+                toast.error(err.message ?? t('ProofOfDeliveryScreen.unableToSaveSignature'));
                 console.warn('Error capturing signature as proof:', err);
             } finally {
                 setIsLoading(false);
@@ -108,7 +110,7 @@ const ProofOfDeliveryScreen = ({ route }) => {
                 setValue('proof', { proof, activity, order: order.id, waypoint: waypoint?.id, entity: entity?.id });
                 navigation.goBack();
             } catch (err) {
-                toast.error(err.message ?? 'Unable to upload captured photos.');
+                toast.error(err.message ?? t('ProofOfDeliveryScreen.unableToUploadPhotos'));
                 console.warn('Error capturing photos as proof:', err);
             } finally {
                 setIsLoading(false);
@@ -151,6 +153,9 @@ const ProofOfDeliveryScreen = ({ route }) => {
                 <SignatureCanvas
                     ref={signatureScreenRef}
                     onOK={handleSignatureCompleted}
+                    clearText={t('ProofOfDeliveryScreen.clear')}
+                    confirmText={t('common.confirm')}
+                    descriptionText={t('ProofOfDeliveryScreen.signAbove')}
                     backgroundColor={'white'}
                     style={{ backgroundColor: 'white', flex: 1, width: '100%', height: '100%' }}
                     webStyle={signatureWebStyle}
