@@ -78,6 +78,26 @@
         "unconfiguredApp": "Looks like you haven't properly configured your app.",
         "envMissing": "is missing from environment!"
     },
+    "DriverReportScreen": {
+        "issues": "Issues",
+        "issue": "Issue",
+        "fuelReports": "Fuel Reports",
+        "fuelReport": "Fuel Report",
+        "noItems": "No {{label}}",
+        "createNew": "Create a new {{label}}",
+        "issueOn": "Issue on:",
+        "fuelReported": "Fuel Reported:",
+        "status": "Status:",
+        "priority": "Priority:",
+        "report": "Report:",
+        "type": "Type:",
+        "category": "Category:",
+        "vehicle": "Vehicle:",
+        "reporter": "Reporter:",
+        "odometer": "Odometer:",
+        "volume": "Volume:",
+        "cost": "Cost:"
+    },
     "LocationPermissionScreen": {
         "enableLocationServices": "Location Data Disclosure",
         "enableLocationPrompt": "Fleetbase Navigator collects precise location data to enable real-time driver tracking and order progress updates for your organization’s dispatchers and operations team, even when the app is closed or not in use. Location is collected while you are online and is sent securely to Fleetbase.",
@@ -161,6 +181,44 @@
         "waypointCompleted": "Waypoint Completed",
         "activityComplete": "Activity for waypoint {{address}} is complete.",
         "destinationChanged": "Your current destination has changed to {{address}}."
+    },
+    "FuelReportForm": {
+        "publishFuelReport": "Publish Fuel Report",
+        "status": "Status",
+        "selectFuelReportStatus": "Select Fuel Report Status",
+        "odometer": "Odometer",
+        "inputOdometer": "Input your current odometer...",
+        "volume": "Volume",
+        "inputFuelVolume": "Input fuel volume...",
+        "cost": "Cost",
+        "inputFuelCosts": "Input fuel costs..."
+    },
+    "IssueForm": {
+        "publishIssue": "Publish Issue",
+        "issueType": "Issue Type",
+        "selectIssueType": "Select Issue Type",
+        "issueCategory": "Issue Category",
+        "selectIssueCategory": "Select Issue Category",
+        "issuePriority": "Issue Priority",
+        "selectIssuePriority": "Select Issue Priority",
+        "issueStatus": "Issue Status",
+        "selectIssueStatus": "Select Issue Status",
+        "issueReport": "Issue Report",
+        "typeYourIssueReport": "Type your issue report..."
+    },
+    "EditFuelReportScreen": {
+        "updateFuelReport": "Update Fuel Report"
+    },
+    "EditIssueScreen": {
+        "saveIssue": "Save Issue"
+    },
+    "MoneyInput": {
+        "inputAmount": "Input amount",
+        "searchCurrencies": "Search currencies"
+    },
+    "UnitInput": {
+        "inputVolume": "Input volume",
+        "searchUnit": "Search unit"
     },
     "PhoneInput": {
         "enterPhoneNumber": "Enter phone number",
@@ -258,6 +316,31 @@
         "type": "Type",
         "dimensions": "Dimensions (L x W x H)",
         "weight": "Weight"
+    },
+    "IssueScreen": {
+        "confirmDeletion": "Confirm Deletion",
+        "confirmDeleteIssue": "Are you sure you want to delete this Issue?",
+        "deleteIssue": "Delete Issue",
+        "deletingIssue": "Deleting Issue...",
+        "type": "Type:",
+        "category": "Category:",
+        "vehicle": "Vehicle:",
+        "priority": "Priority:",
+        "status": "Status:",
+        "report": "Report:",
+        "reportLocation": "Report Location:"
+    },
+    "FuelReportScreen": {
+        "confirmDeletion": "Confirm Deletion",
+        "confirmDeleteFuelReport": "Are you sure you want to delete this Fuel Report?",
+        "deleteFuelReport": "Delete Fuel Report",
+        "deletingFuelReport": "Deleting Fuel Report...",
+        "odometer": "Odometer:",
+        "volume": "Volume:",
+        "vehicle": "Vehicle:",
+        "cost": "Cost:",
+        "status": "Status:",
+        "reportLocation": "Report Location:"
     },
     "useOAuth": {
         "appleSignInNotSupported": "Apple Sign-In is not supported on this device",
