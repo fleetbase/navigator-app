@@ -24,7 +24,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
-import { useChatRefresh } from '../realtime/liveRefresh';
+import { bumpChatRefresh, useChatRefresh } from '../realtime/liveRefresh';
 
 export interface ChatParticipant {
     id: string;
@@ -35,6 +35,8 @@ export interface ChatParticipant {
     name?: string;
     username?: string;
     email?: string;
+    /** The user's phone, when they have one — what makes a call button real. */
+    phone?: string | null;
     avatar_url?: string;
     is_online?: boolean;
     last_seen_at?: string;
@@ -52,6 +54,16 @@ export interface ChatAttachment {
     url?: string | null;
     filename?: string | null;
     content_type?: string | null;
+    created_at?: string;
+}
+
+/** One participant having read one message. Created by `POST read-message/{id}`. */
+export interface ChatReceipt {
+    id?: string;
+    /** The reader's *participant* id. */
+    participant?: string;
+    participant_name?: string | null;
+    read_at?: string | null;
 }
 
 export interface ChatMessage {
@@ -59,8 +71,10 @@ export interface ChatMessage {
     sender?: ChatParticipant;
     content?: string;
     attachments?: ChatAttachment[];
-    receipts?: { id?: string; participant?: string }[];
+    receipts?: ChatReceipt[];
     created_at?: string;
+    /** The server's own verdict on `meta.system`. */
+    system?: boolean;
     /** `{ system: true, kind }` marks a message the platform wrote, not a person. */
     meta?: { system?: boolean; kind?: string; [key: string]: unknown } | null;
 }
@@ -101,6 +115,8 @@ export interface ChatChannelMeta {
     storefront_order_uuid?: string;
     kind?: OrderChatKind | string;
     order_public_id?: string;
+    /** Set by FleetOps when an order's chat is closed (`OrderChat::close`). */
+    closed_at?: string;
     [key: string]: unknown;
 }
 
@@ -112,7 +128,7 @@ export function participantRole(person?: ChatParticipant | null): string | undef
 
 /** A message the platform wrote — an edit notice, an address-change request. */
 export function isSystemMessage(message?: ChatMessage | null): boolean {
-    return Boolean(message?.meta?.system) || participantRole(message?.sender) === 'system';
+    return Boolean(message?.system) || Boolean(message?.meta?.system) || participantRole(message?.sender) === 'system';
 }
 
 /** The order this channel is about, when it is about one. */
@@ -337,21 +353,24 @@ export function useChatChannel(channelId?: string, seed?: ChatChannelRecord | nu
     };
 }
 
+export type SendOutcome = { kind: 'sent'; message: ChatMessage } | { kind: 'queued' } | { kind: 'failed'; reason: string } | { kind: 'empty' };
+
 export function useSendMessage(channelId?: string, senderParticipantId?: string) {
     const { adapter } = useFleetbase();
     const [isSending, setIsSending] = useState(false);
     const [queued, setQueued] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const send = useCallback(
-        async (content: string, files: string[] = []): Promise<ChatMessage | null> => {
+    /** Sends, and says what became of it: sent, saved for later, or refused. */
+    const deliver = useCallback(
+        async (content: string, files: string[] = []): Promise<SendOutcome> => {
             const body = content.trim();
-            if (!channelId || (!body && !files.length)) return null;
+            if (!channelId || (!body && !files.length)) return { kind: 'empty' };
             if (!senderParticipantId) {
                 // Without a participant record the API 422s; say so rather than
                 // letting the driver type into a void.
                 setError('missing-participant');
-                return null;
+                return { kind: 'failed', reason: 'missing-participant' };
             }
 
             setIsSending(true);
@@ -365,12 +384,13 @@ export function useSendMessage(channelId?: string, senderParticipantId?: string)
                 });
                 if (isQueuedAck(result)) {
                     setQueued(true);
-                    return null;
+                    return { kind: 'queued' };
                 }
-                return ((result as { data?: unknown })?.data ?? result) as ChatMessage;
+                return { kind: 'sent', message: ((result as { data?: unknown })?.data ?? result) as ChatMessage };
             } catch (err) {
-                setError((err as Error).message);
-                return null;
+                const reason = (err as Error).message;
+                setError(reason);
+                return { kind: 'failed', reason };
             } finally {
                 setIsSending(false);
             }
@@ -378,7 +398,15 @@ export function useSendMessage(channelId?: string, senderParticipantId?: string)
         [adapter, channelId, senderParticipantId]
     );
 
-    return { send, isSending, queued, error, clearError: useCallback(() => setError(null), []) };
+    const send = useCallback(
+        async (content: string, files: string[] = []): Promise<ChatMessage | null> => {
+            const outcome = await deliver(content, files);
+            return outcome.kind === 'sent' ? outcome.message : null;
+        },
+        [deliver]
+    );
+
+    return { send, deliver, isSending, queued, error, clearError: useCallback(() => setError(null), []) };
 }
 
 /** G3's picker. Returns everyone in the org who can be added to a channel. */
@@ -416,14 +444,15 @@ export function useCreateChannel() {
             setIsCreating(true);
             setError(null);
             try {
-                const raw = await adapter.post('chat-channels', { name });
+                /*
+                 * `participants` (user public ids) is read by the create
+                 * endpoint itself, so the room and everyone in it are made in
+                 * one request. Adding people one by one afterwards could leave
+                 * a real channel with only some of them in it.
+                 */
+                const raw = await adapter.post('chat-channels', { name, participants: participantUserIds });
                 if (isQueuedAck(raw)) return null;
                 const channel = ((raw as { data?: unknown })?.data ?? raw) as ChatChannelRecord;
-
-                // Participants are added one at a time — there is no bulk route.
-                for (const user of participantUserIds) {
-                    await adapter.post(`chat-channels/${channel.id}/add-participant`, { user });
-                }
                 return channel;
             } catch (err) {
                 setError((err as Error).message);
@@ -436,4 +465,144 @@ export function useCreateChannel() {
     );
 
     return { create, isCreating, error };
+}
+
+/* ── What a message is made of ─────────────────────────────────────────────── */
+
+export type AttachmentKind = 'image' | 'audio' | 'file';
+
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i;
+const AUDIO_EXT = /\.(m4a|aac|mp3|wav|ogg|oga|opus|amr|3gp|caf|weba)$/i;
+
+/**
+ * Photo, voice message, or some other file.
+ *
+ * The content type is what the uploader declared, and a console upload of an
+ * unknown type arrives as `application/octet-stream`, so the file name's
+ * extension is the fallback.
+ */
+export function attachmentKind(attachment?: ChatAttachment | null): AttachmentKind {
+    const type = String(attachment?.content_type ?? '').toLowerCase();
+    const name = String(attachment?.filename ?? '');
+    if (type.startsWith('image/')) return 'image';
+    if (type.startsWith('audio/')) return 'audio';
+    if (IMAGE_EXT.test(name)) return 'image';
+    if (AUDIO_EXT.test(name)) return 'audio';
+    return 'file';
+}
+
+/*
+ * A shared position travels as an ordinary text message holding a map link:
+ * the chat API has no location type, and a link still works for whoever reads
+ * it in the console or in an older build.
+ */
+const LOCATION_LINK = /https:\/\/maps\.google\.com\/\?q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/;
+
+export function locationMessageContent(latitude: number, longitude: number): string {
+    return `https://maps.google.com/?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+}
+
+/** The position inside a message that is nothing but a shared location. */
+export function locationOfMessage(content?: string | null): { latitude: number; longitude: number; url: string } | undefined {
+    const text = (content ?? '').trim();
+    const match = LOCATION_LINK.exec(text);
+    // Only when the link is the whole message; a link inside a sentence stays a sentence.
+    if (!match || match[0] !== text) return undefined;
+    return { latitude: Number(match[1]), longitude: Number(match[2]), url: match[0] };
+}
+
+export type MessagePreviewKind = 'none' | 'text' | 'image' | 'audio' | 'file' | 'location';
+
+/** What the last message *is*, for the inbox card's preview strip. */
+export function messagePreviewKind(message?: ChatMessage | null): MessagePreviewKind {
+    if (!message) return 'none';
+    const attachments = message.attachments ?? [];
+    if (attachments.length) {
+        const kinds = attachments.map(attachmentKind);
+        if (kinds.includes('audio')) return 'audio';
+        if (kinds.includes('image')) return 'image';
+        return 'file';
+    }
+    if (locationOfMessage(message.content)) return 'location';
+    return message.content?.trim() ? 'text' : 'none';
+}
+
+/** More than the driver and one other person. */
+export function isGroupChannel(channel?: ChatChannelRecord | null): boolean {
+    return (channel?.participants ?? []).length > 2;
+}
+
+/** FleetOps closed this order's chat; the customer side already refuses to post to it. */
+export function isChannelClosed(channel?: ChatChannelRecord | null): boolean {
+    return typeof channel?.meta?.closed_at === 'string' && channel.meta.closed_at.length > 0;
+}
+
+/** Receipts left by anyone but the sender: the people who have read a message of mine. */
+export function readersOf(message?: ChatMessage | null): ChatReceipt[] {
+    const sender = message?.sender?.id;
+    return (message?.receipts ?? []).filter((r) => !!r.participant && r.participant !== sender);
+}
+
+/**
+ * Marks what the driver is looking at as read.
+ *
+ * The server counts a message as unread until the reader's own participant
+ * has a receipt on it, and the only way to leave one is one request per
+ * message (`POST read-message/{id}`); there is no "read up to here". Without
+ * this the tab's unread count only ever grew.
+ *
+ * Only while online: a receipt is worth nothing queued, and a queue full of
+ * them would bury the driver's real work on the sync screen.
+ */
+export function useMarkChannelRead(channel: ChatChannelRecord | null | undefined, myParticipantId: string | undefined, enabled = true): void {
+    const { adapter } = useFleetbase();
+    const attempted = useRef(new Set<string>());
+
+    useEffect(() => {
+        if (!enabled || !channel || !myParticipantId) return;
+        const unread = (channel.feed ?? [])
+            .filter((entry) => entry.type === 'message' && !!entry.data?.id)
+            .map((entry) => entry.data as ChatMessage)
+            .filter((m) => m.sender?.id !== myParticipantId && !(m.receipts ?? []).some((r) => r.participant === myParticipantId) && !attempted.current.has(m.id));
+        if (!unread.length) return;
+
+        for (const message of unread) attempted.current.add(message.id);
+        void (async () => {
+            let marked = 0;
+            for (const message of unread) {
+                try {
+                    const result = await adapter.post(`chat-channels/read-message/${message.id}`, { participant: myParticipantId });
+                    if (!isQueuedAck(result)) marked += 1;
+                } catch {
+                    // Let the next load of the channel try this one again.
+                    attempted.current.delete(message.id);
+                }
+            }
+            // The inbox list and the tab badge hold counts of their own.
+            if (marked) bumpChatRefresh();
+        })();
+    }, [adapter, channel, myParticipantId, enabled]);
+}
+
+/** Deletes a message. The server soft-deletes it; the feed simply stops returning it. */
+export function useDeleteMessage() {
+    const { adapter } = useFleetbase();
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const remove = useCallback(
+        async (messageId: string): Promise<boolean> => {
+            setIsDeleting(true);
+            try {
+                const result = await adapter.delete(`chat-channels/delete-message/${messageId}`);
+                return !isQueuedAck(result);
+            } catch {
+                return false;
+            } finally {
+                setIsDeleting(false);
+            }
+        },
+        [adapter]
+    );
+
+    return { remove, isDeleting };
 }

@@ -87,7 +87,8 @@ const OptimisePreviewH = withHeader('nav.optimisePreview', screenSlot('route.opt
 const OrderDetailH = withHeader('nav.orderDetail', screenSlot('order.detail'));
 const EntityDetailH = withHeader('nav.itemDetail', screenSlot('order.entityDetail'));
 const OrderTimelineH = withHeader('nav.orderTimeline', screenSlot('order.timeline'));
-const ConversationH = withHeader('nav.conversation', screenSlot('inbox.conversation'));
+// The conversation draws its own header (who the chat is with), so it is not wrapped in a title bar.
+const ConversationH = screenSlot('inbox.conversation');
 const NewConversationH = withHeader('nav.newConversation', screenSlot('inbox.newConversation'));
 const FuelLogH = withHeader('nav.fuelLog', screenSlot('fuel.log'));
 const FuelReportH = withHeader('nav.fuelReport', screenSlot('fuel.report'));

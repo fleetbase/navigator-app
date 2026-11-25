@@ -1,89 +1,110 @@
 /**
- * Inbox — the channel list behind R1 frame s11.
+ * Chat — the inbox, design round 3 (`Inbox.dc.html`).
  *
- * A channel's stored title is every participant's name joined together,
- * including the driver's own, so it is rebuilt from the other participants —
- * reading "Ron, Charlotte, Isabella" in Ron's own inbox is noise.
+ * The screen draws its own header now (the shell has none): the title, a
+ * search over the chats already loaded, and the one action, starting a chat.
+ * Under it, four filters that each mean something the server can answer:
+ *
+ *   - **Unread**: `unread_count`, which the API works out for the person asking.
+ *   - **Waypoints**: chats linked to an order (`meta.order_public_id`).
+ *   - **Groups**: more than two people in the room.
+ *
+ * There is no "dispatch" chat and no online dot: the platform has neither a
+ * built-in dispatch channel nor presence for anyone signed in through this app.
  */
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
-import { FlatList } from '../ui/Scroll';
-import { XStack, YStack } from 'tamagui';
-import { Body, Micro, Secondary } from '../ui/Text';
-import { Surface } from '../ui/Surface';
+import { XStack, YStack, useTheme } from 'tamagui';
+import { FlatList, ScrollView } from '../ui/Scroll';
+import { Body, Secondary } from '../ui/Text';
+import { Field } from '../ui/Field';
 import { Button } from '../ui/Button';
-import { EmptyState, Skeleton } from '../ui/Banner';
+import { Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
-import { space, radius } from '../theme/tokens';
+import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
-import { useChatChannels, channelTitle, otherParticipants, channelOrderId, orderStore, displayIdOf, type ChatChannelRecord } from '../data';
-import { formatClock } from '../format';
+import { useTabBarSpace } from '../navigation/TabBar';
+import { useChatChannels, channelOrderId, isGroupChannel, otherParticipants, type ChatChannelRecord } from '../data';
+import { ChannelCard } from './chat/ChannelCard';
+import { Entrance } from './chat/Entrance';
+import { ChatIcon } from './chat/icons';
+import { chatName, chatOrderLabel } from './chat/naming';
 
-function UnreadDot({ count }: { count: number }) {
+type Filter = 'all' | 'unread' | 'waypoints' | 'groups';
+const FILTERS: Filter[] = ['all', 'unread', 'waypoints', 'groups'];
+
+function matchesFilter(channel: ChatChannelRecord, filter: Filter): boolean {
+    if (filter === 'unread') return (Number(channel.unread_count) || 0) > 0;
+    if (filter === 'waypoints') return !!channelOrderId(channel);
+    if (filter === 'groups') return isGroupChannel(channel);
+    return true;
+}
+
+function HeaderButton({ icon, primary, active, label, onPress, testID }: { icon: 'search' | 'plus' | 'close'; primary?: boolean; active?: boolean; label: string; onPress?: () => void; testID: string }) {
+    const theme = useTheme();
     return (
-        <XStack
-            minWidth={22}
-            height={22}
-            paddingHorizontal={space[2]}
-            borderRadius={radius.pill}
-            backgroundColor="$primary"
+        <YStack
+            width={44}
+            height={44}
+            borderRadius={22}
             alignItems="center"
             justifyContent="center"
+            backgroundColor={primary ? '$primary' : active ? '$surfaceRaised' : '$surface'}
+            borderWidth={primary ? 0 : 1}
+            borderColor="$border"
+            onPress={onPress}
+            pressStyle={{ opacity: 0.6 }}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={active === undefined ? undefined : { expanded: active }}
+            testID={testID}
         >
-            <Micro color="$onPrimary" fontWeight="800" tabular>
-                {count > 99 ? '99+' : count}
-            </Micro>
+            <ChatIcon name={icon} size={20} color={(primary ? theme.onPrimary?.val : theme.textPrimary?.val) as string} strokeWidth={primary ? 2.6 : 2.4} />
+        </YStack>
+    );
+}
+
+function FilterChip({ label, on, onPress, testID }: { label: string; on: boolean; onPress: () => void; testID: string }) {
+    return (
+        <XStack
+            height={36}
+            paddingHorizontal={14}
+            alignItems="center"
+            borderRadius={18}
+            // The chosen chip is inverted, so it is told apart by fill as well as by colour.
+            backgroundColor={on ? '$textPrimary' : '$transparent'}
+            borderWidth={1}
+            borderColor={on ? '$textPrimary' : '$border'}
+            onPress={onPress}
+            pressStyle={{ opacity: 0.7 }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: on }}
+            testID={testID}
+        >
+            <Body fontSize={14} lineHeight={18} fontWeight="700" color={on ? '$background' : '$textSecondary'} numberOfLines={1}>
+                {label}
+            </Body>
         </XStack>
     );
 }
 
-function ChannelRow({
-    channel,
-    userId,
-    onPress,
-    t,
-}: {
-    channel: ChatChannelRecord;
-    userId?: string;
-    onPress?: () => void;
-    t: (key: string, options?: Record<string, unknown>) => string;
-}) {
-    const unread = Number(channel.unread_count) || 0;
-    const title = channelTitle(channel, userId, t('inbox.untitled'));
-    const preview = channel.last_message?.content;
-    const others = otherParticipants(channel, userId);
-    // An order thread says which order — the tracking number when it is on the device.
-    const orderId = channelOrderId(channel);
-    const orderLabel = orderId ? (orderStore.get(orderId) ? displayIdOf(orderStore.get(orderId)) : orderId) : undefined;
-
+function Empty({ title, body, action, testID }: { title: string; body: string; action?: { label: string; onPress: () => void }; testID: string }) {
+    const theme = useTheme();
     return (
-        <YStack padding={space[3]} gap={space[2]} onPress={onPress} pressStyle={onPress ? { opacity: 0.7 } : undefined} testID={`channel-${channel.id}`}>
-            <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                <Body fontSize={15} fontWeight={unread ? '800' : '700'} flex={1} numberOfLines={1}>
-                    {title}
-                </Body>
-                {unread ? <UnreadDot count={unread} /> : null}
-            </XStack>
-
-            {orderLabel ? (
-                <Micro tone="brand" testID={`channel-order-${channel.id}`}>
-                    {t('inbox.aboutOrder', { order: orderLabel })}
-                </Micro>
+        <YStack flex={1} alignItems="center" justifyContent="center" gap={space[3]} paddingHorizontal={space[5]} testID={testID}>
+            <YStack width={64} height={64} borderRadius={32} backgroundColor="$surface" borderWidth={1} borderColor="$border" alignItems="center" justifyContent="center">
+                <ChatIcon name="send" size={26} color={theme.textSecondary?.val as string} />
+            </YStack>
+            <Body fontSize={20} lineHeight={26} fontWeight="800" textAlign="center">
+                {title}
+            </Body>
+            <Secondary textAlign="center">{body}</Secondary>
+            {action ? (
+                <Button marginTop={space[2]} paddingHorizontal={space[5]} onPress={action.onPress} testID={`${testID}-action`}>
+                    {action.label}
+                </Button>
             ) : null}
-
-            {preview ? (
-                <Secondary fontSize={13} numberOfLines={1}>
-                    {preview}
-                </Secondary>
-            ) : (
-                <Micro testID={`no-messages-${channel.id}`}>{t('inbox.noMessagesYet')}</Micro>
-            )}
-
-            <XStack justifyContent="space-between" alignItems="center">
-                <Micro>{t('inbox.peopleCount', { count: others.length })}</Micro>
-                <Micro tabular>{formatClock(channel.last_message?.created_at ?? channel.updated_at)}</Micro>
-            </XStack>
         </YStack>
     );
 }
@@ -101,64 +122,130 @@ export function InboxScreen({
 }) {
     const { t } = useTranslation();
     const { isOnline } = useSync();
+    const tabBarSpace = useTabBarSpace();
     const { channels, isLoading, isRefreshing, failed, error, refresh, retry } = useChatChannels(reloadToken);
 
+    const [filter, setFilter] = useState<Filter>('all');
+    const [searching, setSearching] = useState(false);
+    const [query, setQuery] = useState('');
+
+    const shown = useMemo(() => {
+        const needle = searching ? query.trim().toLowerCase() : '';
+        return (channels ?? []).filter((channel) => {
+            if (!matchesFilter(channel, filter)) return false;
+            if (!needle) return true;
+            // What a driver would remember a chat by: its name, who is in it, its order, the last thing said.
+            const haystack = [
+                chatName(channel, userId, t),
+                channel.name,
+                ...otherParticipants(channel, userId).map((p) => p.name),
+                chatOrderLabel(channel)?.label,
+                channel.last_message?.content,
+            ];
+            return haystack.some((value) => typeof value === 'string' && value.toLowerCase().includes(needle));
+        });
+    }, [channels, filter, query, searching, t, userId]);
+
     const renderItem = useCallback(
-        ({ item }: { item: ChatChannelRecord }) => (
-            <Surface marginBottom={space[3]}>
-                <ChannelRow channel={item} userId={userId} t={t} onPress={onOpenChannel ? () => onOpenChannel(item) : undefined} />
-            </Surface>
+        ({ item, index }: { item: ChatChannelRecord; index: number }) => (
+            <Entrance index={index}>
+                <ChannelCard channel={item} userId={userId} t={t} onPress={onOpenChannel ? () => onOpenChannel(item) : undefined} />
+            </Entrance>
         ),
         [onOpenChannel, t, userId]
     );
 
+    const toggleSearch = useCallback(() => {
+        setSearching((on) => !on);
+        setQuery('');
+    }, []);
+
+    const header = (
+        <YStack>
+            <XStack alignItems="center" justifyContent="space-between" paddingHorizontal={space[4]} paddingTop={space[2]} paddingBottom={space[3]}>
+                <Body fontSize={30} lineHeight={36} fontWeight="800" letterSpacing={-0.6} accessibilityRole="header" testID="inbox-title">
+                    {t('chat.title')}
+                </Body>
+                <XStack gap={space[2]}>
+                    <HeaderButton icon={searching ? 'close' : 'search'} active={searching} label={searching ? t('chat.search.close') : t('chat.search.open')} onPress={toggleSearch} testID="inbox-search-toggle" />
+                    {onCompose ? <HeaderButton icon="plus" primary label={t('chat.newChat')} onPress={onCompose} testID="inbox-compose" /> : null}
+                </XStack>
+            </XStack>
+
+            {searching ? (
+                <YStack paddingHorizontal={space[4]} paddingBottom={space[3]}>
+                    <Field value={query} onChangeText={setQuery} placeholder={t('chat.search.placeholder')} autoCapitalize="none" testID="inbox-search" />
+                </YStack>
+            ) : null}
+        </YStack>
+    );
+
     if (isLoading) {
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="inbox-loading">
-                <Skeleton height={88} />
-                <Skeleton height={88} />
-                <Skeleton height={88} />
+            <YStack flex={1} backgroundColor="$background" testID="inbox-loading">
+                {header}
+                <YStack paddingHorizontal={space[4]} gap={space[2]}>
+                    <Skeleton height={124} borderRadius={18} />
+                    <Skeleton height={124} borderRadius={18} />
+                    <Skeleton height={124} borderRadius={18} />
+                </YStack>
             </YStack>
         );
     }
 
     if (failed && !channels) {
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="inbox-error">
-                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="inbox-error" />
+            <YStack flex={1} backgroundColor="$background" testID="inbox-error">
+                {header}
+                <YStack flex={1} padding={space[4]} paddingBottom={tabBarSpace} justifyContent="center">
+                    <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="inbox-error" />
+                </YStack>
             </YStack>
         );
     }
 
+    const hasChats = (channels ?? []).length > 0;
+    const narrowed = filter !== 'all' || (searching && query.trim().length > 0);
+
     return (
         <YStack flex={1} backgroundColor="$background" testID="inbox-screen">
-            <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={space[3]}>
-                {onCompose ? (
-                    <Button fullWidth onPress={onCompose} testID="inbox-compose">
-                        {t('inbox.newConversation')}
-                    </Button>
-                ) : null}
-            </YStack>
+            {header}
+
+            {/* Filters only once there is something to filter. */}
+            {hasChats ? (
+                <YStack paddingBottom={space[3]}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[2], paddingHorizontal: space[4] }} testID="inbox-filters">
+                        {FILTERS.map((key) => (
+                            <FilterChip key={key} label={t(`chat.filters.${key}`)} on={filter === key} onPress={() => setFilter(key)} testID={`inbox-filter-${key}`} />
+                        ))}
+                    </ScrollView>
+                </YStack>
+            ) : null}
 
             <FlatList
-                data={channels ?? []}
+                data={shown}
                 keyExtractor={(c) => c.id}
                 renderItem={renderItem}
-                contentContainerStyle={channels?.length ? { padding: space[4] } : { flexGrow: 1, padding: space[4] }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                ItemSeparatorComponent={Gap}
+                contentContainerStyle={{ flexGrow: 1, paddingHorizontal: space[4], paddingBottom: tabBarSpace }}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} />}
                 ListEmptyComponent={
-                    <YStack flex={1} justifyContent="center">
-                        <EmptyState
-                            testID="inbox-empty"
-                            title={t('inbox.emptyTitle')}
-                            body={t('inbox.emptyBody')}
-                            action={onCompose ? { label: t('inbox.newConversation'), onPress: onCompose } : undefined}
-                        />
-                    </YStack>
+                    hasChats && narrowed ? (
+                        <Empty testID="inbox-no-matches" title={t('chat.empty.noMatchesTitle')} body={t('chat.empty.noMatchesBody')} action={{ label: t('chat.empty.showAll'), onPress: () => { setFilter('all'); setQuery(''); setSearching(false); } }} />
+                    ) : (
+                        <Empty testID="inbox-empty" title={t('chat.empty.title')} body={t('chat.empty.body')} action={onCompose ? { label: t('chat.newChat'), onPress: onCompose } : undefined} />
+                    )
                 }
+                testID="inbox-list"
             />
         </YStack>
     );
+}
+
+function Gap() {
+    return <YStack height={space[2]} />;
 }
 
 export default InboxScreen;

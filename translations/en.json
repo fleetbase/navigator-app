@@ -498,6 +498,104 @@
         "noneBody": "There is nobody in your organisation to start a conversation with.",
         "createFailed": "Could not start the conversation"
     },
+    "chat": {
+        "title": "Chat",
+        "newChat": "Start a new chat",
+        "back": "Back to chats",
+        "call": "Call %{name}",
+        "closed": "This chat has ended.",
+        "orderPrefix": "Order",
+        "orderLine": "Order %{order}",
+        "aboutOrder": "About an order",
+        "aboutPlace": "About the delivery to %{place}",
+        "unreadCount": {
+            "one": "%{count} unread message",
+            "other": "%{count} unread messages"
+        },
+        "search": {
+            "open": "Search chats",
+            "close": "Close search",
+            "placeholder": "Search chats"
+        },
+        "filters": {
+            "all": "All",
+            "unread": "Unread",
+            "waypoints": "Waypoints",
+            "groups": "Groups"
+        },
+        "empty": {
+            "title": "No chats yet",
+            "body": "Chats with your team and with customers on your orders appear here.",
+            "noMatchesTitle": "Nothing here",
+            "noMatchesBody": "No chat matches what you picked.",
+            "showAll": "Show all chats"
+        },
+        "preview": {
+            "you": "You",
+            "voice": "Voice message",
+            "photo": {
+                "one": "Photo",
+                "other": "%{count} photos"
+            },
+            "file": "File",
+            "location": "Location"
+        },
+        "day": {
+            "today": "Today",
+            "yesterday": "Yesterday"
+        },
+        "state": {
+            "sent": "Sent",
+            "read": "Read",
+            "queued": "Sending when you're back online"
+        },
+        "composer": {
+            "placeholder": "Message"
+        },
+        "voice": {
+            "label": "voice message",
+            "play": "Play voice message",
+            "pause": "Pause voice message",
+            "cannotPlay": "This voice message can't be played here",
+            "openInstead": "Tap to open the file"
+        },
+        "photo": {
+            "open": "Open photo",
+            "close": "Close photo"
+        },
+        "file": {
+            "open": "Tap to open"
+        },
+        "location": {
+            "mine": "My location",
+            "theirs": "Location",
+            "open": "Open in maps"
+        },
+        "attach": {
+            "open": "Add a photo or your location",
+            "title": "Send",
+            "titleTo": "Send to %{name}",
+            "camera": "Camera",
+            "photos": "Photos",
+            "location": "Location",
+            "locationNote": "Location sends where you are right now, once.",
+            "noCamera": "The camera isn't available. Check camera access in Settings."
+        },
+        "record": {
+            "hold": "Hold to record a voice message",
+            "recording": "Recording",
+            "delete": "Delete",
+            "lock": "Lock",
+            "send": "Send",
+            "holdHint": "Let go to send. Slide left to delete. Slide right to lock it and keep both hands free.",
+            "lockedHint": "Recording. Send it when you're done, or delete it."
+        },
+        "delete": {
+            "title": "Delete this message?",
+            "body": "It is removed for everyone in the chat.",
+            "failed": "That message could not be deleted."
+        }
+    },
     "account": {
         "title": "Account",
         "unnamed": "Driver",
