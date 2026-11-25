@@ -5,14 +5,32 @@
  * The strip sits below the header so it pushes content rather than covering the
  * duty control, and renders nothing at all when there is nothing to say.
  */
-import { useCallback, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 import { DriverTabs, type Features } from './DriverTabs';
 import type { TabBadges } from './TabBar';
-import { AppHeader, DutySheet, OfflineBar, useDuty } from '../shell';
+import { DutySheet, OfflineBar, useDuty } from '../shell';
 import { space } from '../theme/tokens';
+
+/**
+ * What the shell knows that a screen may show: whose work this is, and how to
+ * open the duty sheet. Round 3 has no shared header row; each screen draws its
+ * own, and the dashboard carries the duty control.
+ */
+export interface ShellValue {
+    organizationName: string;
+    /** The driver's name, when known. */
+    driverName?: string;
+    openDutySheet: () => void;
+}
+
+const ShellContext = createContext<ShellValue>({ organizationName: '', openDutySheet: () => {} });
+
+export function useShell(): ShellValue {
+    return useContext(ShellContext);
+}
 
 export function DriverShell({
     organizationName,
@@ -52,16 +70,11 @@ export function DriverShell({
         [setDuty]
     );
 
-    return (
-        <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
-            <AppHeader
-                organizationName={organizationName}
-                subtitle={subtitle}
-                duty={duty}
-                isChanging={isChanging}
-                onDutyPress={() => setSheetOpen(true)}
-            />
+    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true) }), [organizationName, subtitle]);
 
+    return (
+        <ShellContext.Provider value={shell}>
+        <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
             <YStack paddingHorizontal={space[4]}>
                 <OfflineBar />
             </YStack>
@@ -85,6 +98,7 @@ export function DriverShell({
                 </YStack>
             </Modal>
         </YStack>
+        </ShellContext.Provider>
     );
 }
 

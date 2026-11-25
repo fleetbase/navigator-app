@@ -14,7 +14,8 @@ export const DEFAULT_BRANDING = {
     shape: { radius: { compact: 10, hero: 18 } },
     assets: {} as { logo?: { url: string } | null },
     boot: { background: '#0B1017' },
-    navigation: { tabs: [...CORE_TABS] as string[], defaultTab: 'Today', tabOverrides: {} },
+    // Four tabs: Home, Jobs, Chat, Me. The route lives inside Jobs; a build may still give it a tab of its own.
+    navigation: { tabs: CORE_TABS.filter((tab) => tab !== 'Route') as string[], defaultTab: 'Today', tabOverrides: {} },
     account: { hiddenLinks: [] as string[] },
     features: { earnings: false },
     statuses: {},

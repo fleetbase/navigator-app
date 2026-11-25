@@ -159,6 +159,10 @@ function OrdersStack() {
     return (
         <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen name="OrdersHome" component={OrdersHome} />
+            {/* The route lives inside Jobs now, so its screens are reachable from this stack too. */}
+            <Stack.Screen name="StopDetail" component={StopDetailH} />
+            <Stack.Screen name="StopExecution" component={StopExecutionH} />
+            <Stack.Screen name="OptimisePreview" component={OptimisePreviewH} />
             <Stack.Screen name="OrderDetail" component={OrderDetailH} />
             <Stack.Screen name="Offers" component={OffersH} />
             <Stack.Screen name="EditPayloadItem" component={EditPayloadItemH} options={modalOptions} />

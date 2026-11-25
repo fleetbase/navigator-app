@@ -73,12 +73,45 @@ export function AccountIcon({ color = 'currentColor', ...p }: IconProps) {
     );
 }
 
+/* The tab set of design round 3: bold strokes, one clear shape each. */
+export function HomeTabIcon({ color = 'currentColor', ...p }: IconProps) {
+    return (
+        <Svg {...base(p)}>
+            <Path d="M4 10.5L12 4l8 6.5V20H4z" stroke={color} strokeWidth={p.strokeWidth ?? 2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        </Svg>
+    );
+}
+
+export function JobsTabIcon({ color = 'currentColor', ...p }: IconProps) {
+    return (
+        <Svg {...base(p)}>
+            <Path d="M5 6h9M5 12h14M5 18h7M18 6h.01M16 18h.01" stroke={color} strokeWidth={p.strokeWidth ?? 2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        </Svg>
+    );
+}
+
+export function ChatTabIcon({ color = 'currentColor', ...p }: IconProps) {
+    return (
+        <Svg {...base(p)}>
+            <Path d="M5 5h14v10h-8l-5 4v-4H5z" stroke={color} strokeWidth={p.strokeWidth ?? 2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        </Svg>
+    );
+}
+
+export function MeTabIcon({ color = 'currentColor', ...p }: IconProps) {
+    return (
+        <Svg {...base(p)}>
+            <Path d="M12 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c1-3.5 3.7-5 7-5s6 1.5 7 5" stroke={color} strokeWidth={p.strokeWidth ?? 2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        </Svg>
+    );
+}
+
 export const tabIcons = {
-    Today: TodayIcon,
+    Today: HomeTabIcon,
     Route: RouteIcon,
-    Orders: OrdersIcon,
-    Inbox: InboxIcon,
-    Account: AccountIcon,
+    Orders: JobsTabIcon,
+    Inbox: ChatTabIcon,
+    Account: MeTabIcon,
 } as const;
 
 export type TabIconName = keyof typeof tabIcons;

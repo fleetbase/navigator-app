@@ -865,11 +865,11 @@
         "offers": "Offers",
         "routeHome": "Route",
         "tabs": {
-            "today": "Today",
+            "today": "Home",
             "route": "Route",
-            "orders": "Orders",
-            "inbox": "Inbox",
-            "account": "Account"
+            "orders": "Jobs",
+            "inbox": "Chat",
+            "account": "Me"
         },
         "trailerDetail": "Trailer",
         "earnings": "Earnings",
