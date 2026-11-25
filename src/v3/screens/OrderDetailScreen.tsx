@@ -68,6 +68,8 @@ import { useFleetbase, isQueuedAck } from '../api';
 import { useSettings, useResolvedScheme } from '../settings';
 import { useDeviceLocation } from '../shell';
 import { OrderMap, type OrderMapStop } from '../ui/OrderMap';
+import { markerKindOf } from '../ui/RouteMap';
+import { colorForId } from '../ui/routeColors';
 import { formatClock, formatDateTime } from '../format';
 import { dayKey } from '../data/orderStore';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
@@ -415,7 +417,7 @@ export function OrderDetailScreen({
                     <OrderDetails order={order} config={config} reloadToken={reloadToken + revision} onOpenTimeline={onOpenTimeline} openUrl={openUrl} />
                 ) : (
                     <>
-                        <OrderRouteMap payload={payload} tracker={live} activeStopId={heading?.id} />
+                        <OrderRouteMap orderId={order.id} payload={payload} tracker={live} activeStopId={heading?.id} />
 
                         {/* The identifier leads, in full, on its own line. */}
                         <OrderIdentity
@@ -611,20 +613,28 @@ export default OrderDetailScreen;
  * The order on a map. Stops come from the tracker when it has loaded (it knows
  * which are done), otherwise from the order itself, so the map does not wait on it.
  */
-function OrderRouteMap({ payload, tracker, activeStopId }: { payload: ReturnType<typeof payloadOf>; tracker?: TrackerRecord | null; activeStopId?: string }) {
+function OrderRouteMap({ orderId, payload, tracker, activeStopId }: { orderId?: string; payload: ReturnType<typeof payloadOf>; tracker?: TrackerRecord | null; activeStopId?: string }) {
     const scheme = useResolvedScheme();
     const position = useDeviceLocation();
     const route = useMemo(() => decodePolyline(tracker?.route?.polyline), [tracker?.route?.polyline]);
 
     const stops = useMemo<OrderMapStop[]>(() => {
+        // A waypoint between the ends is numbered among the order's waypoints, as the console numbers it.
+        let waypointNumber = 0;
+        const numbered = (type: unknown) => (type === 'waypoint' ? { number: ++waypointNumber } : {});
         const tracked = (tracker?.stops ?? []).flatMap((stop, index) => {
+            const role = numbered(stop.type);
             const point = coordsOfPoint(stop.location);
-            return point ? [{ id: stop.public_id ?? stop.uuid ?? String(index), point, sequence: stop.sequence ?? index + 1, name: stop.name ?? stop.address, done: !!stop.completed }] : [];
+            return point
+                ? [{ id: stop.public_id ?? stop.uuid ?? String(index), point, sequence: stop.sequence ?? index + 1, kind: markerKindOf(stop.type), ...role, name: stop.name ?? stop.address, done: !!stop.completed }]
+                : [];
         });
         if (tracked.length) return tracked;
+        waypointNumber = 0;
         return orderStops(payload).flatMap((stop, index) => {
+            const role = numbered(stop.type);
             const point = coordsOfPoint(stop.location);
-            return point ? [{ id: stop.id ?? String(index), point, sequence: index + 1, name: stop.name ?? stop.address }] : [];
+            return point ? [{ id: stop.id ?? String(index), point, sequence: index + 1, kind: markerKindOf(stop.type), ...role, name: stop.name ?? stop.address }] : [];
         });
     }, [tracker?.stops, payload]);
 
@@ -632,6 +642,7 @@ function OrderRouteMap({ payload, tracker, activeStopId }: { payload: ReturnType
         <OrderMap
             stops={stops}
             route={route}
+            routeColor={orderId ? colorForId(orderId) : undefined}
             activeStopId={tracker?.active_stop?.public_id ?? activeStopId}
             position={position}
             dark={scheme !== 'light' && scheme !== 'sunlight'}

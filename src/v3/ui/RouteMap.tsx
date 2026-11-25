@@ -5,18 +5,17 @@
  * card, so a list of N orders fired N Directions requests; here the map is the
  * Route tab's own and the cards carry none.
  *
- * Markers are the design's stop-sequence badge (min 44dp) rather than the
- * platform pin, so a stop reads the same on the map as in the list: number,
- * state, and a glyph for done — never colour alone. The line joining them is
- * the straight-line plan, which is honest about what the app knows: nothing
- * here asks a directions service, and a driver's actual road comes from the
- * navigation app they hand off to.
+ * Markers are the FleetOps console's waypoint markers (see `StopBadge`), so a
+ * waypoint looks the same to the driver as to the dispatcher they are talking
+ * to. The line joining them here is the straight-line plan, dashed so it reads
+ * as "not the road"; the Jobs map and the dashboard draw the road itself.
  */
 import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
-import { Body, Micro } from './Text';
-import { hitTarget, radius } from '../theme/tokens';
+import { Body } from './Text';
+import { hitTarget } from '../theme/tokens';
+import { WAYPOINT_DONE_COLOR, colorForId, describeWaypoint, type WaypointMarkerKind } from './routeColors';
 import type { ManifestStopRecord } from '../data/manifestStore';
 import { coordsOfStop, isStopDone, type LatLng } from '../data/routeGeo';
 
@@ -48,30 +47,89 @@ export function placeableStops(stops: ManifestStopRecord[]): PlacedStop[] {
         .filter(Boolean) as PlacedStop[];
 }
 
-export function StopBadge({ sequence, state }: { sequence?: number; state: 'done' | 'current' | 'pending' }) {
-    const background = state === 'current' ? '$primary' : state === 'done' ? '$successFill' : '$surface';
-    const border = state === 'current' ? '$primary' : state === 'done' ? '$successBorder' : '$border';
-    const size = hitTarget.min;
+export type StopBadgeState = 'done' | 'current' | 'pending' | 'skipped';
+
+export interface StopBadgeProps {
+    /** What the waypoint is to its order. Unknown is drawn as a numbered waypoint. */
+    kind?: WaypointMarkerKind;
+    /** The number inside an in-between waypoint. */
+    number?: number;
+    /** The route's colour, for an in-between waypoint. On a map of several orders, the order's. */
+    color?: string;
+    state: StopBadgeState;
+}
+
+/** The roles a manifest stop or tracker stop can name, as a marker draws them. */
+export function markerKindOf(type: unknown): WaypointMarkerKind | undefined {
+    return type === 'pickup' || type === 'dropoff' || type === 'return' || type === 'waypoint' ? type : undefined;
+}
+
+/**
+ * A waypoint's marker on a map.
+ *
+ * The base is the console's marker exactly (`waypointIconHtml`): a 32px circle,
+ * a 2.5px white border, a soft shadow, and P / D / R or the waypoint's number
+ * in white. On top of that the app shows state, because a driver needs it at a
+ * glance, and never by colour alone:
+ *
+ *   - done: the same letter or number, dimmed, with a small check badge;
+ *   - being driven to: larger (40px) with a ring around it;
+ *   - skipped: hollow, with a dash instead of the letter or number.
+ *
+ * The frame around the circle is fixed per size and larger than the circle:
+ * Android clips a marker to its view, so the ring and the check badge need
+ * room inside it, and it gives a thumb the full tap target.
+ */
+export function StopBadge({ kind, number, color, state }: StopBadgeProps) {
+    const { label, color: fill } = describeWaypoint(kind, number, color);
+    const current = state === 'current';
+    const skipped = state === 'skipped';
+    const done = state === 'done';
+    const size = current ? 40 : 32;
+    const frame = current ? 52 : hitTarget.min;
+
     return (
-        <YStack
-            width={size}
-            height={size}
-            borderRadius={radius.compact + 2}
-            borderWidth={state === 'current' ? 0 : 1.5}
-            borderColor={border as never}
-            backgroundColor={background as never}
-            alignItems="center"
-            justifyContent="center"
-        >
-            {state === 'done' ? (
-                <Micro tone="success" fontSize={16}>
-                    ✓
-                </Micro>
-            ) : (
-                <Body fontSize={17} fontWeight="800" tone={state === 'current' ? 'onPrimary' : 'primary'} tabular>
-                    {sequence ?? '·'}
+        <YStack width={frame} height={frame} alignItems="center" justifyContent="center">
+            {current ? <YStack position="absolute" width={frame} height={frame} borderRadius={frame / 2} borderWidth={3} borderColor={fill as never} /> : null}
+            <YStack
+                width={size}
+                height={size}
+                borderRadius={size / 2}
+                borderWidth={2.5}
+                borderColor={(skipped ? fill : '#FFFFFF') as never}
+                backgroundColor={(skipped ? '#FFFFFF' : fill) as never}
+                opacity={done ? 0.55 : 1}
+                alignItems="center"
+                justifyContent="center"
+                shadowColor="#000000"
+                shadowOpacity={skipped ? 0.2 : 0.45}
+                shadowRadius={4}
+                shadowOffset={{ width: 0, height: 2 }}
+                elevation={skipped ? 1 : 4}
+            >
+                <Body fontSize={current ? 16 : 13} lineHeight={current ? 20 : 16} fontWeight="700" color={(skipped ? fill : '#FFFFFF') as never} tabular>
+                    {skipped ? '–' : label}
                 </Body>
-            )}
+            </YStack>
+            {done ? (
+                <YStack
+                    position="absolute"
+                    top={(frame - size) / 2 - 4}
+                    right={(frame - size) / 2 - 4}
+                    width={16}
+                    height={16}
+                    borderRadius={8}
+                    borderWidth={1.5}
+                    borderColor="#FFFFFF"
+                    backgroundColor={WAYPOINT_DONE_COLOR as never}
+                    alignItems="center"
+                    justifyContent="center"
+                >
+                    <Body fontSize={9} lineHeight={12} fontWeight="800" color="#FFFFFF">
+                        ✓
+                    </Body>
+                </YStack>
+            ) : null}
         </YStack>
     );
 }
@@ -115,10 +173,11 @@ export function RouteMap({ stops, currentStopId, position, dark, onPressStop, fi
                 <Polyline coordinates={line} strokeColor={theme.primary?.val as string} strokeWidth={4} lineDashPattern={[8, 6]} />
             ) : null}
             {placed.map(({ stop, point }) => {
-                const state = isStopDone(stop) ? 'done' : stop.id === currentStopId ? 'current' : 'pending';
+                const state = stop.status === 'skipped' ? 'skipped' : isStopDone(stop) ? 'done' : stop.id === currentStopId ? 'current' : 'pending';
                 return (
                     <Marker
-                        key={stop.id}
+                        // The badge is drawn once (`tracksViewChanges` off), so a change of state needs a new marker.
+                        key={`${stop.id}:${state}`}
                         coordinate={point}
                         anchor={{ x: 0.5, y: 0.5 }}
                         tracksViewChanges={false}
@@ -126,7 +185,8 @@ export function RouteMap({ stops, currentStopId, position, dark, onPressStop, fi
                         testID={`route-marker-${stop.id}`}
                         accessibilityLabel={`${stop.sequence ?? ''} ${stop.place?.name ?? ''}`.trim()}
                     >
-                        <StopBadge sequence={stop.sequence} state={state} />
+                        {/* The number is the waypoint's own within its order when the server says; the line shows the driving order. */}
+                        <StopBadge kind={markerKindOf(stop.type)} number={stop.waypoint_index ?? stop.sequence} color={colorForId(stop.order?.id ?? '')} state={state} />
                     </Marker>
                 );
             })}

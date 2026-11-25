@@ -214,6 +214,8 @@ export interface JobWaypoint {
     arrived?: boolean;
     /** Known only when the waypoint's order is on this device — see `fromManifest`. */
     role?: PointRole;
+    /** The leg back to base. It is worked like a drop-off (`role`), but the map marks it R as the console does. */
+    isReturn?: boolean;
     waypointNumber?: number;
     waypointTotal?: number;
     name?: string;
@@ -270,6 +272,7 @@ export function fromManifest(manifestId: string, stops: ManifestStopRecord[], or
             arrived: stop.status === 'arrived',
             // The server's word first; the match against the order covers an older server.
             role: serverRole(stop.type) ?? match?.role,
+            isReturn: stop.type === 'return' || undefined,
             waypointNumber: num(stop.waypoint_index) ?? match?.waypointNumber,
             waypointTotal: num(stop.waypoint_total) ?? match?.waypointTotal,
             name: text(place?.name),

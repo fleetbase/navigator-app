@@ -11,6 +11,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
 import { StopBadge } from './RouteMap';
+import { CasedPolyline } from './CasedPolyline';
+import type { WaypointMarkerKind } from './routeColors';
 import { radius } from '../theme/tokens';
 import type { LatLng } from '../data/routeGeo';
 
@@ -18,6 +20,10 @@ export interface OrderMapStop {
     id: string;
     point: LatLng;
     sequence?: number;
+    /** What the stop is to the order: decides the marker's letter and colour. */
+    kind?: WaypointMarkerKind;
+    /** For a waypoint between pickup and drop-off: its number among the order's waypoints. */
+    number?: number;
     name?: string | null;
     done?: boolean;
 }
@@ -28,13 +34,15 @@ export interface OrderMapProps {
     activeStopId?: string;
     /** The road route, decoded. Empty draws the straight-line fallback. */
     route?: LatLng[];
+    /** The order's colour (the console's `colorForId` of its public id), for numbered waypoints. */
+    routeColor?: string;
     position?: LatLng | null;
     dark?: boolean;
     height?: number;
     testID?: string;
 }
 
-export function OrderMap({ stops, activeStopId, route = [], position, dark, height = 220, testID = 'order-map' }: OrderMapProps) {
+export function OrderMap({ stops, activeStopId, route = [], routeColor, position, dark, height = 220, testID = 'order-map' }: OrderMapProps) {
     const theme = useTheme();
     const ref = useRef<MapView>(null);
     const hasRoute = route.length > 1;
@@ -70,22 +78,26 @@ export function OrderMap({ stops, activeStopId, route = [], position, dark, heig
                 rotateEnabled={false}
             >
                 {hasRoute ? (
-                    <Polyline coordinates={route} strokeColor={theme.primary?.val as string} strokeWidth={5} />
+                    <CasedPolyline coordinates={route} color={theme.primary?.val as string} />
                 ) : straight.length > 1 ? (
                     <Polyline coordinates={straight} strokeColor={theme.primary?.val as string} strokeWidth={4} lineDashPattern={[8, 6]} />
                 ) : null}
-                {stops.map((stop) => (
-                    <Marker
-                        key={stop.id}
-                        coordinate={stop.point}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                        tracksViewChanges={false}
-                        testID={`order-marker-${stop.id}`}
-                        accessibilityLabel={`${stop.sequence ?? ''} ${stop.name ?? ''}`.trim()}
-                    >
-                        <StopBadge sequence={stop.sequence} state={stop.done ? 'done' : stop.id === activeStopId ? 'current' : 'pending'} />
-                    </Marker>
-                ))}
+                {stops.map((stop) => {
+                    const state = stop.done ? 'done' : stop.id === activeStopId ? 'current' : 'pending';
+                    return (
+                        <Marker
+                            // The badge is drawn once (`tracksViewChanges` off), so a change of state needs a new marker.
+                            key={`${stop.id}:${state}`}
+                            coordinate={stop.point}
+                            anchor={{ x: 0.5, y: 0.5 }}
+                            tracksViewChanges={false}
+                            testID={`order-marker-${stop.id}`}
+                            accessibilityLabel={`${stop.sequence ?? ''} ${stop.name ?? ''}`.trim()}
+                        >
+                            <StopBadge kind={stop.kind} number={stop.number ?? stop.sequence} color={routeColor} state={state} />
+                        </Marker>
+                    );
+                })}
             </MapView>
         </YStack>
     );

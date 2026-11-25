@@ -1,15 +1,22 @@
 /**
  * Jobs → Map — design round 3 (WorkMap.dc.html).
  *
- * Every waypoint of the day on one map, with the line between them drawn in
- * three parts so its state is not carried by colour alone: solid behind the
- * driver, heavier to the waypoint being headed to, dashed for what comes
- * later. The marks are the same ones the Route list uses.
+ * Every waypoint of the day on one map, joined by the road between them.
  *
- * The line joins waypoints directly. It is the plan's order, not the road:
- * the manifest carries no route geometry, and the app asks no directions
- * service of its own — the road comes from the navigation app the driver
- * hands off to.
+ * The road is the server's, never the app's own guess: the manifest's route
+ * (`useManifestRoute`) when dispatch built one, cut into the part behind the
+ * driver, the leg being driven and the part still to come; without a manifest,
+ * the tracker's route for the one order being driven. Wherever the app has no
+ * road it joins waypoints with a straight **dashed** line, so a dashed line
+ * always reads as "not the road" and a solid one always is the road.
+ *
+ * State is never carried by colour alone: the leg being driven is the heaviest
+ * line, the part behind is thinner and see-through, and the markers carry
+ * their own state (see `StopBadge`).
+ *
+ * Markers are the console's: P, D and R for the ends of an order, a number on
+ * the order's own colour for the waypoints in between. The driving order is
+ * told by the line and by the Route list, not by the number in the marker.
  *
  * Built on react-native-maps like `ui/RouteMap`, using only what the web
  * build's Leaflet stand-in implements (web/maps.jsx): MapView with
@@ -21,26 +28,29 @@ import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Secondary } from '../../ui/Text';
 import { EmptyState } from '../../ui/Banner';
 import { StopBadge } from '../../ui/RouteMap';
+import { CasedPolyline } from '../../ui/CasedPolyline';
+import { colorForId } from '../../ui/routeColors';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useResolvedScheme } from '../../settings';
 import { useDeviceLocation } from '../../shell';
 import { formatClock, formatMeters } from '../../format';
-import type { LatLng } from '../../data';
+import { decodePolyline, routeRuns, useManifestRoute, useTracker, type LatLng, type RouteRunKind } from '../../data';
 import { CARD_RADIUS, GUTTER, IconButton, SectionLabel, WaypointMark } from './parts';
 import { waypointTag } from './JobsRoute';
 import type { JobWaypoint } from './model';
 
 type Placed = JobWaypoint & { point: LatLng };
 
-function LegendChip({ label, kind }: { label: string; kind: 'done' | 'now' | 'later' }) {
+function LegendChip({ label, kind, dashed }: { label: string; kind: RouteRunKind | 'straight'; dashed?: boolean }) {
     return (
         <XStack height={30} paddingHorizontal={10} gap={6} alignItems="center" borderRadius={15} backgroundColor="$background" borderWidth={1} borderColor="$border">
             <YStack
                 width={14}
                 height={0}
-                borderTopWidth={3}
-                borderColor={kind === 'done' ? '$success' : kind === 'now' ? '$primary' : '$textMuted'}
-                borderStyle={kind === 'later' ? 'dotted' : 'solid'}
+                borderTopWidth={kind === 'now' ? 4 : 3}
+                borderColor={kind === 'done' ? '$success' : kind === 'later' ? '$textMuted' : '$primary'}
+                borderStyle={dashed ? 'dashed' : 'solid'}
+                opacity={kind === 'done' && !dashed ? 0.7 : 1}
             />
             <Body fontSize={12} fontWeight="700" tone="secondary">
                 {label}
@@ -48,6 +58,20 @@ function LegendChip({ label, kind }: { label: string; kind: 'done' | 'now' | 'la
         </XStack>
     );
 }
+
+interface Line {
+    kind: RouteRunKind;
+    coordinates: LatLng[];
+}
+
+const runKind = (state: JobWaypoint['state']): RouteRunKind => (state === 'done' || state === 'skipped' ? 'done' : state === 'current' ? 'now' : 'later');
+
+/** Dash patterns for straight lines. All dashed (not the road); told apart by rhythm and weight as well as colour. */
+const DASH: Record<RouteRunKind, { pattern: number[]; width: number }> = {
+    done: { pattern: [10, 6], width: 3 },
+    now: { pattern: [10, 6], width: 5 },
+    later: { pattern: [2, 8], width: 4 },
+};
 
 export interface JobsMapProps {
     waypoints: JobWaypoint[];
@@ -70,18 +94,67 @@ export function JobsMap({ waypoints, units, onOpenWaypoint, bottomSpace }: JobsM
     // The card follows the waypoint being headed to until the driver taps another.
     const selected = placed.find((w) => w.key === pickedKey) ?? current ?? placed.find((w) => w.state === 'later') ?? placed[placed.length - 1];
 
-    const lines = useMemo(() => {
-        const points = placed.map((w) => w.point);
+    // The manifest's road, asked for once per sequence and shared with the dashboard's map.
+    const manifestId = useMemo(() => waypoints.find((w) => w.manifestId)?.manifestId, [waypoints]);
+    const routeStops = useMemo(
+        () => waypoints.flatMap((w) => (w.stopId ? [{ id: w.stopId, status: w.state === 'skipped' ? 'skipped' : w.state === 'done' ? 'completed' : 'pending' }] : [])),
+        [waypoints]
+    );
+    const { route: manifestRoute } = useManifestRoute(manifestId, routeStops);
+
+    /*
+     * No manifest: the only road worth asking for is the one being driven. One
+     * tracker request for that order, asked again when one of its waypoints is
+     * finished; every other order is joined by straight dashed lines. A request
+     * per order would be a routing call per order each time the map opens.
+     */
+    const drivenOrderId = !manifestId ? current?.orderId : undefined;
+    const drivenDone = drivenOrderId ? waypoints.filter((w) => w.orderId === drivenOrderId && runKind(w.state) === 'done').length : 0;
+    const { tracker } = useTracker(drivenOrderId, drivenDone);
+    const trackerRoute = useMemo(() => {
+        if (!drivenOrderId) return [];
+        // The hook keeps its last answer while the order changes: only draw a route that is about this order's places.
+        const mine = (tracker?.stops ?? []).some((stop) => waypoints.some((w) => w.key === `${drivenOrderId}:${stop.public_id}`));
+        return mine ? decodePolyline(tracker?.route?.polyline) : [];
+    }, [tracker, drivenOrderId, waypoints]);
+
+    const { road, straight } = useMemo(() => {
+        const road: Line[] = [];
+        const straight: Line[] = [];
         const at = current ? placed.indexOf(current) : -1;
-        if (at < 0) {
-            // Nothing is being headed to: all behind, or all ahead.
-            const allDone = placed.length > 0 && placed.every((w) => w.state === 'done' || w.state === 'skipped');
-            return { done: allDone ? points : [], now: [] as LatLng[], later: allDone ? [] : points };
+
+        if (manifestRoute) {
+            const stateOf = new Map(waypoints.flatMap((w) => (w.stopId ? [[w.stopId, runKind(w.state)] as const] : [])));
+            const allDone = placed.every((w) => runKind(w.state) === 'done');
+            road.push(...routeRuns(manifestRoute, (stopId) => (stopId ? stateOf.get(stopId) : undefined) ?? 'later', allDone ? 'done' : 'now'));
+            // The route runs waypoint to waypoint, so nothing leads to the first one: join the driver to it.
+            const leadsToCurrent = manifestRoute.hasLegGeometry ? manifestRoute.legs.some((leg) => leg.toStop === current?.stopId) : at > 0;
+            if (current && position && !leadsToCurrent) straight.push({ kind: 'now', coordinates: [position, current.point] });
+            return { road, straight };
         }
-        // The driver's own position starts the "now" leg when there is a fix.
-        const from = position ?? (at > 0 ? points[at - 1] : undefined);
-        return { done: points.slice(0, at), now: from ? [from, points[at]] : [], later: points.slice(at) };
-    }, [placed, current, position]);
+
+        const hasTrackerRoute = trackerRoute.length > 1;
+        if (hasTrackerRoute) road.push({ kind: 'now', coordinates: trackerRoute });
+
+        // Straight lines, waypoint to waypoint, each taking the state of the waypoint it leads to.
+        const push = (kind: RouteRunKind, from: LatLng, to: LatLng) => {
+            const last = straight[straight.length - 1];
+            const end = last?.coordinates[last.coordinates.length - 1];
+            if (last && last.kind === kind && end === from) last.coordinates.push(to);
+            else straight.push({ kind, coordinates: [from, to] });
+        };
+        placed.forEach((waypoint, index) => {
+            const kind = runKind(waypoint.state);
+            // The tracker's route already runs from the driver through what is left of the driven order.
+            if (hasTrackerRoute && waypoint.orderId === drivenOrderId && kind !== 'done') return;
+            // The driver's own position starts the leg being driven when there is a fix.
+            const from = kind === 'now' && position ? position : index > 0 ? placed[index - 1].point : undefined;
+            if (from) push(kind, from, waypoint.point);
+        });
+        return { road, straight };
+    }, [placed, waypoints, current, position, manifestRoute, trackerRoute, drivenOrderId]);
+
+    const tone: Record<RouteRunKind, string> = { done: theme.success?.val as string, now: theme.primary?.val as string, later: theme.textMuted?.val as string };
 
     const fit = (animated: boolean) => {
         const coordinates = [...placed.map((w) => w.point), ...(position ? [position] : [])];
@@ -120,11 +193,31 @@ export function JobsMap({ waypoints, units, onOpenWaypoint, bottomSpace }: JobsM
                 showsCompass={false}
                 toolbarEnabled={false}
             >
-                {lines.done.length > 1 ? <Polyline coordinates={lines.done} strokeColor={theme.success?.val as string} strokeWidth={5} /> : null}
-                {lines.later.length > 1 ? <Polyline coordinates={lines.later} strokeColor={theme.textMuted?.val as string} strokeWidth={4} lineDashPattern={[2, 9]} /> : null}
-                {lines.now.length > 1 ? <Polyline coordinates={lines.now} strokeColor={theme.primary?.val as string} strokeWidth={6} /> : null}
+                {/* Behind first, the leg being driven last, so it is never covered. */}
+                {(['done', 'later', 'now'] as const).flatMap((kind, layer) =>
+                    road
+                        .filter((line) => line.kind === kind)
+                        .map((line, index) => (
+                            <CasedPolyline
+                                key={`road-${kind}-${index}`}
+                                coordinates={line.coordinates}
+                                color={tone[kind]}
+                                variant={kind === 'done' ? 'completed' : kind === 'now' ? 'live' : 'upcoming'}
+                                zIndex={layer + 1}
+                            />
+                        ))
+                )}
+                {straight.map((line, index) => (
+                    <Polyline
+                        key={`straight-${line.kind}-${index}`}
+                        coordinates={line.coordinates}
+                        strokeColor={tone[line.kind]}
+                        strokeWidth={DASH[line.kind].width}
+                        lineDashPattern={DASH[line.kind].pattern}
+                    />
+                ))}
                 {placed.map((waypoint) => {
-                    const state = waypoint.state === 'done' || waypoint.state === 'skipped' ? 'done' : waypoint.state === 'current' ? 'current' : 'pending';
+                    const state = waypoint.state === 'skipped' ? 'skipped' : waypoint.state === 'done' ? 'done' : waypoint.state === 'current' ? 'current' : 'pending';
                     return (
                         <Marker
                             // Custom markers are drawn once (`tracksViewChanges`), so a change of state needs a new marker.
@@ -136,7 +229,14 @@ export function JobsMap({ waypoints, units, onOpenWaypoint, bottomSpace }: JobsM
                             testID={`route-marker-${waypoint.stopId ?? waypoint.key}`}
                             accessibilityLabel={`${waypoint.sequence} ${waypoint.name ?? ''}`.trim()}
                         >
-                            <StopBadge sequence={waypoint.sequence} state={state} />
+                            <StopBadge
+                                kind={waypoint.isReturn ? 'return' : waypoint.role}
+                                // Its number within its order; the place in the day only when nothing says what it is to its order.
+                                number={waypoint.waypointNumber ?? waypoint.sequence}
+                                // Several orders share this map: each keeps the colour the console gives it.
+                                color={colorForId(waypoint.orderId ?? '')}
+                                state={state}
+                            />
                         </Marker>
                     );
                 })}
@@ -158,9 +258,11 @@ export function JobsMap({ waypoints, units, onOpenWaypoint, bottomSpace }: JobsM
 
             <YStack position="absolute" start={GUTTER} end={GUTTER} bottom={bottomSpace} gap={8} pointerEvents="box-none">
                 <XStack gap={8} pointerEvents="none">
-                    <LegendChip kind="done" label={t('jobs.map.legendDone')} />
-                    <LegendChip kind="now" label={t('jobs.map.legendNow')} />
-                    <LegendChip kind="later" label={t('jobs.map.legendLater')} />
+                    <LegendChip kind="done" dashed={!road.length} label={t('jobs.map.legendDone')} />
+                    <LegendChip kind="now" dashed={!road.length} label={t('jobs.map.legendNow')} />
+                    <LegendChip kind="later" dashed={!road.length} label={t('jobs.map.legendLater')} />
+                    {/* Only worth saying when both kinds of line are on the map together. */}
+                    {road.length && straight.length ? <LegendChip kind="straight" dashed label={t('jobs.map.legendStraight')} /> : null}
                 </XStack>
                 {selected ? (
                     <XStack
