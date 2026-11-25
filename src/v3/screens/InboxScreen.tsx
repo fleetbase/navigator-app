@@ -31,7 +31,7 @@ import { Entrance } from './chat/Entrance';
 import { ChatIcon } from './chat/icons';
 import { chatName, chatOrderLabel } from './chat/naming';
 
-type Filter = 'all' | 'unread' | 'waypoints' | 'groups';
+type Filter = 'all' | 'unread' | 'waypoints' | 'groups' | 'ended';
 const FILTERS: Filter[] = ['all', 'unread', 'waypoints', 'groups'];
 
 function matchesFilter(channel: ChatChannelRecord, filter: Filter): boolean {
@@ -124,10 +124,16 @@ export function InboxScreen({
     const { isOnline } = useSync();
     const tabBarSpace = useTabBarSpace();
     const { channels: allChannels, isLoading, isRefreshing, failed, error, refresh, retry } = useChatChannels(reloadToken);
-    // An order's chat ends with the order: once it is closed it leaves the inbox.
-    const channels = useMemo(() => (allChannels ? allChannels.filter((channel) => !isChannelClosed(channel)) : allChannels), [allChannels]);
-
     const [filter, setFilter] = useState<Filter>('all');
+    // An order's chat ends with the order. Ended chats are kept out of the way, not
+    // thrown away: they sit behind their own "Ended" filter, which only appears when
+    // there are some.
+    const endedCount = useMemo(() => (allChannels ?? []).filter((channel) => isChannelClosed(channel)).length, [allChannels]);
+    const channels = useMemo(
+        () => (allChannels ? allChannels.filter((channel) => (filter === 'ended' ? isChannelClosed(channel) : !isChannelClosed(channel))) : allChannels),
+        [allChannels, filter]
+    );
+
     const [searching, setSearching] = useState(false);
     const [query, setQuery] = useState('');
 
@@ -206,7 +212,7 @@ export function InboxScreen({
         );
     }
 
-    const hasChats = (channels ?? []).length > 0;
+    const hasChats = (allChannels ?? []).length > 0;
     const narrowed = filter !== 'all' || (searching && query.trim().length > 0);
 
     return (
@@ -220,6 +226,7 @@ export function InboxScreen({
                         {FILTERS.map((key) => (
                             <FilterChip key={key} label={t(`chat.filters.${key}`)} on={filter === key} onPress={() => setFilter(key)} testID={`inbox-filter-${key}`} />
                         ))}
+                        {endedCount > 0 ? <FilterChip label={t('chat.filters.ended', { count: endedCount })} on={filter === 'ended'} onPress={() => setFilter('ended')} testID="inbox-filter-ended" /> : null}
                     </ScrollView>
                 </YStack>
             ) : null}

@@ -676,7 +676,8 @@
             "all": "All",
             "unread": "Unread",
             "waypoints": "Waypoints",
-            "groups": "Groups"
+            "groups": "Groups",
+            "ended": "Ended · %{count}"
         },
         "empty": {
             "title": "No chats yet",

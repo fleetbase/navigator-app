@@ -581,10 +581,12 @@ export function TodayScreen({
         heroStats.push({ key: 'distance', value: formatMeters(straightM, units), label: t('home.hero.straightLine') });
     }
 
-    if (next.windowEnd) {
-        const due = formatClock(next.windowEnd);
+    // The waypoint's own window, else the one the tracker reports for where the driver is heading.
+    const windowEnd = next.windowEnd ?? (eta.kind === 'live' ? (insights?.due_by ?? undefined) : undefined);
+    if (windowEnd) {
+        const due = formatClock(windowEnd);
         if (etaAt && eta.kind === 'live') {
-            const late = Date.parse(etaAt) > Date.parse(next.windowEnd);
+            const late = Date.parse(etaAt) > Date.parse(windowEnd);
             heroStats.push({ key: 'due', value: late ? t('home.hero.late') : t('home.hero.onTime'), tone: late ? 'danger' : 'success', label: t('home.hero.dueBy', { time: due }) });
         } else {
             heroStats.push({ key: 'due', value: due, label: t('home.hero.deliverBy') });

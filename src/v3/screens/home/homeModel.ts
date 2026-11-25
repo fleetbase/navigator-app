@@ -109,13 +109,21 @@ function manifestWaypoints(manifest: ManifestRecord): HomeWaypoint[] {
         stopId: stop.id,
         orderId: str(stop.order?.id),
         placeId: str(stop.place?.id),
-        kind: (['pickup', 'dropoff'].includes(String(stop.place?.type)) ? stop.place?.type : undefined) as WaypointKind | undefined,
+        // The stop's own role (FleetOps 0.7.4 and later), else what the place calls itself.
+        kind: (['pickup', 'dropoff', 'waypoint'].includes(String(stop.type))
+            ? stop.type
+            : stop.type === 'return'
+              ? 'dropoff'
+              : ['pickup', 'dropoff'].includes(String(stop.place?.type))
+                ? stop.place?.type
+                : undefined) as WaypointKind | undefined,
         name: str(stop.place?.name),
         address: str(stop.place?.address) ?? str(stop.place?.street1),
         point: coordsOfPoint(stop.place?.location),
         done: isStopDone(stop),
         skipped: stop.status === 'skipped',
         trackingNumber: str(stop.order?.tracking_number),
+        windowEnd: str(stop.time_window_end) ?? null,
         plannedAt: stop.estimated_arrival ?? null,
         number: index + 1,
     }));

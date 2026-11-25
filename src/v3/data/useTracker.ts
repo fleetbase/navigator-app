@@ -70,6 +70,8 @@ export interface TrackerEta {
 export interface TrackerInsights {
     is_delayed?: boolean;
     delay_seconds?: number;
+    /** End of the active waypoint's time window, when it has one (FleetOps 0.7.4 and later). */
+    due_by?: string | null;
     is_location_stale?: boolean;
     is_off_route?: boolean;
 }

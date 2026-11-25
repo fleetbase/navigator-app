@@ -57,6 +57,23 @@ export interface ManifestStopRecord {
     duration_from_prev_s?: number | null;
     place?: ManifestPlace | null;
     order?: ManifestStopOrderRef | null;
+    /**
+     * What the stop is to its order, and where it falls among that order's points.
+     * Sent by FleetOps 0.7.4 and later; an older server leaves these out and the
+     * app works the role out from the order when it has it.
+     */
+    type?: 'pickup' | 'waypoint' | 'dropoff' | 'return' | string | null;
+    position?: number | null;
+    position_total?: number | null;
+    waypoint_id?: string | null;
+    waypoint_index?: number | null;
+    waypoint_total?: number | null;
+    time_window_start?: string | null;
+    time_window_end?: string | null;
+    service_time?: number | null;
+    notes?: string | null;
+    pod_required?: boolean | null;
+    pod_method?: string | null;
     meta?: Record<string, unknown> | null;
     updated_at?: string;
     created_at?: string;

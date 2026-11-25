@@ -239,11 +239,18 @@ function num(value: unknown): number | undefined {
     return value != null && Number.isFinite(n) ? n : undefined;
 }
 
+/** A stop's role as the server names it. A return leg is driven like a drop-off. */
+function serverRole(type: unknown): PointRole | undefined {
+    if (type === 'pickup' || type === 'waypoint' || type === 'dropoff') return type;
+    if (type === 'return') return 'dropoff';
+    return undefined;
+}
+
 /**
  * The manifest's stops as waypoints.
  *
  * The stop resource says where, when and for which order, but not what the
- * place *is* to that order (ManifestStop.php exposes no role). So the role is
+ * place *is* to that order only from FleetOps 0.7.4 on. For an older server the role is
  * found by matching the stop's place against the order's own pickup, waypoints
  * and drop-off — possible only for an order this device has loaded. Otherwise
  * the row simply has no role, rather than a guessed one.
@@ -255,21 +262,22 @@ export function fromManifest(manifestId: string, stops: ManifestStopRecord[], or
         const place = stop.place;
         const match = order && place?.id ? orderPoints(order).find((p) => p.id === place.id) : undefined;
         const state: PointState = stop.status === 'skipped' ? 'skipped' : stop.status === 'completed' ? 'done' : stop.id === current?.id ? 'current' : 'later';
-        const cash = match?.role === 'dropoff' || (match && !orderShape(orderPoints(order)).hasDropoff) ? cashOnDeliveryOf(order) : undefined;
+        const cash = (serverRole(stop.type) ?? match?.role) === 'dropoff' || (match && !orderShape(orderPoints(order)).hasDropoff) ? cashOnDeliveryOf(order) : undefined;
         return {
             key: stop.id,
             sequence: num(stop.sequence) ?? index + 1,
             state,
             arrived: stop.status === 'arrived',
-            role: match?.role,
-            waypointNumber: match?.waypointNumber,
-            waypointTotal: match?.waypointTotal,
+            // The server's word first; the match against the order covers an older server.
+            role: serverRole(stop.type) ?? match?.role,
+            waypointNumber: num(stop.waypoint_index) ?? match?.waypointNumber,
+            waypointTotal: num(stop.waypoint_total) ?? match?.waypointTotal,
             name: text(place?.name),
             address: text(place?.address),
             point: coordsOfPoint(place?.location),
             eta: text(stop.estimated_arrival),
             arrivedAt: text(stop.actual_arrival),
-            windowEnd: match?.windowEnd,
+            windowEnd: text(stop.time_window_end) ?? match?.windowEnd,
             distanceFromPrevM: num(stop.distance_from_prev_m),
             durationFromPrevS: num(stop.duration_from_prev_s),
             orderId: stop.order?.id,
