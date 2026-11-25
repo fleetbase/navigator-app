@@ -27,7 +27,11 @@ import {
     type PermissionStatus,
 } from 'react-native-permissions';
 
-export type PermissionKey = 'location' | 'notifications' | 'camera';
+/**
+ * `microphone` is not on the primer: it is asked for the first time a driver
+ * records a voice message, which is the moment the request makes sense.
+ */
+export type PermissionKey = 'location' | 'notifications' | 'camera' | 'microphone';
 
 /**
  * `denied` can be asked again; `blocked` cannot — only Settings will change it.
@@ -61,6 +65,8 @@ export function permissionIdsFor(key: PermissionKey, platform: string = Platform
                 return [PERMISSIONS.IOS.LOCATION_WHEN_IN_USE, PERMISSIONS.IOS.LOCATION_ALWAYS];
             case 'camera':
                 return [PERMISSIONS.IOS.CAMERA];
+            case 'microphone':
+                return [PERMISSIONS.IOS.MICROPHONE];
             case 'notifications':
                 // Handled by the notifications API, not the permissions matrix.
                 return [];
@@ -71,6 +77,8 @@ export function permissionIdsFor(key: PermissionKey, platform: string = Platform
             return [PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION, PERMISSIONS.ANDROID.ACCESS_BACKGROUND_LOCATION];
         case 'camera':
             return [PERMISSIONS.ANDROID.CAMERA];
+        case 'microphone':
+            return [PERMISSIONS.ANDROID.RECORD_AUDIO];
         case 'notifications':
             return [PERMISSIONS.ANDROID.POST_NOTIFICATIONS];
     }

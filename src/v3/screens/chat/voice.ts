@@ -1,32 +1,32 @@
 /**
- * Voice messages: what is on, and what recording needs.
+ * Voice messages: the switch, the shape of a recording, and how one is named.
  *
- * **Playback works today.** It needs nothing the app does not already ship:
- * see `AudioPlayer.tsx`.
+ * Recording and playback both run on `react-native-nitro-sound`. The recorder
+ * itself lives in `recorder.ts` (and `recorder.web.ts`, which has none: a
+ * browser build shows no microphone); playback is in `AudioPlayer.tsx`.
  *
- * **Recording does not**, because no audio-recording library is installed and
- * adding one is a native change (a pod, a Gradle module, a microphone
- * permission string, a rebuild). The whole recording surface (the microphone
- * button, hold to record, slide to delete, lock, send) is built and sits
- * behind the one switch below.
+ * A recording is AAC in an .m4a container, which iOS, Android and every
+ * browser can play back. It is sent like a photo: uploaded through
+ * `POST files/base64`, then attached to a message by file id. The multipart
+ * upload route cannot be used; its allow-list has no audio types.
  *
- * To turn it on:
- *   1. Add a recorder. `react-native-nitro-sound` fits: the app already ships
- *      `react-native-nitro-modules`, and it records AAC in an .m4a container,
- *      which the player and every browser can play back.
- *   2. iOS: add `NSMicrophoneUsageDescription` to Info.plist, then `pod install`.
- *      Android: add `android.permission.RECORD_AUDIO` to the manifest and ask
- *      for it at runtime before the first recording.
- *   3. Give `voiceRecorder` below a real implementation and set
- *      `VOICE_RECORDING_ENABLED` to true.
+ * The base64 route stores the `content_type` and `file_name` it is given, and
+ * the chat API returns both on the attachment, so a recording comes back as
+ * `audio/mp4` with an `.m4a` name and `attachmentKind` reads it as audio by
+ * either. (The route also writes `extension: 'png'` on every file whatever it
+ * is; nothing in the chat reads that column.)
  *
- * A recording is sent like a photo: uploaded through `POST files/base64` with
- * an `audio/*` content type, then attached to a message by file id. The
- * multipart upload route cannot be used; its allow-list has no audio types.
+ * The route saves the file under the name it is given, in one shared folder,
+ * so the name has to be unique or one recording overwrites another. The
+ * length rides in the name too: the server keeps no duration, and a bubble
+ * should say how long a message is before anyone plays it.
  */
 
-/** The single switch for recording voice messages. False until a recorder is installed. */
-export const VOICE_RECORDING_ENABLED = false;
+/** The single switch for recording voice messages. */
+export const VOICE_RECORDING_ENABLED = true;
+
+/** What an .m4a is to a browser and to the server. */
+export const VOICE_CONTENT_TYPE = 'audio/mp4';
 
 export interface VoiceRecording {
     /** Bare base64 of the audio file. */
@@ -37,17 +37,44 @@ export interface VoiceRecording {
     durationMs: number;
 }
 
+/**
+ * How asking to record went. `asked` means the system's microphone question
+ * was just shown and answered yes: the question took the touch away, so
+ * nothing is recording and the driver holds the button again.
+ */
+export type RecorderStart = 'started' | 'asked' | 'denied' | 'failed';
+
 export interface VoiceRecorder {
-    /** Asks for the microphone if needed and starts. False when the driver said no. */
-    start(): Promise<boolean>;
+    /** Asks for the microphone if needed and starts. */
+    start(): Promise<RecorderStart>;
     /** Stops and hands back the recording, or null when there is nothing worth sending. */
     stop(): Promise<VoiceRecording | null>;
     /** Stops and throws the recording away. */
     cancel(): Promise<void>;
+    /** How loud the microphone is right now, 0 (silence) to 1, about ten times a second. Returns the way to stop listening. */
+    onLevel(listener: (level: number) => void): () => void;
 }
-
-/** The installed recorder. Null until a library is added; see the note above. */
-export const voiceRecorder: VoiceRecorder | null = null;
 
 /** Recordings shorter than this are a slip of the thumb, not a message. */
 export const MIN_RECORDING_MS = 700;
+
+/**
+ * The longest message. The bytes travel as base64 inside one JSON request, and
+ * a recording left locked in a pocket should not grow without end.
+ */
+export const MAX_RECORDING_MS = 3 * 60_000;
+
+/** "voice-m2x4k1p0-7f3a9c-14s.m4a": when it was made, a few random characters, and its length in seconds. */
+export function voiceFileName(durationMs: number, now: number = Date.now()): string {
+    const seconds = Math.max(1, Math.round(durationMs / 1000));
+    const random = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
+    return `voice-${now.toString(36)}-${random}-${seconds}s.m4a`;
+}
+
+const VOICE_NAME = /^voice-[a-z0-9]+-[a-z0-9]+-(\d+)s\.m4a$/i;
+
+/** The length in seconds written into one of this app's own recordings; undefined for any other file. */
+export function voiceDurationOf(fileName?: string | null): number | undefined {
+    const match = VOICE_NAME.exec(String(fileName ?? '').trim());
+    return match ? Number(match[1]) : undefined;
+}

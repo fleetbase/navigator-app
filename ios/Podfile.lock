@@ -112,8 +112,32 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroModules (0.36.1):
+  - NitroModules (0.36.5):
     - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-callinvoker
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - NitroSound (0.2.21):
+    - hermes-engine
+    - NitroModules
     - RCTRequired
     - RCTTypeSafety
     - React-callinvoker
@@ -2726,6 +2750,7 @@ DEPENDENCIES:
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - NitroMmkv (from `../node_modules/react-native-mmkv`)
   - NitroModules (from `../node_modules/react-native-nitro-modules`)
+  - NitroSound (from `../node_modules/react-native-nitro-sound`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../node_modules/react-native/Libraries/Required`)
   - RCTSwiftUI (from `../node_modules/react-native/ReactApple/RCTSwiftUI`)
@@ -2869,6 +2894,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-mmkv"
   NitroModules:
     :path: "../node_modules/react-native-nitro-modules"
+  NitroSound:
+    :path: "../node_modules/react-native-nitro-sound"
   RCTDeprecation:
     :path: "../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation"
   RCTRequired:
@@ -3100,7 +3127,8 @@ SPEC CHECKSUMS:
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   MMKVCore: 3d16ce9f7d411e135020915fde98a056859a1efa
   NitroMmkv: 85a251e15c39d7c95fe58cf40786fa126b8d143c
-  NitroModules: b4174dd303728e16ad1afb79f64c1a5c69a3b373
+  NitroModules: 452230d9b63c6c3f59dd97eeaa27ec3449271d4a
+  NitroSound: 45066f8f14282dbdae42571aec5681396d2d4925
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
@@ -3202,7 +3230,7 @@ SPEC CHECKSUMS:
   RNKeychain: 6778b35b5bd067c322f8479526ac09b1d61f31d0
   RNLaunchNavigator: 2011701d73aba8517d17cc82a8c98131c7a580c6
   RNLocalize: f370284ea42c48f29f0d8dd3a7bcc28a04f82155
-  RNPermissions: 39323bcc254021f7eb70deab4d1b5c617b8133c8
+  RNPermissions: 1e9365f8b573a6e16e74186d8f3f111d916b292a
   RNReactNativeHapticFeedback: 576e23c1ad2d800ded4502be3f66b767308b63a1
   RNReanimated: fcf6a8cdd698fb09a811a8d6c5bcfe36575d965d
   RNScreens: 991cc417cd396602a6cf59a42139e5a9d91462a9
@@ -3215,6 +3243,6 @@ SPEC CHECKSUMS:
   VisionCamera: 7187b3dac1ff3071234ead959ce311875748e14f
   Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
 
-PODFILE CHECKSUM: 78d8755b180dd2d7aa83061bd28bf4b37b94fcdf
+PODFILE CHECKSUM: 4c4186ff1844e1a7795363a40ef27fc47f2a214b
 
 COCOAPODS: 1.17.0

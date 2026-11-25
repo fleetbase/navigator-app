@@ -744,7 +744,11 @@
             "lock": "Lock",
             "send": "Send",
             "holdHint": "Let go to send. Slide left to delete. Slide right to lock it and keep both hands free.",
-            "lockedHint": "Recording. Send it when you're done, or delete it."
+            "lockedHint": "Recording. Send it when you're done, or delete it.",
+            "noMicrophone": "Navigator can't use the microphone. Allow it in Settings to send voice messages.",
+            "cannotRecord": "Recording could not start. Try again.",
+            "needsConnection": "Voice messages need a connection to send. Record it again when you are back online.",
+            "notSent": "That voice message could not be sent."
         },
         "delete": {
             "title": "Delete this message?",

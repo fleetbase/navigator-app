@@ -2,9 +2,9 @@
  * Recording a voice message: hold the microphone, let go to send, slide left to
  * delete, slide right to lock it and keep both hands free.
  *
- * Everything here runs against the `VoiceRecorder` in `voice.ts`. No recorder
- * is installed yet, so the composer only draws the microphone when
- * `VOICE_RECORDING_ENABLED` is true; see that file for what turning it on takes.
+ * Everything here runs against the `VoiceRecorder` interface in `voice.ts`;
+ * the recorder itself is in `recorder.ts`. The browser build has none, and the
+ * composer draws no microphone there.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, PanResponder, type PanResponderInstance } from 'react-native';
@@ -13,7 +13,9 @@ import { Body, Secondary } from '../../ui/Text';
 import { space } from '../../theme/tokens';
 import { ChatIcon } from './icons';
 import { formatSeconds } from './time';
-import { MIN_RECORDING_MS, voiceRecorder, type VoiceRecording } from './voice';
+import { stopPlayback } from './AudioPlayer';
+import { voiceRecorder } from './recorder';
+import { MAX_RECORDING_MS, MIN_RECORDING_MS, type VoiceRecording } from './voice';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
@@ -27,6 +29,8 @@ export interface HoldToRecord {
     phase: RecordPhase;
     hint: SlideHint;
     elapsedMs: number;
+    /** The microphone's recent levels, oldest first, each 0 to 1. Empty until the recorder reports one. */
+    levels: number[];
     /** Spread onto the microphone button. */
     handlers: PanResponderInstance['panHandlers'];
     /** For the locked state's buttons. */
@@ -34,14 +38,20 @@ export interface HoldToRecord {
     discard: () => void;
 }
 
-export function useHoldToRecord(onRecorded: (recording: VoiceRecording) => void): HoldToRecord {
+/** Why a hold did not become a recording: the driver refused the microphone, or the recorder would not start. */
+export type RecordRefusal = 'denied' | 'failed';
+
+export function useHoldToRecord(onRecorded: (recording: VoiceRecording) => void, onRefused?: (why: RecordRefusal) => void): HoldToRecord {
     const [phase, setPhase] = useState<RecordPhase>('idle');
     const [hint, setHint] = useState<SlideHint>(null);
     const [elapsedMs, setElapsedMs] = useState(0);
+    const [levels, setLevels] = useState<number[]>([]);
     const phaseRef = useRef<RecordPhase>('idle');
     const startedAt = useRef(0);
     const onRecordedRef = useRef(onRecorded);
     onRecordedRef.current = onRecorded;
+    const onRefusedRef = useRef(onRefused);
+    onRefusedRef.current = onRefused;
 
     const set = useCallback((next: RecordPhase) => {
         phaseRef.current = next;
@@ -49,23 +59,26 @@ export function useHoldToRecord(onRecorded: (recording: VoiceRecording) => void)
         if (next === 'idle') {
             setHint(null);
             setElapsedMs(0);
+            setLevels([]);
         }
     }, []);
-
-    // The clock the driver watches; the recording's real length comes from the recorder.
-    useEffect(() => {
-        if (phase === 'idle') return;
-        const timer = setInterval(() => setElapsedMs(Date.now() - startedAt.current), 200);
-        return () => clearInterval(timer);
-    }, [phase]);
 
     const begin = useCallback(async () => {
         if (!voiceRecorder || phaseRef.current !== 'idle') return;
         startedAt.current = Date.now();
         set('holding');
-        const started = await voiceRecorder.start().catch(() => false);
-        // The thumb may already be up, or the driver refused the microphone.
-        if (!started) set('idle');
+        // A voice message left playing would be recorded into this one.
+        stopPlayback();
+        const outcome = await voiceRecorder.start().catch(() => 'failed' as const);
+        if (outcome === 'started') {
+            // The clock counts what was recorded, not the moment spent waking the microphone.
+            startedAt.current = Date.now();
+            return;
+        }
+        // The thumb may already be up; either way nothing is recording.
+        set('idle');
+        // `asked` needs no words: the driver just said yes, and holds the button again.
+        if (outcome === 'denied' || outcome === 'failed') onRefusedRef.current?.(outcome);
     }, [set]);
 
     const discard = useCallback(() => {
@@ -114,13 +127,41 @@ export function useHoldToRecord(onRecorded: (recording: VoiceRecording) => void)
         [begin, discard, send, set]
     );
 
+    // The clock the driver watches; the recording's real length comes from the recorder.
+    useEffect(() => {
+        if (phase === 'idle') return;
+        const timer = setInterval(() => {
+            const elapsed = Date.now() - startedAt.current;
+            setElapsedMs(elapsed);
+            // Long enough: send what there is rather than let it grow.
+            if (elapsed >= MAX_RECORDING_MS) send();
+        }, 200);
+        return () => clearInterval(timer);
+    }, [phase, send]);
+
+    // The live level, as a short history the panel draws as bars.
+    useEffect(() => {
+        if (phase === 'idle' || !voiceRecorder) return;
+        return voiceRecorder.onLevel((level) => setLevels((recent) => [...recent, level].slice(-BARS.length)));
+    }, [phase]);
+
     // Leaving the screen mid-recording must not leave the microphone open.
     useEffect(() => () => void voiceRecorder?.cancel().catch(() => {}), []);
 
-    return { phase, hint, elapsedMs, handlers: responder.panHandlers, send, discard };
+    return { phase, hint, elapsedMs, levels, handlers: responder.panHandlers, send, discard };
 }
 
+/** The resting shape, drawn until the microphone reports a level (and on a device whose recorder never does). */
 const BARS = [14, 26, 40, 22, 34, 52, 30, 18, 44, 50, 24, 36, 12, 28, 46, 38, 20, 32, 54, 26, 16, 42, 30, 48, 22, 14, 36, 28, 18, 10];
+const BAR_MIN = 6;
+const BAR_MAX = 54;
+
+/** What to draw: the newest levels on the right, silence before them. */
+function barHeights(levels: number[]): number[] {
+    if (!levels.length) return BARS;
+    const quiet = Array.from({ length: BARS.length - levels.length }, () => BAR_MIN);
+    return [...quiet, ...levels.map((level) => BAR_MIN + level * (BAR_MAX - BAR_MIN))];
+}
 
 /** The red dot that says the microphone is live. It blinks unless the driver asked for less motion. */
 function LiveDot() {
@@ -181,7 +222,7 @@ export function RecordPanel({ recorder, t }: { recorder: HoldToRecord; t: T }) {
             </XStack>
 
             <XStack height={56} alignItems="center" justifyContent="space-between" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                {BARS.map((height, i) => (
+                {barHeights(recorder.levels).map((height, i) => (
                     <YStack key={i} width={4} height={height} borderRadius={2} backgroundColor="$primary" opacity={0.75} />
                 ))}
             </XStack>

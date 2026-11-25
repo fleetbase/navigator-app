@@ -129,6 +129,8 @@
 	<string>Navigator requires access to your location at all times to track your position in the background for accurate navigation and task updates.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Navigator needs your location to provide navigation and task management features while you are using the app.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Navigator uses the microphone to record voice messages you send in chat.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Navigator uses motion data to enhance navigation and track physical activity for improved task management.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

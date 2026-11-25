@@ -315,7 +315,9 @@ describe('ConversationScreen', () => {
         await ReactTestRenderer.act(async () => {
             (byID(t, 'composer').props as { onChangeText?: (s: string) => void }).onChangeText?.('   ');
         });
-        expect(byID(t, 'send').props.disabled).toBe(true);
+        // Nothing to send, so the button on the right is still the microphone; there is no send to press.
+        expect(testIDs(t)).not.toContain('send');
+        expect(testIDs(t)).toContain('record-voice');
         ReactTestRenderer.act(() => t.unmount());
     });
 
@@ -323,7 +325,8 @@ describe('ConversationScreen', () => {
         // The API 422s on an unknown sender; better to say it up front.
         const t = await mount(<ConversationScreen channelId={channel.id} channel={channel} userId="stranger" />);
         expect(testIDs(t)).toContain('not-participant');
-        expect(byID(t, 'send').props.disabled).toBe(true);
+        // With nothing typed the button on the right is the microphone, and it is off too.
+        expect(byID(t, 'record-voice-glyph').props.disabled).toBe(true);
         ReactTestRenderer.act(() => t.unmount());
     });
 

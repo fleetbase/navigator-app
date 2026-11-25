@@ -17,6 +17,7 @@ import { attachmentKind, locationOfMessage, type ChatAttachment, type ChatMessag
 import { ChatIcon } from './icons';
 import { useAudioPlayer } from './AudioPlayer';
 import { formatSeconds } from './time';
+import { voiceDurationOf } from './voice';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
@@ -90,7 +91,8 @@ function VoiceBubble({ attachment, mine, t }: { attachment: ChatAttachment; mine
     const isCurrent = !!url && state.url === url;
     const playing = isCurrent && state.playing;
     const failed = !!url && !!state.failed[url];
-    const duration = isCurrent ? state.duration : 0;
+    // The player knows the length once it has loaded the file; this app's own recordings carry theirs in the file name.
+    const duration = (isCurrent ? state.duration : 0) || voiceDurationOf(attachment.filename) || 0;
     const position = isCurrent ? state.position : 0;
     const progress = duration > 0 ? Math.min(1, position / duration) : 0;
 
@@ -151,8 +153,8 @@ function VoiceBubble({ attachment, mine, t }: { attachment: ChatAttachment; mine
                     return <YStack key={i} width={3} height={height} borderRadius={2} backgroundColor={done ? played : rest} opacity={done ? 1 : mine ? 0.45 : 0.6} />;
                 })}
             </XStack>
-            {/* The length is only known once the file's header has loaded, so it appears on first play. */}
-            {isCurrent && duration > 0 ? (
+            {/* A recording made in this app says its length straight away; any other file only once it has loaded, on first play. */}
+            {duration > 0 ? (
                 <Body fontSize={13} lineHeight={18} fontWeight="700" tabular color={mine ? '$onPrimary' : '$textSecondary'}>
                     {formatSeconds(playing || position > 0 ? position : duration)}
                 </Body>

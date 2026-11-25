@@ -112,6 +112,7 @@ module.exports = (env = {}, argv = {}) => {
                 'react-native-device-info': shim('device-info.js'),
                 'react-native-i18n': shim('i18n.js'),
                 'react-native-maps': shim('maps.jsx'),
+                'react-native-nitro-sound': shim('nitro-sound.js'),
                 'react-native-notifications': shim('notifications.js'),
                 'react-native-permissions': shim('permissions.js'),
                 'react-native-signature-canvas': shim('signature-canvas.jsx'),

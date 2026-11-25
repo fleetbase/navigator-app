@@ -13,8 +13,9 @@
  *     message written without signal shows in the conversation as waiting.
  *   - **Photos**, uploaded first (`POST files/base64`) and attached by file id.
  *     An upload cannot queue (the message needs the id), so photos need signal.
- *   - **Voice messages**: played back in place. Recording is built but switched
- *     off until a recorder is installed; see `chat/voice.ts`.
+ *   - **Voice messages**: hold the microphone to record; uploaded like a photo
+ *     and attached by file id, so they need signal too. Played back in place.
+ *     See `chat/voice.ts`.
  *   - **Where I am**: a text message holding a map link, because the chat API
  *     has no location type. Drawn as a location row on this side.
  *
@@ -38,6 +39,7 @@ import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync, useDeviceLocation } from '../shell';
+import { openSettings } from '../permissions/permissions';
 import {
     useChatChannel,
     useSendMessage,
@@ -66,7 +68,8 @@ import { DaySeparator, MessageBubble, SystemLine, SystemNotice, type DeliverySta
 import { ChatIcon } from './chat/icons';
 import { ImagePreview } from './chat/ImagePreview';
 import { chatContext, chatName, chatOrderLabel } from './chat/naming';
-import { RecordPanel, useHoldToRecord } from './chat/Recording';
+import { RecordPanel, useHoldToRecord, type RecordRefusal } from './chat/Recording';
+import { voiceRecorder } from './chat/recorder';
 import { dayKeyOf, dayLabelOf } from './chat/time';
 import { VOICE_RECORDING_ENABLED, type VoiceRecording } from './chat/voice';
 
@@ -74,6 +77,22 @@ type T = (key: string, options?: Record<string, unknown>) => string;
 
 /* Loaded when the driver first asks for a photo, so opening a chat never touches the picker's native module. */
 const picker = () => require('react-native-image-picker') as typeof import('react-native-image-picker');
+
+/** Whether this build can record at all: the browser build has no recorder, and draws no microphone. */
+const CAN_RECORD = VOICE_RECORDING_ENABLED && !!voiceRecorder;
+
+/** What the line above the composer can be saying about an attachment or a recording. */
+type AttachNotice = 'needs-connection' | 'failed' | 'no-camera' | 'no-microphone' | 'cannot-record' | 'voice-needs-connection' | 'voice-failed';
+
+const ATTACH_NOTICE_KEYS: Record<AttachNotice, string> = {
+    'needs-connection': 'conversation.attachmentsNeedConnection',
+    failed: 'conversation.attachmentFailed',
+    'no-camera': 'chat.attach.noCamera',
+    'no-microphone': 'chat.record.noMicrophone',
+    'cannot-record': 'chat.record.cannotRecord',
+    'voice-needs-connection': 'chat.record.needsConnection',
+    'voice-failed': 'chat.record.notSent',
+};
 
 /** The three things a driver says most. */
 const QUICK_REPLY_KEYS = ['onMyWay', 'runningLate', 'arrived'] as const;
@@ -290,7 +309,7 @@ export function ConversationScreen({
     const [waiting, setWaiting] = useState<WaitingMessage[]>([]);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
-    const [attachNotice, setAttachNotice] = useState<'needs-connection' | 'failed' | 'no-camera' | null>(null);
+    const [attachNotice, setAttachNotice] = useState<AttachNotice | null>(null);
 
     const order = chatOrderLabel(channel);
     const orderRecord = useOrder(order?.orderId);
@@ -445,13 +464,16 @@ export function ConversationScreen({
 
     const sendRecording = useCallback(
         async (recording: VoiceRecording) => {
+            setAttachNotice(null);
+            // The server stores the name and content type it is given, and those are what mark the attachment as a voice message.
             const outcome = await upload({ base64: recording.base64, fileName: recording.fileName, contentType: recording.contentType, fileType: 'audio' });
             if (outcome.kind === 'uploaded') await submit('', { files: [{ file: outcome.file }] });
-            else setAttachNotice(outcome.kind === 'needs-connection' ? 'needs-connection' : 'failed');
+            else setAttachNotice(outcome.kind === 'needs-connection' ? 'voice-needs-connection' : 'voice-failed');
         },
         [submit, upload]
     );
-    const recorder = useHoldToRecord(sendRecording);
+    const recordRefused = useCallback((why: RecordRefusal) => setAttachNotice(why === 'denied' ? 'no-microphone' : 'cannot-record'), []);
+    const recorder = useHoldToRecord(sendRecording, recordRefused);
 
     const confirmDelete = useCallback(
         (message: ChatMessage) => {
@@ -652,15 +674,20 @@ export function ConversationScreen({
                                 {attachNotice ? (
                                     <YStack paddingHorizontal={space[4]} paddingBottom={space[2]}>
                                         <Banner
-                                            tone={attachNotice === 'failed' ? 'danger' : 'neutral'}
-                                            message={
-                                                attachNotice === 'needs-connection'
-                                                    ? t('conversation.attachmentsNeedConnection')
-                                                    : attachNotice === 'no-camera'
-                                                      ? t('chat.attach.noCamera')
-                                                      : t('conversation.attachmentFailed')
+                                            tone={attachNotice === 'failed' || attachNotice === 'voice-failed' ? 'danger' : 'neutral'}
+                                            message={t(ATTACH_NOTICE_KEYS[attachNotice])}
+                                            action={
+                                                attachNotice === 'no-microphone'
+                                                    ? // Once refused, only Settings can allow it; the system will not ask again.
+                                                      {
+                                                          label: t('permissions.openSettings'),
+                                                          onPress: () => {
+                                                              setAttachNotice(null);
+                                                              void openSettings().catch(() => {});
+                                                          },
+                                                      }
+                                                    : { label: t('common.dismiss'), onPress: () => setAttachNotice(null) }
                                             }
-                                            action={{ label: t('common.dismiss'), onPress: () => setAttachNotice(null) }}
                                             testID={`attach-${attachNotice}`}
                                         />
                                     </YStack>
@@ -739,10 +766,10 @@ export function ConversationScreen({
                                         />
                                     </YStack>
                                     {/*
-                                      * One button on the right. With something to send it sends; with nothing, and a
-                                      * recorder installed, it is the microphone: hold to record.
+                                      * One button on the right. With something to send it sends; with nothing, on a
+                                      * build that can record, it is the microphone: hold to record.
                                       */}
-                                    {VOICE_RECORDING_ENABLED && !hasDraft ? (
+                                    {CAN_RECORD && !hasDraft ? (
                                         // A plain view owns the touch: the hold and the slide must not compete with a button's own press handling.
                                         <View {...(canWrite ? recorder.handlers : {})} accessible accessibilityRole="button" accessibilityLabel={t('chat.record.hold')} testID="record-voice">
                                             <View pointerEvents="none">

@@ -2473,7 +2473,8 @@ __metadata:
     react-native-maps: ^1.20.0
     react-native-maps-directions: ^1.9.0
     react-native-mmkv: ^4.3.2
-    react-native-nitro-modules: ^0.36.1
+    react-native-nitro-modules: ^0.36.5
+    react-native-nitro-sound: ^0.2.21
     react-native-notifications: ^5.1.0
     react-native-otp-entry: ^1.7.3
     react-native-permissions: ^4.1.1
@@ -3894,6 +3895,13 @@ __metadata:
     react-native-windows:
       optional: true
   checksum: e4f0312225b9738d28b075fbfadb0be258ce91610abfd7d5728b06c92113d83de414e9708ae980d605594f037c1e4f68e1078923c34adc42b5c6b712520d65fc
+  languageName: node
+  linkType: hard
+
+"@react-native-community/slider@npm:^5.2.0":
+  version: 5.2.2
+  resolution: "@react-native-community/slider@npm:5.2.2"
+  checksum: d675aae093e1e1e8f81db9d2f773de4958846027c7ffbc469bfbd8527569716df7b828dc5c37cb0deffeceaa18c00b37d7b4c2c0d84b8f31c8eeb448d5e5f769
   languageName: node
   linkType: hard
 
@@ -15309,13 +15317,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-nitro-modules@npm:^0.36.1":
-  version: 0.36.1
-  resolution: "react-native-nitro-modules@npm:0.36.1"
+"react-native-nitro-modules@npm:^0.36.5":
+  version: 0.36.5
+  resolution: "react-native-nitro-modules@npm:0.36.5"
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: f22f81591a1f9bfe53f12616cc4f7abf124eade3f5282e7c79c0d13b8351322bdbe8bae472262945341ade03f5e3e9a9fde27d902363c7d7a3d927bcff96224a
+  checksum: 4739190a0ffd2a11ed8d506b24fb168fd7d5070617a2a0734e5ac8aa26df5d5a49be6c55b7bf94b8eac8439d896c1c6257f3b04cbfbca06d7d8f0c186c97f2e3
+  languageName: node
+  linkType: hard
+
+"react-native-nitro-sound@npm:^0.2.21":
+  version: 0.2.21
+  resolution: "react-native-nitro-sound@npm:0.2.21"
+  dependencies:
+    "@react-native-community/slider": ^5.2.0
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+    react-native-nitro-modules: ">=0.36.5"
+  checksum: 8dfc53dbdbb1cd096b523765b3c962f90e1756642b39872ddefd9375e108bb53ef67072c22934b1c1591de4ee74776bb11b96290dd75af624acb9aeb5701e1af
   languageName: node
   linkType: hard
 
