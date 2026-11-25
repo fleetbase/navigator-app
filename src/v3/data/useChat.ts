@@ -102,6 +102,12 @@ export interface ChatChannelRecord {
     last_message?: ChatMessage | null;
     participants?: ChatParticipant[];
     feed?: FeedEntry[];
+    /**
+     * The channel list carries only each channel's latest entries and says so
+     * here. `useChatChannel` fetches the channel by id, which returns the whole
+     * feed, so an open conversation is never the cut one for long.
+     */
+    feed_truncated?: boolean;
     /** Order-linked threads: `{ storefront_order_uuid, kind, order_public_id }`. */
     meta?: ChatChannelMeta | null;
     updated_at?: string;
