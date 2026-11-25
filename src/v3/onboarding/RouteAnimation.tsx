@@ -69,6 +69,7 @@ export function RouteAnimation({ width, testID = 'route-animation' }: { /** Scre
     const draw = useRef(new Animated.Value(0)).current;
     const drift = useRef(new Animated.Value(0)).current;
     const ping = useRef(new Animated.Value(0)).current;
+    const endPing = useRef(new Animated.Value(0)).current;
     const pops = useRef(WAYPOINTS.map(() => new Animated.Value(0))).current;
     const [still, setStill] = useState(false);
 
@@ -98,14 +99,19 @@ export function RouteAnimation({ width, testID = 'route-animation' }: { /** Scre
                     ])
                 );
                 const pulse = Animated.loop(Animated.timing(ping, { toValue: 1, duration: 2200, easing: Easing.out(Easing.quad), useNativeDriver: true }));
-                running.push(line, landings, sway, pulse);
+                // The finished waypoint starts pulsing once the route has reached it.
+                const arrival = Animated.sequence([
+                    Animated.delay(300 + DRAW_MS + 250),
+                    Animated.loop(Animated.timing(endPing, { toValue: 1, duration: 1900, easing: Easing.out(Easing.quad), useNativeDriver: true })),
+                ]);
+                running.push(line, landings, sway, pulse, arrival);
                 running.forEach((animation) => animation.start());
             });
         return () => {
             cancelled = true;
             running.forEach((animation) => animation.stop());
         };
-    }, [draw, drift, ping, pops]);
+    }, [draw, drift, ping, endPing, pops]);
 
     return (
         <View style={{ width, height, overflow: 'hidden' }} testID={testID} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none">
@@ -165,11 +171,30 @@ export function RouteAnimation({ width, testID = 'route-animation' }: { /** Scre
                 {WAYPOINTS.map((point, index) => {
                     const last = index === WAYPOINTS.length - 1;
                     return last ? (
+                        <React.Fragment key="end">
+                            {still ? null : (
+                                <Animated.View
+                                    style={[
+                                        styles.pin,
+                                        {
+                                            left: point.x * scale - 20,
+                                            top: point.y * scale - 20,
+                                            width: 40,
+                                            height: 40,
+                                            borderRadius: 12,
+                                            backgroundColor: success,
+                                            opacity: endPing.interpolate({ inputRange: [0, 0.05, 1], outputRange: [0, 0.55, 0] }),
+                                            transform: [{ scale: endPing.interpolate({ inputRange: [0, 1], outputRange: [1, 2.3] }) }],
+                                        },
+                                    ]}
+                                />
+                            )}
                         <Pin key={point.label || 'end'} x={point.x} y={point.y} scale={scale} size={40} progress={pops[index]} style={{ borderRadius: 12, backgroundColor: success }}>
                             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#06210F" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
                                 <Path d="M5 12.5l4.5 4.5L19 7.5" />
                             </Svg>
                         </Pin>
+                        </React.Fragment>
                     ) : (
                         <Pin key={point.label} x={point.x} y={point.y} scale={scale} size={32} progress={pops[index]} style={{ borderRadius: 10, backgroundColor: road, borderWidth: 2, borderColor: primary }}>
                             <Body fontSize={16} lineHeight={20} fontWeight="800">
