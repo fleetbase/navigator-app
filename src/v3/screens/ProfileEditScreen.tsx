@@ -1,32 +1,38 @@
 /**
- * Profile edit — R2 frame A7.
+ * Your details — R2 frame A7, in the round 3 look.
  *
- * Only the driver's *own* details. Status, assigned vehicle, vendor and current
- * job are all writable on the same endpoint, and all of them belong to dispatch
- * — a driver setting their own status to "available" from the phone would be
- * editing the dispatcher's view of the fleet.
+ * Only the driver's *own* details. Status, vendor and current job are writable
+ * on the same endpoint, and all of them belong to dispatch — a driver setting
+ * their own status to "available" from the phone would be editing the
+ * dispatcher's view of the fleet.
  *
- * **No password change.** `PUT /v1/drivers/{id}` accepts `password` and sets it
- * without asking for the current one, so putting that in the app would let
- * anyone holding an unlocked handset take the account. It needs a server-side
- * current-password check first.
+ * Three things `PUT /v1/drivers/{id}` and its neighbours allow, all used here:
  *
- * Only changed fields are sent — nothing is required on an update, so an
- * unchanged form makes no request at all.
+ *   - **name, email, phone** go to the linked user; **city, country** to the
+ *     driver (DriverController@update). Nothing is required on an update, so
+ *     only changed fields are sent and an unchanged form makes no request.
+ *   - **photo** as a base64 image becomes the user's avatar.
+ *   - **password** has its own endpoint, `POST drivers/{id}/change-password`,
+ *     which asks for the current one and answers with a new token. The general
+ *     update no longer accepts a password at all, which is why this screen used
+ *     to say it could not be changed.
  */
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView } from '../ui/Scroll';
+import React, { useCallback, useMemo, useState } from 'react';
 import { XStack, YStack } from 'tamagui';
-import { Micro } from '../ui/Text';
-import { Surface } from '../ui/Surface';
+import { Body, Secondary } from '../ui/Text';
 import { Field } from '../ui/Field';
 import { Button } from '../ui/Button';
 import { Banner, ErrorState } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
-import { useUpdateDriver, type DriverRecord, type DriverProfileDraft } from '../data';
-import { useScreenStyle } from '../ui/useScreenStyle';
+import { useUpdateDriver, useUpdateDriverPhoto, useChangePassword, type DriverRecord, type DriverProfileDraft } from '../data';
+import { ACTION_RADIUS, BigButton } from '../onboarding/AuthScaffold';
+import { Avatar, Card, MenuRow, Screen, Section, SmallButton } from './me/parts';
+import type { CapturedPhoto } from '../../components/CameraCapture';
+
+/* VisionCamera initialises its native module at import; load it only when the driver asks for a photo. */
+const lazyCamera = () => require('../../components/CameraCapture').default as React.ComponentType<{ onDone?: (photos: CapturedPhoto[]) => void }>;
 
 /** Deliberately not `status`, `vehicle`, `vendor` or `job` — dispatch owns those. */
 const FIELDS = [
@@ -40,22 +46,32 @@ const FIELDS = [
 type FieldKey = (typeof FIELDS)[number]['key'];
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** The server's own floor (DriverController@changePassword). */
+const MIN_PASSWORD = 8;
 
 export function ProfileEditScreen({
     driverId,
     driver,
     onSaved,
-    onCancel,
+    onNewToken,
 }: {
     driverId?: string;
     driver?: DriverRecord | null;
     onSaved?: (driver: DriverRecord) => void;
+    /** Kept for callers; the title bar's back control is the way out now. */
     onCancel?: () => void;
+    /**
+     * A password change returns a new token and deletes the old one. Whoever
+     * owns the session must take it, so the password section is only offered
+     * when this is wired.
+     */
+    onNewToken?: (token: string) => void;
 }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { save, isSaving, queued, error, clearError } = useUpdateDriver(driverId);
+    const { savePhoto, isSaving: isSavingPhoto, error: photoError } = useUpdateDriverPhoto(driverId);
+    const password = useChangePassword(driverId);
 
     const initial = useMemo<Record<FieldKey, string>>(
         () => ({
@@ -70,6 +86,13 @@ export function ProfileEditScreen({
 
     const [draft, setDraft] = useState<Partial<Record<FieldKey, string>>>({});
     const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
+    const [camera, setCamera] = useState(false);
+    // The photo just saved, shown at once; the driver record refetches on return.
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const [photoQueued, setPhotoQueued] = useState(false);
+    const [changingPassword, setChangingPassword] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
 
     const valueOf = (key: FieldKey) => draft[key] ?? initial[key];
 
@@ -104,46 +127,138 @@ export function ProfileEditScreen({
         if (updated) onSaved?.(updated);
     }, [changed, draft, save, onSaved]);
 
+    const takePhoto = useCallback(
+        async (taken: CapturedPhoto[]) => {
+            setCamera(false);
+            const first = taken.map((p) => p.base64 ?? '').find(Boolean);
+            if (!first) return;
+            const result = await savePhoto(first);
+            if (result === 'queued') setPhotoQueued(true);
+            else if (result) setPhotoUrl(result.photo_url ?? result.avatar_url ?? null);
+        },
+        [savePhoto]
+    );
+
+    const passwordReady = currentPassword.length > 0 && newPassword.length >= MIN_PASSWORD;
+    const submitPassword = useCallback(async () => {
+        const token = await password.change(currentPassword, newPassword);
+        if (token) {
+            setCurrentPassword('');
+            setNewPassword('');
+            setChangingPassword(false);
+            onNewToken?.(token);
+        }
+    }, [password, currentPassword, newPassword, onNewToken]);
+
     return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="profile-edit">
+        <Screen
+            testID="profile-edit"
+            footer={
+                <BigButton disabled={changed.length === 0 || invalid} loading={isSaving} onPress={submit} testID="profile-save">
+                    {t('profile.save')}
+                </BigButton>
+            }
+        >
             {!isOnline ? <Banner tone="neutral" message={t('profile.offlineNotice')} testID="profile-offline" /> : null}
 
-            <Surface padded>
-                <YStack gap={space[4]}>
-                    {FIELDS.map((field) => (
-                        <Field
-                            key={field.key}
-                            label={t(field.labelKey)}
-                            value={valueOf(field.key)}
-                            onChangeText={(text) => setDraft((d) => ({ ...d, [field.key]: text }))}
-                            onBlur={() => setTouched((s) => ({ ...s, [field.key]: true }))}
-                            keyboardType={field.keyboard}
-                            autoCapitalize={'autoCapitalize' in field ? field.autoCapitalize : undefined}
-                            tabular={'tabular' in field ? field.tabular : undefined}
-                            error={errorFor(field.key)}
-                            hint={'hintKey' in field ? t(field.hintKey) : undefined}
-                            testID={`input-${field.key}`}
-                        />
-                    ))}
+            <XStack alignItems="center" gap={14} testID="profile-photo">
+                <Avatar url={photoUrl ?? driver?.photo_url ?? driver?.avatar_url} name={valueOf('name')} size={76} />
+                <YStack flex={1} gap={space[2]} alignItems="flex-start">
+                    {/* A photo is megabytes; it is only offered with a connection. */}
+                    {isOnline ? (
+                        <SmallButton label={isSavingPhoto ? t('common.saving') : camera ? t('common.cancel') : t('me.profile.changePhoto')} onPress={isSavingPhoto ? undefined : () => setCamera((open) => !open)} testID="profile-change-photo" />
+                    ) : (
+                        <Secondary fontSize={13}>{t('me.profile.photoNeedsSignal')}</Secondary>
+                    )}
+                    {photoError ? (
+                        <Secondary fontSize={13} tone="danger" testID="profile-photo-error">
+                            {t('me.profile.photoFailed')}
+                        </Secondary>
+                    ) : null}
+                    {photoQueued ? <Secondary fontSize={13}>{t('me.savedOnPhone')}</Secondary> : null}
                 </YStack>
-            </Surface>
+            </XStack>
 
-            {/* Says what this screen will not do, and why, rather than staying silent. */}
-            <Micro testID="dispatch-owned">{t('profile.dispatchOwned')}</Micro>
-            <Micro testID="no-password">{t('profile.noPasswordChange')}</Micro>
+            {camera
+                ? (() => {
+                      const Camera = lazyCamera();
+                      return <Camera onDone={(taken) => void takePhoto(taken)} />;
+                  })()
+                : null}
+
+            <Card gap={space[4]}>
+                {FIELDS.map((field) => (
+                    <Field
+                        key={field.key}
+                        label={t(field.labelKey)}
+                        value={valueOf(field.key)}
+                        onChangeText={(text) => setDraft((d) => ({ ...d, [field.key]: text }))}
+                        onBlur={() => setTouched((s) => ({ ...s, [field.key]: true }))}
+                        keyboardType={field.keyboard}
+                        autoCapitalize={'autoCapitalize' in field ? field.autoCapitalize : undefined}
+                        tabular={'tabular' in field ? field.tabular : undefined}
+                        error={errorFor(field.key)}
+                        hint={'hintKey' in field ? t(field.hintKey) : undefined}
+                        testID={`input-${field.key}`}
+                    />
+                ))}
+            </Card>
 
             {queued ? <Banner tone="neutral" message={t('profile.queued')} testID="profile-queued" /> : null}
             {error ? <ErrorState title={t('profile.saveFailed')} body={error} onRetry={clearError} retryLabel={t('common.dismiss')} testID="profile-error" /> : null}
 
-            <XStack gap={space[2]}>
-                <Button flex={1} variant="ghost" onPress={onCancel} testID="profile-cancel">
-                    {t('common.cancel')}
-                </Button>
-                <Button flex={2} disabled={changed.length === 0 || invalid} loading={isSaving} onPress={submit} testID="profile-save">
-                    {t('profile.save')}
-                </Button>
-            </XStack>
-        </ScrollView>
+            {/* Never queued: a password change that lands an hour later, on a handset someone else may be holding by then, is not what was asked for. */}
+            {onNewToken && isOnline ? (
+                <Section title={t('me.profile.security')}>
+                    {changingPassword ? (
+                        <Card gap={space[4]} testID="profile-password">
+                            <Field label={t('me.profile.currentPassword')} value={currentPassword} onChangeText={setCurrentPassword} secure autoCapitalize="none" autoComplete="current-password" testID="input-current-password" />
+                            <Field
+                                label={t('me.profile.newPassword')}
+                                value={newPassword}
+                                onChangeText={setNewPassword}
+                                secure
+                                autoCapitalize="none"
+                                autoComplete="off"
+                                hint={t('me.profile.passwordHint', { count: MIN_PASSWORD })}
+                                testID="input-new-password"
+                            />
+                            {password.error ? <Banner tone="danger" message={password.error === 'no-token' ? t('me.profile.passwordFailed') : password.error} testID="profile-password-error" /> : null}
+                            <Secondary fontSize={13} lineHeight={18}>
+                                {t('me.profile.passwordSignsOthersOut')}
+                            </Secondary>
+                            <XStack gap={space[2]}>
+                                <Button
+                                    flex={1}
+                                    height={52}
+                                    borderRadius={ACTION_RADIUS}
+                                    variant="secondary"
+                                    onPress={() => {
+                                        setChangingPassword(false);
+                                        password.clearError();
+                                    }}
+                                    testID="profile-password-cancel"
+                                >
+                                    {t('common.cancel')}
+                                </Button>
+                                <Button flex={1} height={52} borderRadius={ACTION_RADIUS} disabled={!passwordReady} loading={password.isSaving} onPress={submitPassword} testID="profile-password-save">
+                                    {t('me.profile.changePassword')}
+                                </Button>
+                            </XStack>
+                        </Card>
+                    ) : (
+                        <Card flush>
+                            <MenuRow first height={60} icon="lock" label={t('me.profile.changePassword')} onPress={() => setChangingPassword(true)} testID="profile-change-password" />
+                        </Card>
+                    )}
+                </Section>
+            ) : null}
+
+            {/* Says what this screen will not do, and why, rather than staying silent. */}
+            <Body fontSize={13} lineHeight={18} tone="secondary" testID="dispatch-owned">
+                {t('me.profile.dispatchOwned')}
+            </Body>
+        </Screen>
     );
 }
 

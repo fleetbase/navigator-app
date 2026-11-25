@@ -1,5 +1,5 @@
 /**
- * Sync queue — gap I1.
+ * Waiting to send — design round 3 (`Sync.dc.html`), gap I1.
  *
  * The queue is the app's promise that work done without signal is not lost.
  * This screen is where that promise is auditable: what is waiting, what failed
@@ -14,20 +14,23 @@
  * **A failed item is not the same as a waiting one.** Pending work needs
  * nothing but signal. Failed work has been refused eight times or rejected
  * outright, and will not move on its own — those are the only ones worth the
- * driver's attention, so they are listed first and carry the reason.
+ * driver's attention, so they are listed first, carry the reason, and are
+ * marked with a square "!" where waiting ones get a round "…".
+ *
+ * The mockup's third figure, "last sent 14:21", is not here: the queue does not
+ * record when it last got something through, and a made-up time would be worse
+ * than none.
  */
 import { useCallback, useState } from 'react';
-import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Micro, Secondary } from '../ui/Text';
-import { Surface, Divider } from '../ui/Surface';
+import { Body, Secondary } from '../ui/Text';
 import { Button } from '../ui/Button';
-import { Banner, EmptyState } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useQueue, mutationQueue, type MutationQueue, type QueuedMutation } from '../api';
-import { useScreenStyle } from '../ui/useScreenStyle';
+import { ACTION_RADIUS, BigButton } from '../onboarding/AuthScaffold';
+import { Card, CARD_PAD, Icon, Screen, Section, SmallButton, Tile } from './me/parts';
 
 function relativeAge(createdAt: number, now: number, t: (k: string, o?: Record<string, unknown>) => string): string {
     const minutes = Math.max(0, Math.round((now - createdAt) / 60000));
@@ -41,66 +44,70 @@ function relativeAge(createdAt: number, now: number, t: (k: string, o?: Record<s
 function QueueRow({
     item,
     now,
+    first,
     onDiscard,
     t,
 }: {
     item: QueuedMutation;
     now: number;
+    first: boolean;
     onDiscard: (item: QueuedMutation) => void;
     t: (k: string, o?: Record<string, unknown>) => string;
 }) {
     const failed = item.status === 'failed';
     // The key is stored, not the translated string — see describeMutation.
     const label = item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label;
+    const state = failed ? t('sync.failed') : item.status === 'syncing' ? t('sync.sending') : t('sync.waiting');
 
     return (
-        <YStack padding={space[3]} gap={space[2]} testID={`queued-${item.id}`}>
-            <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                <Body fontSize={15} fontWeight="700" flex={1} numberOfLines={1}>
+        <XStack
+            alignItems="center"
+            gap={space[3]}
+            minHeight={68}
+            paddingVertical={10}
+            paddingHorizontal={CARD_PAD}
+            borderTopWidth={first ? 0 : 1}
+            borderTopColor="$border"
+            backgroundColor={failed ? '$dangerFill' : '$transparent'}
+            testID={`queued-${item.id}`}
+        >
+            {/* Square with "!" for the ones that need the driver, round with "…" for the ones that only need signal. */}
+            <YStack width={32} height={32} borderRadius={failed ? 6 : 16} backgroundColor={failed ? '$danger' : '$surfaceRaised'} alignItems="center" justifyContent="center">
+                <Body fontSize={15} fontWeight="800" color={failed ? '$background' : '$textSecondary'}>
+                    {failed ? '!' : '…'}
+                </Body>
+            </YStack>
+            <YStack flex={1} gap={2} minWidth={0}>
+                <Body fontSize={15} fontWeight="800" numberOfLines={1}>
                     {label}
                 </Body>
-                {failed ? (
-                    <Micro tone="danger" testID={`failed-${item.id}`}>
-                        {t('sync.failed')}
-                    </Micro>
-                ) : item.status === 'syncing' ? (
-                    <Micro tone="brand">{t('sync.sending')}</Micro>
-                ) : (
-                    <Micro>{t('sync.waiting')}</Micro>
-                )}
-            </XStack>
-
-            <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                <Micro>{relativeAge(item.createdAt, now, t)}</Micro>
-                {item.attempts > 0 ? (
-                    <Micro tabular testID={`attempts-${item.id}`}>
-                        {t('sync.attempts', { count: item.attempts })}
-                    </Micro>
-                ) : null}
-            </XStack>
-
-            {/* Only failed items carry a reason worth reading. */}
-            {failed && item.lastError ? (
-                <Secondary fontSize={13} testID={`reason-${item.id}`}>
-                    {item.lastStatus ? t('sync.rejected', { status: item.lastStatus, message: item.lastError }) : item.lastError}
+                <Secondary fontSize={13} tabular numberOfLines={1}>
+                    <Secondary fontSize={13} fontWeight="700" tone={failed ? 'danger' : item.status === 'syncing' ? 'brand' : 'secondary'} testID={failed ? `failed-${item.id}` : undefined}>
+                        {state}
+                    </Secondary>
+                    {' · '}
+                    {relativeAge(item.createdAt, now, t)}
+                    {item.attempts > 0 ? ' · ' : ''}
+                    {item.attempts > 0 ? <Secondary fontSize={13} testID={`attempts-${item.id}`}>{t('sync.attempts', { count: item.attempts })}</Secondary> : null}
                 </Secondary>
-            ) : null}
-
-            {failed ? (
-                <Button variant="ghost" onPress={() => onDiscard(item)} testID={`discard-${item.id}`}>
-                    {t('sync.discard')}
-                </Button>
-            ) : null}
-        </YStack>
+                {/* Only failed items carry a reason worth reading. */}
+                {failed && item.lastError ? (
+                    <Secondary fontSize={13} lineHeight={18} testID={`reason-${item.id}`}>
+                        {item.lastStatus ? t('sync.rejected', { status: item.lastStatus, message: item.lastError }) : item.lastError}
+                    </Secondary>
+                ) : null}
+            </YStack>
+            {failed ? <SmallButton tone="danger" height={40} label={t('sync.discard')} onPress={() => onDiscard(item)} testID={`discard-${item.id}`} /> : null}
+        </XStack>
     );
 }
 
 export function SyncQueueScreen({ queue = mutationQueue }: { queue?: MutationQueue }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const snapshot = useQueue(queue);
     const [confirming, setConfirming] = useState<QueuedMutation | null>(null);
+
     // Captured per render rather than ticking: the ages are coarse, and a timer
     // here would re-render the whole list every second for no benefit.
     const now = Date.now();
@@ -126,64 +133,104 @@ export function SyncQueueScreen({ queue = mutationQueue }: { queue?: MutationQue
 
     if (items.length === 0) {
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="sync-empty">
-                <EmptyState title={t('sync.emptyTitle')} body={t('sync.emptyBody')} />
-            </YStack>
+            <Screen testID="sync-empty">
+                <YStack flex={1} alignItems="center" justifyContent="center" gap={space[3]} paddingVertical={space[6]}>
+                    <YStack width={72} height={72} borderRadius={36} backgroundColor="$successFill" borderWidth={1} borderColor="$successBorder" alignItems="center" justifyContent="center">
+                        <Icon name="tick" size={32} color="successText" strokeWidth={3} />
+                    </YStack>
+                    <Body fontSize={20} fontWeight="800" center>
+                        {t('sync.emptyTitle')}
+                    </Body>
+                    <Secondary fontSize={15} lineHeight={22} center>
+                        {t('sync.emptyBody')}
+                    </Secondary>
+                </YStack>
+            </Screen>
         );
     }
 
-    return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="sync-queue">
-            {!isOnline ? <Banner tone="neutral" message={t('sync.offlineNotice')} testID="sync-offline" /> : null}
+    const headline = !isOnline ? t('me.sync.offlineTitle') : snapshot.isFlushing ? t('sync.sendingNow') : snapshot.failedCount > 0 ? t('me.sync.needsYouTitle') : t('me.sync.waitingTitle');
+    const body = !isOnline ? t('me.sync.offlineBody') : snapshot.failedCount > 0 && !snapshot.isFlushing ? t('me.sync.needsYouBody') : t('sync.explainer');
 
-            <YStack gap={space[1]}>
-                <Caption testID="sync-summary">
-                    {t('sync.summary', { pending: snapshot.pendingCount, failed: snapshot.failedCount })}
-                </Caption>
-                {snapshot.isFlushing ? <Micro tone="brand" testID="sync-flushing">{t('sync.sendingNow')}</Micro> : null}
-            </YStack>
+    return (
+        <Screen
+            testID="sync-queue"
+            footer={
+                <>
+                    <BigButton variant={isOnline ? 'primary' : 'secondary'} disabled={!isOnline || snapshot.isFlushing} loading={isOnline && snapshot.isFlushing} onPress={retry} testID="sync-retry">
+                        {isOnline ? t('me.sync.sendNow') : t('me.sync.sendNowNoSignal')}
+                    </BigButton>
+                    <Secondary fontSize={13} center testID="sync-explainer">
+                        {t('sync.explainer')}
+                    </Secondary>
+                </>
+            }
+        >
+            <Card flexDirection="row" alignItems="center" gap={14} paddingVertical={space[4]} testID={!isOnline ? 'sync-offline' : 'sync-status'}>
+                {/* Signal bars: one lit when there is none, all four when there is. */}
+                <XStack width={52} height={52} borderRadius={16} backgroundColor="$surfaceRaised" alignItems="flex-end" justifyContent="center" gap={4} paddingBottom={14}>
+                    {[8, 14, 20, 26].map((height, i) => (
+                        <YStack key={height} width={5} height={height} borderRadius={2} backgroundColor={isOnline || i === 0 ? '$textSecondary' : '$border'} />
+                    ))}
+                </XStack>
+                <YStack flex={1} gap={2}>
+                    <Body fontSize={18} fontWeight="800" testID={snapshot.isFlushing ? 'sync-flushing' : undefined}>
+                        {headline}
+                    </Body>
+                    <Secondary fontSize={14} lineHeight={20}>
+                        {body}
+                    </Secondary>
+                </YStack>
+            </Card>
+
+            <XStack gap={space[2]} testID="sync-summary">
+                <Tile>
+                    <Body fontSize={24} fontWeight="800" tabular>
+                        {snapshot.pendingCount}
+                    </Body>
+                    <Secondary fontSize={12}>{t('me.sync.waiting')}</Secondary>
+                </Tile>
+                {/* Absent, not zero, when nothing needs the driver. */}
+                {snapshot.failedCount > 0 ? (
+                    <Tile tone="danger">
+                        <Body fontSize={24} fontWeight="800" tone="danger" tabular>
+                            {snapshot.failedCount}
+                        </Body>
+                        <Secondary fontSize={12}>{t('me.sync.needsYou')}</Secondary>
+                    </Tile>
+                ) : null}
+            </XStack>
 
             {confirming ? (
-                <Surface padded testID="discard-confirm">
-                    <YStack gap={space[3]}>
-                        <Body fontSize={15} fontWeight="700">
-                            {t('sync.discardTitle')}
-                        </Body>
-                        {/* Names the work, because "Clear" tells the driver nothing. */}
-                        <Secondary fontSize={13}>
-                            {t('sync.discardBody', {
-                                label: confirming.labelKey ? t(confirming.labelKey, { defaultValue: confirming.label }) : confirming.label,
-                            })}
-                        </Secondary>
-                        <XStack gap={space[2]}>
-                            <Button flex={1} variant="ghost" onPress={() => setConfirming(null)} testID="discard-cancel">
-                                {t('common.cancel')}
-                            </Button>
-                            <Button flex={1} variant="destructive" onPress={() => discard(confirming)} testID="discard-confirm-yes">
-                                {t('sync.discardConfirm')}
-                            </Button>
-                        </XStack>
-                    </YStack>
-                </Surface>
+                <Card gap={space[3]} testID="discard-confirm">
+                    <Body fontSize={17} fontWeight="800">
+                        {t('sync.discardTitle')}
+                    </Body>
+                    {/* Names the work, because "Clear" tells the driver nothing. */}
+                    <Secondary fontSize={14} lineHeight={20}>
+                        {t('sync.discardBody', {
+                            label: confirming.labelKey ? t(confirming.labelKey, { defaultValue: confirming.label }) : confirming.label,
+                        })}
+                    </Secondary>
+                    <XStack gap={space[2]}>
+                        <Button flex={1} height={52} borderRadius={ACTION_RADIUS} variant="secondary" onPress={() => setConfirming(null)} testID="discard-cancel">
+                            {t('common.cancel')}
+                        </Button>
+                        <Button flex={1} height={52} borderRadius={ACTION_RADIUS} variant="destructive" onPress={() => discard(confirming)} testID="discard-confirm-yes">
+                            {t('sync.discardConfirm')}
+                        </Button>
+                    </XStack>
+                </Card>
             ) : null}
 
-            <Surface testID="sync-items">
-                {items.map((item, i) => (
-                    <YStack key={item.id}>
-                        {i > 0 ? <Divider /> : null}
-                        <QueueRow item={item} now={now} onDiscard={setConfirming} t={t} />
-                    </YStack>
-                ))}
-            </Surface>
-
-            {snapshot.failedCount > 0 ? (
-                <Button fullWidth disabled={!isOnline || snapshot.isFlushing} onPress={retry} testID="sync-retry">
-                    {t('sync.retryAll')}
-                </Button>
-            ) : null}
-
-            <Micro testID="sync-explainer">{t('sync.explainer')}</Micro>
-        </ScrollView>
+            <Section title={t('me.sync.onThisPhone')}>
+                <Card flush testID="sync-items">
+                    {items.map((item, i) => (
+                        <QueueRow key={item.id} item={item} now={now} first={i === 0} onDiscard={setConfirming} t={t} />
+                    ))}
+                </Card>
+            </Section>
+        </Screen>
     );
 }
 

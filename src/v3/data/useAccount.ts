@@ -22,6 +22,7 @@ export interface VehicleSummary {
     year?: string | number | null;
     /** Carried by the driver's embedded vehicle on the live API; seeds the odometer prompt. */
     odometer?: number | string | null;
+    status?: string | null;
 }
 
 export interface DriverRecord {
@@ -43,6 +44,8 @@ export interface DriverRecord {
     city?: string | null;
     country?: string | null;
     currency?: string | null;
+    /** From the linked user; the Driver resource reads it through. */
+    timezone?: string | null;
 }
 
 export interface OrganizationRecord {
@@ -288,4 +291,123 @@ export function useUpdateDriver(driverId?: string) {
     );
 
     return { save, isSaving, queued, error, clearError: useCallback(() => setError(null), []) };
+}
+
+/**
+ * What the organisation asks of a driver it has just taken on.
+ *
+ * `GET /v1/onboard/driver-onboard-settings/{company}` answers a driver token as
+ * well as the platform one (routes.php, the `fleetbase.api-or-platform` group).
+ * The only part the account area can act on is the list of documents: a driver
+ * who signed up with a join code is held at `status: pending` until the
+ * organisation has seen them (DriverOnboardController@create).
+ */
+export interface OnboardingSummary {
+    documents_required?: boolean;
+    documents?: string[];
+    self_sign_up?: boolean;
+    invite_only?: boolean;
+}
+
+export function useOnboardingSummary(organizationId?: string | null, enabled = true) {
+    const { adapter } = useFleetbase();
+    const [summary, setSummary] = useState<OnboardingSummary | null>(null);
+
+    useEffect(() => {
+        if (!organizationId || !enabled) return;
+        let alive = true;
+        adapter
+            .get(`onboard/driver-onboard-settings/${organizationId}`)
+            .then((raw) => {
+                const body = ((raw as { data?: unknown })?.data ?? raw) as { onboarding?: OnboardingSummary } | null;
+                if (alive) setSummary(body?.onboarding ?? null);
+            })
+            // Supporting detail: without it the notice is simply not shown.
+            .catch(() => {
+                if (alive) setSummary(null);
+            });
+        return () => {
+            alive = false;
+        };
+    }, [adapter, organizationId, enabled]);
+
+    return summary;
+}
+
+/**
+ * Sets the driver's photo.
+ *
+ * `PUT /v1/drivers/{id}` takes `photo` as a base64 data URI, stores the file
+ * and points the linked user's avatar at it (DriverController@update).
+ *
+ * The screen offers this only with a connection: the picture is megabytes of
+ * base64, and a profile photo is not worth holding that in the offline queue
+ * for. If signal drops mid-request the adapter still queues it, which is why
+ * `'queued'` is a possible answer.
+ */
+export function useUpdateDriverPhoto(driverId?: string) {
+    const { adapter } = useFleetbase();
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const savePhoto = useCallback(
+        async (base64: string): Promise<DriverRecord | 'queued' | null> => {
+            if (!driverId || !base64) return null;
+            setIsSaving(true);
+            setError(null);
+            try {
+                const raw = await adapter.put(`drivers/${driverId}`, { photo: `data:image/jpeg;base64,${base64}` });
+                if (isQueuedAck(raw)) return 'queued';
+                return (((raw as { data?: unknown })?.data ?? raw) ?? null) as DriverRecord | null;
+            } catch (err) {
+                setError((err as Error).message);
+                return null;
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [adapter, driverId]
+    );
+
+    return { savePhoto, isSaving, error };
+}
+
+/**
+ * Changes the driver's password, proving the current one.
+ *
+ * `POST /v1/drivers/{id}/change-password` (DriverController@changePassword)
+ * checks `current_password`, sets `password` (8 characters or more), signs every
+ * other device out and answers with a **new token** for this one. The caller
+ * has to hand that token to whoever owns the session, or the very next request
+ * would be made with a token the server has just deleted.
+ */
+export function useChangePassword(driverId?: string) {
+    const { adapter } = useFleetbase();
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const change = useCallback(
+        async (currentPassword: string, password: string): Promise<string | null> => {
+            if (!driverId) return null;
+            setIsSaving(true);
+            setError(null);
+            try {
+                const raw = await adapter.post(`drivers/${driverId}/change-password`, { current_password: currentPassword, password, password_confirmation: password });
+                const body = ((raw as { data?: unknown })?.data ?? raw) as { token?: string } | null;
+                if (!body?.token) {
+                    setError('no-token');
+                    return null;
+                }
+                return body.token;
+            } catch (err) {
+                setError((err as Error).message);
+                return null;
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [adapter, driverId]
+    );
+
+    return { change, isSaving, error, clearError: useCallback(() => setError(null), []) };
 }

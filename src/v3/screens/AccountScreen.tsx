@@ -1,61 +1,74 @@
 /**
- * Account home — from the design prototype's Account list.
+ * Me — design round 3 (`Me.dc.html`).
  *
- * This replaces the placeholder that Fuel log and Issues were reached through,
- * so it is also the hub for everything filed under Account.
+ * Who the driver is, who they are driving for, what they are driving, and the
+ * way into everything filed under their account. It is a root tab screen, so it
+ * draws its own header and leaves room for the floating tab bar.
  *
- * Two rows the prototype shows are deliberately absent:
+ * What the mockup shows and this does not:
  *
- *   - **Earnings** ("£1,284 this wk"). No earnings, payout or rate data exists
- *     for a driver anywhere in FleetOps. Showing a zero would be a lie and
- *     showing a placeholder would imply it is coming.
- *   - **Licence details.** The fields exist (`drivers_license_number`,
- *     `license_expiry`) but are null on the instance, so the row appears only
- *     when there is something in it.
+ *   - **The day's figures** (waypoints done, distance driven, time on duty).
+ *     Those belong to Home, which owns the data for them; nothing in the
+ *     account endpoints carries a distance driven or a time on duty.
+ *   - **Documents.** The organisation can name documents it wants from a new
+ *     driver, but the server has nowhere for the driver to send them — see the
+ *     notice below, which says who to give them to instead of offering an
+ *     upload that nobody would receive.
+ *
+ * Rows only appear when they lead somewhere real: Earnings is absent unless the
+ * organisation has it on, and the switch control is absent for a driver who
+ * belongs to one organisation.
  */
 import { useState } from 'react';
-import { Image } from 'react-native';
-import { ScrollView } from '../ui/Scroll';
+import { Image, RefreshControl } from 'react-native';
 import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
-import { Identifier } from '../ui/Identifier';
-import { StatusPill } from '../ui/StatusPill';
-import { Surface, Divider } from '../ui/Surface';
-import { Button } from '../ui/Button';
+import { ScrollView } from '../ui/Scroll';
+import { Body, Display, Secondary } from '../ui/Text';
 import { Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
-import { space, radius } from '../theme/tokens';
+import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useQueue, useFleetbase } from '../api';
-import { useDriver, useCurrentOrganization, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
+import { useDriver, useCurrentOrganization, useDriverOrganizations, useOnboardingSummary, useIssues, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
+import { vehiclePhotoOf } from '../data/useVehicle';
 import { useScreenStyle } from '../ui/useScreenStyle';
-import { chevron } from '../i18n/direction';
 import { getBuildBranding } from '../branding/build-branding';
 import { customAccountLinks } from '../extensions/build-navigation';
+import { useTabBarSpace } from '../navigation/TabBar';
+import { ACTION_RADIUS, BigButton } from '../onboarding/AuthScaffold';
+import { Button } from '../ui/Button';
+import { Avatar, Card, Chevron, Icon, MenuRow, Plate, SectionLabel, SmallButton, type IconName } from './me/parts';
+import { isOpenIssue } from './me/issueTaxonomy';
 
 export interface AccountLink {
     route: string;
     labelKey: string;
-    /** Shown in place of a chevron when the destination is not built yet. */
+    /** Set on an entry whose destination is not built; such an entry is left out of the menu. */
     blockedKey?: string;
     /** Organisation switch that lifts `blockedKey` when on. */
     feature?: 'earnings';
+    icon?: IconName;
 }
 
-/** Everything filed under Account, built or not. */
+/**
+ * Everything filed under Me. Profile and My vehicle are in the list — so a
+ * brand can still hide them by route name — but are drawn as the Edit control
+ * and the vehicle card rather than as rows.
+ */
 const LINKS: AccountLink[] = [
-    { route: 'ProfileEdit', labelKey: 'account.profile' },
-    { route: 'FuelLog', labelKey: 'account.fuelLog' },
-    { route: 'Issues', labelKey: 'account.issues' },
-    { route: 'MyVehicle', labelKey: 'account.myVehicle' },
-    { route: 'Earnings', labelKey: 'account.earnings', blockedKey: 'account.notEnabled', feature: 'earnings' },
-    { route: 'Inspection', labelKey: 'account.inspection' },
+    { route: 'ProfileEdit', labelKey: 'account.profile', icon: 'person' },
+    { route: 'MyVehicle', labelKey: 'account.myVehicle', icon: 'vehicle' },
+    { route: 'FuelLog', labelKey: 'account.fuelLog', icon: 'fuel' },
+    { route: 'Issues', labelKey: 'me.issues', icon: 'issue' },
+    { route: 'Inspection', labelKey: 'me.inspection', icon: 'check' },
+    { route: 'SyncQueue', labelKey: 'me.waitingToSend', icon: 'sync' },
+    { route: 'Earnings', labelKey: 'account.earnings', blockedKey: 'account.notEnabled', feature: 'earnings', icon: 'wallet' },
+    // No screen exists for this and the server has no upload to build one on.
     { route: 'Documents', labelKey: 'account.documents', blockedKey: 'account.notEnabled' },
-    { route: 'Permissions', labelKey: 'account.permissions' },
-    { route: 'SyncQueue', labelKey: 'account.syncQueue' },
-    { route: 'Settings', labelKey: 'account.settings' },
-    { route: 'Help', labelKey: 'account.help' },
+    { route: 'Permissions', labelKey: 'me.permissions', icon: 'pin' },
+    { route: 'Settings', labelKey: 'account.settings', icon: 'settings' },
+    { route: 'Help', labelKey: 'me.help', icon: 'help' },
 ];
 
 /**
@@ -79,18 +92,9 @@ export function accountLinks(
 }
 
 const MENU = accountLinks();
-
-function Avatar({ url, name }: { url?: string | null; name?: string }) {
-    if (url) {
-        return <Image source={{ uri: url }} style={{ width: 56, height: 56, borderRadius: radius.pill }} />;
-    }
-    const initial = (name ?? '?').trim().charAt(0).toUpperCase() || '?';
-    return (
-        <YStack width={56} height={56} borderRadius={radius.pill} backgroundColor="$primary" alignItems="center" justifyContent="center">
-            <Heading color="$onPrimary">{initial}</Heading>
-        </YStack>
-    );
-}
+/** Drawn as their own controls, not as rows. */
+const NOT_ROWS = new Set(['ProfileEdit', 'MyVehicle']);
+const has = (route: string) => MENU.some((link) => link.route === route);
 
 export function AccountScreen({
     driverId,
@@ -99,19 +103,26 @@ export function AccountScreen({
     onNavigate,
     onSignOut,
     features,
+    appVersion,
+    host,
 }: {
     driverId?: string;
     driver?: DriverRecord | null;
     reloadToken?: number;
     onNavigate?: (route: string) => void;
     onSignOut?: () => void;
-    /** Organisation switches; a gated row loses its "not enabled" mark when on. */
+    /** Organisation switches; a gated row appears only when its switch is on. */
     features?: { earnings?: boolean };
+    /** The native build's version, shown under sign out. */
+    appVersion?: string;
+    /** The server this build talks to. */
+    host?: string;
 }) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
-    const { isOnline } = useSync();
-    const { driver, isLoading, isBlocked, error, retry } = useDriver(driverId, seed, reloadToken);
+    const tabBarSpace = useTabBarSpace();
+    const { isOnline, queuedCount } = useSync();
+    const { driver, state, isLoading, isBlocked, error, retry } = useDriver(driverId, seed, reloadToken);
     const [confirmingSignOut, setConfirmingSignOut] = useState(false);
     // Everything still waiting to reach the server, failed items included —
     // a parked item is exactly the kind the driver would want to know about.
@@ -119,15 +130,23 @@ export function AccountScreen({
     // instance) supplies its own, and reading the wrong one would count zero.
     const { queue } = useFleetbase();
     const { pendingCount, failedCount } = useQueue(queue);
-    const waiting = pendingCount + failedCount;
+    const waiting = Math.max(pendingCount + failedCount, queuedCount);
     const { organization } = useCurrentOrganization(reloadToken);
+    // Only to know whether there is anything to switch to.
+    const { organizations } = useDriverOrganizations(driverId, reloadToken);
+    const { issues } = useIssues(driverId, reloadToken);
+    const openIssues = (issues ?? []).filter(isOpenIssue).length;
+    // A driver who joined with a code is held at `pending` until the
+    // organisation has seen the documents it asks for; only then is this worth asking.
+    const onboarding = useOnboardingSummary(organization?.id ?? driver?.company, driver?.status === 'pending');
 
     if (isLoading) {
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="account-loading">
-                <Skeleton height={96} />
-                <Skeleton height={72} />
-                <Skeleton height={240} />
+            <YStack flex={1} backgroundColor="$background" paddingHorizontal={space[4]} paddingTop={space[2]} gap={14} testID="account-loading">
+                <Skeleton height={68} borderRadius={18} />
+                <Skeleton height={64} borderRadius={18} />
+                <Skeleton height={96} borderRadius={18} />
+                <Skeleton height={240} borderRadius={18} />
             </YStack>
         );
     }
@@ -141,118 +160,173 @@ export function AccountScreen({
      */
     const detailsUnavailable = isBlocked || !driver;
     const vehicle = driver ? vehicleOf(driver) : undefined;
+    const vehiclePhoto = vehiclePhotoOf(vehicle);
     const vehicleDetail = vehicleDescription(vehicle);
     const licence = driver?.drivers_license_number;
+    const organizationName = organization?.name ?? driver?.company_name;
+    const canSwitch = (organizations?.length ?? 0) > 1;
+    const documents = driver?.status === 'pending' && onboarding?.documents_required ? (onboarding.documents ?? []) : [];
+
+    const valueFor = (route: string): { value?: string; tone?: 'warning' | 'danger' } => {
+        if (route === 'SyncQueue') return waiting > 0 ? { value: t('me.waitingCount', { count: waiting }), tone: failedCount > 0 ? 'danger' : 'warning' } : { value: t('me.allSent') };
+        if (route === 'Issues' && openIssues > 0) return { value: t('me.openCount', { count: openIssues }), tone: 'warning' };
+        return {};
+    };
+
+    const rows = MENU.filter((link) => !NOT_ROWS.has(link.route)).filter((link) => !link.blockedKey || (link.feature && features?.[link.feature]));
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="account-screen">
+        <ScrollView
+            style={screen}
+            contentContainerStyle={{ paddingHorizontal: space[4], paddingTop: space[2], paddingBottom: tabBarSpace, gap: 14 }}
+            refreshControl={<RefreshControl refreshing={state === 'loading' && !!driver} onRefresh={retry} />}
+            testID="account-screen"
+        >
+            <XStack alignItems="center" justifyContent="space-between" gap={space[3]} minHeight={44}>
+                <Display fontSize={30} lineHeight={36} fontWeight="800" letterSpacing={-0.4} testID="account-title">
+                    {t('me.title')}
+                </Display>
+                {onNavigate && driver && has('ProfileEdit') ? <SmallButton label={t('common.edit')} onPress={() => onNavigate('ProfileEdit')} testID="link-ProfileEdit" /> : null}
+            </XStack>
 
             {detailsUnavailable || !driver ? (
-                <Surface padded testID="account-error">
+                <Card testID="account-error">
                     <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="account-error" />
-                </Surface>
+                </Card>
             ) : (
                 <>
-            <Surface hero padded testID="account-identity">
-                <XStack gap={space[3]} alignItems="center">
-                    <Avatar url={driver.photo_url ?? driver.avatar_url} name={driver.name} />
-                    <YStack flex={1} gap={2}>
-                        <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                            <Body fontSize={17} fontWeight="800" flex={1} numberOfLines={1}>
+                    <XStack alignItems="center" gap={14} testID="account-identity">
+                        <Avatar url={driver.photo_url ?? driver.avatar_url} name={driver.name} testID="account-avatar" />
+                        <YStack flex={1} gap={2} minWidth={0}>
+                            <Body fontSize={24} lineHeight={28} fontWeight="800" letterSpacing={-0.2} numberOfLines={2}>
                                 {driver.name ?? t('account.unnamed')}
                             </Body>
-                            {driver.status ? (
-                                <StatusPill status={driver.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} testID="driver-status" />
+                            {driver.phone ? (
+                                <Secondary fontSize={14} tabular numberOfLines={1}>
+                                    {driver.phone}
+                                </Secondary>
                             ) : null}
-                        </XStack>
-                        {driver.email ? <Micro numberOfLines={1}>{driver.email}</Micro> : null}
-                        {driver.phone ? <Micro tabular>{driver.phone}</Micro> : null}
-                    </YStack>
-                </XStack>
+                            {driver.email ? (
+                                <Secondary fontSize={14} numberOfLines={1}>
+                                    {driver.email}
+                                </Secondary>
+                            ) : null}
+                        </YStack>
+                    </XStack>
 
-                {driver.internal_id ? (
-                    <YStack paddingTop={space[3]} gap={space[1]}>
-                        <Caption>{t('account.driverId')}</Caption>
-                        <Identifier value={driver.internal_id} boxed={false} />
-                    </YStack>
-                ) : null}
-            </Surface>
+                    {driver.internal_id || licence ? (
+                        <Card gap={space[3]} testID="account-ids">
+                            {driver.internal_id ? (
+                                <YStack gap={2} testID="account-driver-id">
+                                    <SectionLabel>{t('account.driverId')}</SectionLabel>
+                                    <Body fontFamily="$mono" fontSize={15} fontWeight="600" selectable>
+                                        {driver.internal_id}
+                                    </Body>
+                                </YStack>
+                            ) : null}
+                            {licence ? (
+                                <YStack gap={2} testID="account-licence">
+                                    <SectionLabel>{t('account.licence')}</SectionLabel>
+                                    <Body fontFamily="$mono" fontSize={15} fontWeight="600" selectable>
+                                        {licence}
+                                    </Body>
+                                    {driver.license_expiry ? <Secondary fontSize={13}>{t('account.licenceExpires', { date: driver.license_expiry })}</Secondary> : null}
+                                </YStack>
+                            ) : null}
+                        </Card>
+                    ) : null}
 
-            <Surface padded="compact" testID="account-organization">
-                <XStack gap={space[3]} alignItems="center">
-                    {organization?.logo_url ? (
-                        <Image source={{ uri: organization.logo_url }} style={{ width: 32, height: 32, borderRadius: radius.compact }} />
-                    ) : null}
-                    <YStack flex={1} gap={2}>
-                        <Caption>{t('account.organization')}</Caption>
-                        <Body fontSize={15} fontWeight="700" numberOfLines={1}>
-                            {organization?.name ?? driver.company_name ?? t('account.unknownOrganization')}
-                        </Body>
-                    </YStack>
-                    {onNavigate ? (
-                        <Button variant="secondary" onPress={() => onNavigate('OrgSwitcher')} testID="switch-organization">
-                            {t('account.switch')}
-                        </Button>
-                    ) : null}
-                </XStack>
-            </Surface>
-
-            <Surface padded="compact" testID="account-vehicle">
-                <XStack gap={space[3]} alignItems="center">
-                    {vehicle?.photo_url ? (
-                        <Image source={{ uri: vehicle.photo_url }} style={{ width: 44, height: 44, borderRadius: radius.compact }} />
-                    ) : null}
-                    <YStack flex={1} gap={2}>
-                        <Caption>{t('account.assignedVehicle')}</Caption>
-                        {vehicle?.name ? (
-                            <Body fontSize={15} fontWeight="700">
-                                {vehicle.name}
+                    {documents.length ? (
+                        <Card tone="warning" gap={4} testID="account-documents-notice">
+                            <Body fontSize={16} fontWeight="800" tone="warning">
+                                {t('me.documentsTitle')}
                             </Body>
-                        ) : (
-                            <Body fontSize={15} tone="secondary" testID="no-vehicle">
-                                {t('account.noVehicle')}
+                            <Secondary fontSize={14} lineHeight={20}>
+                                {t('me.documentsBody', { organization: organizationName ?? t('account.organization'), documents: documents.join(', ') })}
+                            </Secondary>
+                        </Card>
+                    ) : null}
+
+                    <Card
+                        flexDirection="row"
+                        alignItems="center"
+                        gap={space[3]}
+                        paddingVertical={space[3]}
+                        onPress={canSwitch && onNavigate ? () => onNavigate('OrgSwitcher') : undefined}
+                        pressStyle={canSwitch && onNavigate ? { opacity: 0.8 } : undefined}
+                        accessibilityRole={canSwitch ? 'button' : 'text'}
+                        testID="account-organization"
+                    >
+                        <Avatar url={organization?.logo_url} name={organizationName} size={40} square />
+                        <YStack flex={1} gap={1} minWidth={0}>
+                            <SectionLabel>{t('me.drivingFor')}</SectionLabel>
+                            <Body fontSize={16} fontWeight="800" numberOfLines={1}>
+                                {organizationName ?? t('account.unknownOrganization')}
                             </Body>
-                        )}
-                        {vehicleDetail ? <Micro>{vehicleDetail}</Micro> : null}
-                    </YStack>
-                </XStack>
-            </Surface>
+                        </YStack>
+                        {/* One organisation is not a choice, so nothing is offered. */}
+                        {canSwitch && onNavigate ? (
+                            <Body fontSize={13} fontWeight="800" tone="brand" numberOfLines={1} testID="switch-organization">
+                                {t('account.switch')}
+                            </Body>
+                        ) : null}
+                    </Card>
 
-            {licence ? (
-                <Surface padded="compact" testID="account-licence">
-                    <YStack gap={space[1]}>
-                        <Caption>{t('account.licence')}</Caption>
-                        <Identifier value={licence} boxed={false} />
-                        {driver.license_expiry ? <Micro>{t('account.licenceExpires', { date: driver.license_expiry })}</Micro> : null}
-                    </YStack>
-                </Surface>
-            ) : null}
-
+                    {has('MyVehicle') ? (
+                        <Card
+                            flexDirection="row"
+                            alignItems="center"
+                            gap={space[3]}
+                            padding={space[3]}
+                            onPress={onNavigate ? () => onNavigate('MyVehicle') : undefined}
+                            pressStyle={onNavigate ? { opacity: 0.8 } : undefined}
+                            accessibilityRole="button"
+                            testID="account-vehicle"
+                        >
+                            {vehiclePhoto ? (
+                                <Image source={{ uri: vehiclePhoto }} style={{ width: 96, height: 72, borderRadius: 12 }} accessibilityIgnoresInvertColors testID="account-vehicle-photo" />
+                            ) : (
+                                <YStack width={56} height={56} borderRadius={14} backgroundColor="$surfaceRaised" alignItems="center" justifyContent="center">
+                                    <Icon name="vehicle" size={26} />
+                                </YStack>
+                            )}
+                            <YStack flex={1} gap={4} minWidth={0}>
+                                <SectionLabel>{t('account.myVehicle')}</SectionLabel>
+                                {vehicle?.name || vehicleDetail ? (
+                                    <Body fontSize={17} fontWeight="800" numberOfLines={1}>
+                                        {vehicle?.name ?? vehicleDetail}
+                                    </Body>
+                                ) : (
+                                    <Body fontSize={16} fontWeight="700" tone="secondary" testID="no-vehicle">
+                                        {t('account.noVehicle')}
+                                    </Body>
+                                )}
+                                {vehicle?.plate_number ? <Plate value={vehicle.plate_number} testID="account-vehicle-plate" /> : null}
+                                {vehicle?.name && vehicleDetail && vehicleDetail !== vehicle.name && !vehicle?.plate_number ? <Secondary fontSize={13}>{vehicleDetail}</Secondary> : null}
+                            </YStack>
+                            {onNavigate ? <Chevron /> : null}
+                        </Card>
+                    ) : null}
                 </>
             )}
 
-            <Surface testID="account-links">
-                {MENU.map((raw, i) => {
-                    const link = raw.feature && features?.[raw.feature] ? { ...raw, blockedKey: undefined } : raw;
+            <Card flush testID="account-links">
+                {rows.map((link, i) => {
+                    const { value, tone } = valueFor(link.route);
                     return (
-                    <YStack key={link.route}>
-                        {i > 0 ? <Divider /> : null}
-                        <XStack
-                            padding={space[3]}
-                            alignItems="center"
-                            justifyContent="space-between"
-                            gap={space[3]}
+                        <MenuRow
+                            key={link.route}
+                            first={i === 0}
+                            icon={link.icon}
+                            label={t(link.labelKey)}
+                            value={value}
+                            valueTone={tone}
                             onPress={onNavigate ? () => onNavigate(link.route) : undefined}
-                            pressStyle={onNavigate ? { opacity: 0.7 } : undefined}
                             testID={`link-${link.route}`}
-                        >
-                            <Body fontSize={15}>{t(link.labelKey)}</Body>
-                            {link.blockedKey ? <Micro tone="warning">{t(link.blockedKey)}</Micro> : <Secondary fontSize={17}>{chevron()}</Secondary>}
-                        </XStack>
-                    </YStack>
+                        />
                     );
                 })}
-            </Surface>
+            </Card>
 
             {/*
               * The confirmation replaces the button rather than following it.
@@ -261,9 +335,9 @@ export function AccountScreen({
               * and had no reason to think anything had happened.
               */}
             {onSignOut && !confirmingSignOut ? (
-                <Button variant="destructive" fullWidth onPress={() => setConfirmingSignOut(true)} testID="sign-out">
+                <BigButton variant="destructive" height={52} backgroundColor="$transparent" onPress={() => setConfirmingSignOut(true)} testID="sign-out">
                     {t('account.signOut')}
-                </Button>
+                </BigButton>
             ) : null}
 
             {onSignOut && confirmingSignOut ? (
@@ -273,24 +347,28 @@ export function AccountScreen({
                  * the driver who created it — so it has to be named before it
                  * is stranded, with the count, not a vague "unsaved changes".
                  */
-                <Surface padded testID="sign-out-confirm">
-                    <YStack gap={space[3]}>
-                        <Body fontSize={15} fontWeight="700">
-                            {t('account.signOutTitle')}
-                        </Body>
-                        <Secondary fontSize={13}>
-                            {waiting > 0 ? t('account.signOutWithQueued', { count: waiting }) : t('account.signOutBody')}
-                        </Secondary>
-                        <XStack gap={space[2]}>
-                            <Button flex={1} variant="ghost" onPress={() => setConfirmingSignOut(false)} testID="sign-out-cancel">
-                                {t('common.cancel')}
-                            </Button>
-                            <Button flex={1} variant="destructive" onPress={onSignOut} testID="sign-out-confirm-yes">
-                                {t('account.signOutConfirm')}
-                            </Button>
-                        </XStack>
-                    </YStack>
-                </Surface>
+                <Card gap={space[3]} testID="sign-out-confirm">
+                    <Body fontSize={17} fontWeight="800">
+                        {t('account.signOutTitle')}
+                    </Body>
+                    <Secondary fontSize={14} lineHeight={20}>
+                        {waiting > 0 ? t('account.signOutWithQueued', { count: waiting }) : t('account.signOutBody')}
+                    </Secondary>
+                    <XStack gap={space[2]}>
+                        <Button flex={1} height={52} borderRadius={ACTION_RADIUS} variant="secondary" onPress={() => setConfirmingSignOut(false)} testID="sign-out-cancel">
+                            {t('common.cancel')}
+                        </Button>
+                        <Button flex={1} height={52} borderRadius={ACTION_RADIUS} variant="destructive" onPress={onSignOut} testID="sign-out-confirm-yes">
+                            {t('account.signOutConfirm')}
+                        </Button>
+                    </XStack>
+                </Card>
+            ) : null}
+
+            {appVersion || host ? (
+                <Secondary fontSize={12} center tabular testID="account-version">
+                    {[appVersion ? t('me.version', { version: appVersion }) : undefined, host ? t('me.connectedTo', { host: host.replace(/^https?:\/\//, '') }) : undefined].filter(Boolean).join(' · ')}
+                </Secondary>
             ) : null}
         </ScrollView>
     );

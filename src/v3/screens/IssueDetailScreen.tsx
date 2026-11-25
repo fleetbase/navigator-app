@@ -1,31 +1,32 @@
 /**
- * Issue detail — R2 frame F3.
+ * One issue — R2 frame F3, in the round 3 look.
+ *
+ * What was reported, how urgent, where it stands, and when it was filed and
+ * resolved.
  *
  * F3 asks for "the status timeline". `GET issues/{id}/timeline` is registered
  * only under the console's `int/v1` prefix, so a driver token cannot read it;
- * the screen shows the current status and when it was filed and resolved, and
- * says the history is not available rather than leaving a gap where a timeline
- * was promised.
+ * the screen shows the current status with the two dates the record carries and
+ * leaves the history out rather than drawing an empty one. Photos attached to
+ * an issue are not shown for the same kind of reason: the public resource
+ * returns `files` only when the relation is loaded, and the public endpoints
+ * never load it.
  */
-import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Micro, Secondary } from '../ui/Text';
-import { Identifier } from '../ui/Identifier';
-import { StatusPill } from '../ui/StatusPill';
-import { Surface, Divider } from '../ui/Surface';
-import { Banner } from '../ui/Banner';
+import { Body, Secondary } from '../ui/Text';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { headingOf, humanizeTerm, type IssueRecord } from '../data';
+import { headingOf, type IssueRecord } from '../data';
 import { formatDateTime } from '../format';
 import { isRealPoint } from '../data/useOrderTimeline';
-import { useScreenStyle } from '../ui/useScreenStyle';
-import { endAlign } from '../i18n/direction';
+import { Card, FactRow, Icon, Screen, Section, Tag } from './me/parts';
+import { typeOf } from './me/issueTaxonomy';
+import { PriorityChip, categoryText, statusLabel, typeLabel } from './me/issueParts';
 
 export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const point = isRealPoint(issue.location) ? (issue.location!.coordinates as number[]) : undefined;
+
     /*
      * `headingOf` already tells us when it fell back to the report text for the
      * heading. Ignoring that printed the same sentence twice — once as the
@@ -33,12 +34,12 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
      */
     const { heading, usedReport } = headingOf(issue);
 
-    const rows: { key: string; labelKey: string; value: string }[] = [];
-    const push = (key: string, labelKey: string, value?: string) => {
-        if (value) rows.push({ key, labelKey, value });
+    const rows: { key: string; labelKey: string; value: string; mono?: boolean }[] = [];
+    const push = (key: string, labelKey: string, value?: string, mono?: boolean) => {
+        if (value) rows.push({ key, labelKey, value, mono });
     };
-    push('type', 'issueDetail.type', humanizeTerm(issue.type));
-    push('category', 'issueDetail.category', humanizeTerm(issue.category));
+    push('type', 'issueDetail.type', typeLabel(issue.type, t));
+    push('category', 'issueDetail.category', categoryText(issue.category, t));
     push('vehicle', 'issueDetail.vehicle', issue.vehicle_name ?? undefined);
     push('reporter', 'issueDetail.reporter', issue.reporter_name ?? undefined);
     push('assignee', 'issueDetail.assignee', issue.assignee_name ?? undefined);
@@ -48,68 +49,63 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
      * no one can place. There is no reverse-geocode on this payload, so the
      * honest move is to name the value for what it is rather than dress it up.
      */
-    if (point) push('location', 'issueDetail.location', `${point[1].toFixed(4)}, ${point[0].toFixed(4)}`);
+    if (point) push('location', 'issueDetail.location', `${point[1].toFixed(4)}, ${point[0].toFixed(4)}`, true);
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="issue-detail">
-            <Surface hero padded>
-                <YStack gap={space[2]}>
-                    <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                        <Caption>{t('issueDetail.title')}</Caption>
-                        <XStack gap={space[2]} alignItems="center">
-                            {issue.priority ? (
-                                <StatusPill status={issue.priority} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} testID="issue-priority" />
-                            ) : null}
-                            {issue.status ? (
-                                <StatusPill status={issue.status} t={(k, fb) => t(k, { defaultValue: fb })} testID="issue-status" />
-                            ) : (
-                                <Micro testID="issue-untriaged">{t('issues.untriaged')}</Micro>
-                            )}
-                        </XStack>
-                    </XStack>
-                    <Body fontSize={17} fontWeight="800">
-                        {heading || t('issues.untitled')}
-                    </Body>
-                    {issue.issue_id ? <Identifier value={issue.issue_id} boxed={false} /> : null}
-                </YStack>
-            </Surface>
+        <Screen testID="issue-detail">
+            <Card gap={space[3]}>
+                <XStack alignItems="flex-start" gap={space[3]}>
+                    <YStack width={40} height={40} borderRadius={12} backgroundColor="$surfaceRaised" alignItems="center" justifyContent="center">
+                        <Icon name={typeOf(issue.type)?.icon ?? 'issue'} size={20} />
+                    </YStack>
+                    <YStack flex={1} gap={4} minWidth={0}>
+                        <Body fontSize={20} lineHeight={26} fontWeight="800">
+                            {heading || t('issues.untitled')}
+                        </Body>
+                        {issue.issue_id ? (
+                            <Body fontFamily="$mono" fontSize={13} fontWeight="500" tone="secondary" selectable>
+                                {issue.issue_id}
+                            </Body>
+                        ) : null}
+                    </YStack>
+                </XStack>
+                <XStack gap={6} flexWrap="wrap">
+                    <PriorityChip priority={issue.priority} t={t} testID="issue-priority" />
+                    <Tag testID={issue.status ? 'issue-status' : 'issue-untriaged'}>{statusLabel(issue.status, t)}</Tag>
+                </XStack>
+            </Card>
 
             {issue.report && !usedReport ? (
-                <YStack gap={space[2]}>
-                    <Caption>{t('issueDetail.report')}</Caption>
-                    <Surface padded="compact">
-                        <Secondary>{issue.report}</Secondary>
-                    </Surface>
-                </YStack>
+                <Section title={t('issueDetail.report')}>
+                    <Card>
+                        <Body fontSize={16} lineHeight={23}>
+                            {issue.report}
+                        </Body>
+                    </Card>
+                </Section>
             ) : null}
 
             {rows.length ? (
-                <Surface testID="issue-rows">
+                <Card flush testID="issue-rows">
                     {rows.map((row, i) => (
-                        <YStack key={row.key}>
-                            {i > 0 ? <Divider /> : null}
-                            <XStack padding={space[3]} justifyContent="space-between" alignItems="center" gap={space[3]} testID={`issue-row-${row.key}`}>
-                                <Caption>{t(row.labelKey)}</Caption>
-                                <Body fontSize={15} textAlign={endAlign()} flexShrink={1}>
-                                    {row.value}
-                                </Body>
-                            </XStack>
-                        </YStack>
+                        <FactRow key={row.key} first={i === 0} label={t(row.labelKey)} value={row.value} mono={row.mono} testID={`issue-row-${row.key}`} />
                     ))}
-                </Surface>
+                </Card>
             ) : null}
 
-            <YStack gap={space[2]}>
-                <Caption>{t('issueDetail.history')}</Caption>
-                <Micro testID="issue-filed">
-                    {issue.created_at ? t('issueDetail.filed', { when: formatDateTime(issue.created_at) }) : t('issueDetail.filedUnknown')}
-                </Micro>
-                {issue.resolved_at ? (
-                    <Micro testID="issue-resolved">{t('issueDetail.resolved', { when: formatDateTime(issue.resolved_at) })}</Micro>
-                ) : null}
-                <Banner tone="neutral" message={t('issueDetail.timelineUnavailable')} testID="issue-timeline-unavailable" />
-            </YStack>
-        </ScrollView>
+            <Section title={t('issueDetail.history')}>
+                <Card gap={space[2]}>
+                    <Secondary fontSize={14} tabular testID="issue-filed">
+                        {issue.created_at ? t('issueDetail.filed', { when: formatDateTime(issue.created_at) }) : t('issueDetail.filedUnknown')}
+                    </Secondary>
+                    {issue.resolved_at ? (
+                        <Secondary fontSize={14} tone="success" tabular testID="issue-resolved">
+                            {t('issueDetail.resolved', { when: formatDateTime(issue.resolved_at) })}
+                        </Secondary>
+                    ) : null}
+                </Card>
+            </Section>
+        </Screen>
     );
 }
 

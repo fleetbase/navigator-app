@@ -5,8 +5,8 @@ import FuelReportCreateScreen from '../../screens/FuelReportCreateScreen';
 import IssuesScreen from '../../screens/IssuesScreen';
 import IssueDetailScreen from '../../screens/IssueDetailScreen';
 import IssueCreateScreen from '../../screens/IssueCreateScreen';
-import type { FuelReportRecord, IssueRecord } from '../../data';
-import { useDriverId, useFocusCount, type Nav } from '../session';
+import { vehicleOf, type FuelReportRecord, type IssueRecord } from '../../data';
+import { useAssignedVehicle, useDriverId, useFocusCount, type Nav } from '../session';
 
 export function FuelLog({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
@@ -16,7 +16,8 @@ export function FuelLog({ navigation }: { navigation: Nav }) {
             driverId={driverId}
             reloadToken={reloadToken}
             onOpenReport={({ report, previous }) => navigation.navigate('FuelReport', { report, previous })}
-            onCreate={() => navigation.navigate('FuelReportCreate', {})}
+            // The newest fill goes along so the form can check the odometer against it.
+            onCreate={({ last }) => navigation.navigate('FuelReportCreate', { last })}
         />
     );
 }
@@ -28,12 +29,19 @@ export function FuelReport({ route }: { route: { params?: { report?: FuelReportR
 }
 
 export function FuelReportCreate({ route, navigation }: { route: { params?: { last?: FuelReportRecord; currency?: string } }; navigation: Nav }) {
-    const driverId = useDriverId();
+    const { driverId, driver, vehicleId, vehicleName } = useAssignedVehicle();
+    const last = route.params?.last;
     return (
         <FuelReportCreateScreen
             driverId={driverId}
-            lastReport={route.params?.last}
-            currency={route.params?.currency}
+            // The server files the report against the driver's assigned vehicle, so
+            // a previous fill only means anything if it was on that same vehicle.
+            lastReport={last && (!last.vehicle?.id || !vehicleId || last.vehicle.id === vehicleId) ? last : undefined}
+            // The driver's own currency (the Driver resource falls back to their
+            // country's); without it every cost was filed as US dollars.
+            currency={route.params?.currency ?? driver?.currency ?? undefined}
+            vehicleName={vehicleName}
+            plate={vehicleOf(driver)?.plate_number}
             onDone={() => navigation.goBack()}
         />
     );
@@ -58,7 +66,7 @@ export function IssueDetail({ route }: { route: { params?: { issue?: IssueRecord
     return <IssueDetailScreen issue={issue} />;
 }
 
-export function IssueCreate({ navigation }: { navigation: Nav }) {
-    const driverId = useDriverId();
-    return <IssueCreateScreen driverId={driverId} onDone={() => navigation.goBack()} />;
+export function IssueCreate({ route, navigation }: { route: { params?: { about?: string } }; navigation: Nav }) {
+    const { driverId, vehicleName } = useAssignedVehicle();
+    return <IssueCreateScreen driverId={driverId} initialType={route.params?.about} vehicleName={vehicleName} onDone={() => navigation.goBack()} />;
 }

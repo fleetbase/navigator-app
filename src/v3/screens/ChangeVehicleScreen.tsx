@@ -1,36 +1,57 @@
 /**
- * Change the assigned vehicle — R2 E2.
+ * Choose a vehicle — design round 3 (`VehiclePick.dc.html`).
  *
- * The ledger had this blocked on `GET /v1/vehicles?available=1` and a public
- * `assign-vehicle`. Neither is needed: `GET /v1/vehicles` is public and
- * company-scoped, and assignment is `PUT /v1/drivers/{id}` with the vehicle's
- * **public id**, which `DriverController@update` resolves against
- * `vehicles.public_id` for the session's company. A driver can therefore only
- * ever be assigned a vehicle in their own organisation, which is the constraint
- * that mattered.
+ * `GET /v1/vehicles` is public and company-scoped, and assignment is
+ * `PUT /v1/drivers/{id}` with the vehicle's **public id**, which the request
+ * validates as a vehicle of the session's company (CreateDriverRequest:
+ * `starts_with:vehicle_` + `existsInCompany`). A driver can therefore only
+ * ever take a vehicle in their own organisation, which is the constraint that
+ * mattered.
+ *
+ * The driver picks a row and then confirms with the one action at the bottom,
+ * rather than a tap on a row swapping their vehicle on the spot: a mis-tap in
+ * a list of look-alike vans used to change what dispatch saw them driving.
  *
  * Vehicles that cannot be driven — in maintenance, out of service, retired —
  * are shown greyed rather than hidden. A driver looking for the van they used
  * yesterday should find out it is off the road, not be left wondering whether
  * the list is broken.
+ *
+ * Not built, because the server has nothing for them:
+ *
+ *   - **"Scan tag."** Vehicles carry no scannable tag the API can look up.
+ *   - **"At Wareham depot."** A vehicle has no home depot on the resource.
+ *   - **"Checked yesterday / 82% charged / service due."** None of these are
+ *     on the vehicle list.
  */
-import { useCallback, useState } from 'react';
-import { ScrollView } from '../ui/Scroll';
+import { useCallback, useMemo, useState } from 'react';
+import { Image, TextInput } from 'react-native';
 import { XStack, YStack } from 'tamagui';
-import { Body, Micro, Secondary } from '../ui/Text';
-import { Identifier } from '../ui/Identifier';
-import { StatusPill } from '../ui/StatusPill';
-import { Surface, Divider } from '../ui/Surface';
+import { Body, Secondary } from '../ui/Text';
 import { Banner, EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useScreenStyle } from '../ui/useScreenStyle';
-import { chevron } from '../i18n/direction';
 import { useSync } from '../shell';
 import { useVehicles, isAssignable } from '../data/useVehicles';
 import { useUpdateDriver } from '../data/useAccount';
-import { vehicleTitle, type VehicleRecord } from '../data/useVehicle';
+import { vehicleTitle, vehiclePhotoOf, type VehicleRecord } from '../data/useVehicle';
+import { humanizeStatus } from '../theme/status';
+import { BigButton } from '../onboarding/AuthScaffold';
+import { Card, Icon, Plate, RadioMark, Screen, SectionLabel, useColor } from './me/parts';
+
+type Standing = 'yours' | 'free' | 'inUse' | 'offRoad';
+
+/** Where a vehicle stands for this driver, from what the list actually says. */
+function standingOf(vehicle: VehicleRecord, currentVehicleId?: string, driverId?: string): Standing {
+    if (currentVehicleId && vehicle.id === currentVehicleId) return 'yours';
+    if (!isAssignable(vehicle)) return 'offRoad';
+    // `driver_id` is the driver holding it now; absent on older servers, where everything reads as free.
+    if (vehicle.driver_id && vehicle.driver_id !== driverId) return 'inUse';
+    return 'free';
+}
+
+const ORDER: Record<Standing, number> = { yours: 0, free: 1, inUse: 2, offRoad: 3 };
 
 export function ChangeVehicleScreen({
     driverId,
@@ -50,32 +71,50 @@ export function ChangeVehicleScreen({
     onAssigned?: (vehicle: VehicleRecord) => void;
 }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { isOnline } = useSync();
+    const placeholder = useColor('textMuted');
+    const ink = useColor('textPrimary');
     const [reloadToken, setReloadToken] = useState(0);
     const { vehicles, isLoading, error } = useVehicles(reloadToken);
     const { save, isSaving, queued, error: saveError } = useUpdateDriver(driverId);
+    const [query, setQuery] = useState('');
+    const [pickedId, setPickedId] = useState<string | null>(null);
 
-    const choose = useCallback(
-        async (vehicle: VehicleRecord) => {
-            if (!vehicle.id) return;
-            const updated = await save({ vehicle: vehicle.id });
-            // A queued change reports itself through the hook's own state; only
-            // a confirmed one should close the screen behind the driver.
-            if (updated) {
-                if (onAssigned) onAssigned(vehicle);
-                else onDone?.();
-            }
-        },
-        [onAssigned, onDone, save]
-    );
+    const list = useMemo(() => {
+        const wanted = query.trim().toLowerCase();
+        return (vehicles ?? [])
+            .map((vehicle) => ({ vehicle, standing: standingOf(vehicle, currentVehicleId, driverId) }))
+            .filter(({ vehicle }) => {
+                if (!wanted) return true;
+                // Plates are typed with and without the space.
+                const haystack = [vehicle.name, vehicleTitle(vehicle), vehicle.plate_number, vehicle.plate_number?.replace(/\s+/g, ''), vehicle.internal_id, vehicle.call_sign].filter(Boolean).join(' ').toLowerCase();
+                return haystack.includes(wanted) || haystack.includes(wanted.replace(/\s+/g, ''));
+            })
+            .sort((a, b) => ORDER[a.standing] - ORDER[b.standing]);
+    }, [vehicles, query, currentVehicleId, driverId]);
+
+    const picked = (vehicles ?? []).find((vehicle) => vehicle.id === pickedId) ?? null;
+    const pickedName = picked ? (picked.name ?? vehicleTitle(picked) ?? picked.plate_number ?? t('vehicle.unnamed')) : undefined;
+    const freeCount = (vehicles ?? []).filter((vehicle) => standingOf(vehicle, currentVehicleId, driverId) === 'free').length;
+
+    const confirm = useCallback(async () => {
+        if (!picked?.id) return;
+        const updated = await save({ vehicle: picked.id });
+        // A queued change reports itself through the hook's own state; only
+        // a confirmed one should close the screen behind the driver.
+        if (updated) {
+            if (onAssigned) onAssigned(picked);
+            else onDone?.();
+        }
+    }, [picked, onAssigned, onDone, save]);
 
     if (isLoading && !vehicles) {
         return (
             <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="change-vehicle-loading">
-                <Skeleton height={72} />
-                <Skeleton height={72} />
-                <Skeleton height={72} />
+                <Skeleton height={52} borderRadius={16} />
+                <Skeleton height={96} borderRadius={18} />
+                <Skeleton height={96} borderRadius={18} />
+                <Skeleton height={96} borderRadius={18} />
             </YStack>
         );
     }
@@ -89,59 +128,127 @@ export function ChangeVehicleScreen({
     }
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="change-vehicle">
+        <Screen
+            gap={space[3]}
+            testID="change-vehicle"
+            footer={
+                vehicles.length ? (
+                    <>
+                        <BigButton disabled={!picked} loading={isSaving} onPress={confirm} testID="change-vehicle-confirm">
+                            {pickedName ? t('me.vehicle.take', { name: pickedName }) : t('me.vehicle.choose')}
+                        </BigButton>
+                        {onAssigned ? (
+                            <Secondary fontSize={13} center>
+                                {t('me.vehicle.checkBeforeSetOff')}
+                            </Secondary>
+                        ) : null}
+                    </>
+                ) : undefined
+            }
+        >
             {queued ? <Banner tone="neutral" message={t('changeVehicle.queued')} testID="change-vehicle-queued" /> : null}
             {saveError ? <Banner tone="danger" message={t('changeVehicle.failed')} testID="change-vehicle-failed" /> : null}
 
             {vehicles.length ? (
-                <Surface testID="change-vehicle-list">
-                    {vehicles.map((vehicle, i) => {
-                        const isCurrent = !!currentVehicleId && vehicle.id === currentVehicleId;
-                        const assignable = isAssignable(vehicle) && !isCurrent && !isSaving;
-                        const title = vehicleTitle(vehicle);
+                <>
+                    {/* Only worth a search box once the list is longer than a glance. */}
+                    {vehicles.length > 6 ? (
+                        <XStack alignItems="center" gap={10} height={52} paddingHorizontal={14} borderRadius={16} backgroundColor="$surface" borderWidth={1} borderColor="$border">
+                            <Icon name="search" size={18} strokeWidth={2.4} />
+                            <TextInput
+                                value={query}
+                                onChangeText={setQuery}
+                                placeholder={t('me.vehicle.searchPlaceholder')}
+                                placeholderTextColor={placeholder}
+                                autoCapitalize="characters"
+                                autoCorrect={false}
+                                returnKeyType="search"
+                                accessibilityLabel={t('me.vehicle.searchLabel')}
+                                style={{ flex: 1, minWidth: 0, fontSize: 16, color: ink, paddingVertical: 0 }}
+                                testID="change-vehicle-search"
+                            />
+                        </XStack>
+                    ) : null}
 
-                        return (
-                            <YStack key={vehicle.id ?? String(i)}>
-                                {i > 0 ? <Divider /> : null}
-                                <XStack
-                                    padding={space[3]}
-                                    gap={space[3]}
+                    <SectionLabel testID="change-vehicle-count">{t('me.vehicle.freeCount', { count: freeCount })}</SectionLabel>
+
+                    <YStack gap={space[2]} testID="change-vehicle-list">
+                        {list.map(({ vehicle, standing }, i) => {
+                            const selectable = standing === 'free' || standing === 'inUse';
+                            const selected = !!vehicle.id && vehicle.id === pickedId;
+                            const title = vehicleTitle(vehicle);
+                            const name = vehicle.name ?? title ?? t('vehicle.unnamed');
+                            const photo = vehiclePhotoOf(vehicle);
+                            const tone = standing === 'offRoad' ? 'danger' : standing === 'inUse' ? 'warning' : standing === 'yours' ? 'brand' : 'success';
+                            const dot = standing === 'offRoad' ? '$dangerText' : standing === 'inUse' ? '$warningText' : standing === 'yours' ? '$primary' : '$successText';
+                            const word =
+                                standing === 'yours'
+                                    ? t('changeVehicle.current')
+                                    : standing === 'free'
+                                      ? t('me.vehicle.free')
+                                      : standing === 'inUse'
+                                        ? t('me.vehicle.inUse')
+                                        : t('me.vehicle.offRoad', { reason: vehicle.status ? humanizeStatus(vehicle.status) : '' }).replace(/ · $/, '');
+
+                            return (
+                                <Card
+                                    key={vehicle.id ?? String(i)}
+                                    selected={selected}
+                                    flexDirection="row"
                                     alignItems="center"
-                                    opacity={assignable || isCurrent ? 1 : 0.5}
-                                    onPress={assignable ? () => void choose(vehicle) : undefined}
-                                    pressStyle={assignable ? { opacity: 0.7 } : undefined}
-                                    accessibilityRole={assignable ? 'button' : 'text'}
-                                    accessibilityState={{ selected: isCurrent, disabled: !assignable }}
+                                    gap={space[3]}
+                                    padding={space[3]}
+                                    minHeight={96}
+                                    opacity={standing === 'offRoad' ? 0.55 : 1}
+                                    onPress={selectable && !isSaving ? () => setPickedId(vehicle.id) : undefined}
+                                    pressStyle={selectable ? { opacity: 0.8 } : undefined}
+                                    accessibilityRole={selectable ? 'radio' : 'text'}
+                                    accessibilityState={{ selected, disabled: !selectable }}
                                     testID={`vehicle-option-${vehicle.id ?? i}`}
                                 >
-                                    <YStack flex={1} gap={2} minWidth={0}>
-                                        <Body fontSize={15} fontWeight={isCurrent ? '800' : '600'} numberOfLines={1}>
-                                            {vehicle.name ?? title ?? t('vehicle.unnamed')}
-                                        </Body>
-                                        {title && title !== vehicle.name ? <Micro numberOfLines={1}>{title}</Micro> : null}
-                                        {vehicle.plate_number ? <Identifier value={vehicle.plate_number} boxed={false} /> : null}
-                                    </YStack>
-
-                                    {isCurrent ? (
-                                        <Micro tone="brand" testID={`vehicle-current-${vehicle.id}`}>
-                                            {t('changeVehicle.current')}
-                                        </Micro>
-                                    ) : vehicle.status ? (
-                                        <StatusPill status={vehicle.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} testID={`vehicle-status-${vehicle.id}`} />
+                                    {photo ? (
+                                        <Image source={{ uri: photo }} style={{ width: 96, height: 72, borderRadius: 12 }} accessibilityIgnoresInvertColors />
                                     ) : (
-                                        <Secondary fontSize={17}>{chevron()}</Secondary>
+                                        <YStack width={56} height={56} borderRadius={14} backgroundColor="$surfaceRaised" alignItems="center" justifyContent="center">
+                                            <Icon name="vehicle" size={26} />
+                                        </YStack>
                                     )}
-                                </XStack>
-                            </YStack>
-                        );
-                    })}
-                </Surface>
-            ) : (
-                <EmptyState testID="change-vehicle-empty" title={t('changeVehicle.emptyTitle')} body={t('changeVehicle.emptyBody')} />
-            )}
+                                    <YStack flex={1} gap={4} minWidth={0}>
+                                        <Body fontSize={17} fontWeight="800" numberOfLines={1}>
+                                            {name}
+                                        </Body>
+                                        {title && title !== vehicle.name ? (
+                                            <Secondary fontSize={13} numberOfLines={1}>
+                                                {title}
+                                            </Secondary>
+                                        ) : null}
+                                        <Plate value={vehicle.plate_number} />
+                                        {/* A dot for the free ones, a square for the ones that are not: shape as well as colour. */}
+                                        <XStack alignItems="center" gap={6} testID={standing === 'yours' ? `vehicle-current-${vehicle.id}` : `vehicle-status-${vehicle.id}`}>
+                                            <YStack width={8} height={8} borderRadius={standing === 'free' || standing === 'yours' ? 4 : 1} backgroundColor={dot} />
+                                            <Body fontSize={13} fontWeight="700" tone={tone} numberOfLines={1}>
+                                                {word}
+                                            </Body>
+                                        </XStack>
+                                    </YStack>
+                                    {selectable ? <RadioMark selected={selected} /> : null}
+                                </Card>
+                            );
+                        })}
+                    </YStack>
 
-            <Micro>{t('changeVehicle.note')}</Micro>
-        </ScrollView>
+                    {!list.length ? (
+                        <Secondary center testID="change-vehicle-no-match">
+                            {t('me.vehicle.noMatch')}
+                        </Secondary>
+                    ) : null}
+                </>
+            ) : (
+                <YStack flex={1} justifyContent="center">
+                    <EmptyState testID="change-vehicle-empty" title={t('changeVehicle.emptyTitle')} body={t('changeVehicle.emptyBody')} />
+                </YStack>
+            )}
+        </Screen>
     );
 }
 

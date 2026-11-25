@@ -34,6 +34,8 @@ export interface IssueRecord {
     tags?: string[] | null;
     driver_name?: string | null;
     vehicle_name?: string | null;
+    /** Public id of the vehicle the reporting driver had at the time. */
+    vehicle_id?: string | null;
     assignee_name?: string | null;
     reporter_name?: string | null;
     location?: { type?: string; coordinates?: number[] } | null;
@@ -179,4 +181,56 @@ export function useCreateIssue(driverId?: string) {
     );
 
     return { create, isSaving, queued, error };
+}
+
+/**
+ * Attaches photos to an issue that already exists.
+ *
+ * The issue endpoints take no files, but the core file endpoint does the job:
+ * `POST /v1/files/base64` with `subject_type: fleet-ops:issue` and
+ * `subject_id: <issue public id>` stores the image and points it at the issue
+ * (File::setSubjectFromRequest resolves the public id inside the session's
+ * company), which is the relation the console reads (`Issue::files`).
+ *
+ * `subject_id`, not `subject_uuid`: the latter is written to the column as
+ * given, and a public id there matches nothing.
+ *
+ * Needs the issue's id, so it cannot run for a report that was queued offline —
+ * the screen says photos need a connection rather than pretending to keep them.
+ * Returns how many did not upload.
+ */
+export function useAttachIssuePhotos() {
+    const { adapter } = useFleetbase();
+    const [isUploading, setIsUploading] = useState(false);
+
+    const attach = useCallback(
+        async (issueId: string, photos: string[]): Promise<number> => {
+            if (!issueId || !photos.length) return 0;
+            setIsUploading(true);
+            let failed = 0;
+            try {
+                for (let i = 0; i < photos.length; i += 1) {
+                    try {
+                        const result = await adapter.post('files/base64', {
+                            data: photos[i],
+                            file_name: `issue-${issueId}-${i + 1}.jpg`,
+                            file_type: 'image',
+                            content_type: 'image/jpeg',
+                            subject_type: 'fleet-ops:issue',
+                            subject_id: issueId,
+                        });
+                        if (isQueuedAck(result) || !((result as { data?: { id?: string } })?.data ?? (result as { id?: string }))?.id) failed += 1;
+                    } catch {
+                        failed += 1;
+                    }
+                }
+            } finally {
+                setIsUploading(false);
+            }
+            return failed;
+        },
+        [adapter]
+    );
+
+    return { attach, isUploading };
 }

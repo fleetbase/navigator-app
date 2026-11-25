@@ -56,7 +56,7 @@ export function DutySheet({
             {duty !== 'off' && activeStopCount > 0 ? (
                 <Banner
                     tone="warning"
-                    message={`You still have ${activeStopCount} ${activeStopCount === 1 ? 'stop' : 'stops'} to complete`}
+                    message={`You still have ${activeStopCount} ${activeStopCount === 1 ? 'waypoint' : 'waypoints'} to complete`}
                 />
             ) : null}
 

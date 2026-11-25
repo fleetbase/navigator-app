@@ -17,46 +17,46 @@
  * before the driver sends them — a button that quietly attaches things is a
  * button that attaches whatever a later version decides to.
  *
- * **FAQ** is not built. There is no endpoint serving help content and no
- * agreed copy; hardcoding a few questions here would be inventing product.
+ * **FAQ** is not built, and is no longer mentioned on the screen either. There
+ * is no endpoint serving help content and no agreed copy; hardcoding a few
+ * questions here would be inventing product.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
-import { ScrollView } from '../ui/Scroll';
-import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Micro, Secondary } from '../ui/Text';
-import { Surface, Divider } from '../ui/Surface';
-import { Button } from '../ui/Button';
+import { YStack } from 'tamagui';
+import { Body, Secondary } from '../ui/Text';
 import { Banner } from '../ui/Banner';
 import { Field } from '../ui/Field';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useScreenStyle } from '../ui/useScreenStyle';
-import { chevron } from '../i18n/direction';
+import { BigButton } from '../onboarding/AuthScaffold';
+import { Card, CARD_PAD, Chevron, Icon, Screen, Section, SectionLabel } from './me/parts';
 import { useSync } from '../shell';
 import { useQueue, useFleetbase } from '../api';
 import { useCreateIssue } from '../data';
 import { describeDiagnostics, type Diagnostics } from '../data/diagnostics';
-import { IssueType } from '../../constants/Enums';
 
-/** The one category in the org taxonomy that means "the app is broken". */
-const APP_BUG_CATEGORY = 'Bugs';
+/**
+ * The one type and category in the console's taxonomy that mean "the app is
+ * broken", spelled as the console spells them (see `me/issueTaxonomy.ts`).
+ */
+const APP_BUG_TYPE = 'software-technical';
+const APP_BUG_CATEGORY = 'bugs';
 
 export function HelpScreen({
     driverId,
     appVersion,
     host,
     onMessageDispatch,
-    onDone,
 }: {
     driverId?: string;
     appVersion: string;
     host?: string;
     onMessageDispatch?: () => void;
+    /** Kept for callers; the title bar's back control is the way out now. */
     onDone?: () => void;
 }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { queue } = useFleetbase();
     const { pendingCount, failedCount } = useQueue(queue);
@@ -90,9 +90,9 @@ export function HelpScreen({
          */
         const created = await create({
             report: `${written}\n\n---\n${summary}`,
-            type: IssueType.SOFTWARE_TECHNICAL,
+            type: APP_BUG_TYPE,
             category: APP_BUG_CATEGORY,
-            priority: 'Low',
+            priority: 'low',
             // Issues require a location; the app has none to give here and must
             // not invent one, so this is the same null island the API treats as
             // "no fix" elsewhere.
@@ -115,54 +115,51 @@ export function HelpScreen({
     }, [queued]);
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="help-screen">
-            <Surface testID="help-contact">
-                <XStack
-                    padding={space[3]}
-                    alignItems="center"
-                    justifyContent="space-between"
-                    gap={space[3]}
-                    onPress={onMessageDispatch}
-                    pressStyle={onMessageDispatch ? { opacity: 0.7 } : undefined}
-                    testID="help-message-dispatch"
-                >
-                    <YStack flex={1} gap={2}>
-                        <Body fontSize={15}>{t('help.messageDispatch')}</Body>
-                        <Micro>{t('help.messageDispatchBody')}</Micro>
+        <Screen
+            testID="help-screen"
+            footer={
+                <BigButton disabled={!report.trim() || isSaving} loading={isSaving} onPress={submit} testID="help-send">
+                    {t('help.send')}
+                </BigButton>
+            }
+        >
+            {onMessageDispatch ? (
+                <Card flush testID="help-contact">
+                    <YStack
+                        flexDirection="row"
+                        alignItems="center"
+                        gap={space[3]}
+                        minHeight={68}
+                        paddingHorizontal={CARD_PAD}
+                        paddingVertical={space[2]}
+                        onPress={onMessageDispatch}
+                        pressStyle={{ backgroundColor: '$surfaceRaised' }}
+                        accessibilityRole="button"
+                        testID="help-message-dispatch"
+                    >
+                        <Icon name="help" />
+                        <YStack flex={1} gap={2}>
+                            <Body fontSize={16} fontWeight="800">
+                                {t('help.messageDispatch')}
+                            </Body>
+                            <Secondary fontSize={13}>{t('help.messageDispatchBody')}</Secondary>
+                        </YStack>
+                        <Chevron />
                     </YStack>
-                    <Secondary fontSize={17}>{chevron()}</Secondary>
-                </XStack>
+                </Card>
+            ) : null}
 
-                <Divider />
+            <Section title={t('help.reportTitle')}>
+                <Field label={t('help.reportLabel')} value={report} onChangeText={setReport} multiline placeholder={t('help.reportPlaceholder')} testID="help-report" />
 
-                <YStack padding={space[3]} gap={space[1]}>
-                    <Body fontSize={15}>{t('help.faq')}</Body>
-                    {/* Named as absent rather than left out, so nobody wonders
-                        whether they missed it. */}
-                    <Micro tone="warning">{t('help.faqUnavailable')}</Micro>
-                </YStack>
-            </Surface>
-
-            <YStack gap={space[2]}>
-                <Caption>{t('help.reportTitle')}</Caption>
-                <Field
-                    label={t('help.reportLabel')}
-                    value={report}
-                    onChangeText={setReport}
-                    multiline
-                    placeholder={t('help.reportPlaceholder')}
-                    testID="help-report"
-                />
-
-                <Surface padded="compact" testID="help-diagnostics">
-                    <YStack gap={space[1]}>
-                        <Caption>{t('help.diagnostics')}</Caption>
-                        <Micro tabular testID="help-diagnostics-summary">
-                            {summary}
-                        </Micro>
-                    </YStack>
-                </Surface>
-                <Micro>{t('help.diagnosticsNote')}</Micro>
+                {/* On screen before it is sent: a button that quietly attaches things attaches whatever a later version decides to. */}
+                <Card gap={space[1]} testID="help-diagnostics">
+                    <SectionLabel>{t('help.diagnostics')}</SectionLabel>
+                    <Body fontFamily="$mono" fontSize={13} lineHeight={19} fontWeight="500" tone="secondary" selectable testID="help-diagnostics-summary">
+                        {summary}
+                    </Body>
+                </Card>
+                <Secondary fontSize={13}>{t('help.diagnosticsNote')}</Secondary>
 
                 {error ? (
                     <Banner tone="danger" message={t('help.reportFailed')} testID="help-error" />
@@ -171,19 +168,8 @@ export function HelpScreen({
                 ) : sent ? (
                     <Banner tone="success" message={t('help.reportSent')} testID="help-sent" />
                 ) : null}
-
-                <XStack gap={space[2]}>
-                    {onDone ? (
-                        <Button flex={1} variant="ghost" onPress={onDone} testID="help-close">
-                            {t('common.close')}
-                        </Button>
-                    ) : null}
-                    <Button flex={1} disabled={!report.trim() || isSaving} loading={isSaving} onPress={submit} testID="help-send">
-                        {t('help.send')}
-                    </Button>
-                </XStack>
-            </YStack>
-        </ScrollView>
+            </Section>
+        </Screen>
     );
 }
 

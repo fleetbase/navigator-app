@@ -11,7 +11,7 @@
  * blanks, so the screen asks for named facts and drops whatever is absent.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { useFleetbase } from '../api';
+import { useFleetbase, isQueuedAck } from '../api';
 
 export interface VehicleRecord {
     id: string;
@@ -34,6 +34,18 @@ export interface VehicleRecord {
     fuel_volume_unit?: string | null;
     seating_capacity?: number | string | null;
     payload_capacity?: number | string | null;
+    /** Vehicle resource: who holds it now (public id), null when nobody does. */
+    driver_id?: string | null;
+    /** Set only when the organisation uploaded a real photograph. */
+    photo_id?: string | null;
+    serial_number?: string | null;
+    call_sign?: string | null;
+    trim?: string | null;
+    type?: string | null;
+    body_type?: string | null;
+    transmission?: string | null;
+    fuel_card_number?: string | null;
+    description?: string | null;
     telematics?: {
         last_event_at?: string | null;
         last_provider?: string | null;
@@ -58,6 +70,30 @@ export function odometerOf(vehicle?: VehicleRecord | null): { value: number; sou
     if (Number.isFinite(telemetry)) return { value: telemetry, source: 'telematics' };
 
     return undefined;
+}
+
+/**
+ * The vehicle's photograph, when it has one.
+ *
+ * `photo_url` is never empty: with nothing uploaded the server answers with a
+ * stock placeholder image (Vehicle::getPhotoUrlAttribute), and `avatar_url` is
+ * the map icon, not a picture of the vehicle. A hero made of either would show
+ * every van in the fleet as the same grey drawing, so both are refused here.
+ */
+export function vehiclePhotoOf(vehicle?: { photo_url?: string | null; photo_id?: string | null } | null): string | undefined {
+    const url = vehicle?.photo_url;
+    if (!url || /vehicle-placeholder/i.test(url)) return undefined;
+    // The full resource says outright whether a photo was uploaded; the copy
+    // embedded in the driver record does not carry `photo_id`, hence `undefined` passes.
+    if (vehicle?.photo_id === null) return undefined;
+    return url;
+}
+
+/** "Mercedes-Benz · 2022 · diesel · panel van": the line under the name. */
+export function vehicleFacts(vehicle?: VehicleRecord | null): string | undefined {
+    const words = (value?: string | null) => (value ? value.replace(/[_-]+/g, ' ').trim() : undefined);
+    const parts = [[vehicle?.make, vehicle?.model].filter(Boolean).join(' ') || undefined, vehicle?.year ? String(vehicle.year) : undefined, words(vehicle?.fuel_type), words(vehicle?.body_type)].filter(Boolean);
+    return parts.length ? parts.join(' · ') : undefined;
 }
 
 /** "Toyota HiAce 2025", from whichever parts the record actually carries. */
@@ -94,4 +130,53 @@ export function useVehicle(vehicleId?: string, seed?: VehicleRecord | null, relo
     }, [load, reloadToken]);
 
     return { vehicle, isLoading, error, reload: load };
+}
+
+/**
+ * Records an odometer reading against the vehicle.
+ *
+ * `PUT /v1/vehicles/{id}` now keeps `odometer` (VehicleController's
+ * `vehicleInputFromRequest` lists it; the request validates `numeric|min:0`).
+ * Earlier servers accepted the field, answered 200 and threw it away, so the
+ * answer is read back: a reading the server did not keep is reported as
+ * `'ignored'` rather than as saved.
+ *
+ * Goes through the adapter, so a reading entered without signal is queued and
+ * sent later like any other piece of work.
+ */
+export function useUpdateOdometer(vehicleId?: string) {
+    const { adapter } = useFleetbase();
+    const [isSaving, setIsSaving] = useState(false);
+    const [outcome, setOutcome] = useState<'saved' | 'queued' | 'ignored' | 'failed' | null>(null);
+
+    const save = useCallback(
+        async (reading: number): Promise<VehicleRecord | null> => {
+            if (!vehicleId || !Number.isFinite(reading) || reading < 0) return null;
+            setIsSaving(true);
+            setOutcome(null);
+            try {
+                const raw = await adapter.put(`vehicles/${vehicleId}`, { odometer: reading });
+                if (isQueuedAck(raw)) {
+                    setOutcome('queued');
+                    return null;
+                }
+                const vehicle = ((raw as { data?: unknown })?.data ?? raw) as VehicleRecord | null;
+                const kept = Number(vehicle?.odometer);
+                if (!vehicle || !Number.isFinite(kept) || Math.abs(kept - reading) > 0.5) {
+                    setOutcome('ignored');
+                    return null;
+                }
+                setOutcome('saved');
+                return vehicle;
+            } catch {
+                setOutcome('failed');
+                return null;
+            } finally {
+                setIsSaving(false);
+            }
+        },
+        [adapter, vehicleId]
+    );
+
+    return { save, isSaving, outcome };
 }

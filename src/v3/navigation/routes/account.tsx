@@ -12,7 +12,21 @@ import { useFleetbase } from '../../api';
 import { useDriver } from '../../data';
 import { useDriverId, useFeatures, useFocusCount, useOrganization, useSignOut, type Nav } from '../session';
 
-export { SettingsScreen as Settings };
+/** The native build's version, not package.json's — a bug report has to name the binary the driver is actually running. */
+const buildVersion = () => `${getVersion()} (${getBuildNumber()})`;
+
+export function Settings({ navigation }: { navigation: Nav }) {
+    const signOut = useSignOut();
+    return (
+        <SettingsScreen
+            appVersion={buildVersion()}
+            // The diagnostics go out with a written report, from Help, where the
+            // driver can read what is attached before sending it.
+            onSendDiagnostics={() => navigation.navigate('Help', {})}
+            onSignOut={signOut}
+        />
+    );
+}
 
 /* -- Not enabled yet: honest states, not build-time placeholders. --------- */
 
@@ -30,11 +44,14 @@ export function AccountHome({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const reloadToken = useFocusCount();
     const signOut = useSignOut();
+    const { adapter } = useFleetbase();
     return (
         <AccountScreen
             driverId={driverId}
             reloadToken={reloadToken}
             features={useFeatures()}
+            appVersion={buildVersion()}
+            host={adapter.host}
             onNavigate={(route) => navigation.navigate(route, {})}
             onSignOut={signOut}
         />
@@ -44,7 +61,19 @@ export function AccountHome({ navigation }: { navigation: Nav }) {
 export function ProfileEdit({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const { driver } = useDriver(driverId);
-    return <ProfileEditScreen driverId={driverId} driver={driver} onSaved={navigation.goBack} onCancel={navigation.goBack} />;
+    const { onSwitched } = useOrganization();
+    return (
+        <ProfileEditScreen
+            driverId={driverId}
+            driver={driver}
+            onSaved={navigation.goBack}
+            onCancel={navigation.goBack}
+            // A password change answers with a new token and kills the old one.
+            // The host owns the session, and takes a driver carrying its token —
+            // the same hand-over an organisation switch makes.
+            onNewToken={onSwitched && driver ? (token) => onSwitched({ ...driver, token }) : undefined}
+        />
+    );
 }
 
 export function OrgSwitcher({ navigation }: { navigation: Nav }) {
@@ -66,9 +95,7 @@ export function OrgSwitcher({ navigation }: { navigation: Nav }) {
 export function Help({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const { adapter } = useFleetbase();
-    // The native build's version, not package.json's — a bug report has to name
-    // the binary the driver is actually running.
-    const appVersion = `${getVersion()} (${getBuildNumber()})`;
+    const appVersion = buildVersion();
     return (
         <HelpScreen
             driverId={driverId}
@@ -83,5 +110,7 @@ export function Help({ navigation }: { navigation: Nav }) {
 }
 
 export function SyncQueue() {
-    return <SyncQueueScreen />;
+    // The provider's queue — the same one Me counts from — not the module default.
+    const { queue } = useFleetbase();
+    return <SyncQueueScreen queue={queue} />;
 }
