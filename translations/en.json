@@ -256,7 +256,8 @@
             "showAll": "Show the whole route",
             "legendDone": "Done",
             "legendNow": "Now",
-            "legendLater": "Later"
+            "legendLater": "Later",
+            "legendStraight": "Not by road"
         }
     },
     "orderDetail": {
@@ -989,7 +990,8 @@
             "off": "Off duty",
             "break": "On break",
             "change": "Duty status: %{status}. Change",
-            "failed": "Your duty status did not change. Try again."
+            "failed": "Your duty status did not change. Try again.",
+            "since": "Since %{time}"
         },
         "kind": {
             "pickup": "Pickup",
@@ -1090,7 +1092,13 @@
                 "one": "order",
                 "other": "orders"
             },
+            "ordersCompleted": {
+                "one": "order completed",
+                "other": "orders completed"
+            },
             "plannedRoute": "planned route",
+            "driven": "driven",
+            "onDuty": "on duty",
             "routeTime": "on the route",
             "cash": "Cash on delivery",
             "cashBody": {
