@@ -174,7 +174,8 @@ export function ChangeVehicleScreen({
 
                     <YStack gap={space[2]} testID="change-vehicle-list">
                         {list.map(({ vehicle, standing }, i) => {
-                            const selectable = standing === 'free' || standing === 'inUse';
+                            // A vehicle another driver holds cannot be taken: two drivers must not end up on one vehicle.
+                            const selectable = standing === 'free';
                             const selected = !!vehicle.id && vehicle.id === pickedId;
                             const title = vehicleTitle(vehicle);
                             const name = vehicle.name ?? title ?? t('vehicle.unnamed');

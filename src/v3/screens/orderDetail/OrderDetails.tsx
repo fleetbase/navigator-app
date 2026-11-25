@@ -23,6 +23,7 @@
  * There is no clipboard module in the app, so "copy" is the system share
  * sheet, which offers Copy among its actions.
  */
+import { useNavigatorSettings } from '../../data/useNavigatorSettings';
 import { useState } from 'react';
 import { Image, Linking, Modal, Share } from 'react-native';
 import { XStack, YStack } from 'tamagui';
@@ -302,7 +303,9 @@ function Facilitator({ order, t, openUrl }: { order: OrderRecord; t: T; openUrl:
 /* -- Service rate. ----------------------------------------------------------- */
 
 function ServiceRate({ order, t }: { order: OrderRecord; t: T }) {
-    const rate = purchaseRateOf(order as { purchase_rate?: unknown });
+    // The organisation decides whether its drivers see what an order is charged at.
+    const { showServiceRate } = useNavigatorSettings();
+    const rate = showServiceRate ? purchaseRateOf(order as { purchase_rate?: unknown }) : undefined;
     const { items } = useServiceQuote(serviceQuoteIdOf(rate));
     if (!rate || rate.amount == null) return null;
     const currency = text(rate.currency) ?? undefined;

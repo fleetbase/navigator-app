@@ -25,7 +25,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useTabBarSpace } from '../navigation/TabBar';
-import { useChatChannels, channelOrderId, isGroupChannel, otherParticipants, type ChatChannelRecord } from '../data';
+import { useChatChannels, channelOrderId, isChannelClosed, isGroupChannel, otherParticipants, type ChatChannelRecord } from '../data';
 import { ChannelCard } from './chat/ChannelCard';
 import { Entrance } from './chat/Entrance';
 import { ChatIcon } from './chat/icons';
@@ -123,7 +123,9 @@ export function InboxScreen({
     const { t } = useTranslation();
     const { isOnline } = useSync();
     const tabBarSpace = useTabBarSpace();
-    const { channels, isLoading, isRefreshing, failed, error, refresh, retry } = useChatChannels(reloadToken);
+    const { channels: allChannels, isLoading, isRefreshing, failed, error, refresh, retry } = useChatChannels(reloadToken);
+    // An order's chat ends with the order: once it is closed it leaves the inbox.
+    const channels = useMemo(() => (allChannels ? allChannels.filter((channel) => !isChannelClosed(channel)) : allChannels), [allChannels]);
 
     const [filter, setFilter] = useState<Filter>('all');
     const [searching, setSearching] = useState(false);
