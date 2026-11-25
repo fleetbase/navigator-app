@@ -36,6 +36,7 @@ import {
 import { dayKey } from '../../data/orderStore';
 import type { ApiError } from '../../api/NavigatorAdapter';
 import { CARD_RADIUS, FilterChip, Glyph, GUTTER, IconButton, OrderAvatar, Rail, Rise, SectionLabel, WaypointMark } from './parts';
+import { OrderCardMap } from './OrderCardMap';
 import { isOrderStarted, nextPoint, orderPoints, orderShape, orderTypeLabel, segmentOf, type OrderMark, type OrderPoint, type OrderSegment } from './model';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
@@ -131,22 +132,24 @@ const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress,
      */
     const scheduledToday = order.scheduled_at && dayKey(order.scheduled_at) === dayKey();
     const time = finished ? undefined : nextEta ? formatClock(nextEta) : order.scheduled_at && !started ? (scheduledToday ? formatClock(order.scheduled_at) : formatDateTime(order.scheduled_at)) : undefined;
-    const extra = [
-        time,
-        !finished && next?.windowEnd ? t('jobs.byTime', { time: formatClock(next.windowEnd) }) : null,
-        !finished && cash?.toCollect ? t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }) : null,
-    ]
-        .filter(Boolean)
-        .join(' · ');
-
     const nextName = next?.name ?? next?.address;
     const shape = shapeLabel(points, t);
 
+    const done = points.filter((p) => p.state === 'done').length;
+    const progress = points.length ? t('jobs.orders.progress', { done, total: points.length }) : undefined;
+    const under = [progress, itemCount ? t('ordersScreen.itemCount', { count: itemCount }) : null, type].filter(Boolean).join(' · ');
+    const dueBy = !finished && next?.windowEnd ? t('jobs.byTime', { time: formatClock(next.windowEnd) }) : undefined;
+    const cashLine = !finished && cash?.toCollect ? t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }) : undefined;
+
+    /*
+     * Order card C: the order's route on a small map first, because where it goes
+     * is how a driver recognises a job; then the tracking number, the next place
+     * and when. The status sits on the map so the text below stays three lines.
+     */
     return (
         <YStack
-            padding={14}
-            gap={12}
             borderRadius={CARD_RADIUS}
+            overflow="hidden"
             backgroundColor="$surface"
             borderWidth={started && !finished ? 1.5 : 1}
             borderColor={started && !finished ? '$primary' : '$border'}
@@ -156,39 +159,54 @@ const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress,
             accessibilityLabel={t('jobs.openOrder', { order: displayIdOf(order) })}
             testID={`order-${order.id}`}
         >
-            <XStack alignItems="flex-start" gap={12}>
-                <OrderAvatar mark={mark} />
+            <YStack>
+                <OrderCardMap orderId={order.id} points={points} finished={finished} testID={`order-${order.id}-map`} />
+                <XStack position="absolute" top={10} left={10}>
+                    <StatusPill status={order.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} />
+                </XStack>
+            </YStack>
+
+            <XStack alignItems="flex-end" justifyContent="space-between" gap={12} paddingHorizontal={14} paddingTop={12} paddingBottom={14}>
                 <YStack flex={1} gap={2}>
                     {/* In full, on its own line: it is read against a parcel label. */}
-                    <Body fontFamily="$mono" fontSize={16} fontWeight="600" testID={`order-${order.id}-tracking`}>
+                    <Body fontFamily="$mono" fontSize={15} fontWeight="600" testID={`order-${order.id}-tracking`}>
                         {displayIdOf(order)}
                     </Body>
-                    <Secondary fontSize={13} numberOfLines={1}>
-                        {[type, itemCount ? t('ordersScreen.itemCount', { count: itemCount }) : null, customer].filter(Boolean).join(' · ')}
-                    </Secondary>
-                </YStack>
-                <StatusPill status={order.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} />
-            </XStack>
-
-            <ShapeStrip points={points} testID={`order-${order.id}-shape`} />
-
-            {shape || nextName || extra ? (
-                <XStack alignItems="flex-end" justifyContent="space-between" gap={12}>
-                    <YStack flex={1} gap={2}>
-                        {shape ? <SectionLabel>{shape}</SectionLabel> : null}
-                        {nextName && !finished ? (
-                            <Body fontSize={15} fontWeight="800" numberOfLines={1}>
-                                {t('jobs.orders.next', { name: nextName })}
-                            </Body>
-                        ) : null}
-                    </YStack>
-                    {extra ? (
-                        <Secondary fontSize={13} fontWeight="700" tabular numberOfLines={1}>
-                            {extra}
+                    {nextName && !finished ? (
+                        <Body fontSize={15} fontWeight="800" numberOfLines={1}>
+                            {t('jobs.orders.next', { name: nextName })}
+                        </Body>
+                    ) : shape ? (
+                        <Body fontSize={15} fontWeight="800" numberOfLines={1}>
+                            {shape}
+                        </Body>
+                    ) : null}
+                    {under ? (
+                        <Secondary fontSize={13} tabular numberOfLines={1}>
+                            {under}
                         </Secondary>
                     ) : null}
-                </XStack>
-            ) : null}
+                </YStack>
+                {time || dueBy || cashLine ? (
+                    <YStack alignItems="flex-end" gap={1}>
+                        {time ? (
+                            <Body fontSize={24} lineHeight={28} fontWeight="800" tabular numberOfLines={1}>
+                                {time}
+                            </Body>
+                        ) : null}
+                        {dueBy ? (
+                            <Secondary fontSize={12} tabular numberOfLines={1}>
+                                {dueBy}
+                            </Secondary>
+                        ) : null}
+                        {cashLine ? (
+                            <Secondary fontSize={12} fontWeight="700" tabular numberOfLines={1} color="$warningText">
+                                {cashLine}
+                            </Secondary>
+                        ) : null}
+                    </YStack>
+                ) : null}
+            </XStack>
         </YStack>
     );
 });

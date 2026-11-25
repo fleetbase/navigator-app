@@ -35,6 +35,8 @@ import {
 } from '../../data';
 import type { ApiError } from '../../api/NavigatorAdapter';
 import { toGeoPoint, useDeviceLocation } from '../../shell';
+import { StopBadge } from '../../ui/RouteMap';
+import { colorForId } from '../../ui/routeColors';
 import { Card, CARD_RADIUS, Glyph, GUTTER, OrderAvatar, Rail, Rise, SectionLabel, SegmentBar, WaypointMark } from './parts';
 import type { JobWaypoint, OrderMark, RouteCounts } from './model';
 
@@ -194,62 +196,59 @@ function WaypointCard({
         : [waypoint.distanceFromPrevM != null ? formatMeters(waypoint.distanceFromPrevM, units) : null, waypoint.durationFromPrevS ? formatDuration(waypoint.durationFromPrevS) : null]
               .filter(Boolean)
               .join(' · ');
+    // The time column is narrow, so distance and minutes each get a line of their own.
+    const legDistance = done ? leg : waypoint.distanceFromPrevM != null ? formatMeters(waypoint.distanceFromPrevM, units) : undefined;
+    const legDuration = !done && waypoint.durationFromPrevS ? formatDuration(waypoint.durationFromPrevS) : undefined;
     const part = [roleLabel(waypoint, t, true), waypoint.itemCount ? t('ordersScreen.itemCount', { count: waypoint.itemCount }) : null, waypoint.cash ? t('jobs.collect', { amount: formatMoney(waypoint.cash.amount, waypoint.cash.currency) }) : null].filter(Boolean).join(' · ');
     const tag = waypointTag(waypoint, t);
     const title = waypoint.name ?? waypoint.address ?? t('jobs.unnamed', { sequence: waypoint.sequence });
 
     return (
         <XStack gap={12} testID={`jobs-waypoint-${waypoint.key}`}>
-            <YStack width={36} alignItems="center">
-                <WaypointMark state={waypoint.state} label={waypoint.sequence} />
+            <YStack width={44} alignItems="center">
+                {/* The same marker as on the map and in the console: P, D or the waypoint's number, in its order's colour. */}
+                <StopBadge
+                    kind={waypoint.isReturn ? 'return' : waypoint.role}
+                    number={waypoint.waypointNumber ?? waypoint.sequence}
+                    color={waypoint.orderId ? colorForId(waypoint.orderId) : undefined}
+                    state={waypoint.state === 'later' ? 'pending' : waypoint.state}
+                />
                 {last ? null : <Rail vertical done={waypoint.state === 'done'} />}
             </YStack>
-            <YStack
+            {/*
+              * Route card A with the time in a column of its own at the far right:
+              * what and where on the left, when on the right, so the eye runs down
+              * one edge of the list to read the day's times.
+              */}
+            <XStack
                 flex={1}
                 marginBottom={12}
-                padding={14}
-                gap={10}
                 borderRadius={CARD_RADIUS}
+                overflow="hidden"
                 backgroundColor={current ? '$primaryFill' : '$surface'}
                 borderWidth={current ? 1.5 : 1}
                 borderColor={current ? '$primary' : '$border'}
                 opacity={done ? 0.72 : 1}
             >
-                <XStack
-                    gap={12}
-                    alignItems="flex-start"
+            <YStack flex={1} padding={14} gap={10}>
+                <YStack
+                    gap={2}
                     onPress={onOpen}
                     pressStyle={onOpen ? { opacity: 0.7 } : undefined}
                     accessibilityRole={onOpen ? 'button' : undefined}
                     accessibilityLabel={`${waypoint.sequence}. ${tag}. ${title}`}
                     testID={`route-stop-${waypoint.stopId ?? waypoint.key}`}
                 >
-                    <YStack flex={1} gap={2}>
-                        <SectionLabel tone={waypoint.state === 'done' ? 'success' : current ? 'brand' : 'muted'}>{tag}</SectionLabel>
-                        <Body fontSize={17} fontWeight="800" numberOfLines={1}>
-                            {title}
-                        </Body>
-                        {waypoint.name && waypoint.address ? (
-                            <Secondary fontSize={13} numberOfLines={1}>
-                                {waypoint.address}
-                            </Secondary>
-                        ) : null}
-                    </YStack>
-                    {time || leg ? (
-                        <YStack alignItems="flex-end" gap={2}>
-                            {time ? (
-                                <Body fontSize={18} fontWeight="800" tabular>
-                                    {formatClock(time)}
-                                </Body>
-                            ) : null}
-                            {leg ? (
-                                <Secondary fontSize={12} tabular numberOfLines={1}>
-                                    {leg}
-                                </Secondary>
-                            ) : null}
-                        </YStack>
+                    <SectionLabel tone={waypoint.state === 'done' ? 'success' : current ? 'brand' : 'muted'}>{tag}</SectionLabel>
+                    <Body fontSize={17} fontWeight="800" numberOfLines={1}>
+                        {title}
+                    </Body>
+                    {waypoint.name && waypoint.address ? (
+                        <Secondary fontSize={13} numberOfLines={1}>
+                            {waypoint.address}
+                        </Secondary>
                     ) : null}
-                </XStack>
+                </YStack>
 
                 {waypoint.orderId && waypoint.trackingNumber ? (
                     <XStack
@@ -282,6 +281,36 @@ function WaypointCard({
                     </XStack>
                 ) : null}
             </YStack>
+            {time || leg ? (
+                <YStack
+                    width={78}
+                    alignItems="center"
+                    justifyContent="center"
+                    gap={2}
+                    paddingHorizontal={6}
+                    borderLeftWidth={1}
+                    borderColor={current ? '$primary' : '$border'}
+                    onPress={onOpen}
+                    testID={`jobs-waypoint-time-${waypoint.key}`}
+                >
+                    {time ? (
+                        <Body fontSize={18} fontWeight="800" tabular numberOfLines={1}>
+                            {formatClock(time)}
+                        </Body>
+                    ) : null}
+                    {legDistance ? (
+                        <Secondary fontSize={11} tabular numberOfLines={1}>
+                            {legDistance}
+                        </Secondary>
+                    ) : null}
+                    {legDuration ? (
+                        <Secondary fontSize={11} tabular numberOfLines={1}>
+                            {legDuration}
+                        </Secondary>
+                    ) : null}
+                </YStack>
+            ) : null}
+            </XStack>
         </XStack>
     );
 }

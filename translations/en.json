@@ -248,7 +248,8 @@
                 "other": "%{count} waypoints"
             },
             "next": "Next: %{name}",
-            "cash": "%{amount} cash"
+            "cash": "%{amount} cash",
+            "progress": "%{done} of %{total} done"
         },
         "map": {
             "noPositions": "These waypoints have no coordinates, so the map cannot place them.",
