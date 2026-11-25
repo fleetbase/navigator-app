@@ -7,7 +7,8 @@
  * server's config-driven consequences; the app shows that they happened.
  */
 import { useMemo } from 'react';
-import { Image, ScrollView } from 'react-native';
+import { Image } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

@@ -7,7 +7,7 @@
  * the reason. Nothing is assumed editable.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack, Switch } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

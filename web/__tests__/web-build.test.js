@@ -11,8 +11,9 @@ function loadConfig() {
     process.env.FLEETBASE_KEY = SECRET;
     process.env.TRANSISTORSOFT_LICENSE_KEY = SECRET;
     process.env.GOOGLE_MAPS_API_KEY = SECRET;
-    delete process.env.FLEETBASE_WEB_KEY;
-    delete process.env.FLEETBASE_PLATFORM_TOKEN;
+    // Set, not deleted: the config loads .env, which only fills in what is missing.
+    process.env.FLEETBASE_WEB_KEY = '';
+    process.env.FLEETBASE_PLATFORM_TOKEN = '';
     return require('../../webpack.config.js')({}, { mode: 'production' });
 }
 

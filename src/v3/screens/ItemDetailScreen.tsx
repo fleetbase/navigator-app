@@ -15,7 +15,8 @@
  * the screen says so, instead of printing a column of em dashes.
  */
 import { useMemo } from 'react';
-import { Image, ScrollView } from 'react-native';
+import { Image } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

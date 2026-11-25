@@ -11,7 +11,8 @@
  * called, what is on the plate, how far it has run, what it drinks — and drops
  * every one the record does not have.
  */
-import { ScrollView, Image } from 'react-native';
+import { Image } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

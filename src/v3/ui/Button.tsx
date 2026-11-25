@@ -21,6 +21,9 @@ const Frame = styled(XStack, {
     borderRadius: radius.compact + 2,
     borderWidth: 1,
     borderColor: '$transparent',
+    // Stated, not left to the default: the `disabled` variant animates opacity down, and with
+    // nothing to animate back to an enabled button kept looking disabled.
+    opacity: 1,
     animation: 'quick',
 
     variants: {

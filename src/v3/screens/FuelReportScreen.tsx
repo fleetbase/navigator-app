@@ -18,7 +18,7 @@ import { StatusPill } from '../ui/StatusPill';
 import { Surface, Divider } from '../ui/Surface';
 import { Banner } from '../ui/Banner';
 import { space } from '../theme/tokens';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSettings } from '../settings';
 import { formatVolume, formatOdometer, formatEconomy, computeEconomy, type FuelReportRecord } from '../data';

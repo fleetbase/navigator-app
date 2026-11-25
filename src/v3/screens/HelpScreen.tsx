@@ -21,7 +21,8 @@
  * agreed copy; hardcoding a few questions here would be inventing product.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Surface, Divider } from '../ui/Surface';

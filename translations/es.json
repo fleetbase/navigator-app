@@ -683,21 +683,20 @@
         "inspection": "Inspección del vehículo"
     },
     "otp": {
-        "title": "Iniciar sesión con un código",
-        "intro": "Introduce tu número de teléfono y te enviaremos un código de un solo uso.",
-        "introWithOrg": "Introduce el número de teléfono que %{organization} tiene registrado y te enviaremos un código de un solo uso.",
+        "title": "Iniciar sesión",
+        "intro": "Introduce tu número de teléfono y te enviaremos un código por SMS.",
+        "introWithOrg": "Introduce el número de teléfono que %{organization} tiene registrado y te enviaremos un código por SMS.",
         "phoneLabel": "Número de teléfono",
-        "phoneHint": "Incluye el prefijo de tu país, por ejemplo +34.",
         "phoneInvalid": "Eso no parece un número de teléfono.",
         "send": "Enviarme un código",
         "sentSms": "Enviamos un código por SMS a %{phone}.",
         "sentEmail": "No pudimos enviarte un SMS, así que el código fue a tu correo.",
-        "codeLabel": "Código de seis dígitos",
+        "codeLabel": "Introduce el código de 6 dígitos",
         "verify": "Iniciar sesión",
         "resend": "Enviar de nuevo",
         "changeNumber": "Cambiar número",
         "failed": "Eso no funcionó",
-        "usePassword": "Usar contraseña",
+        "usePassword": "Iniciar sesión con correo electrónico",
         "note": "Los códigos caducan a los pocos minutos. Consulta a despacho si tu número ha cambiado.",
         "offlineNotice": "Necesitas conexión para recibir un código."
     },
@@ -732,7 +731,12 @@
         "onTime": "A tiempo",
         "behind": "Con retraso",
         "manifestId": "MANIFIESTO",
-        "stopsOfTotal": "%{completed} de %{total} paradas"
+        "stopsOfTotal": "%{completed} de %{total} paradas",
+        "phone": {
+            "changeCountry": "Código de país, %{country}. Toca para cambiar.",
+            "countryTitle": "Código de país",
+            "countrySearch": "Buscar países"
+        }
     },
     "settings": {
         "appearance": "APARIENCIA",

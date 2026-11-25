@@ -12,7 +12,7 @@
  * than offering all forty at once.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Caption, Micro } from '../ui/Text';
 import { Surface } from '../ui/Surface';

@@ -12,7 +12,7 @@
  * things worse rather than better.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Surface, Divider } from '../ui/Surface';

@@ -6,7 +6,7 @@
  * shown in full when the server has answered; a queued submission has none
  * yet, and says so rather than inventing them.
  */
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

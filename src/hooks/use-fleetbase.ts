@@ -5,7 +5,9 @@ import useStorage from './use-storage';
 
 const useFleetbase = () => {
     const { resolveConnectionConfig } = useConfig();
-    const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+    // Before sign-in the SDK carries the app's own credential (see ConfigContext).
+    // The SDK refuses an empty one, so a build with neither still starts.
+    const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_SIGN_IN_CREDENTIAL') || 'unconfigured';
     const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
 
     const [error, setError] = useState<Error | null>(null);
@@ -13,7 +15,7 @@ const useFleetbase = () => {
     const [fleetbase, setFleetbase] = useState<Fleetbase | null>(new Fleetbase(authToken ?? FLEETBASE_KEY, { host: FLEETBASE_HOST }));
 
     const hasFleetbaseConfig = useCallback(() => {
-        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_SIGN_IN_CREDENTIAL');
         const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
 
         return typeof FLEETBASE_KEY === 'string' && typeof FLEETBASE_HOST === 'string';
@@ -21,7 +23,7 @@ const useFleetbase = () => {
 
     useEffect(() => {
         const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
-        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_SIGN_IN_CREDENTIAL') || 'unconfigured';
 
         try {
             // If authToken is present, initialize a new Fleetbase instance with it,

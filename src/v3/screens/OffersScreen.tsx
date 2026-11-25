@@ -16,7 +16,7 @@
  * the live-refresh signal, so a new offer appears while this screen is open.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

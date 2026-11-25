@@ -18,7 +18,7 @@
  * follow-up once C5 (proof of delivery record) is built — it is the same read.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

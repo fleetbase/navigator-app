@@ -10,7 +10,7 @@
  *   and sunlight are deliberate driver decisions that must never be inferred
  *   from the OS.
  */
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack, Switch } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Banner } from '../ui/Banner';

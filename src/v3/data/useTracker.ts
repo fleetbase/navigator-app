@@ -92,7 +92,13 @@ export interface TrackerRecord {
     stops?: TrackerStop[];
     active_stop?: TrackerStop | null;
     next_stop?: TrackerStop | null;
-    route?: { distance_m?: number; duration_s?: number; duration_in_traffic_s?: number };
+    route?: {
+        distance_m?: number;
+        duration_s?: number;
+        duration_in_traffic_s?: number;
+        /** The road route through the remaining stops, encoded (precision 5). Null when no routing engine answered. */
+        polyline?: string | null;
+    };
     eta?: TrackerEta;
     insights?: TrackerInsights;
     capabilities?: TrackerCapabilities;

@@ -20,7 +20,7 @@
  *     nearly twelve hours old, so an unlabelled ETA would have been wrong by
  *     any measure.
  */
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, MetricValue, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';
@@ -48,9 +48,6 @@ import {
 import { useLiveRefresh } from '../realtime/liveRefresh';
 import { formatDuration, formatMeters, formatClock } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
-
-/** Blocked on Phase 4a. Named individually so the gap is legible, not vague. */
-const NOT_ENABLED = ['today.hos', 'today.driveTime', 'today.break', 'today.inspection'] as const;
 
 function NextStopCard({
     order,
@@ -236,29 +233,6 @@ export function TodayScreen({
             {orders.length > 1 ? (
                 <Micro testID="today-more-work">{t('today.moreWork', { count: orders.length - 1 })}</Micro>
             ) : null}
-
-            {/*
-              * Named individually rather than one vague "coming soon": a driver
-              * should be able to see that the app knows these exist and is not
-              * quietly omitting them.
-              */}
-            <Surface testID="today-not-enabled">
-                <YStack padding={space[3]} gap={space[1]}>
-                    <Heading fontSize={15}>{t('today.notEnabledTitle')}</Heading>
-                    <Secondary fontSize={13}>{t('today.notEnabledBody')}</Secondary>
-                </YStack>
-                {NOT_ENABLED.map((key) => (
-                    <YStack key={key}>
-                        <Divider />
-                        <XStack padding={space[3]} justifyContent="space-between" alignItems="center" testID={`not-enabled-${key.split('.')[1]}`}>
-                            <Body fontSize={15} tone="secondary">
-                                {t(key)}
-                            </Body>
-                            <Micro tone="warning">{t('today.notEnabled')}</Micro>
-                        </XStack>
-                    </YStack>
-                ))}
-            </Surface>
         </ScrollView>
     );
 }

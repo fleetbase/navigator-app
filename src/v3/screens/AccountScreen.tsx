@@ -14,7 +14,8 @@
  *     when there is something in it.
  */
 import { useState } from 'react';
-import { ScrollView, Image } from 'react-native';
+import { Image } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

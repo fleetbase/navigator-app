@@ -2,6 +2,7 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { TamaguiProvider, Theme } from 'tamagui';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PortalProvider } from '@gorhom/portal';
 import config, { SCHEMES, type SchemeName } from '../../theme';
 import { OtpSignInScreen } from '../OtpSignInScreen';
 import { FleetbaseProvider, MutationQueue } from '../../api';
@@ -48,7 +49,8 @@ async function mount(node: React.ReactNode, scheme: SchemeName = 'dark') {
                     <Theme name={scheme}>
                         <SyncProvider>
                             <FleetbaseProvider host="https://x.test" queue={queue}>
-                                {node}
+                                {/* The country picker's sheet renders through a portal. */}
+                                <PortalProvider>{node}</PortalProvider>
                             </FleetbaseProvider>
                         </SyncProvider>
                     </Theme>
@@ -81,7 +83,9 @@ const testIDs = (t: ReactTestRenderer.ReactTestRenderer) => {
 const byID = (t: ReactTestRenderer.ReactTestRenderer, id: string) => t.root.findAll((n) => n.props?.testID === id)[0];
 const type = (t: ReactTestRenderer.ReactTestRenderer, id: string, text: string) =>
     ReactTestRenderer.act(() => {
-        (byID(t, id).props as { onChangeText?: (s: string) => void }).onChangeText?.(text);
+        // The phone field reports the whole number through `onChange`; text inputs through `onChangeText`.
+        const props = byID(t, id).props as { onChangeText?: (s: string) => void; onChange?: (s: string) => void };
+        (props.onChangeText ?? props.onChange)?.(text);
     });
 const press = async (t: ReactTestRenderer.ReactTestRenderer, id: string) =>
     ReactTestRenderer.act(async () => {
@@ -158,9 +162,9 @@ describe('OtpSignInScreen', () => {
         const t = await mount(<OtpSignInScreen />);
         type(t, 'input-phone', '+6581000001');
         await press(t, 'otp-send');
-        type(t, 'input-code', '123');
+        type(t, 'input-code-input', '123');
         expect(byID(t, 'otp-verify').props.disabled).toBe(true);
-        type(t, 'input-code', '123456');
+        type(t, 'input-code-input', '123456');
         expect(byID(t, 'otp-verify').props.disabled).toBe(false);
         ReactTestRenderer.act(() => t.unmount());
     });
@@ -169,8 +173,8 @@ describe('OtpSignInScreen', () => {
         const t = await mount(<OtpSignInScreen />);
         type(t, 'input-phone', '+6581000001');
         await press(t, 'otp-send');
-        type(t, 'input-code', 'a1b2c3d4e5f6g7');
-        expect(byID(t, 'input-code').props.value).toBe('123456');
+        type(t, 'input-code-input', 'a1b2c3d4e5f6g7');
+        expect(byID(t, 'input-code-input').props.value).toBe('123456');
         ReactTestRenderer.act(() => t.unmount());
     });
 
@@ -178,7 +182,7 @@ describe('OtpSignInScreen', () => {
         const t = await mount(<OtpSignInScreen />);
         type(t, 'input-phone', '65 8100 0001');
         await press(t, 'otp-send');
-        type(t, 'input-code', '123456');
+        type(t, 'input-code-input', '123456');
         await press(t, 'otp-verify');
 
         const verify = fetchMock.mock.calls.find((c) => String(c[0]).includes('verify-code'));
@@ -192,7 +196,7 @@ describe('OtpSignInScreen', () => {
         const t = await mount(<OtpSignInScreen onVerified={onVerified} />);
         type(t, 'input-phone', '+6581000001');
         await press(t, 'otp-send');
-        type(t, 'input-code', '123456');
+        type(t, 'input-code-input', '123456');
         await press(t, 'otp-verify');
         expect(onVerified).toHaveBeenCalledWith(expect.objectContaining({ id: 'driver_1' }));
         ReactTestRenderer.act(() => t.unmount());
@@ -203,7 +207,7 @@ describe('OtpSignInScreen', () => {
         const t = await mount(<OtpSignInScreen />);
         type(t, 'input-phone', '+6581000001');
         await press(t, 'otp-send');
-        type(t, 'input-code', '000000');
+        type(t, 'input-code-input', '000000');
         await press(t, 'otp-verify');
         expect(testIDs(t)).toContain('otp-error');
         expect(testIDs(t)).toContain('input-code');

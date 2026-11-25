@@ -740,21 +740,20 @@
         "inspection": "Vehicle inspection"
     },
     "otp": {
-        "title": "Sign in with a code",
-        "intro": "Enter your phone number and we will send you a one-time code.",
-        "introWithOrg": "Enter the phone number %{organization} has on file and we will send you a one-time code.",
+        "title": "Sign in",
+        "intro": "Enter your phone number and we will text you a code.",
+        "introWithOrg": "Enter the phone number %{organization} has on file and we will text you a code.",
         "phoneLabel": "Phone number",
-        "phoneHint": "Include your country code, for example +65.",
         "phoneInvalid": "That does not look like a phone number.",
         "send": "Send me a code",
         "sentSms": "We texted a code to %{phone}.",
         "sentEmail": "We could not text you, so the code went to your email instead.",
-        "codeLabel": "Six-digit code",
+        "codeLabel": "Enter the 6-digit code",
         "verify": "Sign in",
         "resend": "Send again",
         "changeNumber": "Change number",
         "failed": "That did not work",
-        "usePassword": "Use a password instead",
+        "usePassword": "Sign in with email instead",
         "note": "Codes expire after a few minutes. Ask dispatch if your number has changed.",
         "offlineNotice": "You need a connection to receive a code."
     },
@@ -789,7 +788,12 @@
         "onTime": "On time",
         "behind": "Behind",
         "manifestId": "MANIFEST",
-        "stopsOfTotal": "%{completed} of %{total} stops"
+        "stopsOfTotal": "%{completed} of %{total} stops",
+        "phone": {
+            "changeCountry": "Country code, %{country}. Tap to change.",
+            "countryTitle": "Country code",
+            "countrySearch": "Search countries"
+        }
     },
     "settings": {
         "appearance": "APPEARANCE",

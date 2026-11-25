@@ -133,6 +133,10 @@ export interface FieldProps {
     disabled?: boolean;
     /** Right-hand accessory: a unit pill, currency selector, or plain text. */
     accessory?: React.ReactNode;
+    /** Left-hand element inside the frame, ahead of the input: a country code picker. */
+    leading?: React.ReactNode;
+    /** What the system may autofill here. */
+    autoComplete?: 'off' | 'tel' | 'email' | 'username' | 'current-password';
     /** Numeric values must be tabular so digits don't jitter while typing. */
     tabular?: boolean;
     keyboardType?: 'default' | 'numeric' | 'decimal-pad' | 'phone-pad' | 'email-address';
@@ -150,7 +154,7 @@ export interface FieldProps {
 }
 
 export const Field = forwardRef<TextInput, FieldProps>(function Field(
-    { label, value, placeholder, error, hint, disabled, accessory, tabular, keyboardType, autoCapitalize, multiline, secure, onChangeText, onBlur, testID },
+    { label, value, placeholder, error, hint, disabled, accessory, leading, autoComplete, tabular, keyboardType, autoCapitalize, multiline, secure, onChangeText, onBlur, testID },
     ref
 ) {
     const [focused, setFocused] = useState(false);
@@ -164,6 +168,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
             {/* The ring is a sibling of the frame, never an ancestor of the input. */}
             <View>
                 <View style={frame} testID={testID ? `${testID}-frame` : undefined}>
+                    {leading}
                     <BareInput
                         ref={ref as never}
                         value={value}
@@ -171,6 +176,7 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
                         placeholderTextColor="$textMuted"
                         editable={!disabled}
                         keyboardType={keyboardType}
+                        autoComplete={autoComplete}
                         autoCapitalize={autoCapitalize}
                         multiline={multiline}
                         secureTextEntry={secure}

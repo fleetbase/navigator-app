@@ -9,7 +9,8 @@
  * either landed or queued.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
 import { Surface, Divider } from '../ui/Surface';

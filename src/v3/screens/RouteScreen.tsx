@@ -19,7 +19,8 @@
  *     on the console-only endpoints. It is not drawn.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import { RefreshControl } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Heading, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

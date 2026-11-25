@@ -180,6 +180,8 @@ export interface V3AppProps {
     onSignIn?: (identity: string, password: string) => Promise<void>;
     /** Per-organisation auth alternates. */
     authMethods?: AuthMethod[];
+    /** Which sign-in a driver sees first. Phone needs `authMethods` to offer it. */
+    defaultAuthMethod?: 'phone' | 'password';
     /**
      * Accepts a verified self-hosted origin. Omit to hide the option entirely —
      * a managed deployment should not offer to point elsewhere.
@@ -242,6 +244,7 @@ export function V3App({
     location,
     onSignIn,
     authMethods,
+    defaultAuthMethod = 'phone',
     onChangeHost,
     onOtpVerified,
     children,
@@ -252,7 +255,7 @@ export function V3App({
     // Which sign-in the driver is using. Password remains the default; the code
     // route is offered because a driver who has forgotten theirs is otherwise
     // stuck until dispatch intervenes.
-    const [usingOtp, setUsingOtp] = React.useState(false);
+    const [usingOtp, setUsingOtp] = React.useState(() => defaultAuthMethod === 'phone' && !!authMethods?.includes('phone'));
     return (
         <PortalProvider>
             <ThemedRoot scheme={scheme}>

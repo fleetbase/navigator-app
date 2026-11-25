@@ -21,7 +21,8 @@
  * Read receipts are shown where the API gives them: `receipts` on each message.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, ScrollView, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { FlatList, ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';
 import { Field } from '../ui/Field';

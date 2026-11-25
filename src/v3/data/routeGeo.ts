@@ -181,3 +181,37 @@ export function formatLatLng(point?: LatLng | null): string | undefined {
     if (!point) return undefined;
     return `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}`;
 }
+
+/**
+ * Decodes an encoded polyline (precision 5, the encoding the tracker's
+ * `route.polyline` uses whichever routing engine produced it).
+ */
+export function decodePolyline(encoded?: string | null): LatLng[] {
+    if (!encoded) return [];
+    const points: LatLng[] = [];
+    let index = 0;
+    let latitude = 0;
+    let longitude = 0;
+
+    const next = () => {
+        let result = 0;
+        let shift = 0;
+        let byte: number;
+        do {
+            byte = encoded.charCodeAt(index++) - 63;
+            result |= (byte & 0x1f) << shift;
+            shift += 5;
+        } while (byte >= 0x20 && index < encoded.length);
+        return result & 1 ? ~(result >> 1) : result >> 1;
+    };
+
+    while (index < encoded.length) {
+        latitude += next();
+        longitude += next();
+        const point = { latitude: latitude / 1e5, longitude: longitude / 1e5 };
+        // A truncated or foreign string decodes to nonsense: draw nothing rather than a line across the globe.
+        if (Math.abs(point.latitude) > 90 || Math.abs(point.longitude) > 180) return [];
+        points.push(point);
+    }
+    return points;
+}

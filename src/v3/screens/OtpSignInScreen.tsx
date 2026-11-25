@@ -1,5 +1,6 @@
 /**
- * Sign in with a one-time code — R1 frame s15.
+ * Sign in with a one-time code — R1 frame s15. The default way in: a driver knows
+ * their phone number, and email sign-in is the alternative offered below.
  *
  * The frame shows "we texted you". The server does not guarantee that: it tries
  * SMS, falls back to email if SMS throws, and reports which it used. So the
@@ -12,12 +13,14 @@
  * get back without losing their place.
  */
 import { useCallback, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack } from 'tamagui';
-import { Caption, Heading, Micro, Secondary } from '../ui/Text';
+import { Caption, Display, Micro, Secondary } from '../ui/Text';
 import { Surface } from '../ui/Surface';
-import { Field } from '../ui/Field';
+import { PhoneField } from '../ui/PhoneField';
+import { CodeInput } from '../ui/CodeInput';
+import { BrandLogo } from '../branding/BrandLogo';
 import { Button } from '../ui/Button';
 import { Banner, ErrorState } from '../ui/Banner';
 import { space } from '../theme/tokens';
@@ -63,9 +66,9 @@ export function OtpSignInScreen({
         setChannel(result.channel ?? 'sms');
     }, [phone, requestCode]);
 
-    const submit = useCallback(async () => {
+    const submit = useCallback(async (entered?: string) => {
         setError(null);
-        const result = await verifyCode(normalizePhone(phone), code);
+        const result = await verifyCode(normalizePhone(phone), entered ?? code);
         if (!result.ok) {
             setError(result.error ?? null);
             return;
@@ -84,10 +87,13 @@ export function OtpSignInScreen({
         <ScrollView
             style={screen}
             contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[5], gap: space[4], flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
             testID="otp-sign-in"
         >
-            <YStack gap={space[2]}>
-                <Heading>{t('otp.title')}</Heading>
+            <YStack gap={space[1]}>
+                {/* The first screen a driver sees: the build's logo, as on the email sign-in. */}
+                <BrandLogo />
+                <Display fontSize={30}>{t('otp.title')}</Display>
                 <Secondary fontSize={14}>
                     {organizationName ? t('otp.introWithOrg', { organization: organizationName }) : t('otp.intro')}
                 </Secondary>
@@ -98,16 +104,12 @@ export function OtpSignInScreen({
             <Surface padded>
                 {!sent ? (
                     <YStack gap={space[4]}>
-                        <Field
+                        <PhoneField
                             label={t('otp.phoneLabel')}
                             value={phone}
-                            onChangeText={setPhone}
+                            onChange={setPhone}
                             onBlur={() => setTouched(true)}
-                            keyboardType="phone-pad"
-                            tabular
-                            placeholder="+65 8100 0001"
                             error={phoneInvalid ? t('otp.phoneInvalid') : undefined}
-                            hint={t('otp.phoneHint')}
                             testID="input-phone"
                         />
                         <Button
@@ -127,13 +129,15 @@ export function OtpSignInScreen({
                             {channel === 'email' ? t('otp.sentEmail') : t('otp.sentSms', { phone: normalizePhone(phone) })}
                         </Caption>
 
-                        <Field
+                        <CodeInput
                             label={t('otp.codeLabel')}
                             value={code}
-                            onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, CODE_LENGTH))}
-                            keyboardType="numeric"
-                            tabular
-                            placeholder="000000"
+                            onChange={setCode}
+                            // The last digit signs in: nothing is left for the driver to decide.
+                            onComplete={(entered) => void submit(entered)}
+                            length={CODE_LENGTH}
+                            disabled={isVerifying}
+                            autoFocus
                             testID="input-code"
                         />
 
@@ -141,7 +145,7 @@ export function OtpSignInScreen({
                             fullWidth
                             disabled={code.length < CODE_LENGTH || !isOnline}
                             loading={isVerifying}
-                            onPress={submit}
+                            onPress={() => void submit()}
                             testID="otp-verify"
                         >
                             {t('otp.verify')}

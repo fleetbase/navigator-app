@@ -8,7 +8,8 @@
  * A driver who belongs to one organisation gets told so plainly rather than
  * being shown a one-item list that looks like a choice.
  */
-import { ScrollView, Image } from 'react-native';
+import { Image } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { useSync } from '../shell';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';

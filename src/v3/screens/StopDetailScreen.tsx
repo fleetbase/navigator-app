@@ -17,7 +17,8 @@
  * the app yet; share covers the same need through the system sheet).
  */
 import { useCallback, useMemo, useState } from 'react';
-import { Linking, ScrollView, Share } from 'react-native';
+import { Linking, Share } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

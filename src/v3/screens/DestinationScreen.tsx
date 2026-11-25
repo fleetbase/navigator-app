@@ -14,7 +14,7 @@
  * finished stop is not something the app should quietly allow.
  */
 import { useCallback, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Micro, Secondary } from '../ui/Text';
 import { Surface, Divider } from '../ui/Surface';

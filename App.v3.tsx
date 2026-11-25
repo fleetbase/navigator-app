@@ -27,7 +27,7 @@ import { navigatorConfig } from './src/utils/navigator-config';
 function DriverBridge(): React.JSX.Element {
     const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, sessionEpoch, logout, createDriverSession } = useAuth();
     const { fleetbase } = useFleetbaseV2();
-    const { resolveConnectionConfig, setInstanceLinkConfig } = useConfig();
+    const { resolveConnectionConfig } = useConfig();
     const { addNotificationListener, removeNotificationListener } = useNotification();
     // v2 already runs background geolocation for the whole app; v3 reads its
     // last fix rather than starting a second consumer of the same hardware.
@@ -105,17 +105,18 @@ function DriverBridge(): React.JSX.Element {
             // re-handshakes it on every sign-in, sign-out and org switch.
             socketSession={sessionEpoch}
             subscribeToPush={subscribeToPush}
-            // FLEETBASE_KEY is the organisation's *API key* — an admin-scoped
-            // credential that should never sit on a handset. The platform token
-            // is the pre-auth one, scoped to onboarding.
-            platformToken={resolveConnectionConfig('FLEETBASE_PLATFORM_TOKEN')}
+            // What the app presents until a driver signs in: the instance's
+            // platform token, which only opens the sign-in routes. A build tied
+            // to one organisation may still use that organisation's API key.
+            platformToken={resolveConnectionConfig('FLEETBASE_SIGN_IN_CREDENTIAL')}
             userToken={authToken ?? undefined}
             onUnauthorized={logout}
             onSignOut={logout}
-            // Only the host is stored — never a key. v2's link flow shipped an
-            // admin API credential here; the v3 screen verifies the host
-            // unauthenticated instead.
-            onChangeHost={(nextHost: string) => setInstanceLinkConfig('FLEETBASE_HOST', nextHost)}
+            // No `onChangeHost`: "Connect to a different server" is not offered.
+            // A host alone is not enough to move to another instance — the app
+            // would still carry this build's platform token and socket, which
+            // belong to the instance it was built for. Switching needs the other
+            // instance to hand those over (a signed link from its Console).
             // The code route returns the same driver payload as a password
             // sign-in, so the session is created in exactly the same way.
             onOtpVerified={createDriverSession}

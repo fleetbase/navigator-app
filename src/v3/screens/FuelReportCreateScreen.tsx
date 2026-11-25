@@ -14,7 +14,7 @@
  * is queued with its idempotency key and replayed, rather than lost.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';
 import { Surface } from '../ui/Surface';

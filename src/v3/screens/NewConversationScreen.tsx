@@ -9,7 +9,7 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { useSync } from '../shell';
-import { FlatList } from 'react-native';
+import { FlatList } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro } from '../ui/Text';
 import { Surface, Divider } from '../ui/Surface';

@@ -15,7 +15,7 @@
  * unchanged form makes no request at all.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Micro } from '../ui/Text';
 import { Surface } from '../ui/Surface';

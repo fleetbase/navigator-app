@@ -10,7 +10,8 @@
  * progress and the app says so rather than failing.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, ScrollView } from 'react-native';
+import { Linking } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Heading, HeroValue, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';
@@ -51,9 +52,14 @@ import {
     clearProof,
     type ChatChannelRecord,
     type RemovalReason,
+    type TrackerRecord,
+    decodePolyline,
+    coordsOfPoint,
 } from '../data';
 import { useFleetbase, isQueuedAck } from '../api';
-import { useSettings } from '../settings';
+import { useSettings, useResolvedScheme } from '../settings';
+import { useDeviceLocation } from '../shell';
+import { OrderMap, type OrderMapStop } from '../ui/OrderMap';
 import { formatClock, formatMeters } from '../format';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { useScreenStyle } from '../ui/useScreenStyle';
@@ -324,6 +330,8 @@ export function OrderDetailScreen({
                 </YStack>
             </Surface>
 
+            <OrderRouteMap payload={payload} tracker={live} activeStopId={heading?.id} />
+
             {tracker?.eta_seconds || tracker?.distance_m ? (
                 <XStack gap={space[4]}>
                     {tracker?.eta_seconds ? (
@@ -502,3 +510,35 @@ export function OrderDetailScreen({
 }
 
 export default OrderDetailScreen;
+
+/**
+ * The order on a map. Stops come from the tracker when it has loaded (it knows
+ * which are done), otherwise from the order itself, so the map does not wait on it.
+ */
+function OrderRouteMap({ payload, tracker, activeStopId }: { payload: ReturnType<typeof payloadOf>; tracker?: TrackerRecord | null; activeStopId?: string }) {
+    const scheme = useResolvedScheme();
+    const position = useDeviceLocation();
+    const route = useMemo(() => decodePolyline(tracker?.route?.polyline), [tracker?.route?.polyline]);
+
+    const stops = useMemo<OrderMapStop[]>(() => {
+        const tracked = (tracker?.stops ?? []).flatMap((stop, index) => {
+            const point = coordsOfPoint(stop.location);
+            return point ? [{ id: stop.public_id ?? stop.uuid ?? String(index), point, sequence: stop.sequence ?? index + 1, name: stop.name ?? stop.address, done: !!stop.completed }] : [];
+        });
+        if (tracked.length) return tracked;
+        return orderStops(payload).flatMap((stop, index) => {
+            const point = coordsOfPoint(stop.location);
+            return point ? [{ id: stop.id ?? String(index), point, sequence: index + 1, name: stop.name ?? stop.address }] : [];
+        });
+    }, [tracker?.stops, payload]);
+
+    return (
+        <OrderMap
+            stops={stops}
+            route={route}
+            activeStopId={tracker?.active_stop?.public_id ?? activeStopId}
+            position={position}
+            dark={scheme !== 'light' && scheme !== 'sunlight'}
+        />
+    );
+}

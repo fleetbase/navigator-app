@@ -9,7 +9,8 @@
  * Read-only on purpose. Whether a driver couples and uncouples from the app
  * is the owner's call (§12.1); until then the screen says who does.
  */
-import { ScrollView, Image } from 'react-native';
+import { Image } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

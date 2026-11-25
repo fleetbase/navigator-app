@@ -10,7 +10,8 @@
  * currency. Direction is shown with a glyph and a tone, never colour alone.
  */
 import { useMemo, useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import { RefreshControl } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, HeroValue, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

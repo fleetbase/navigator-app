@@ -6,7 +6,8 @@
  * reading "Ron, Charlotte, Isabella" in Ron's own inbox is noise.
  */
 import { useCallback } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { RefreshControl } from 'react-native';
+import { FlatList } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Micro, Secondary } from '../ui/Text';
 import { Surface } from '../ui/Surface';

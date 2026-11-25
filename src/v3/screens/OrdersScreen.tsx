@@ -9,7 +9,8 @@
  * identity across unrelated re-renders and the memoised cards actually skip.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { RefreshControl } from 'react-native';
+import { FlatList } from '../ui/Scroll';
 import { YStack, useTheme } from 'tamagui';
 import { Banner, EmptyState, Skeleton } from '../ui/Banner';
 import { Button } from '../ui/Button';

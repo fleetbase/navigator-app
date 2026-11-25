@@ -9,7 +9,8 @@
  * status, so the row omits it — see `useOrderTimeline` for why that is a
  * deliberate omission and not an oversight.
  */
-import { ScrollView, RefreshControl } from 'react-native';
+import { RefreshControl } from 'react-native';
+import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Identifier } from '../ui/Identifier';

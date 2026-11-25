@@ -11,7 +11,7 @@
  * than shrinking below a legible size. Colour comes from the status registry,
  * never from the config's `color` hint — the app owns its palette.
  */
-import { ScrollView } from 'react-native';
+import { ScrollView } from './Scroll';
 import { XStack, YStack } from 'tamagui';
 import { Micro } from './Text';
 import { describeStatus } from '../theme/status';

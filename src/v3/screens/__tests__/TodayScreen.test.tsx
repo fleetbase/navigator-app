@@ -92,14 +92,11 @@ describe('TodayScreen', () => {
         ReactTestRenderer.act(() => t.unmount());
     });
 
-    it('names the four cards it cannot show, rather than omitting them quietly', async () => {
-        // A driver should see the app knows these exist and are switched off.
+    it('shows nothing about features the organisation has not switched on', async () => {
+        // A card listing what is unavailable gave a driver nothing to act on.
         const t = await mount(<TodayScreen driverId="driver_1" />);
-        const ids = testIDs(t);
-        for (const key of ['hos', 'driveTime', 'break', 'inspection']) {
-            expect(ids).toContain(`not-enabled-${key}`);
-        }
-        expect(textOf(t)).toContain('Not enabled');
+        expect(testIDs(t)).not.toContain('today-not-enabled');
+        expect(textOf(t)).not.toContain('Not enabled');
         ReactTestRenderer.act(() => t.unmount());
     });
 

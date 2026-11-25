@@ -48,7 +48,7 @@ export function placeableStops(stops: ManifestStopRecord[]): PlacedStop[] {
         .filter(Boolean) as PlacedStop[];
 }
 
-function StopBadge({ sequence, state }: { sequence?: number; state: 'done' | 'current' | 'pending' }) {
+export function StopBadge({ sequence, state }: { sequence?: number; state: 'done' | 'current' | 'pending' }) {
     const background = state === 'current' ? '$primary' : state === 'done' ? '$successFill' : '$surface';
     const border = state === 'current' ? '$primary' : state === 'done' ? '$successBorder' : '$border';
     const size = hitTarget.min;
