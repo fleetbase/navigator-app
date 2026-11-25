@@ -18,9 +18,10 @@ import { TamaguiProvider, Theme } from 'tamagui';
 
 import waypointConfig, { type SchemeName } from './theme';
 import { useResolvedScheme } from './settings';
-import SignInScreen, { type AuthMethod } from './screens/SignInScreen';
-import SelfHostedConnectionScreen from './screens/SelfHostedConnectionScreen';
-import OtpSignInScreen from './screens/OtpSignInScreen';
+import { type AuthMethod } from './screens/SignInScreen';
+import { PreAuthFlow } from './onboarding/PreAuthFlow';
+import { OnboardingFlow } from './onboarding/OnboardingFlow';
+import type { InstanceLink } from './connection/instanceLink';
 import { DriverShell } from './navigation';
 import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
@@ -187,6 +188,24 @@ export interface V3AppProps {
      * a managed deployment should not offer to point elsewhere.
      */
     onChangeHost?: (host: string) => void;
+    /**
+     * Saves a link to another server (scanned, opened or typed) and reconnects.
+     * Omit to hide linking: a build tied to one deployment should not offer it.
+     */
+    onLinkInstance?: (link: InstanceLink) => void;
+    /** Returns to the server the build shipped with. */
+    onUnlinkInstance?: () => void;
+    /** The linked server's origin, when the app is linked away from its own. */
+    linkedHost?: string;
+    /** A link that arrived from outside the app (the Console's URL). */
+    openedLink?: InstanceLink | null;
+    onOpenedLinkHandled?: () => void;
+    /**
+     * False until this driver has been through the first-run steps (organisation,
+     * location, notifications). The host remembers it; v3 only asks.
+     */
+    onboardingComplete?: boolean;
+    onOnboardingComplete?: () => void;
     /** Completes an OTP sign-in; the host app creates the session. */
     onOtpVerified?: (driver: unknown) => void;
     /** Rendered inside the providers — toasts, portals the host app owns. */
@@ -245,17 +264,20 @@ export function V3App({
     onSignIn,
     authMethods,
     defaultAuthMethod = 'phone',
-    onChangeHost,
+    onLinkInstance,
+    onUnlinkInstance,
+    linkedHost,
+    openedLink,
+    onOpenedLinkHandled,
+    onboardingComplete = true,
+    onOnboardingComplete,
     onOtpVerified,
     children,
 }: V3AppProps): React.JSX.Element {
-    // Pre-auth only: the driver can point the app at their own instance before
-    // signing in. Deliberately local state — there is no navigator here yet.
-    const [choosingHost, setChoosingHost] = React.useState(false);
-    // Which sign-in the driver is using. Password remains the default; the code
-    // route is offered because a driver who has forgotten theirs is otherwise
-    // stuck until dispatch intervenes.
-    const [usingOtp, setUsingOtp] = React.useState(() => defaultAuthMethod === 'phone' && !!authMethods?.includes('phone'));
+    // A link opened while a driver is signed in still has to be confirmed: it
+    // replaces the session, so it takes over the screen until answered.
+    const linkWaiting = !!openedLink && !!onLinkInstance;
+    const finishOnboarding = React.useCallback(() => onOnboardingComplete?.(), [onOnboardingComplete]);
     return (
         <PortalProvider>
             <ThemedRoot scheme={scheme}>
@@ -289,44 +311,41 @@ export function V3App({
                                         <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
                                             <LocationProvider location={location}>
                                             <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation} documentTitle={{ enabled: false }} linking={linking}>
-                                                {isAuthenticated ? (
-                                                    <DriverSurface
-                                                        organizationName={organizationName}
-                                                        subtitle={subtitle}
-                                                        badges={badges}
-                                                        activeStopCount={activeStopCount}
-                                                        driverId={driverId}
-                                                        driverUserId={driverUserId}
-                                                        onSignOut={onSignOut}
-                                                        organizationId={organizationId}
-                                                        onOrganizationSwitched={onOrganizationSwitched}
-                                                        features={features}
-                                                    />
-                                                ) : choosingHost ? (
-                                                    <SelfHostedConnectionScreen
-                                                        initialHost={host}
-                                                        onCancel={() => setChoosingHost(false)}
-                                                        onConnected={(identity) => {
-                                                            onChangeHost?.(identity.host);
-                                                            setChoosingHost(false);
-                                                        }}
-                                                    />
-                                                ) : usingOtp ? (
-                                                    <OtpSignInScreen
-                                                        organizationName={organizationName}
-                                                        onUsePassword={() => setUsingOtp(false)}
-                                                        onVerified={(driver) => onOtpVerified?.(driver)}
-                                                    />
+                                                {isAuthenticated && !linkWaiting ? (
+                                                    onboardingComplete ? (
+                                                        <DriverSurface
+                                                            organizationName={organizationName}
+                                                            subtitle={subtitle}
+                                                            badges={badges}
+                                                            activeStopCount={activeStopCount}
+                                                            driverId={driverId}
+                                                            driverUserId={driverUserId}
+                                                            onSignOut={onSignOut}
+                                                            organizationId={organizationId}
+                                                            onOrganizationSwitched={onOrganizationSwitched}
+                                                            features={features}
+                                                        />
+                                                    ) : (
+                                                        <OnboardingFlow
+                                                            driverId={driverId}
+                                                            organizationId={organizationId}
+                                                            onOrganizationSwitched={onOrganizationSwitched}
+                                                            onDone={finishOnboarding}
+                                                        />
+                                                    )
                                                 ) : (
-                                                    <SignInScreen
-                                                        onSignIn={onSignIn ?? (() => Promise.reject(new Error('Sign-in is not configured')))}
-                                                        methods={authMethods}
+                                                    <PreAuthFlow
                                                         organizationName={organizationName}
                                                         host={host}
-                                                        onChangeServer={onChangeHost ? () => setChoosingHost(true) : undefined}
-                                                        onSelectMethod={(method) => {
-                                                            if (method === 'phone') setUsingOtp(true);
-                                                        }}
+                                                        linkedHost={linkedHost}
+                                                        authMethods={authMethods}
+                                                        defaultAuthMethod={defaultAuthMethod}
+                                                        onSignIn={onSignIn}
+                                                        onOtpVerified={onOtpVerified}
+                                                        onLinkInstance={onLinkInstance}
+                                                        onUnlinkInstance={onUnlinkInstance}
+                                                        openedLink={openedLink}
+                                                        onOpenedLinkHandled={onOpenedLinkHandled}
                                                     />
                                                 )}
                                             </NavigationContainer>

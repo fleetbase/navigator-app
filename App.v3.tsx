@@ -3,9 +3,12 @@
  * (App.tsx) and the web entry (App.web.tsx).
  */
 import React, { useMemo } from 'react';
+import { Linking } from 'react-native';
 import { Toasts } from '@backpackapp-io/react-native-toast';
 
 import V3App from './src/v3/App';
+import { isInstanceLinkUrl, parseInstanceLink, type InstanceLink } from './src/v3/connection/instanceLink';
+import useStorage from './src/hooks/use-storage';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { ChatProvider } from './src/contexts/ChatContext';
@@ -27,7 +30,7 @@ import { navigatorConfig } from './src/utils/navigator-config';
 function DriverBridge(): React.JSX.Element {
     const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, sessionEpoch, logout, createDriverSession } = useAuth();
     const { fleetbase } = useFleetbaseV2();
-    const { resolveConnectionConfig } = useConfig();
+    const { resolveConnectionConfig, setInstanceLinkConfig, clearInstanceLinkConfig, instanceLinkConfig } = useConfig();
     const { addNotificationListener, removeNotificationListener } = useNotification();
     // v2 already runs background geolocation for the whole app; v3 reads its
     // last fix rather than starting a second consumer of the same hardware.
@@ -89,6 +92,57 @@ function DriverBridge(): React.JSX.Element {
         []
     );
 
+    /*
+     * Linking to another server. The Console hands over one link (as a QR code or
+     * a URL) carrying the server's address, its access key and where its live
+     * updates are served. Scanned and typed links arrive from v3's own screens;
+     * an opened one arrives here, from the OS, and waits for the driver to
+     * confirm it. Saving a link ends the current session: its token belongs to
+     * the server being left.
+     */
+    const [openedLink, setOpenedLink] = React.useState<InstanceLink | null>(null);
+    React.useEffect(() => {
+        const take = (url?: string | null) => {
+            if (!isInstanceLinkUrl(url)) return;
+            const link = parseInstanceLink(url);
+            if (link) setOpenedLink(link);
+        };
+        void Linking.getInitialURL().then(take).catch(() => {});
+        const subscription = Linking.addEventListener('url', ({ url }) => take(url));
+        return () => subscription.remove();
+    }, []);
+
+    const linkInstance = React.useCallback(
+        (link: InstanceLink) => {
+            setInstanceLinkConfig('FLEETBASE_HOST', link.host);
+            setInstanceLinkConfig('FLEETBASE_KEY', link.key);
+            setInstanceLinkConfig('SOCKETCLUSTER_HOST', link.socketHost);
+            setInstanceLinkConfig('SOCKETCLUSTER_PORT', link.socketPort);
+            setInstanceLinkConfig('SOCKETCLUSTER_SECURE', link.socketSecure === undefined ? undefined : String(link.socketSecure));
+            setOpenedLink(null);
+            if (isAuthenticated) logout();
+        },
+        [setInstanceLinkConfig, isAuthenticated, logout]
+    );
+    const unlinkInstance = React.useCallback(() => {
+        clearInstanceLinkConfig();
+        setOpenedLink(null);
+        if (isAuthenticated) logout();
+    }, [clearInstanceLinkConfig, isAuthenticated, logout]);
+    const linkedHost = (instanceLinkConfig?.FLEETBASE_HOST as string | undefined) || undefined;
+
+    /*
+     * First-run steps (organisation, location, notifications) are shown once per
+     * person on this phone. Keyed on the user, not the driver: switching
+     * organisation makes a new driver and must not start them over.
+     */
+    const personId = ((driver as { getAttribute?: (k: string) => unknown })?.getAttribute?.('user') as string | undefined) ?? driver?.id;
+    const [onboarded, setOnboarded] = useStorage<Record<string, boolean>>('V3_ONBOARDED', {});
+    const onboardingComplete = !personId || !!onboarded?.[personId];
+    const completeOnboarding = React.useCallback(() => {
+        if (personId) setOnboarded({ ...(onboarded ?? {}), [personId]: true });
+    }, [personId, onboarded, setOnboarded]);
+
     // Organisation switches, read once: the config module is not reactive.
     const features = useMemo(() => ({ earnings: Boolean(navigatorConfig('features.earnings', false)) }), []);
 
@@ -112,11 +166,15 @@ function DriverBridge(): React.JSX.Element {
             userToken={authToken ?? undefined}
             onUnauthorized={logout}
             onSignOut={logout}
-            // No `onChangeHost`: "Connect to a different server" is not offered.
-            // A host alone is not enough to move to another instance — the app
-            // would still carry this build's platform token and socket, which
-            // belong to the instance it was built for. Switching needs the other
-            // instance to hand those over (a signed link from its Console).
+            // Moving to another server takes that server's own link (address,
+            // access key and live-update settings together), never a bare host.
+            onLinkInstance={linkInstance}
+            onUnlinkInstance={unlinkInstance}
+            linkedHost={linkedHost}
+            openedLink={openedLink}
+            onOpenedLinkHandled={() => setOpenedLink(null)}
+            onboardingComplete={onboardingComplete}
+            onOnboardingComplete={completeOnboarding}
             // The code route returns the same driver payload as a password
             // sign-in, so the session is created in exactly the same way.
             onOtpVerified={createDriverSession}

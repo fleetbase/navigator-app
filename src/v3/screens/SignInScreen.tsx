@@ -1,70 +1,49 @@
 /**
- * Sign in — R2 frame A1.
- *
- * Auth methods are configured per organisation, so the alternates below the
- * fold are a list, not a fixed row: the frame is annotated "renders 1, 2 or 4
- * of them". Passing none hides the whole section rather than leaving a heading
- * over empty space.
+ * Sign in with email and password — design round 3 frame s64. The alternative
+ * to the phone code, for a driver whose organisation gave them a password.
  *
  * Sign-in is the one flow that genuinely cannot be queued — there is no session
  * to act on behalf of — so offline is a blocking state here, unlike everywhere
  * else in the app.
  */
 import { useCallback, useState } from 'react';
-import { ScrollView } from '../ui/Scroll';
 import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Display, Micro, Secondary } from '../ui/Text';
+import { Body, Caption } from '../ui/Text';
 import { Field } from '../ui/Field';
-import { Button } from '../ui/Button';
 import { Banner } from '../ui/Banner';
-import { Surface, Divider } from '../ui/Surface';
 import { space } from '../theme/tokens';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
-import { useScreenStyle } from '../ui/useScreenStyle';
 import { componentSlot } from '../extensions/components/component-slot';
-import { BrandLogo } from '../branding/BrandLogo';
+import { displayHost } from '../connection/instanceLink';
+import { AuthScaffold, BigButton, FieldAction, LinkButton, StepTitle } from '../onboarding/AuthScaffold';
 
 export type AuthMethod = 'phone' | 'sso' | 'qr';
-
-const METHOD_KEY: Record<AuthMethod, string> = {
-    phone: 'signIn.phoneMethod',
-    sso: 'signIn.ssoMethod',
-    qr: 'signIn.qrMethod',
-};
 
 export interface SignInScreenProps {
     /** Resolves on success; rejects with a message to show inline. */
     onSignIn: (identity: string, password: string) => Promise<void>;
-    /** Per-organisation. Empty hides the alternates section entirely. */
+    /** Per-organisation. `phone` offers the code route as the way back. */
     methods?: AuthMethod[];
     onSelectMethod?: (method: AuthMethod) => void;
     onForgotPassword?: () => void;
+    onBack?: () => void;
     organizationName?: string;
     /** Shown so a driver on a self-hosted instance knows where they are. */
     host?: string;
-    /** Opens the self-hosted connection screen. Hidden when not offered. */
+    /** Opens linking to another server. Hidden when not offered. */
     onChangeServer?: () => void;
+    /** Shown once, after a password reset brought the driver back here. */
+    notice?: string;
 }
 
-function SignInScreenBase({
-    onSignIn,
-    methods = [],
-    onSelectMethod,
-    onForgotPassword,
-    organizationName,
-    host,
-    onChangeServer,
-}: SignInScreenProps) {
+function SignInScreenBase({ onSignIn, methods = [], onSelectMethod, onForgotPassword, onBack, host, onChangeServer, notice }: SignInScreenProps) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { isOnline } = useSync();
-    // Same reason as the connection screen: no DriverShell above this one.
-    const insets = useSafeAreaInsets();
 
     const [identity, setIdentity] = useState('');
     const [password, setPassword] = useState('');
+    const [shown, setShown] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -86,29 +65,40 @@ function SignInScreenBase({
         }
     }, [identity, password, onSignIn, t]);
 
-    return (
-        <ScrollView
-            style={screen}
-            contentContainerStyle={{ padding: space[4], paddingTop: insets.top + space[5], gap: space[5], flexGrow: 1 }}
-            keyboardShouldPersistTaps="handled"
-            testID="sign-in-screen"
-        >
-            <YStack gap={space[1]}>
-                {/* The build's logo (brand/logo.png or branding assets.logo); nothing when there is none. */}
-                <BrandLogo />
-                <Display fontSize={30}>{t('signIn.title')}</Display>
-                {organizationName || host ? (
-                    <Secondary fontSize={13}>
-                        {organizationName && host
-                            ? t('signIn.connectedTo', { organization: organizationName, host })
-                            : t('signIn.connectedToHost', { host: host ?? '' })}
-                    </Secondary>
-                ) : null}
-            </YStack>
+    const offersPhone = methods.includes('phone');
 
+    return (
+        <AuthScaffold
+            onBack={onBack}
+            testID="sign-in-screen"
+            footer={
+                <>
+                    <BigButton loading={isSubmitting} disabled={!isOnline} onPress={submit} testID="sign-in-submit">
+                        <Body fontSize={18} fontWeight="800" tone="onPrimary">
+                            {t('signIn.submit')}
+                        </Body>
+                    </BigButton>
+                    {offersPhone ? (
+                        <BigButton variant="secondary" onPress={() => onSelectMethod?.('phone')} testID="method-phone">
+                            <Body fontSize={16} fontWeight="700">
+                                {t('signIn.usePhone')}
+                            </Body>
+                        </BigButton>
+                    ) : null}
+                    {onChangeServer ? (
+                        <LinkButton onPress={onChangeServer} testID="change-server">
+                            {t('signIn.changeServer')}
+                        </LinkButton>
+                    ) : null}
+                </>
+            }
+        >
+            <StepTitle title={t('signIn.emailTitle')} body={t('signIn.emailIntro')} />
+
+            {notice ? <Banner tone="success" message={notice} testID="sign-in-notice" /> : null}
             {!isOnline ? <Banner tone="warning" message={t('signIn.offline')} testID="sign-in-offline" /> : null}
 
-            <YStack gap={space[3]}>
+            <YStack gap={space[4]}>
                 <Field
                     label={t('signIn.emailLabel')}
                     value={identity}
@@ -116,79 +106,34 @@ function SignInScreenBase({
                     placeholder={t('signIn.emailPlaceholder')}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    autoComplete="email"
                     testID="sign-in-email"
                 />
-                <Field
-                    label={t('signIn.passwordLabel')}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder={t('signIn.passwordPlaceholder')}
-                    autoCapitalize="none"
-                    secure
-                    testID="sign-in-password"
-                />
+                <YStack gap={space[2]}>
+                    <Field
+                        label={t('signIn.passwordLabel')}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholder={t('signIn.passwordPlaceholder')}
+                        autoCapitalize="none"
+                        autoComplete="current-password"
+                        secure={!shown}
+                        accessory={<FieldAction label={shown ? t('signIn.hide') : t('signIn.show')} onPress={() => setShown((s) => !s)} testID="sign-in-toggle-password" />}
+                        testID="sign-in-password"
+                    />
+                    {onForgotPassword ? (
+                        <XStack justifyContent="flex-end">
+                            <Body fontSize={14} fontWeight="700" tone="brand" onPress={onForgotPassword} testID="forgot-password">
+                                {t('signIn.forgotPassword')}
+                            </Body>
+                        </XStack>
+                    ) : null}
+                </YStack>
 
                 {error ? <Banner tone="danger" message={error} testID="sign-in-error" /> : null}
-
-                <XStack alignItems="center" justifyContent="space-between" gap={space[3]}>
-                    {onForgotPassword ? (
-                        <Body fontSize={13} tone="brand" onPress={onForgotPassword} testID="forgot-password">
-                            {t('signIn.forgotPassword')}
-                        </Body>
-                    ) : (
-                        <YStack flex={1} />
-                    )}
-                    <Button
-                        loading={isSubmitting}
-                        disabled={!isOnline}
-                        onPress={submit}
-                        paddingHorizontal={space[5]}
-                        testID="sign-in-submit"
-                    >
-                        {t('signIn.submit')}
-                    </Button>
-                </XStack>
+                {host ? <Caption testID="sign-in-host">{t('signIn.connectedToHost', { host: displayHost(host) })}</Caption> : null}
             </YStack>
-
-            {methods.length ? (
-                <YStack gap={space[3]} testID="sign-in-alternates">
-                    <XStack alignItems="center" gap={space[3]}>
-                        <YStack flex={1}>
-                            <Divider />
-                        </YStack>
-                        <Caption>{t('signIn.alternatesHeading')}</Caption>
-                        <YStack flex={1}>
-                            <Divider />
-                        </YStack>
-                    </XStack>
-
-                    <YStack gap={space[2]}>
-                        {methods.map((method) => (
-                            <Surface
-                                key={method}
-                                padded="compact"
-                                onPress={() => onSelectMethod?.(method)}
-                                pressStyle={{ opacity: 0.7 }}
-                                testID={`method-${method}`}
-                            >
-                                <Body fontSize={15} center>
-                                    {t(METHOD_KEY[method])}
-                                </Body>
-                            </Surface>
-                        ))}
-                    </YStack>
-                </YStack>
-            ) : null}
-
-            <YStack flex={1} justifyContent="flex-end">
-                {host ? <Micro center>{host}</Micro> : null}
-                {onChangeServer ? (
-                    <Button variant="ghost" onPress={onChangeServer} testID="change-server">
-                        {t('signIn.changeServer')}
-                    </Button>
-                ) : null}
-            </YStack>
-        </ScrollView>
+        </AuthScaffold>
     );
 }
 

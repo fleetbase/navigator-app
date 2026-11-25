@@ -73,7 +73,8 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
                 // platform token, or an organisation's API key for a build tied to
                 // one organisation (and for servers before core-api 2.0.6, whose
                 // sign-in routes only take a key).
-                FLEETBASE_SIGN_IN_CREDENTIAL: config('FLEETBASE_PLATFORM_TOKEN') || instanceLinkedFleetbaseKey || config('FLEETBASE_KEY'),
+                // A linked server's key comes first: the build's own platform token belongs to the server it shipped for.
+                FLEETBASE_SIGN_IN_CREDENTIAL: instanceLinkedFleetbaseKey || config('FLEETBASE_PLATFORM_TOKEN') || config('FLEETBASE_KEY'),
                 SOCKETCLUSTER_HOST: instanceLinkedSocketclusterHost ?? config('SOCKETCLUSTER_HOST', 'socket.fleetbase.io'),
                 SOCKETCLUSTER_PORT: parseInt(instanceLinkedSocketclusterPort ?? config('SOCKETCLUSTER_PORT', '8000')),
                 SOCKETCLUSTER_SECURE: toBoolean(instanceLinkedSocketclusterSecure ?? config('SOCKETCLUSTER_SECURE', true)),

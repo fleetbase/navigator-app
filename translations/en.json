@@ -285,11 +285,11 @@
         "title": "Sign in",
         "connectedTo": "%{organization} · %{host}",
         "connectedToHost": "Connected to %{host}",
-        "emailLabel": "EMAIL",
+        "emailLabel": "Email",
         "emailPlaceholder": "you@company.com",
-        "passwordLabel": "PASSWORD",
+        "passwordLabel": "Password",
         "passwordPlaceholder": "••••••••",
-        "forgotPassword": "Forgot password",
+        "forgotPassword": "Forgot it?",
         "submit": "Sign in",
         "alternatesHeading": "OR CONTINUE WITH",
         "phoneMethod": "Phone number",
@@ -299,7 +299,12 @@
         "invalidCredentials": "Those details were not recognised",
         "offline": "You need a connection to sign in",
         "signingIn": "Signing in…",
-        "changeServer": "Connect to a different server"
+        "changeServer": "Connect to a different server",
+        "emailTitle": "Sign in with email",
+        "emailIntro": "Use the email and password your organisation gave you.",
+        "show": "Show",
+        "hide": "Hide",
+        "usePhone": "Use my phone number instead"
     },
     "itemDetail": {
         "title": "Item",
@@ -740,22 +745,24 @@
         "inspection": "Vehicle inspection"
     },
     "otp": {
-        "title": "Sign in",
-        "intro": "Enter your phone number and we will text you a code.",
-        "introWithOrg": "Enter the phone number %{organization} has on file and we will text you a code.",
+        "title": "What's your number?",
+        "intro": "We'll text you a code to sign in. No password needed.",
+        "introWithOrg": "Use the number %{organization} has for you. We'll text you a code to sign in.",
         "phoneLabel": "Phone number",
         "phoneInvalid": "That does not look like a phone number.",
-        "send": "Send me a code",
+        "send": "Text me a code",
         "sentSms": "We texted a code to %{phone}.",
         "sentEmail": "We could not text you, so the code went to your email instead.",
-        "codeLabel": "Enter the 6-digit code",
+        "codeLabel": "6-digit code",
         "verify": "Sign in",
         "resend": "Send again",
         "changeNumber": "Change number",
         "failed": "That did not work",
-        "usePassword": "Sign in with email instead",
-        "note": "Codes expire after a few minutes. Ask dispatch if your number has changed.",
-        "offlineNotice": "You need a connection to receive a code."
+        "usePassword": "Use email and password instead",
+        "note": "Codes expire after a few minutes. If your number has changed, ask your organisation to update it.",
+        "offlineNotice": "You need a connection to receive a code.",
+        "codeTitle": "Enter the code",
+        "resendIn": "Send it again in %{time}"
     },
     "ui": {
         "offline": "You are offline — work is saved on this device",
@@ -1434,5 +1441,116 @@
         "snap": "Take photo",
         "done": "Done",
         "scanUnavailable": "Allow camera access for this site to scan."
+    },
+    "welcome": {
+        "title": "Your day, in order.",
+        "body": "Every waypoint, every order, one clear next step.",
+        "bodyWithOrg": "Every waypoint and order for %{organization}, one clear next step.",
+        "signIn": "Sign in",
+        "link": "Connect to your company's server",
+        "changeServer": "Change server",
+        "connectedTo": "Connected to %{host}"
+    },
+    "reset": {
+        "title": "Forgot your password?",
+        "intro": "Tell us your email or phone number and we'll send a code to reset it.",
+        "identityLabel": "Email or phone number",
+        "identityPlaceholder": "you@company.com",
+        "send": "Send me a code",
+        "newTitle": "Set a new password",
+        "sentTo": "If %{identity} has an account, a 6-digit code is on its way.",
+        "codeLabel": "Code we sent you",
+        "passwordLabel": "New password",
+        "ruleLength": {
+            "one": "At least %{count} character",
+            "other": "At least %{count} characters"
+        },
+        "codeMissing": {
+            "one": "Enter the last digit",
+            "other": "Enter the last %{count} digits"
+        },
+        "passwordTooShort": {
+            "one": "Password needs %{count} character",
+            "other": "Password needs %{count} characters"
+        },
+        "save": "Save new password",
+        "done": "Password changed. Sign in with the new one."
+    },
+    "link": {
+        "scanTitle": "Connect to your company",
+        "scanHint": "Scan the code your organisation shows you",
+        "byHand": "Enter by hand",
+        "cancel": "Cancel",
+        "codeRead": "Code read",
+        "linkOpened": "You opened a link",
+        "confirmTitle": "Connect Navigator to %{name}?",
+        "server": "Server",
+        "liveUpdates": "Live updates",
+        "accessKey": "Access key",
+        "keyIncluded": "Included",
+        "keyMissing": "Missing",
+        "connect": "Connect and sign in",
+        "edit": "Check or edit the details",
+        "warning": "Only connect if your organisation gave you this. You'll be signed out of the server you're on now.",
+        "checking": "Checking the server…",
+        "found": "Server found",
+        "version": "Fleetbase %{version}",
+        "checkAgain": "Check again",
+        "failed": {
+            "invalid-url": "That isn't a web address",
+            "insecure": "The address must start with https://",
+            "unreachable": "Can't reach that server",
+            "not-fleetbase": "That address isn't a Fleetbase server"
+        },
+        "cameraDenied": "The camera is switched off for Navigator. Enter the details by hand instead.",
+        "notALink": "That isn't a Navigator link.",
+        "manualTitle": "Connect by hand",
+        "manualIntro": "Paste the link your organisation sent, or fill in the details yourself.",
+        "pasteLabel": "Link from your organisation",
+        "pasteRead": "Link read. The details below are filled in.",
+        "advanced": "Advanced: edit the details",
+        "serverAddress": "Server address",
+        "socketAddress": "Live updates address",
+        "port": "Port",
+        "secure": "Secure live updates",
+        "secureHint": "Leave on unless you were told otherwise",
+        "needsKey": "Add the access key",
+        "reset": "Go back to the default server"
+    },
+    "onboarding": {
+        "organizationTitle": "Who are you driving for today?",
+        "organizationBody": {
+            "one": "You drive for %{count} organisation. You can switch later from Me.",
+            "other": "You drive for %{count} organisations. You can switch later from Me."
+        },
+        "continueWith": "Continue with %{organization}",
+        "lastUsed": "Signed in here",
+        "openSettings": "Open Settings",
+        "blocked": "This is switched off for Navigator in your phone's settings. Turn it on there.",
+        "location": {
+            "eyebrow": "Before you go on duty",
+            "title": "Share your location while you work",
+            "allow": "Allow location",
+            "skip": "Not now",
+            "dutyTitle": "Only while you're on duty",
+            "dutyBody": "Sharing stops the moment you go off duty.",
+            "etaTitle": "Customers get a real arrival time",
+            "etaBody": "Your organisation and the customer see where the delivery is.",
+            "arriveTitle": "Arrivals mark themselves",
+            "arriveBody": "The app knows when you reach a waypoint, so there is less to tap.",
+            "always": "When your phone asks, choose Always allow so it keeps working with the screen locked."
+        },
+        "notifications": {
+            "eyebrow": "One more thing",
+            "title": "Hear about work the moment it changes",
+            "allow": "Allow notifications",
+            "skip": "Not now",
+            "offersTitle": "New offers",
+            "offersBody": "Offers go to the first driver who accepts. You need to see them straight away.",
+            "changesTitle": "Changes to your route",
+            "changesBody": "A waypoint moved, an order added or taken away.",
+            "messagesTitle": "Messages",
+            "messagesBody": "From customers and the people you work with."
+        }
     }
 }
