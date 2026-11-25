@@ -2065,10 +2065,32 @@
             "sinceLast": "%{distance} %{unit} since your last fill-up on %{date}",
             "locationSaved": "Where you are is saved with it",
             "thisTank": "this tank",
-            "perUnit": "per %{unit}, worked out for you"
+            "perUnit": "per %{unit}, worked out for you",
+            "station": "Station",
+            "stationPlaceholder": "Where you filled up",
+            "fuelType": "Fuel type",
+            "fuelTypePlaceholder": "Diesel, petrol 95…",
+            "note": "Note",
+            "noteHint": "Anything dispatch should know about this fill-up.",
+            "receipt": "Receipt",
+            "addReceipt": "Photograph the receipt",
+            "receiptCount": {
+                "one": "%{count} receipt photo",
+                "other": "%{count} receipt photos"
+            },
+            "removeReceipt": "Remove",
+            "receiptNeedsSignal": "A receipt photo needs a connection.",
+            "saved": "Your fill-up was saved.",
+            "receiptFailed": {
+                "one": "%{count} receipt photo did not upload. Send it to dispatch in a message.",
+                "other": "%{count} receipt photos did not upload. Send them to dispatch in a message."
+            },
+            "queuedWithoutReceipt": "Saved on this phone. It sends itself when you have signal, without the receipt: send that to dispatch in a message."
         },
         "issue": {
             "about": "What is it about?",
+            "aboutOrder": "About order",
+            "photos": "Photos",
             "other": "Other",
             "whichPart": "Which part?",
             "howUrgent": "How urgent?",

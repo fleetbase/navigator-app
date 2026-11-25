@@ -4,27 +4,33 @@
  * What was reported, how urgent, where it stands, and when it was filed and
  * resolved.
  *
- * F3 asks for "the status timeline". `GET issues/{id}/timeline` is registered
- * only under the console's `int/v1` prefix, so a driver token cannot read it;
- * the screen shows the current status with the two dates the record carries and
- * leaves the history out rather than drawing an empty one. Photos attached to
- * an issue are not shown for the same kind of reason: the public resource
- * returns `files` only when the relation is loaded, and the public endpoints
- * never load it.
+ * The order the issue is about, its photos and its history come from FleetOps
+ * 0.7.4: the screen is opened with the list's row and reads the issue itself
+ * for the photos and the timeline. Against an older server none of the three
+ * arrive, and the screen shows the current status with the two dates the record
+ * carries rather than drawing an empty history.
+ *
+ * The timeline's wording ("Status changed", "Priority changed from Low to
+ * High.") is the server's own and is in English whatever the app's language.
  */
+import { Image } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Secondary } from '../ui/Text';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { headingOf, type IssueRecord } from '../data';
+import { headingOf, useIssueDetail, type IssueRecord } from '../data';
 import { formatDateTime } from '../format';
 import { isRealPoint } from '../data/useOrderTimeline';
-import { Card, FactRow, Icon, Screen, Section, Tag } from './me/parts';
+import { Card, Chevron, FactRow, Icon, Screen, Section, Tag } from './me/parts';
 import { typeOf } from './me/issueTaxonomy';
 import { PriorityChip, categoryText, statusLabel, typeLabel } from './me/issueParts';
 
-export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
+export function IssueDetailScreen({ issue: row, onOpenOrder }: { issue: IssueRecord; onOpenOrder?: (orderId: string) => void }) {
     const { t } = useTranslation();
+    const detail = useIssueDetail(row.id, row);
+    const issue = detail.issue ?? row;
+    const events = detail.events;
+    const photos = (issue.files ?? []).filter((file) => !!file?.url && (!file.content_type || file.content_type.startsWith('image/')));
     const point = isRealPoint(issue.location) ? (issue.location!.coordinates as number[]) : undefined;
 
     /*
@@ -85,6 +91,36 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
                 </Section>
             ) : null}
 
+            {issue.order_id ? (
+                <Card
+                    flexDirection="row"
+                    alignItems="center"
+                    gap={space[3]}
+                    onPress={onOpenOrder ? () => onOpenOrder(issue.order_id as string) : undefined}
+                    pressStyle={onOpenOrder ? { opacity: 0.7 } : undefined}
+                    accessibilityRole={onOpenOrder ? 'button' : undefined}
+                    testID="issue-order"
+                >
+                    <YStack flex={1} gap={2} minWidth={0}>
+                        <Secondary fontSize={13}>{t('me.issue.aboutOrder')}</Secondary>
+                        <Body fontFamily="$mono" fontSize={15} fontWeight="600" selectable={!onOpenOrder}>
+                            {issue.order_tracking_number ?? issue.order_id}
+                        </Body>
+                    </YStack>
+                    {onOpenOrder ? <Chevron /> : null}
+                </Card>
+            ) : null}
+
+            {photos.length ? (
+                <Section title={t('me.issue.photos')}>
+                    <XStack gap={space[2]} flexWrap="wrap" testID="issue-photos">
+                        {photos.map((file) => (
+                            <Image key={file.id} source={{ uri: file.url as string }} style={{ width: 104, height: 104, borderRadius: 12 }} resizeMode="cover" accessibilityLabel={file.original_filename ?? t('me.issue.photos')} accessibilityIgnoresInvertColors />
+                        ))}
+                    </XStack>
+                </Section>
+            ) : null}
+
             {rows.length ? (
                 <Card flush testID="issue-rows">
                     {rows.map((row, i) => (
@@ -104,6 +140,25 @@ export function IssueDetailScreen({ issue }: { issue: IssueRecord }) {
                         </Secondary>
                     ) : null}
                 </Card>
+                {events.length ? (
+                    <Card flush testID="issue-timeline">
+                        {events.map((event, index) => (
+                            <YStack key={event.id} gap={2} paddingHorizontal={space[4]} paddingVertical={space[3]} borderTopWidth={index === 0 ? 0 : 1} borderTopColor="$border" testID={`issue-event-${index}`}>
+                                <Body fontSize={15} fontWeight="700">
+                                    {event.label ?? event.type ?? ''}
+                                </Body>
+                                {event.description ? (
+                                    <Secondary fontSize={14} lineHeight={20}>
+                                        {event.description}
+                                    </Secondary>
+                                ) : null}
+                                <Secondary fontSize={12} tabular>
+                                    {[event.created_at ? formatDateTime(event.created_at) : undefined, event.actor_name ?? undefined].filter(Boolean).join(' · ')}
+                                </Secondary>
+                            </YStack>
+                        ))}
+                    </Card>
+                ) : null}
             </Section>
         </Screen>
     );

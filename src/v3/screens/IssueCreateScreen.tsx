@@ -14,10 +14,11 @@
  *     not "Can wait / Today / Stop now". Those promise a response time nobody
  *     has agreed to, and the server would store something no console filter
  *     knows.
- *   - **"Order" is not a tile.** The endpoint validates an `order` and then
- *     discards it (IssueController@create keeps driver, location, category,
- *     type, report, priority, tags, status), so an issue cannot be tied to an
- *     order from here. Cargo problems go under Cargo.
+ *   - **"Order" is not a tile.** An issue is tied to an order by opening this
+ *     screen *from* that order: the order's id is sent with the report and the
+ *     screen says which order it is about. There is nothing to pick here, so
+ *     opened from anywhere else no order is sent. (FleetOps before 0.7.4
+ *     validates the `order` and then discards it.)
  *   - **"Sent with it" names the vehicle and the coordinates only.** The
  *     server attaches the driver's assigned vehicle itself; no odometer is
  *     sent or stored on an issue.
@@ -61,11 +62,17 @@ export function IssueCreateScreen({
     driverId,
     initialType,
     vehicleName,
+    orderId,
+    orderLabel,
     onDone,
 }: {
     driverId?: string;
     /** A type value to start on: `vehicle` when opened from My vehicle. */
     initialType?: string;
+    /** Public id of the order this issue is about, when the screen was opened from one. */
+    orderId?: string;
+    /** That order's tracking number, to show the driver which one. */
+    orderLabel?: string;
     /** The driver's assigned vehicle, which the server files the issue against. */
     vehicleName?: string;
     onDone?: (created: IssueRecord | null) => void;
@@ -102,12 +109,12 @@ export function IssueCreateScreen({
     const save = useCallback(async () => {
         const point = toGeoPoint(coordinates);
         if (!point) return;
-        const created = await create({ report, type: type ?? undefined, category: category ?? undefined, priority, location: point });
+        const created = await create({ report, type: type ?? undefined, category: category ?? undefined, priority, location: point, order: orderId });
         if (!created) return;
         const photosFailed = photos.length && created.id ? await attach(created.id, photos) : 0;
         if (photosFailed > 0) setSent({ issue: created, photosFailed });
         else onDone?.(created);
-    }, [coordinates, create, report, type, category, priority, photos, attach, onDone]);
+    }, [coordinates, create, report, type, category, priority, orderId, photos, attach, onDone]);
 
     if (sent) {
         // The report itself is in; only the pictures are not. Say exactly that.
@@ -147,6 +154,16 @@ export function IssueCreateScreen({
                         {t('issueCreate.needsLocationHint')}
                     </Secondary>
                 </YStack>
+            ) : null}
+
+            {orderId ? (
+                <Tile flex={undefined} gap={4} paddingHorizontal={14} testID="issue-about-order">
+                    <SectionLabel>{t('me.issue.aboutOrder')}</SectionLabel>
+                    {/* Never truncated: the driver matches it to a label. */}
+                    <Body fontFamily="$mono" fontSize={15} fontWeight="600" selectable>
+                        {orderLabel ?? orderId}
+                    </Body>
+                </Tile>
             ) : null}
 
             <YStack gap={space[2]}>

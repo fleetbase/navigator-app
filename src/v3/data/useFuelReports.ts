@@ -9,10 +9,14 @@
  *
  * What the public resource actually carries (Http/Resources/v1/FuelReport):
  * odometer, amount, currency, volume, metric_unit, type, status, location,
- * vehicle, driver, timestamps. `meta`, `report`, `source`, `provider` and
- * `fuel_provider_transaction_uuid` are all wrapped in `isInternalRequest()`, so
- * the driver-facing API cannot read them — see FuelLogScreen for what that costs
- * the design.
+ * vehicle, driver, timestamps, and from FleetOps 0.7.4 what the driver wrote at
+ * the pump: `station`, `fuel_type`, `note` and the receipt `files`. `meta`,
+ * `source`, `provider` and `fuel_provider_transaction_uuid` are all wrapped in
+ * `isInternalRequest()`, so the driver-facing API cannot read them — see
+ * FuelLogScreen for what that costs the design.
+ *
+ * An older server ignores the three new fields on create and returns none of
+ * them, so everything that reads them treats them as optional.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
@@ -31,8 +35,22 @@ export interface FuelReportRecord {
     location?: { type?: string; coordinates?: number[] } | null;
     vehicle?: { id?: string; name?: string } | null;
     driver?: { id?: string; name?: string } | string | null;
+    /** Where the driver filled up, in their own words. */
+    station?: string | null;
+    /** What went in the tank, in their own words. */
+    fuel_type?: string | null;
+    note?: string | null;
+    /** The receipt photos. */
+    files?: FuelReportFile[] | null;
     created_at?: string;
     updated_at?: string;
+}
+
+export interface FuelReportFile {
+    id: string;
+    url?: string | null;
+    original_filename?: string | null;
+    content_type?: string | null;
 }
 
 export type FuelLoadState = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error';
@@ -206,6 +224,9 @@ export interface NewFuelReport {
     amount?: string;
     currency?: string;
     location?: { type: 'Point'; coordinates: [number, number] } | null;
+    station?: string;
+    fuelType?: string;
+    note?: string;
 }
 
 /**
@@ -244,6 +265,9 @@ export function useCreateFuelReport(driverId?: string) {
                     body.currency = draft.currency ?? 'USD';
                 }
                 if (draft.location) body.location = draft.location;
+                if (draft.station?.trim()) body.station = draft.station.trim();
+                if (draft.fuelType?.trim()) body.fuel_type = draft.fuelType.trim();
+                if (draft.note?.trim()) body.note = draft.note.trim();
 
                 const result = await adapter.post('fuel-reports', body);
                 if (isQueuedAck(result)) {
@@ -262,4 +286,84 @@ export function useCreateFuelReport(driverId?: string) {
     );
 
     return { create, isSaving, queued, error };
+}
+
+/**
+ * One report, read on its own.
+ *
+ * The list is cached on the server and a receipt uploaded a moment ago does not
+ * clear that cache, so the row a detail screen is opened with can be missing a
+ * photo the driver just took. Reading the report itself is never stale. The row
+ * is shown meanwhile, and stays if the read fails.
+ */
+export function useFuelReport(id?: string, seed?: FuelReportRecord | null) {
+    const { adapter } = useFleetbase();
+    const [report, setReport] = useState<FuelReportRecord | null>(seed ?? null);
+
+    useEffect(() => {
+        if (!id) return;
+        let live = true;
+        (async () => {
+            try {
+                const raw = (await adapter.get(`fuel-reports/${id}`)) as unknown;
+                const body = ((raw as { data?: unknown })?.data ?? raw) as FuelReportRecord | null;
+                if (live && body && typeof body === 'object' && body.id) setReport(body);
+            } catch {
+                // The row passed in is still true; it only lacks what the list did not carry.
+            }
+        })();
+        return () => {
+            live = false;
+        };
+    }, [adapter, id]);
+
+    return report ?? seed ?? null;
+}
+
+/**
+ * Attaches receipt photos to a report that already exists.
+ *
+ * The same route an issue's photos take: `POST /v1/files/base64` with the
+ * report as the file's subject, which is the relation the report's `files`
+ * reads. The subject type is spelled `fleet-ops:fuel_report`, underscore and
+ * all: the server turns the part after the colon straight into a table name,
+ * and `fuel-report` names a table that does not exist.
+ *
+ * Needs the report's id, so it cannot run for a fill-up that was queued
+ * offline. Returns how many did not upload.
+ */
+export function useAttachFuelReceipts() {
+    const { adapter } = useFleetbase();
+    const [isUploading, setIsUploading] = useState(false);
+
+    const attach = useCallback(
+        async (reportId: string, photos: string[]): Promise<number> => {
+            if (!reportId || !photos.length) return 0;
+            setIsUploading(true);
+            let failed = 0;
+            try {
+                for (let i = 0; i < photos.length; i += 1) {
+                    try {
+                        const result = await adapter.post('files/base64', {
+                            data: photos[i],
+                            file_name: `fuel-receipt-${reportId}-${i + 1}.jpg`,
+                            file_type: 'image',
+                            content_type: 'image/jpeg',
+                            subject_type: 'fleet-ops:fuel_report',
+                            subject_id: reportId,
+                        });
+                        if (isQueuedAck(result) || !((result as { data?: { id?: string } })?.data ?? (result as { id?: string }))?.id) failed += 1;
+                    } catch {
+                        failed += 1;
+                    }
+                }
+            } finally {
+                setIsUploading(false);
+            }
+            return failed;
+        },
+        [adapter]
+    );
+
+    return { attach, isUploading };
 }

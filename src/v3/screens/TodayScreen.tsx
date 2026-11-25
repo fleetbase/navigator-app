@@ -13,9 +13,13 @@
  * The day is the manifest's waypoints when the driver has one, plus the
  * waypoints of any order the manifest does not cover (see `home/homeModel`).
  *
+ * Time on duty, distance driven and the end-of-day counts come from the
+ * server's day summary (`useDaySummary`) when it has one; against an older
+ * server, or with work still waiting to send, the screen's own figures stand.
+ *
  * What the mockups draw that this screen leaves out, because nothing on the
- * driver API supplies it: a name for the route, hours on duty, distance
- * actually driven, drive time and breaks, and the vehicle's range. The tracker
+ * driver API supplies it: a name for the route, drive time and breaks, and
+ * the vehicle's range. The tracker
  * reports `is_delayed` as a constant `false`, so "on time" is only ever said
  * when the waypoint has a time window to compare the arrival against.
  */
@@ -58,6 +62,7 @@ import {
 } from '../data';
 import { dayKey } from '../data/orderStore';
 import { useOffers as useOpenOffers } from '../data/useOffers';
+import { secondsOnDuty, useDaySummary } from '../data/useDaySummary';
 import { useLiveRefresh } from '../realtime/liveRefresh';
 import { formatClock, formatDuration, formatMeters, formatMoney } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
@@ -88,8 +93,22 @@ const MAP_HEIGHT = 300;
 /** How far the content sheet rides up over the bottom of the map. */
 const SHEET_OVERLAP = 22;
 
+/** The duty control, with when the driver went on duty under it once the server has said. */
+function DutyControl({ t, duty, onPress, since }: { t: Translate; duty: ReturnType<typeof useDuty>['duty']; onPress: () => void; since?: string | null }) {
+    return (
+        <YStack alignItems="flex-end" gap={space[1]}>
+            <DutyChip duty={duty} onPress={onPress} t={t} />
+            {since ? (
+                <Micro fontSize={12} lineHeight={16} tabular testID="home-duty-since">
+                    {t('home.duty.since', { time: formatClock(since) })}
+                </Micro>
+            ) : null}
+        </YStack>
+    );
+}
+
 /** The date and greeting on the left, the duty control on the right. */
-function Header({ t, name, organization, duty, onDuty }: { t: Translate; name?: string; organization: string; duty: ReturnType<typeof useDuty>['duty']; onDuty: () => void }) {
+function Header({ t, name, organization, duty, onDuty, since }: { t: Translate; name?: string; organization: string; duty: ReturnType<typeof useDuty>['duty']; onDuty: () => void; since?: string | null }) {
     const part = dayPart();
     const date = new Date().toLocaleDateString(currentLocale(), { weekday: 'long', day: 'numeric', month: 'long' });
     return (
@@ -102,7 +121,7 @@ function Header({ t, name, organization, duty, onDuty }: { t: Translate; name?: 
                     {name ? t(`home.greeting.${part}`, { name }) : t(`home.greetingNoName.${part}`)}
                 </Display>
             </YStack>
-            <DutyChip duty={duty} onPress={onDuty} t={t} />
+            <DutyControl t={t} duty={duty} onPress={onDuty} since={since} />
         </XStack>
     );
 }
@@ -198,6 +217,19 @@ export function TodayScreen({
     const vehiclePlate = vehicle?.plate_number ?? undefined;
 
     /*
+     * The server's own count of the day. Asked again once a duty change has
+     * gone through, so the time on duty starts and stops with the chip. With work still waiting to
+     * send the server has not heard all of it, so its counts are set aside and
+     * the screen's own are shown; time on duty and distance are still its to give.
+     */
+    const [summaryPulls, setSummaryPulls] = useState(0);
+    const { summary, fetchedAt: summaryAt } = useDaySummary(driverId, `${reloadToken}:${duty}:${isChanging}:${summaryPulls}`, dayKey());
+    // An answer about another day (the phone crossed midnight, or the server cut the day elsewhere) is not today's.
+    const todaySummary = summary && summary.date === dayKey() ? summary : null;
+    const serverCounts = todaySummary && queuedCount === 0 ? todaySummary : null;
+    const onDutySince = onDuty && !isChanging ? (todaySummary?.online_since ?? null) : null;
+
+    /*
      * A pre-trip check is due when the organisation has published a pre-trip
      * form for this vehicle and nothing was filed against the vehicle today.
      * The server has no "due" flag, so this is the same rule a driver would
@@ -227,6 +259,7 @@ export function TodayScreen({
     const [pulling, setPulling] = useState(false);
     const refreshAll = useCallback(async () => {
         setPulling(true);
+        setSummaryPulls((n) => n + 1);
         try {
             await Promise.all([
                 ordersQuery.refresh(),
@@ -257,7 +290,7 @@ export function TodayScreen({
     };
     const canOpen = (waypoint: HomeWaypoint) => (waypoint.source === 'manifest' && !!onOpenWaypoint) || (!!waypoint.orderId && !!onOpenOrder);
 
-    const header = <Header t={t} name={firstName} organization={organizationName} duty={duty} onDuty={openDutySheet} />;
+    const header = <Header t={t} name={firstName} organization={organizationName} duty={duty} onDuty={openDutySheet} since={onDutySince} />;
 
     const noticeBanners = notices.map((notice) => (
         <Banner
@@ -435,24 +468,38 @@ export function TodayScreen({
     /* -- On duty, every waypoint done --------------------------------------- */
 
     if (day.allDone) {
-        const completed = day.done - day.skipped;
+        // The server's counts when it has them; the screen's own otherwise.
+        const counted = serverCounts?.waypoints;
+        const completed = counted ? counted.completed : day.done - day.skipped;
+        const total = counted ? counted.total : day.total;
+        const skipped = counted ? counted.skipped : day.skipped;
+        const ordersDone = serverCounts?.orders_completed;
+        const plannedM = serverCounts?.planned_distance_m ?? day.plannedDistanceM;
+        const drivenM = todaySummary?.distance_driven_m;
+        const dutySeconds = secondsOnDuty(todaySummary, summaryAt);
+        const cashRows: { currency?: string | null; amount: number; orders: number }[] = serverCounts?.cash_on_delivery_due ?? day.cash;
         const routeSeconds = secondsBetween(day.manifest?.started_at, day.manifest?.completed_at);
         const tiles: Stat[] = [
-            { key: 'waypoints', value: t('home.end.ofTotal', { done: completed, total: day.total }), label: t('home.end.waypoints') },
-            { key: 'orders', value: day.finishedOrderCount === day.orderCount ? String(day.orderCount) : t('home.end.ofTotal', { done: day.finishedOrderCount, total: day.orderCount }), label: t('home.end.orders', { count: day.orderCount }) },
-            // The plan's length, labelled as that: nothing measures what was actually driven.
-            ...(day.plannedDistanceM ? [{ key: 'distance', value: formatMeters(day.plannedDistanceM, units), label: t('home.end.plannedRoute') }] : []),
+            { key: 'waypoints', value: t('home.end.ofTotal', { done: completed, total }), label: t('home.end.waypoints') },
+            ordersDone != null
+                ? { key: 'orders', value: String(ordersDone), label: t('home.end.ordersCompleted', { count: ordersDone }) }
+                : { key: 'orders', value: day.finishedOrderCount === day.orderCount ? String(day.orderCount) : t('home.end.ofTotal', { done: day.finishedOrderCount, total: day.orderCount }), label: t('home.end.orders', { count: day.orderCount }) },
+            ...(dutySeconds ? [{ key: 'duty', value: formatDuration(dutySeconds), label: t('home.end.onDuty') }] : []),
+            // Measured from the positions this phone reported, so it is only there when the server could measure it.
+            ...(drivenM ? [{ key: 'driven', value: formatMeters(drivenM, units), label: t('home.end.driven') }] : []),
+            // The plan's length, labelled as that.
+            ...(plannedM ? [{ key: 'distance', value: formatMeters(plannedM, units), label: t('home.end.plannedRoute') }] : []),
             ...(routeSeconds ? [{ key: 'time', value: formatDuration(routeSeconds), label: t('home.end.routeTime') }] : []),
         ];
         const rows: { key: string; kind: 'ok' | 'attention'; title: string; body?: string; value?: string }[] = [
-            ...day.cash.map((cash) => ({
+            ...cashRows.map((cash) => ({
                 key: `cash-${cash.currency ?? ''}`,
                 kind: 'attention' as const,
                 title: t('home.end.cash'),
                 body: t('home.end.cashBody', { count: cash.orders }),
-                value: formatMoney(cash.amount, cash.currency),
+                value: formatMoney(cash.amount, cash.currency ?? undefined),
             })),
-            ...(day.skipped > 0 ? [{ key: 'skipped', kind: 'attention' as const, title: t('home.end.skipped'), body: t('home.end.skippedBody'), value: String(day.skipped) }] : []),
+            ...(skipped > 0 ? [{ key: 'skipped', kind: 'attention' as const, title: t('home.end.skipped'), body: t('home.end.skippedBody'), value: String(skipped) }] : []),
             // Unsent work has its own card below, which opens the queue; this row only ever confirms there is none.
             ...(queuedCount === 0 ? [{ key: 'sent', kind: 'ok' as const, title: t('home.end.allSent'), body: t('home.end.allSentBody') }] : []),
         ];
@@ -461,7 +508,7 @@ export function TodayScreen({
             <YStack flex={1} backgroundColor="$background" testID="today">
                 <ScrollView style={screen} contentContainerStyle={{ gap: space[4], paddingBottom: space[4] }} refreshControl={refreshControl} testID="home-end">
                     <XStack justifyContent="flex-end" paddingHorizontal={space[4]} paddingTop={space[2]}>
-                        <DutyChip duty={duty} onPress={openDutySheet} t={t} />
+                        <DutyControl t={t} duty={duty} onPress={openDutySheet} since={onDutySince} />
                     </XStack>
                     <YStack paddingHorizontal={space[4]} gap={space[4]}>
                         {noticeBanners}

@@ -34,6 +34,8 @@ export interface DriverRecord {
     internal_id?: string | null;
     status?: string | null;
     online?: boolean;
+    /** When the driver went on duty; null while off duty. FleetOps 0.7.4 and later. */
+    online_since?: string | null;
     drivers_license_number?: string | null;
     license_expiry?: string | null;
     photo_url?: string | null;

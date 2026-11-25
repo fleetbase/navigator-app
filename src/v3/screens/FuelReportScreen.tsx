@@ -12,7 +12,13 @@
  *     `fuel_provider_transaction_uuid` are internal-only too, so a driver token
  *     cannot tell a card-matched report from a hand-entered one. Nothing is
  *     shown about it either way.
+ *
+ * The station, fuel type, note and receipt a driver adds at the pump are public
+ * from FleetOps 0.7.4. The list row may predate a receipt taken a moment ago,
+ * so the report is read once on its own; each of the four is shown only when
+ * the record has it.
  */
+import { Image } from 'react-native';
 import { XStack, YStack } from 'tamagui';
 import { Body, Secondary } from '../ui/Text';
 import { StatusPill } from '../ui/StatusPill';
@@ -20,17 +26,17 @@ import { Banner } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSettings } from '../settings';
-import { formatVolume, formatOdometer, computeEconomy, type FuelReportRecord } from '../data';
+import { formatVolume, formatOdometer, computeEconomy, useFuelReport, type FuelReportRecord } from '../data';
 import { isRealPoint } from '../data/useOrderTimeline';
 import { formatMoney, formatDateTime } from '../format';
-import { Card, FactRow, Screen, SectionLabel } from './me/parts';
+import { Card, FactRow, Screen, Section, SectionLabel } from './me/parts';
 import { economyLabel } from './me/fuelSummary';
 
 /** Rejection reasons are internal-only; the status alone is what we may show. */
 const REJECTED = new Set(['rejected', 'canceled', 'cancelled']);
 
 export function FuelReportScreen({
-    report,
+    report: row,
     previous,
 }: {
     report: FuelReportRecord;
@@ -38,6 +44,8 @@ export function FuelReportScreen({
     previous?: FuelReportRecord | null;
 }) {
     const { t } = useTranslation();
+    const report = useFuelReport(row.id, row) ?? row;
+    const receipts = (report.files ?? []).filter((file) => !!file?.url);
     const { units } = useSettings();
     const economy = economyLabel(computeEconomy(previous, report));
     const status = String(report.status ?? '').toLowerCase();
@@ -48,6 +56,8 @@ export function FuelReportScreen({
     if (hasAmount) rows.push({ key: 'amount', labelKey: 'fuelReport.amount', value: formatMoney(report.amount, report.currency ?? 'USD') });
     rows.push({ key: 'volume', labelKey: 'fuelReport.volume', value: formatVolume(report) });
     rows.push({ key: 'odometer', labelKey: 'fuelReport.odometer', value: formatOdometer(report, units), mono: true });
+    if (report.fuel_type) rows.push({ key: 'fuel-type', labelKey: 'me.fuel.fuelType', value: report.fuel_type });
+    if (report.station) rows.push({ key: 'station', labelKey: 'me.fuel.station', value: report.station });
     rows.push({ key: 'vehicle', labelKey: 'fuelReport.vehicle', value: report.vehicle?.name ?? t('fuelLog.noVehicle') });
     if (economy) rows.push({ key: 'economy', labelKey: 'fuelReport.economy', value: economy });
     if (point) rows.push({ key: 'location', labelKey: 'fuelReport.location', value: `${point[1].toFixed(4)}, ${point[0].toFixed(4)}`, mono: true });
@@ -76,6 +86,26 @@ export function FuelReportScreen({
                     <FactRow key={row.key} first={i === 0} label={t(row.labelKey)} value={row.value} mono={row.mono} testID={`fuel-row-${row.key}`} />
                 ))}
             </Card>
+
+            {report.note ? (
+                <Section title={t('me.fuel.note')}>
+                    <Card testID="fuel-note">
+                        <Body fontSize={16} lineHeight={23}>
+                            {report.note}
+                        </Body>
+                    </Card>
+                </Section>
+            ) : null}
+
+            {receipts.length ? (
+                <Section title={t('me.fuel.receipt')}>
+                    <XStack gap={space[2]} flexWrap="wrap" testID="fuel-receipts">
+                        {receipts.map((file) => (
+                            <Image key={file.id} source={{ uri: file.url as string }} style={{ width: 132, height: 176, borderRadius: 12 }} resizeMode="cover" accessibilityLabel={t('me.fuel.receipt')} accessibilityIgnoresInvertColors />
+                        ))}
+                    </XStack>
+                </Section>
+            ) : null}
 
             {!economy ? (
                 <YStack>

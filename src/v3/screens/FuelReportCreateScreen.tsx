@@ -5,21 +5,22 @@
  * the tank and the price per litre are worked out as the driver types, so a
  * slipped digit shows up at the pump rather than in a report a week later.
  *
- * `POST /v1/fuel-reports` keeps exactly: odometer, volume, metric_unit, amount,
- * currency, status and location (FuelReportController@create). So three things
- * in the mockup are not here:
+ * `POST /v1/fuel-reports` keeps odometer, volume, metric_unit, amount,
+ * currency, status and location, and from FleetOps 0.7.4 the station, the fuel
+ * type and a note, each as the driver writes it. How this differs from the
+ * mockup:
  *
- *   - **"Snap the receipt."** FuelReport has no files relation and nothing
- *     reads a receipt, so there is nowhere for the photo to go.
- *   - **The station** ("Shell Wareham, found from where you are"). No column
- *     for it. The pump's *coordinates* are storable, so those are sent instead
- *     and shown for what they are.
- *   - **Fuel type.** `type` is accepted and silently discarded.
+ *   - **The station is typed, not found.** Nothing looks a station up from
+ *     where the phone is, so the driver names it; the pump's coordinates are
+ *     still sent and shown for what they are.
+ *   - **The receipt goes up after the fill-up**, to the file endpoint, pointed
+ *     at the new report. That needs the report to exist, so a fill-up queued
+ *     offline goes without its receipt and the screen says so beforehand.
  *
  * The write goes through the adapter, so a fill logged at a pump with no signal
  * is queued with its idempotency key and replayed, rather than lost.
  */
-import { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { XStack, YStack } from 'tamagui';
 import { Body, Secondary } from '../ui/Text';
 import { Field, FieldAccessory } from '../ui/Field';
@@ -28,11 +29,18 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync, useDeviceLocation, toGeoPoint } from '../shell';
 import { useSettings } from '../settings';
-import { useCreateFuelReport, computeEconomy, type FuelReportRecord } from '../data';
+import { useCreateFuelReport, useAttachFuelReceipts, computeEconomy, type FuelReportRecord } from '../data';
 import { formatDay, formatMoney, formatNumber } from '../format';
 import { BigButton } from '../onboarding/AuthScaffold';
-import { Card, Icon, Screen, Tile } from './me/parts';
+import { Card, Icon, Screen, SmallButton, Tile } from './me/parts';
 import { economyLabel } from './me/fuelSummary';
+import type { CapturedPhoto } from '../../components/CameraCapture';
+
+/* VisionCamera initialises its native module at import; load it only when the driver asks for a photo. */
+const lazyCamera = () => require('../../components/CameraCapture').default as React.ComponentType<{ onDone?: (photos: CapturedPhoto[]) => void }>;
+
+/** A receipt is one slip, sometimes two sides of it. */
+const MAX_RECEIPTS = 2;
 
 const VOLUME_UNITS = ['L', 'gal'] as const;
 type VolumeUnit = (typeof VOLUME_UNITS)[number];
@@ -67,12 +75,20 @@ export function FuelReportCreateScreen({
     const { isOnline } = useSync();
     const coordinates = useDeviceLocation();
     const { create, isSaving, queued, error } = useCreateFuelReport(driverId);
+    const { attach, isUploading } = useAttachFuelReceipts();
 
     const [odometer, setOdometer] = useState('');
     const [volume, setVolume] = useState('');
     const [amount, setAmount] = useState('');
     const [unit, setUnit] = useState<VolumeUnit>(units === 'imperial' ? 'gal' : 'L');
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [station, setStation] = useState('');
+    const [fuelType, setFuelType] = useState('');
+    const [note, setNote] = useState('');
+    const [receipts, setReceipts] = useState<string[]>([]);
+    const [camera, setCamera] = useState(false);
+    /** Set once the fill-up is in but its receipt is not. */
+    const [saved, setSaved] = useState<{ report: FuelReportRecord; receiptsFailed: number } | null>(null);
 
     // Where the pump is. The server keeps a point, so the phone's fix is sent with the report.
     const point = location ?? (toGeoPoint(coordinates) as { type: 'Point'; coordinates: [number, number] } | null);
@@ -120,17 +136,42 @@ export function FuelReportCreateScreen({
             amount: isDecimal(amount) ? amount.trim() : undefined,
             currency,
             location: point,
+            station,
+            fuelType,
+            note,
         });
         // A queued write has no record yet; the screen says so and stays put.
-        if (created) onDone?.(created);
-    }, [create, odometer, volume, unit, amount, currency, point, onDone]);
+        if (!created) return;
+        const receiptsFailed = receipts.length && created.id ? await attach(created.id, receipts) : 0;
+        if (receiptsFailed > 0) setSaved({ report: created, receiptsFailed });
+        else onDone?.(created);
+    }, [create, odometer, volume, unit, amount, currency, point, station, fuelType, note, receipts, attach, onDone]);
+
+    if (saved) {
+        // The fill-up itself is in; only the receipt is not. Say exactly that.
+        return (
+            <Screen
+                testID="fuel-create-saved"
+                footer={
+                    <BigButton onPress={() => onDone?.(saved.report)} testID="fuel-done">
+                        {t('common.done')}
+                    </BigButton>
+                }
+            >
+                <YStack flex={1} justifyContent="center" gap={space[3]}>
+                    <Banner tone="success" message={t('me.fuel.saved')} testID="fuel-saved" />
+                    <Banner tone="warning" message={t('me.fuel.receiptFailed', { count: saved.receiptsFailed })} testID="fuel-receipt-failed" />
+                </YStack>
+            </Screen>
+        );
+    }
 
     return (
         <Screen
             gap={14}
             testID="fuel-create"
             footer={
-                <BigButton disabled={!canSave} loading={isSaving} onPress={save} testID="create-save">
+                <BigButton disabled={!canSave} loading={isSaving || isUploading} onPress={save} testID="create-save">
                     {t('me.fuel.save')}
                 </BigButton>
             }
@@ -192,6 +233,64 @@ export function FuelReportCreateScreen({
                 testID="input-odometer"
             />
 
+            <XStack gap={space[2]} alignItems="flex-start">
+                <YStack flex={1}>
+                    <Field label={t('me.fuel.station')} value={station} onChangeText={setStation} placeholder={t('me.fuel.stationPlaceholder')} testID="input-station" />
+                </YStack>
+                <YStack flex={1}>
+                    <Field label={t('me.fuel.fuelType')} value={fuelType} onChangeText={setFuelType} placeholder={t('me.fuel.fuelTypePlaceholder')} testID="input-fuel-type" />
+                </YStack>
+            </XStack>
+
+            <Field label={t('me.fuel.note')} value={note} onChangeText={setNote} multiline hint={t('me.fuel.noteHint')} testID="input-note" />
+
+            {/* A receipt needs the report's id, which only a sent fill-up has. */}
+            {isOnline ? (
+                <XStack gap={space[2]} alignItems="center">
+                    <XStack
+                        flex={1}
+                        minHeight={56}
+                        alignItems="center"
+                        justifyContent="center"
+                        gap={space[2]}
+                        borderRadius={16}
+                        borderWidth={1.5}
+                        borderStyle="dashed"
+                        borderColor="$textMuted"
+                        opacity={receipts.length >= MAX_RECEIPTS ? 0.5 : 1}
+                        onPress={receipts.length >= MAX_RECEIPTS ? undefined : () => setCamera((open) => !open)}
+                        pressStyle={{ opacity: 0.7 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('me.fuel.addReceipt')}
+                        testID="fuel-add-receipt"
+                    >
+                        <Icon name="camera" size={22} color="textPrimary" />
+                        <Body fontSize={14} fontWeight="800" numberOfLines={1}>
+                            {receipts.length ? t('me.fuel.receiptCount', { count: receipts.length }) : t('me.fuel.addReceipt')}
+                        </Body>
+                    </XStack>
+                    {receipts.length ? <SmallButton label={t('me.fuel.removeReceipt')} onPress={() => setReceipts([])} testID="fuel-remove-receipt" /> : null}
+                </XStack>
+            ) : (
+                <Secondary fontSize={12} testID="fuel-receipt-needs-signal">
+                    {t('me.fuel.receiptNeedsSignal')}
+                </Secondary>
+            )}
+
+            {camera
+                ? (() => {
+                      const Camera = lazyCamera();
+                      return (
+                          <Camera
+                              onDone={(taken) => {
+                                  setReceipts((prev) => [...prev, ...taken.map((p) => p.base64 ?? '').filter(Boolean)].slice(0, MAX_RECEIPTS));
+                                  setCamera(false);
+                              }}
+                          />
+                      );
+                  })()
+                : null}
+
             {point ? (
                 <Card flexDirection="row" alignItems="center" gap={space[3]} testID="fuel-create-location">
                     <Icon name="pin" size={20} color="successText" />
@@ -227,7 +326,7 @@ export function FuelReportCreateScreen({
                 </XStack>
             ) : null}
 
-            {queued ? <Banner tone="neutral" message={t('fuelCreate.queued')} testID="create-queued" /> : null}
+            {queued ? <Banner tone="neutral" message={receipts.length ? t('me.fuel.queuedWithoutReceipt') : t('fuelCreate.queued')} testID="create-queued" /> : null}
             {error ? <ErrorState title={t('fuelCreate.saveFailed')} body={error} testID="create-error" /> : null}
         </Screen>
     );

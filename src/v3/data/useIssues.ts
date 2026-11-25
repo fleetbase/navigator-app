@@ -6,9 +6,12 @@
  *   - **`location` is required on create.** `CreateIssueRequest` demands it, so
  *     an issue filed without a fix is rejected by validation. The create screen
  *     therefore has to know whether it has one before it offers to file.
- *   - **The status timeline is internal-only.** `GET issues/{id}/timeline` is
- *     registered under the `int/v1` prefix, not the public one, so F3's
- *     "timeline of status changes" cannot be shown to a driver token.
+ *   - **The order, the photos and the timeline need FleetOps 0.7.4.** From
+ *     there `POST /v1/issues` keeps `order`, the resource returns `order_id`
+ *     and `order_tracking_number`, `GET issues/{id}` returns `files`, and
+ *     `GET issues/{id}/timeline` exists on the public prefix. An older server
+ *     drops the order, returns no files and answers 404 for the timeline, so
+ *     all three are read as optional.
  *
  * The scoping trap from fuel-reports repeats exactly: `driver=<public id>`
  * filters, while `driver_uuid` is *ignored* and returns every issue in the
@@ -39,9 +42,33 @@ export interface IssueRecord {
     assignee_name?: string | null;
     reporter_name?: string | null;
     location?: { type?: string; coordinates?: number[] } | null;
+    /** Public id of the order the issue is about. */
+    order_id?: string | null;
+    order_tracking_number?: string | null;
+    /** Photos attached to the issue; only on a single read, not in the list. */
+    files?: IssueFile[] | null;
     resolved_at?: string | null;
     created_at?: string;
     updated_at?: string;
+}
+
+export interface IssueFile {
+    id: string;
+    url?: string | null;
+    original_filename?: string | null;
+    content_type?: string | null;
+}
+
+/** One entry in an issue's history, as `GET issues/{id}/timeline` returns it. */
+export interface IssueTimelineEvent {
+    id: string;
+    type?: string | null;
+    /** The server's own English wording: "Status changed". */
+    label?: string | null;
+    description?: string | null;
+    actor_name?: string | null;
+    created_at?: string | null;
+    meta?: { field?: string; from?: unknown; to?: unknown; file_name?: string; file_url?: string } | null;
 }
 
 export type IssueLoadState = 'idle' | 'loading' | 'refreshing' | 'ready' | 'error';
@@ -137,6 +164,8 @@ export interface NewIssue {
     category?: string;
     priority?: string;
     location: GeoPoint;
+    /** Public id of the order the issue is about. */
+    order?: string;
 }
 
 export function useCreateIssue(driverId?: string) {
@@ -163,6 +192,7 @@ export function useCreateIssue(driverId?: string) {
                 if (draft.type) body.type = toApiTerm(draft.type);
                 if (draft.category) body.category = toApiTerm(draft.category);
                 if (draft.priority) body.priority = toApiTerm(draft.priority);
+                if (draft.order) body.order = draft.order;
 
                 const result = await adapter.post('issues', body);
                 if (isQueuedAck(result)) {
@@ -233,4 +263,47 @@ export function useAttachIssuePhotos() {
     );
 
     return { attach, isUploading };
+}
+
+/**
+ * One issue read on its own, with its history.
+ *
+ * The list row has no photos (the list does not load them) and no history, so
+ * the detail screen reads both. Neither read is allowed to cost the screen
+ * anything: the row it was opened with is shown meanwhile and stays if a read
+ * fails, and a server with no public timeline simply yields no events.
+ */
+export function useIssueDetail(id?: string, seed?: IssueRecord | null) {
+    const { adapter } = useFleetbase();
+    const [issue, setIssue] = useState<IssueRecord | null>(seed ?? null);
+    const [events, setEvents] = useState<IssueTimelineEvent[]>([]);
+
+    useEffect(() => {
+        if (!id) return;
+        let live = true;
+        (async () => {
+            try {
+                const raw = (await adapter.get(`issues/${id}`)) as unknown;
+                const body = ((raw as { data?: unknown })?.data ?? raw) as IssueRecord | null;
+                if (live && body && typeof body === 'object' && !Array.isArray(body) && body.id) setIssue(body);
+            } catch {
+                // The row passed in is still true.
+            }
+        })();
+        (async () => {
+            try {
+                const raw = (await adapter.get(`issues/${id}/timeline`)) as { events?: unknown } | null;
+                const rows = Array.isArray(raw?.events) ? (raw.events as IssueTimelineEvent[]) : [];
+                // Newest first, as the console shows it.
+                if (live) setEvents([...rows].filter((e) => !!e?.id).sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))));
+            } catch {
+                // An older server has no public timeline; the two dates on the record are shown instead.
+            }
+        })();
+        return () => {
+            live = false;
+        };
+    }, [adapter, id]);
+
+    return { issue: issue ?? seed ?? null, events };
 }

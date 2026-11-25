@@ -60,13 +60,26 @@ export function Issues({ navigation }: { navigation: Nav }) {
     );
 }
 
-export function IssueDetail({ route }: { route: { params?: { issue?: IssueRecord } } }) {
+export function IssueDetail({ route, navigation }: { route: { params?: { issue?: IssueRecord } }; navigation: Nav }) {
     const issue = route.params?.issue;
     if (!issue) return null;
-    return <IssueDetailScreen issue={issue} />;
+    return <IssueDetailScreen issue={issue} onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId }, initial: false })} />;
 }
 
-export function IssueCreate({ route, navigation }: { route: { params?: { about?: string } }; navigation: Nav }) {
+/**
+ * `order` is the public id of the order the issue is about and `orderLabel` its
+ * tracking number; a screen that opens this from an order passes both.
+ */
+export function IssueCreate({ route, navigation }: { route: { params?: { about?: string; order?: string; orderLabel?: string } }; navigation: Nav }) {
     const { driverId, vehicleName } = useAssignedVehicle();
-    return <IssueCreateScreen driverId={driverId} initialType={route.params?.about} vehicleName={vehicleName} onDone={() => navigation.goBack()} />;
+    return (
+        <IssueCreateScreen
+            driverId={driverId}
+            initialType={route.params?.about}
+            vehicleName={vehicleName}
+            orderId={route.params?.order}
+            orderLabel={route.params?.orderLabel}
+            onDone={() => navigation.goBack()}
+        />
+    );
 }
