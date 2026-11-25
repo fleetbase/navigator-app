@@ -1,4 +1,4 @@
-/** Orders tab. */
+/** Jobs tab (route name `Orders`): the jobs home, the order screen and what an order links to. */
 import OrdersScreen from '../../screens/OrdersScreen';
 import OrderDetailScreen from '../../screens/OrderDetailScreen';
 import EditPayloadItemScreen from '../../screens/EditPayloadItemScreen';
@@ -9,13 +9,22 @@ import DestinationScreen from '../../screens/DestinationScreen';
 import OffersScreen from '../../screens/OffersScreen';
 import { useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
 
-export function OrdersHome({ navigation }: { navigation: Nav }) {
+export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { params?: { mode?: 'route' | 'orders' | 'map' } } }) {
     const driverId = useDriverId();
+    // Focus is a refetch: back from a waypoint or an order, the route may have moved on.
+    const reloadToken = useFocusCount();
     return (
         <OrdersScreen
             driverId={driverId}
+            reloadToken={reloadToken}
+            // Another tab may ask for a view: navigate('Orders', { screen: 'OrdersHome', params: { mode: 'route' } }).
+            initialMode={route?.params?.mode}
+            modeRequest={route?.params}
             onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })}
             onOpenOffers={() => navigation.navigate('Offers')}
+            // The manifest screens are registered in this stack too, so the route is worked from Jobs.
+            onOpenStop={(manifestId, stopId) => navigation.navigate('StopDetail', { manifestId, stopId })}
+            onOptimise={(manifestId) => navigation.navigate('OptimisePreview', { manifestId })}
         />
     );
 }

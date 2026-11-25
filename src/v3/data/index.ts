@@ -27,3 +27,5 @@ export * from './orderStatus';
 export * from './useNextActivity';
 export * from './proofLedger';
 export * from './orderDetails';
+export * from './useOrderComments';
+export * from './useServiceQuote';

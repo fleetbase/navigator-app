@@ -1,251 +1,200 @@
 /**
- * Orders — R1 frames s05 (light) / s18 (dark).
+ * Jobs — design round 3 (Route.dc.html, Work.dc.html, WorkMap.dc.html).
  *
- * The design's rule leads here: the tracking number gets its own line, in full,
- * monospaced, under a label — a driver reads it off the screen and matches it
- * against a parcel. Everything else on the card is secondary to that.
+ * The root of the Jobs tab: one header and a three-way switch over the same
+ * day's work.
  *
- * Rows select from the normalised store, so the list's `data` keeps its
- * identity across unrelated re-renders and the memoised cards actually skip.
+ *   - **Route** — every waypoint in driving order, whichever order it is for.
+ *   - **Orders** — the orders assigned to the driver, each showing its shape.
+ *   - **Map** — the same waypoints on a map.
+ *
+ * The sequence comes from today's manifest when dispatch built one. Without a
+ * manifest there is still work to show, so Route and Map fall back to the
+ * active orders' own waypoints, one order after another, and Route says that
+ * this is the order of the orders rather than a planned route. The switch
+ * opens on Route when there is a manifest and on Orders when there is not,
+ * until the driver picks for themselves.
+ *
+ * The file keeps its old name because the screen slot (`orders.list`) and the
+ * route (`OrdersHome`) did not change; only what it shows did.
  */
-import { useCallback, useMemo, useState } from 'react';
-import { RefreshControl } from 'react-native';
-import { FlatList } from '../ui/Scroll';
-import { YStack, useTheme } from 'tamagui';
-import { Banner, EmptyState, Skeleton } from '../ui/Banner';
-import { Button } from '../ui/Button';
-import { FailureState } from '../ui/FailureState';
-import { OrderCard, type OrderCardStop } from '../ui/Cards';
-import { Field } from '../ui/Field';
-import { Segmented } from '../ui/Field';
-import { space } from '../theme/tokens';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { XStack, YStack } from 'tamagui';
+import { Body } from '../ui/Text';
 import { useTranslation } from '../i18n/useTranslation';
+import { useTabBarSpace } from '../navigation/TabBar';
 import {
     useAllOrders,
     useOrderQuery,
     useOrderNotices,
+    useManifests,
+    useManifest,
+    groupManifests,
     orderStore,
-    customerNameOf,
-    displayIdOf,
-    payloadOf,
-    trackingNumberOf,
-    isOrderFinished,
-    isBookingOrder,
+    type ManifestStopRecord,
 } from '../data';
 import { useSync } from '../shell';
-import { formatClock } from '../format';
 import { useSettings } from '../settings';
-import type { OrderRecord } from '../data';
+import { GUTTER, ModeSwitch } from './jobs/parts';
+import { countWaypoints, fromManifest, fromOrders, inWorkingOrder, orderMarks, segmentOf, type JobWaypoint } from './jobs/model';
+import { JobsRoute } from './jobs/JobsRoute';
+import { JobsOrders } from './jobs/JobsOrders';
+import { JobsMap } from './jobs/JobsMap';
 
-type Segment = 'active' | 'scheduled' | 'completed';
+export type JobsMode = 'route' | 'orders' | 'map';
 
-function segmentOf(order: OrderRecord): Segment {
-    // The order config's `complete` flag decides (see data/orderStatus), so a
-    // booking that ends on its own code lands here rather than staying active.
-    if (isOrderFinished(order)) return 'completed';
-    // Scheduled but not yet dispatched or started.
-    if (!order.started_at && !order.dispatched_at && order.scheduled_at) return 'scheduled';
-    return 'active';
-}
+/** Running first, then ready to run, then still being built. Finished and cancelled routes are not today's work. */
+const MANIFEST_RANK: Record<string, number> = { in_progress: 0, active: 1, draft: 2 };
 
-/** Case-insensitive match across the fields a driver would actually search by. */
-function matches(order: OrderRecord, query: string): boolean {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    const payload = payloadOf(order);
-    return [
-        trackingNumberOf(order),
-        order.internal_id,
-        customerNameOf(order),
-        payload?.pickup?.address,
-        payload?.dropoff?.address,
-    ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q));
-}
-
-function toStops(order: OrderRecord, t: ReturnType<typeof useTranslation>['t']): OrderCardStop[] {
-    const payload = payloadOf(order);
-    const pickupName = payload.pickup?.name ?? payload.pickup?.address;
-    const dropoffName = payload.dropoff?.name ?? payload.dropoff?.address;
-    const stops: OrderCardStop[] = [];
-
-    if (pickupName) {
-        stops.push({
-            name: String(pickupName),
-            kind: 'pickup',
-            detail: order.started_at
-                ? t('ordersScreen.pickupDeparted', { time: formatClock(order.started_at) })
-                : order.scheduled_at
-                  ? t('ordersScreen.pickupScheduled', { time: formatClock(order.scheduled_at) })
-                  : undefined,
-        });
-    }
-    if (dropoffName) {
-        stops.push({ name: String(dropoffName), kind: 'dropoff', detail: t('ordersScreen.dropoff') });
-    }
-    return stops;
-}
+/** One array for "no manifest", so the waypoint list is not rebuilt on every render. */
+const NO_STOPS: ManifestStopRecord[] = [];
 
 export function OrdersScreen({
     driverId,
+    reloadToken = 0,
+    initialMode,
+    modeRequest,
     onOpenOrder,
     onOpenOffers,
+    onOpenStop,
+    onOptimise,
 }: {
     driverId?: string;
+    /** Bumped on screen focus: the orders and the manifest are asked again. */
+    reloadToken?: number;
+    /** Opens on this view instead of choosing by whether there is a manifest. */
+    initialMode?: JobsMode;
+    /** Changes identity each time another screen asks for `initialMode` again (the route's params). */
+    modeRequest?: unknown;
     onOpenOrder?: (id: string) => void;
     /** Opens the offers screen: ad-hoc orders nearby that any driver can take. */
     onOpenOffers?: () => void;
+    /** Opens a manifest waypoint's own screen. */
+    onOpenStop?: (manifestId: string, stopId: string) => void;
+    /** Opens the re-order preview for the manifest. */
+    onOptimise?: (manifestId: string) => void;
 }) {
     const { t } = useTranslation();
-    const theme = useTheme();
     const { units } = useSettings();
     const { isOnline } = useSync();
+    const bottomSpace = useTabBarSpace();
 
-    const [segment, setSegment] = useState<Segment>('active');
-    const [query, setQuery] = useState('');
-
-    const { state, error, isRefreshing, refresh, retry } = useOrderQuery(
-        { driver_assigned: driverId, limit: 50 },
-        { enabled: !!driverId }
-    );
-
+    const orderQuery = useOrderQuery({ driver_assigned: driverId, limit: 50 }, { enabled: !!driverId });
     const all = useAllOrders();
     const notices = useOrderNotices();
 
-    const rows = useMemo(
-        () => all.filter((o) => segmentOf(o) === segment && matches(o, query)),
-        [all, segment, query]
+    const manifestList = useManifests(driverId, reloadToken);
+    const todays = useMemo(
+        () => [...groupManifests(manifestList.manifests).today].filter((m) => String(m.status) in MANIFEST_RANK).sort((a, b) => MANIFEST_RANK[String(a.status)] - MANIFEST_RANK[String(b.status)])[0],
+        [manifestList.manifests]
+    );
+    const manifestDetail = useManifest(todays?.id, reloadToken);
+    const manifest = todays ? (manifestDetail.manifest ?? todays) : undefined;
+    const stops = todays ? manifestDetail.stops : NO_STOPS;
+
+    // The driver's choice wins once made; until then the manifest decides.
+    const [picked, setPicked] = useState<JobsMode | undefined>(initialMode);
+    const mode: JobsMode = picked ?? (todays ? 'route' : 'orders');
+    // Asked for again while already mounted — tabs keep their screens alive.
+    useEffect(() => {
+        if (initialMode) setPicked(initialMode);
+    }, [initialMode, modeRequest]);
+
+    const active = useMemo(() => inWorkingOrder(all.filter((o) => segmentOf(o) === 'active')), [all]);
+    const marks = useMemo(() => orderMarks(active), [active]);
+
+    const waypoints = useMemo<JobWaypoint[]>(
+        // `all` is a dependency on purpose: a role is matched against the stored order, which may load later.
+        () => (todays ? fromManifest(todays.id, stops, (id) => orderStore.get(id)) : fromOrders(active)),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [todays?.id, stops, active, all]
+    );
+    const counts = useMemo(() => countWaypoints(waypoints), [waypoints]);
+
+    /** Order id → the manifest's estimate for the next waypoint of that order. */
+    const nextEtas = useMemo(() => {
+        const etas = new Map<string, string>();
+        for (const w of waypoints) {
+            if (!w.orderId || !w.eta || w.state === 'done' || w.state === 'skipped' || etas.has(w.orderId)) continue;
+            etas.set(w.orderId, w.eta);
+        }
+        return etas;
+    }, [waypoints]);
+
+    const openWaypoint = useCallback(
+        (waypoint: JobWaypoint) => {
+            // A manifest waypoint has its own screen; one worked out from an order opens that order.
+            if (waypoint.manifestId && waypoint.stopId && onOpenStop) onOpenStop(waypoint.manifestId, waypoint.stopId);
+            else if (waypoint.orderId) onOpenOrder?.(waypoint.orderId);
+        },
+        [onOpenStop, onOpenOrder]
     );
 
-    const segments = useMemo(
+    const refreshRoute = useCallback(() => {
+        void manifestList.refresh();
+        void manifestDetail.refresh();
+        void orderQuery.refresh();
+    }, [manifestList, manifestDetail, orderQuery]);
+
+    const modes = useMemo(
         () => [
-            { value: 'active' as const, label: t('ordersScreen.segmentActive') },
-            { value: 'scheduled' as const, label: t('ordersScreen.segmentScheduled') },
-            { value: 'completed' as const, label: t('ordersScreen.segmentCompleted') },
+            { value: 'route' as const, label: t('jobs.modeRoute') },
+            { value: 'orders' as const, label: t('jobs.modeOrders') },
+            { value: 'map' as const, label: t('jobs.modeMap') },
         ],
         [t]
     );
 
-    const renderItem = useCallback(
-        ({ item }: { item: OrderRecord }) => {
-            const payload = payloadOf(item);
-            const waypointCount = payload.waypoints?.length ?? 0;
-
-            return (
-                <YStack paddingHorizontal={space[4]} paddingVertical={space[2]}>
-                    <OrderCard
-                        testID={`order-${item.id}`}
-                        trackingNumber={displayIdOf(item)}
-                        status={item.status}
-                        stops={toStops(item, t)}
-                        summary={
-                            isBookingOrder(item)
-                                ? t('ordersScreen.job')
-                                : waypointCount > 1
-                                  ? `${t('ordersScreen.waypointCount', { count: waypointCount })} · ${t('ordersScreen.multiStop')}`
-                                  : undefined
-                        }
-                        distanceM={item.distance}
-                        durationS={item.time}
-                        itemCount={payload.entities?.length}
-                        customerName={customerNameOf(item)}
-                        units={units}
-                        onPress={onOpenOrder ? () => onOpenOrder(item.id) : undefined}
-                    />
-                </YStack>
-            );
-        },
-        [t, units, onOpenOrder]
-    );
-
-    const empty = useMemo(() => {
-        if (state === 'loading') {
-            return (
-                <YStack padding={space[4]} gap={space[3]} testID="orders-skeleton">
-                    {[0, 1, 2].map((i) => (
-                        <Skeleton key={i} height={148} />
-                    ))}
-                </YStack>
-            );
-        }
-        if (state === 'error') {
-            return (
-                <FailureState error={error} isOnline={isOnline} onRetry={retry} t={t} testID="orders-error" />
-            );
-        }
-        if (query) {
-            return (
-                <YStack padding={space[4]}>
-                    <EmptyState
-                        testID="orders-no-results"
-                        title={t('ordersScreen.noSearchResultsTitle')}
-                        body={t('ordersScreen.noSearchResultsBody', { query })}
-                        action={{ label: t('common.clear'), onPress: () => setQuery('') }}
-                    />
-                </YStack>
-            );
-        }
-        const key = segment.charAt(0).toUpperCase() + segment.slice(1);
-        return (
-            <YStack padding={space[4]}>
-                <EmptyState
-                    testID="orders-empty"
-                    title={t(`ordersScreen.empty${key}Title`)}
-                    body={t(`ordersScreen.empty${key}Body`)}
-                />
-            </YStack>
-        );
-    }, [state, error, query, segment, t, retry, isOnline]);
+    const routeLoading = todays ? manifestDetail.isLoading : manifestList.isLoading || (orderQuery.state === 'loading' && !all.length);
+    const routeError = todays ? (manifestDetail.failed ? manifestDetail.error : null) : orderQuery.state === 'error' ? orderQuery.error : null;
 
     return (
         <YStack flex={1} backgroundColor="$background" testID="orders-screen">
-            <YStack paddingHorizontal={space[4]} paddingTop={space[3]} gap={space[3]}>
-                {/*
-                  * A reassigned order disappears from the list; this says so,
-                  * rather than leaving the driver to wonder where it went.
-                  */}
-                {notices.map((notice) => (
-                    <Banner
-                        key={notice.orderId}
-                        tone="warning"
-                        message={t('ordersScreen.reassigned', { order: notice.label })}
-                        action={{ label: t('common.dismiss'), onPress: () => orderStore.dismissNotice(notice.orderId) }}
-                        testID={`order-notice-${notice.orderId}`}
-                    />
-                ))}
-                {onOpenOffers ? (
-                    <Button variant="secondary" onPress={onOpenOffers} testID="orders-open-offers">
-                        {t('ordersScreen.offers')}
-                    </Button>
-                ) : null}
-                <Segmented options={segments} value={segment} onChange={setSegment} testID="orders-segments" />
-                <Field
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder={t('ordersScreen.searchPlaceholder')}
-                    autoCapitalize="none"
-                    testID="orders-search"
-                />
-                {/* Offline is a state, not an error: cached rows stay usable. */}
-            </YStack>
+            <XStack paddingHorizontal={GUTTER} paddingTop={8} paddingBottom={12} alignItems="center" justifyContent="space-between" gap={12}>
+                <Body fontSize={30} lineHeight={36} fontWeight="800" letterSpacing={-0.6} numberOfLines={1} accessibilityRole="header" testID="jobs-title">
+                    {t('jobs.title')}
+                </Body>
+                <ModeSwitch options={modes} value={mode} onChange={setPicked} label={t('jobs.modeLabel')} testID="jobs-mode" />
+            </XStack>
 
-            <FlatList
-                data={rows}
-                keyExtractor={(o) => o.id}
-                renderItem={renderItem}
-                ListEmptyComponent={empty}
-                contentContainerStyle={rows.length ? { paddingVertical: space[2] } : { flexGrow: 1 }}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={theme.primary?.val as string} />
-                }
-                // Long lists of cards: keep the window tight so scrolling a full
-                // day of work does not mount every row.
-                initialNumToRender={6}
-                windowSize={7}
-                removeClippedSubviews
-                showsVerticalScrollIndicator={false}
-            />
+            {mode === 'route' ? (
+                <JobsRoute
+                    manifest={manifest}
+                    stops={stops}
+                    waypoints={waypoints}
+                    counts={counts}
+                    marks={marks}
+                    units={units}
+                    isOnline={isOnline}
+                    isLoading={routeLoading}
+                    error={routeError}
+                    isRefreshing={manifestList.isRefreshing || manifestDetail.isRefreshing || orderQuery.isRefreshing}
+                    onRefresh={refreshRoute}
+                    onRetry={refreshRoute}
+                    onOpenWaypoint={openWaypoint}
+                    onOpenOrder={onOpenOrder}
+                    onOptimise={todays && onOptimise ? () => onOptimise(todays.id) : undefined}
+                    bottomSpace={bottomSpace}
+                />
+            ) : mode === 'orders' ? (
+                <JobsOrders
+                    orders={all}
+                    marks={marks}
+                    nextEtas={nextEtas}
+                    notices={notices}
+                    state={orderQuery.state}
+                    error={orderQuery.error}
+                    isOnline={isOnline}
+                    isRefreshing={orderQuery.isRefreshing}
+                    onRefresh={orderQuery.refresh}
+                    onRetry={orderQuery.retry}
+                    onOpenOrder={onOpenOrder}
+                    onOpenOffers={onOpenOffers}
+                    bottomSpace={bottomSpace}
+                />
+            ) : (
+                <JobsMap waypoints={waypoints} units={units} onOpenWaypoint={openWaypoint} bottomSpace={bottomSpace} />
+            )}
         </YStack>
     );
 }

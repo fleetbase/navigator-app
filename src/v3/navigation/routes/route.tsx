@@ -1,4 +1,4 @@
-/** Route tab: manifests and their stops. */
+/** Manifests and their waypoints. Reached from Jobs, and from the Route tab on a build that has one. */
 import RouteScreen from '../../screens/RouteScreen';
 import StopDetailScreen from '../../screens/StopDetailScreen';
 import StopExecutionScreen from '../../screens/StopExecutionScreen';
@@ -44,7 +44,9 @@ export function StopExecution({ route, navigation }: StopParams) {
             stopId={String(route.params?.stopId ?? '')}
             onOpenOrder={openOrderFrom(navigation)}
             onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination })}
-            onDone={() => navigation.navigate('RouteHome')}
+            // Back to the root of whichever stack this was opened from: the
+            // Jobs home, or the Route tab on a build that still has one.
+            onDone={() => (navigation.popToTop ? navigation.popToTop() : navigation.goBack())}
         />
     );
 }

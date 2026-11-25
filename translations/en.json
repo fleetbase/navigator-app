@@ -182,6 +182,83 @@
         "reassigned": "Order %{order} was reassigned",
         "offers": "Offers"
     },
+    "jobs": {
+        "title": "Jobs",
+        "modeLabel": "Show jobs as",
+        "modeRoute": "Route",
+        "modeOrders": "Orders",
+        "modeMap": "Map",
+        "role": {
+            "pickup": "Pickup",
+            "dropoff": "Drop-off",
+            "waypoint": "Waypoint",
+            "waypointOf": "Waypoint %{number} of %{total}"
+        },
+        "state": {
+            "heading": "Heading here",
+            "here": "You're here",
+            "done": "Done",
+            "skipped": "Skipped"
+        },
+        "byTime": "by %{time}",
+        "collect": "collect %{amount}",
+        "unnamed": "Waypoint %{sequence}",
+        "openOrder": "Open order %{order}",
+        "route": {
+            "today": "Today's route · %{date}",
+            "onDay": "Route · %{date}",
+            "derivedLabel": "In order of your orders",
+            "derivedNote": "Dispatch has not planned a route for today. These are your orders' waypoints, one order after another. It is not an optimised route.",
+            "statWaypoints": {
+                "one": "waypoint",
+                "other": "waypoints"
+            },
+            "statOrders": {
+                "one": "order",
+                "other": "orders"
+            },
+            "statDistance": "in total",
+            "statLast": "last one",
+            "doneOf": "%{done} of %{total} done",
+            "reorder": {
+                "one": "Re-order the %{count} that is left",
+                "other": "Re-order the %{count} that are left"
+            },
+            "emptyTitle": "Nothing to drive to yet",
+            "emptyBody": "When dispatch gives you a route or an order, its waypoints appear here in driving order.",
+            "draft": "Dispatch is still building this route. Waypoints may change.",
+            "cancelled": "Dispatch cancelled this route.",
+            "allDone": "Every waypoint on this route is done.",
+            "autoArriveTitle": "Arrived at waypoint %{sequence}?",
+            "autoArriveBody": "You are at the waypoint. Recording your arrival in %{seconds}s.",
+            "undo": "Undo",
+            "autoArrived": "Arrival recorded for you"
+        },
+        "orders": {
+            "active": "Active",
+            "activeCount": "Active · %{count}",
+            "scheduled": "Scheduled",
+            "scheduledCount": "Scheduled · %{count}",
+            "done": "Done",
+            "search": "Search orders",
+            "closeSearch": "Close search",
+            "offers": "Offers near you",
+            "waypoints": {
+                "one": "%{count} waypoint",
+                "other": "%{count} waypoints"
+            },
+            "next": "Next: %{name}",
+            "cash": "%{amount} cash"
+        },
+        "map": {
+            "noPositions": "These waypoints have no coordinates, so the map cannot place them.",
+            "centreOnMe": "Centre the map on me",
+            "showAll": "Show the whole route",
+            "legendDone": "Done",
+            "legendNow": "Now",
+            "legendLater": "Later"
+        }
+    },
     "orderDetail": {
         "trackingNumberLabel": "TRACKING NUMBER",
         "createdDispatched": "Created %{created} · dispatched %{dispatched}",
@@ -238,6 +315,7 @@
         },
         "cod": {
             "title": "Cash on delivery",
+            "heading": "Cash to collect",
             "toCollect": "To collect",
             "settled": "Paid",
             "confirm": "I collected %{amount}",
@@ -250,11 +328,88 @@
         "contact": {
             "call": "Call",
             "messageCustomer": "Message customer",
-            "messageDispatch": "Message dispatch"
+            "messageDispatch": "Message dispatch",
+            "callWho": "Call %{name}",
+            "messageWho": "Message %{name}"
         },
         "reassigned": "This order was reassigned. It is no longer yours.",
         "proofCaptured": "Proof captured",
-        "noNextActivity": "There is no next step for this order yet. Ask dispatch to move it on."
+        "noNextActivity": "There is no next step for this order yet. Ask dispatch to move it on.",
+        "tabsLabel": "Order sections",
+        "tabOverview": "Overview",
+        "tabDetails": "Details",
+        "scheduledFor": "scheduled %{time}",
+        "strip": {
+            "arrive": "arrive",
+            "start": "expected start",
+            "toGo": "to go",
+            "deliverBy": "deliver by"
+        },
+        "waypointsHeading": "Waypoints",
+        "startsHere": "Starts here",
+        "changeDestinationLabel": "Change where you are heading",
+        "payloadHint": "Tap an item for details",
+        "historyHeading": "What's happened",
+        "fullTimeline": "Full timeline",
+        "stepsHeading": "Steps for this order",
+        "stepsHeadingOf": "Steps for this order · %{step} of %{total}",
+        "nextStep": "Next:",
+        "details": {
+            "identifiers": "Identifiers",
+            "trackingNumber": "Tracking number",
+            "orderId": "Order ID",
+            "internalId": "Internal ID",
+            "copy": "Copy or share: %{what}",
+            "codes": "Order codes",
+            "codesTitle": "Show this to be scanned",
+            "codesBody": "Depot staff or the customer can scan it to pull up this order.",
+            "qrAlt": "QR code for this order",
+            "barcodeAlt": "Barcode for this order",
+            "fullScreen": "Show full screen",
+            "tapToClose": "Tap anywhere to close",
+            "dates": "Dates and times",
+            "created": "Created",
+            "scheduled": "Scheduled",
+            "dispatched": "Dispatched",
+            "started": "Started",
+            "type": "Order type",
+            "steps": {
+                "one": "%{count} step",
+                "other": "%{count} steps"
+            },
+            "facilitator": "Facilitator",
+            "facilitatorVendor": "Vendor · arranged this order",
+            "facilitatorContact": "Contact · arranged this order",
+            "rate": "Service rate",
+            "rateLine": "Charge",
+            "rateTotal": "Total",
+            "files": "Documents and files · %{count}",
+            "fileUnnamed": "Unnamed file",
+            "fileAdded": "added %{time}",
+            "fileOpen": "Open %{name}",
+            "comments": "Comments",
+            "commentsCount": "Comments · %{count}",
+            "commentYou": "You",
+            "commentUnknown": "Someone",
+            "commentPending": "Waiting to send",
+            "commentQueued": "Saved on this phone. Your comment will send when you are back online.",
+            "commentFailed": "Your comment was not posted. Try again.",
+            "commentPlaceholder": "Add a comment for dispatch",
+            "commentPost": "Post comment",
+            "customFields": "Custom fields · %{count}",
+            "meta": "Metadata · %{count}",
+            "metaAside": "Set by your organisation",
+            "metaFields": {
+                "one": "{ %{count} field }",
+                "other": "{ %{count} fields }"
+            },
+            "metaItems": {
+                "one": "[ %{count} item ]",
+                "other": "[ %{count} items ]"
+            },
+            "timeline": "Timeline",
+            "timelineOpen": "Open timeline"
+        }
     },
     "editPayloadItem": {
         "title": "Editing",
