@@ -10,12 +10,13 @@ import React, { useEffect, useState } from 'react';
 import SignInScreen, { type AuthMethod } from '../screens/SignInScreen';
 import OtpSignInScreen from '../screens/OtpSignInScreen';
 import { useTranslation } from '../i18n/useTranslation';
-import type { InstanceLink } from '../connection/instanceLink';
+import { normalizeJoinCode, sameHost, type InstanceLink } from '../connection/instanceLink';
 import { WelcomeScreen } from './WelcomeScreen';
 import { ResetPasswordScreen } from './ResetPasswordScreen';
-import { LinkFlow } from './LinkFlow';
+import { LinkFlow, LinkScanScreen } from './LinkFlow';
+import { JoinFlow } from './JoinFlow';
 
-type Step = 'welcome' | 'phone' | 'email' | 'reset' | 'link';
+type Step = 'welcome' | 'phone' | 'email' | 'reset' | 'link' | 'join' | 'join-scan';
 
 export interface PreAuthFlowProps {
     organizationName: string;
@@ -38,6 +39,10 @@ export function PreAuthFlow({ organizationName, host, linkedHost, authMethods, d
     const { t } = useTranslation();
     const [step, setStep] = useState<Step>('welcome');
     const [notice, setNotice] = useState<string | undefined>();
+    // A join code waiting for its sign-up: typed codes live in the flow, this one came with a link.
+    const [joinCode, setJoinCode] = useState<string | undefined>();
+    // A link scanned from inside the app, waiting on its confirmation.
+    const [scannedLink, setScannedLink] = useState<InstanceLink | null>(null);
     const offersPhone = !!authMethods?.includes('phone');
     const first: Step = defaultAuthMethod === 'phone' && offersPhone ? 'phone' : 'email';
 
@@ -46,19 +51,59 @@ export function PreAuthFlow({ organizationName, host, linkedHost, authMethods, d
         if (openedLink && onLinkInstance) setStep('link');
     }, [openedLink, onLinkInstance]);
 
-    const leaveLink = () => {
+    const leaveLink = (next: Step = 'welcome') => {
         onOpenedLinkHandled?.();
-        setStep('welcome');
+        setScannedLink(null);
+        setStep(next);
     };
+
+    if (step === 'join-scan') {
+        return (
+            <LinkScanScreen
+                acceptJoinCodes
+                onCancel={() => setStep('join')}
+                onManual={() => setStep('join')}
+                onFound={(link) => {
+                    if (link.joinCode) setJoinCode(link.joinCode);
+                    // A code for the server already in use needs no connecting; any other server is confirmed first.
+                    if (!link.host || sameHost(link.host, host) || !onLinkInstance) {
+                        setStep('join');
+                        return;
+                    }
+                    setScannedLink(link);
+                    setStep('link');
+                }}
+            />
+        );
+    }
+
+    if (step === 'join') {
+        return (
+            <JoinFlow
+                initialCode={joinCode}
+                host={host}
+                onBack={() => {
+                    setJoinCode(undefined);
+                    setStep('welcome');
+                }}
+                onScan={() => setStep('join-scan')}
+                onSignIn={() => setStep(first)}
+                onCreated={(driver) => onOtpVerified?.(driver)}
+            />
+        );
+    }
 
     if (step === 'link' && onLinkInstance) {
         return (
             <LinkFlow
-                opened={openedLink}
+                opened={scannedLink ?? openedLink}
                 linked={!!linkedHost}
                 onConnect={(link) => {
                     onLinkInstance(link);
-                    leaveLink();
+                    // A link that carries a join code is also an invitation to sign up there.
+                    const code = normalizeJoinCode(link.joinCode ?? '') || (scannedLink ? joinCode : undefined);
+                    if (code) setJoinCode(code);
+                    leaveLink(code ? 'join' : 'welcome');
                 }}
                 onReset={
                     onUnlinkInstance
@@ -68,7 +113,7 @@ export function PreAuthFlow({ organizationName, host, linkedHost, authMethods, d
                           }
                         : undefined
                 }
-                onExit={leaveLink}
+                onExit={() => leaveLink(scannedLink ? 'join' : 'welcome')}
             />
         );
     }
@@ -109,7 +154,7 @@ export function PreAuthFlow({ organizationName, host, linkedHost, authMethods, d
         );
     }
 
-    return <WelcomeScreen organizationName={organizationName} linkedHost={linkedHost} onSignIn={() => setStep(first)} onLink={onLinkInstance ? () => setStep('link') : undefined} />;
+    return <WelcomeScreen organizationName={organizationName} linkedHost={linkedHost} onSignIn={() => setStep(first)} onGetStarted={() => setStep('join')} onLink={onLinkInstance ? () => setStep('link') : undefined} />;
 }
 
 export default PreAuthFlow;

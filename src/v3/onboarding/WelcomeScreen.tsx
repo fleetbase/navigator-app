@@ -49,13 +49,16 @@ function Rise({ delay, children }: { delay: number; children: React.ReactNode })
 }
 
 function Mark({ appName }: { appName: string }) {
+    const primary = useTheme().primary?.val as string;
     const hasLogo = brandLogoSource(true) !== null;
     if (hasLogo) return <BrandLogo height={40} maxWidth={200} />;
     return (
         <XStack alignItems="center" gap={10} testID="welcome-mark">
             <YStack width={40} height={40} borderRadius={12} backgroundColor="$primary" alignItems="center" justifyContent="center">
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="#FFFFFF">
-                    <Path d="M12 2l8 19-8-4-8 4z" />
+                {/* The v3 mark: the heading arrow with a lane line down its middle. */}
+                <Svg width={24} height={24} viewBox="0 0 1024 1024">
+                    <Path d="M512 176 L800 836 L512 700 L224 836 Z" fill="#FFFFFF" stroke="#FFFFFF" strokeWidth={36} strokeLinejoin="round" />
+                    <Path d="M512 430 V612" stroke={primary} strokeWidth={58} strokeLinecap="round" />
                 </Svg>
             </YStack>
             <Caption fontFamily="$mono" fontSize={11} letterSpacing={1.1} color="$textSecondary">

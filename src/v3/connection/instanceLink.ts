@@ -22,6 +22,30 @@ export interface InstanceLink {
     socketSecure?: boolean;
     /** What the instance calls itself, when the link says. */
     name?: string;
+    /** An organisation's join code: the link is also an invitation to sign up there. */
+    joinCode?: string;
+}
+
+const JOIN_CODE_LENGTH = 8;
+
+/** A join code as the server keeps it: eight letters and digits, upper case. Empty when it is not one. */
+export function normalizeJoinCode(input: unknown): string {
+    if (typeof input !== 'string') return '';
+    const code = input.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return code.length === JOIN_CODE_LENGTH ? code : '';
+}
+
+/** `ABCD-2345`, the way it is shown and read out. Works on a half-typed code too. */
+export function formatJoinCode(input: string): string {
+    const code = (input ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, JOIN_CODE_LENGTH);
+    return code.length > 4 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+}
+
+/** Two addresses for the same server, however each was written. */
+export function sameHost(a?: string, b?: string): boolean {
+    const left = normalizeHost(a ?? '');
+    const right = normalizeHost(b ?? '');
+    return !!left && !!right && left.host.toLowerCase() === right.host.toLowerCase();
 }
 
 function decode(value: string): string {
@@ -70,6 +94,7 @@ function fromFields(fields: Record<string, unknown>): InstanceLink | null {
         socketPort: socketPort ?? '8000',
         socketSecure: truthy(fields.socketcluster_secure ?? fields.socket_secure ?? fields.SOCKETCLUSTER_SECURE, normalized.secure),
         name: text(fields.name ?? fields.organization ?? fields.company),
+        joinCode: normalizeJoinCode(text(fields.join ?? fields.join_code) ?? '') || undefined,
     };
 }
 

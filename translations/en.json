@@ -1556,5 +1556,22 @@
             "messagesTitle": "Messages",
             "messagesBody": "From customers and the people you work with."
         }
+    },
+    "join": {
+        "title": "Join your organisation",
+        "body": "Your organisation gives new drivers a join code. Scan its QR code or type the code.",
+        "scan": "Scan the QR code",
+        "scanHint": "The fastest way, and it connects the app for you",
+        "codeLabel": "Join code",
+        "codeHint": "Eight letters and numbers, like ABCD-2345.",
+        "codeUnknown": "That join code is not in use. Check it with your organisation.",
+        "continue": "Continue",
+        "haveAccount": "I already have an account",
+        "detailsTitle": "Tell us who you are",
+        "detailsBody": "This creates your driver account with %{organization}.",
+        "nameLabel": "Your name",
+        "namePlaceholder": "First and last name",
+        "documents": "%{organization} will ask you for: %{documents}.",
+        "create": "Create my account"
     }
 }

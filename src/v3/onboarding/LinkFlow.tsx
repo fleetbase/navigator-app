@@ -16,7 +16,7 @@ import { Banner } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { probeHost, normalizeHost, type ProbeFailure } from '../connection/probeHost';
-import { parseInstanceLink, displayHost, type InstanceLink } from '../connection/instanceLink';
+import { parseInstanceLink, normalizeJoinCode, displayHost, type InstanceLink } from '../connection/instanceLink';
 import { requestPermission } from '../permissions/permissions';
 import { AuthScaffold, BigButton, CARD_RADIUS, FieldAction, LinkButton, RoundButton, StepTitle } from './AuthScaffold';
 
@@ -129,7 +129,7 @@ export function LinkConfirmScreen({ link, source, onConnect, onEdit, onCancel }:
 }
 
 /** Scan the Console's QR code — frame s66. */
-export function LinkScanScreen({ onFound, onManual, onCancel }: { onFound: (link: InstanceLink) => void; onManual: () => void; onCancel: () => void }) {
+export function LinkScanScreen({ onFound, onManual, onCancel, acceptJoinCodes }: { onFound: (link: InstanceLink) => void; onManual: () => void; onCancel: () => void; /** Also accept a QR code holding only a join code: `host` is then empty. */ acceptJoinCodes?: boolean }) {
     const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [allowed, setAllowed] = useState<boolean | null>(Platform.OS === 'web' ? true : null);
@@ -153,10 +153,12 @@ export function LinkScanScreen({ onFound, onManual, onCancel }: { onFound: (link
         (code: { value?: string } | string) => {
             const text = typeof code === 'string' ? code : code?.value;
             const link = parseInstanceLink(text);
+            const bareCode = acceptJoinCodes && !link ? normalizeJoinCode(text) : '';
             if (link) onFound(link);
+            else if (bareCode) onFound({ host: '', joinCode: bareCode });
             else setRejected(true);
         },
-        [onFound]
+        [onFound, acceptJoinCodes]
     );
 
     return (
