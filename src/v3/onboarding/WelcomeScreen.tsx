@@ -96,7 +96,7 @@ export function WelcomeScreen({ onSignIn, onGetStarted, onLink, linkedHost, orga
                 <Rise delay={500}>
                     <YStack gap={space[3]}>
                         <Mark appName={appName} />
-                        <Display fontSize={33} lineHeight={37} fontWeight="800" letterSpacing={-0.7} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} testID="welcome-title">
+                        <Display fontSize={32} lineHeight={36} fontWeight="800" letterSpacing={-0.7} testID="welcome-title">
                             {t('welcome.title')}
                         </Display>
                         <Secondary fontSize={16} lineHeight={24} testID="welcome-body">
