@@ -98,6 +98,18 @@ export interface TrackerRecord {
         duration_in_traffic_s?: number;
         /** The road route through the remaining stops, encoded (precision 5). Null when no routing engine answered. */
         polyline?: string | null;
+        /**
+         * One leg per remaining stop, in driving order: the first ends at the
+         * stop being headed to. `eta_*` are filled only while a live ETA is shown.
+         */
+        legs?: {
+            distance_m?: number | null;
+            duration_s?: number | null;
+            duration_in_traffic_s?: number | null;
+            eta_seconds?: number | null;
+            eta_at?: string | null;
+            stop?: TrackerStop | null;
+        }[];
     };
     eta?: TrackerEta;
     insights?: TrackerInsights;

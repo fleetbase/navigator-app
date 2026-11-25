@@ -715,6 +715,138 @@
             "contactDispatch": "Ask dispatch to give you access."
         }
     },
+    "home": {
+        "greeting": {
+            "morning": "Morning, %{name}",
+            "afternoon": "Afternoon, %{name}",
+            "evening": "Evening, %{name}"
+        },
+        "greetingNoName": {
+            "morning": "Good morning",
+            "afternoon": "Good afternoon",
+            "evening": "Good evening"
+        },
+        "duty": {
+            "on": "On duty",
+            "off": "Off duty",
+            "break": "On break",
+            "change": "Duty status: %{status}. Change",
+            "failed": "Your duty status did not change. Try again."
+        },
+        "kind": {
+            "pickup": "Pickup",
+            "dropoff": "Drop-off",
+            "waypoint": "Waypoint"
+        },
+        "stat": {
+            "orders": {
+                "one": "order",
+                "other": "orders"
+            },
+            "toDrive": "planned route",
+            "firstWaypoint": "first waypoint"
+        },
+        "before": {
+            "route": "Today's route",
+            "work": "Today's work",
+            "waypoints": {
+                "one": "%{count} waypoint",
+                "other": "%{count} waypoints"
+            },
+            "waypointsLeft": {
+                "one": "%{count} waypoint left",
+                "other": "%{count} waypoints left"
+            },
+            "startsAt": "Starts at",
+            "draft": "Dispatch is still building this route. Waypoints may change.",
+            "nothingTitle": "Nothing assigned yet",
+            "nothingBody": "When dispatch assigns you work, it appears here. You can go on duty now so they know you are available.",
+            "section": "Before you set off",
+            "goOnDuty": "Go on duty",
+            "locationNote": "Your location is shared with %{organization} only while you're on duty.",
+            "locationNoteNoOrg": "Your location is shared with dispatch only while you're on duty."
+        },
+        "vehicle": {
+            "yours": "Your vehicle",
+            "assigned": "Assigned to you"
+        },
+        "hero": {
+            "next": "Next waypoint",
+            "arrived": "You are here",
+            "arrive": "arrive",
+            "start": "estimated start",
+            "planned": "planned arrival",
+            "away": "%{duration} away",
+            "byRoad": "by road",
+            "straightLine": "in a straight line",
+            "onTime": "On time",
+            "late": "Late",
+            "dueBy": "due by %{time}",
+            "deliverBy": "deliver by",
+            "openWaypoint": "Open waypoint"
+        },
+        "progress": {
+            "done": "%{done} of %{total} waypoints done",
+            "finish": "finish around %{time}"
+        },
+        "upcoming": {
+            "section": "After that",
+            "by": "by %{time}"
+        },
+        "offers": {
+            "title": {
+                "one": "%{count} job you can take",
+                "other": "%{count} jobs you can take"
+            },
+            "pickupAt": "Pickup at %{place}",
+            "body": "Open to see where it goes"
+        },
+        "attention": {
+            "section": "Needs attention",
+            "unsent": {
+                "one": "%{count} update waiting to send",
+                "other": "%{count} updates waiting to send"
+            },
+            "unsentOnline": "Saved on this phone. Open to send now.",
+            "unsentOffline": "Saved on this phone. It sends when you're back online.",
+            "inspection": "Check your vehicle",
+            "unread": {
+                "one": "%{count} unread message",
+                "other": "%{count} unread messages"
+            },
+            "unreadBody": "Open chat to read and reply"
+        },
+        "empty": {
+            "title": "Nothing assigned right now",
+            "body": "You're on duty, so dispatch can see you're available. New work appears here as soon as it is assigned.",
+            "bodyOffers": "You're on duty, and there is work nearby you can take."
+        },
+        "end": {
+            "finished": "All waypoints done",
+            "finishedAt": "Route finished · %{time}",
+            "title": "That's your day done, %{name}",
+            "titleNoName": "That's your day done",
+            "ofTotal": "%{done} of %{total}",
+            "waypoints": "waypoints completed",
+            "orders": {
+                "one": "order",
+                "other": "orders"
+            },
+            "plannedRoute": "planned route",
+            "routeTime": "on the route",
+            "cash": "Cash on delivery",
+            "cashBody": {
+                "one": "On %{count} completed order",
+                "other": "On %{count} completed orders"
+            },
+            "skipped": "Waypoints skipped",
+            "skippedBody": "Dispatch can see which ones",
+            "allSent": "Everything is sent",
+            "allSentBody": "Nothing waiting on this phone",
+            "goOffDuty": "Go off duty",
+            "logFuel": "Log a fill-up first"
+        }
+    },
     "today": {
         "title": "Today",
         "nextPickup": "Next pickup",
