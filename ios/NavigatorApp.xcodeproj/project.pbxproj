@@ -22,6 +22,14 @@
 		EDFBBF4288874E8089ADDC95 /* Archivo-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FE3DEF48E4814B6D95F3F294 /* Archivo-SemiBold.ttf */; };
 		F3D20C423EE2473EBC3A2CE4 /* Archivo-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2D9CF6F6DE7344E5B9AD7F82 /* Archivo-ExtraBold.ttf */; };
 		FB15EE06433579CB8F2910C6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		B5D2C8F12CEC457DA294320F /* Geist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E72AF9ABA6BF4AE7821CF472 /* Geist-Regular.ttf */; };
+		5166147240E04F0FAFD8CB65 /* Geist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2EE09C0F1E71485E89A68CE2 /* Geist-Bold.ttf */; };
+		2F80E8D9D1544EC186E3DE78 /* GeistMono-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 71760A80820C4669B036EBE4 /* GeistMono-SemiBold.ttf */; };
+		56746AD692D34FE0B579BC02 /* Geist-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CC20FA4D5B4C4836830F0354 /* Geist-ExtraBold.ttf */; };
+		7EB4E870CBDA4FD0AD271C7A /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 53E12E2FCF224EFDA75AF7CC /* Geist-Medium.ttf */; };
+		11C5B4808DE642C6BDD466D9 /* GeistMono-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 54C4F3E3B872416A9E38D321 /* GeistMono-Medium.ttf */; };
+		9C5D16110D7E481F8EA0099B /* GeistMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E16BA90273144747BA78C30A /* GeistMono-Regular.ttf */; };
+		044CABE4823C4AB6B8CE8C80 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D9E42508B23A4CD689FC0F91 /* Geist-SemiBold.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,23 +37,31 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = NavigatorApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = NavigatorApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = NavigatorApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		2D9CF6F6DE7344E5B9AD7F82 /* Archivo-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-ExtraBold.ttf"; path = "../assets/fonts/Archivo-ExtraBold.ttf"; sourceTree = "<group>"; };
-		2FB5C793B37341CAB7D58B67 /* JetBrainsMono-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "JetBrainsMono-SemiBold.ttf"; path = "../assets/fonts/JetBrainsMono-SemiBold.ttf"; sourceTree = "<group>"; };
+		2D9CF6F6DE7344E5B9AD7F82 /* Archivo-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-ExtraBold.ttf"; path = "../assets/fonts/Archivo-ExtraBold.ttf"; sourceTree = "<group>"; };
+		2FB5C793B37341CAB7D58B67 /* JetBrainsMono-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "JetBrainsMono-SemiBold.ttf"; path = "../assets/fonts/JetBrainsMono-SemiBold.ttf"; sourceTree = "<group>"; };
 		4582082878954F8C8280EDB3 /* libPods-NavigatorApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-NavigatorApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		5B25A9087FC846F3A953181B /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "JetBrainsMono-Medium.ttf"; path = "../assets/fonts/JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
+		5B25A9087FC846F3A953181B /* JetBrainsMono-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "JetBrainsMono-Medium.ttf"; path = "../assets/fonts/JetBrainsMono-Medium.ttf"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = NavigatorApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = NavigatorApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		9A9C0520CD8B40649B6F6E77 /* Archivo-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Medium.ttf"; path = "../assets/fonts/Archivo-Medium.ttf"; sourceTree = "<group>"; };
+		9A9C0520CD8B40649B6F6E77 /* Archivo-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Medium.ttf"; path = "../assets/fonts/Archivo-Medium.ttf"; sourceTree = "<group>"; };
 		9C1F153BEE684B7399DB9F6C /* Pods-NavigatorApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.release.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.release.xcconfig"; sourceTree = "<group>"; };
-		A60D619528C249BEA8BA4882 /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "JetBrainsMono-Regular.ttf"; path = "../assets/fonts/JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
-		BF76576E84EB48CBBA2B8D9E /* Archivo-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Regular.ttf"; path = "../assets/fonts/Archivo-Regular.ttf"; sourceTree = "<group>"; };
+		A60D619528C249BEA8BA4882 /* JetBrainsMono-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "JetBrainsMono-Regular.ttf"; path = "../assets/fonts/JetBrainsMono-Regular.ttf"; sourceTree = "<group>"; };
+		BF76576E84EB48CBBA2B8D9E /* Archivo-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Regular.ttf"; path = "../assets/fonts/Archivo-Regular.ttf"; sourceTree = "<group>"; };
 		C65E5AB6F3200AE02CD3085B /* Pods-NavigatorApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NavigatorApp.debug.xcconfig"; path = "Target Support Files/Pods-NavigatorApp/Pods-NavigatorApp.debug.xcconfig"; sourceTree = "<group>"; };
 		E4AFEC652CF6BA4C000EDE15 /* Config.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		E4C5571E2D3A1BFA00B22EA8 /* NavigatorApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = NavigatorApp.entitlements; path = NavigatorApp/NavigatorApp.entitlements; sourceTree = "<group>"; };
 		E4CDF7802CE20AF900D34FBB /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = NavigatorApp/BootSplash.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F3D6E2CF06EA4E79BCD03B1F /* Archivo-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Bold.ttf"; path = "../assets/fonts/Archivo-Bold.ttf"; sourceTree = "<group>"; };
-		FE3DEF48E4814B6D95F3F294 /* Archivo-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-SemiBold.ttf"; path = "../assets/fonts/Archivo-SemiBold.ttf"; sourceTree = "<group>"; };
+		F3D6E2CF06EA4E79BCD03B1F /* Archivo-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-Bold.ttf"; path = "../assets/fonts/Archivo-Bold.ttf"; sourceTree = "<group>"; };
+		FE3DEF48E4814B6D95F3F294 /* Archivo-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Archivo-SemiBold.ttf"; path = "../assets/fonts/Archivo-SemiBold.ttf"; sourceTree = "<group>"; };
+		E72AF9ABA6BF4AE7821CF472 /* Geist-Regular.ttf */ = {isa = PBXFileReference; name = "Geist-Regular.ttf"; path = "../assets/fonts/Geist-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		2EE09C0F1E71485E89A68CE2 /* Geist-Bold.ttf */ = {isa = PBXFileReference; name = "Geist-Bold.ttf"; path = "../assets/fonts/Geist-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		71760A80820C4669B036EBE4 /* GeistMono-SemiBold.ttf */ = {isa = PBXFileReference; name = "GeistMono-SemiBold.ttf"; path = "../assets/fonts/GeistMono-SemiBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		CC20FA4D5B4C4836830F0354 /* Geist-ExtraBold.ttf */ = {isa = PBXFileReference; name = "Geist-ExtraBold.ttf"; path = "../assets/fonts/Geist-ExtraBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		53E12E2FCF224EFDA75AF7CC /* Geist-Medium.ttf */ = {isa = PBXFileReference; name = "Geist-Medium.ttf"; path = "../assets/fonts/Geist-Medium.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		54C4F3E3B872416A9E38D321 /* GeistMono-Medium.ttf */ = {isa = PBXFileReference; name = "GeistMono-Medium.ttf"; path = "../assets/fonts/GeistMono-Medium.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E16BA90273144747BA78C30A /* GeistMono-Regular.ttf */ = {isa = PBXFileReference; name = "GeistMono-Regular.ttf"; path = "../assets/fonts/GeistMono-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		D9E42508B23A4CD689FC0F91 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; name = "Geist-SemiBold.ttf"; path = "../assets/fonts/Geist-SemiBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,9 +141,16 @@
 				F3D6E2CF06EA4E79BCD03B1F /* Archivo-Bold.ttf */,
 				2D9CF6F6DE7344E5B9AD7F82 /* Archivo-ExtraBold.ttf */,
 				5B25A9087FC846F3A953181B /* JetBrainsMono-Medium.ttf */,
+				E72AF9ABA6BF4AE7821CF472 /* Geist-Regular.ttf */,
+				2EE09C0F1E71485E89A68CE2 /* Geist-Bold.ttf */,
+				71760A80820C4669B036EBE4 /* GeistMono-SemiBold.ttf */,
+				CC20FA4D5B4C4836830F0354 /* Geist-ExtraBold.ttf */,
+				53E12E2FCF224EFDA75AF7CC /* Geist-Medium.ttf */,
+				54C4F3E3B872416A9E38D321 /* GeistMono-Medium.ttf */,
+				E16BA90273144747BA78C30A /* GeistMono-Regular.ttf */,
+				D9E42508B23A4CD689FC0F91 /* Geist-SemiBold.ttf */,
 			);
 			name = Resources;
-			path = "";
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -212,6 +235,14 @@
 				B5A00A0F59D74153923625B1 /* Archivo-Bold.ttf in Resources */,
 				F3D20C423EE2473EBC3A2CE4 /* Archivo-ExtraBold.ttf in Resources */,
 				7F8DE6495B0345A5805CDAAD /* JetBrainsMono-Medium.ttf in Resources */,
+				B5D2C8F12CEC457DA294320F /* Geist-Regular.ttf in Resources */,
+				5166147240E04F0FAFD8CB65 /* Geist-Bold.ttf in Resources */,
+				2F80E8D9D1544EC186E3DE78 /* GeistMono-SemiBold.ttf in Resources */,
+				56746AD692D34FE0B579BC02 /* Geist-ExtraBold.ttf in Resources */,
+				7EB4E870CBDA4FD0AD271C7A /* Geist-Medium.ttf in Resources */,
+				11C5B4808DE642C6BDD466D9 /* GeistMono-Medium.ttf in Resources */,
+				9C5D16110D7E481F8EA0099B /* GeistMono-Regular.ttf in Resources */,
+				044CABE4823C4AB6B8CE8C80 /* Geist-SemiBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

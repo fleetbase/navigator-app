@@ -248,7 +248,7 @@ export function resolveBranding(sources: BrandingSource[], { fonts = [] as strin
     }
 
     // ── typography: every named face must be bundled ────────────────────────
-    const shipped = new Set([...fonts, 'Archivo-Regular', 'Archivo-Medium', 'Archivo-SemiBold', 'Archivo-Bold', 'Archivo-ExtraBold', 'JetBrainsMono-Regular', 'JetBrainsMono-Medium', 'JetBrainsMono-SemiBold']);
+    const shipped = new Set([...fonts, 'Geist-Regular', 'Geist-Medium', 'Geist-SemiBold', 'Geist-Bold', 'Geist-ExtraBold', 'GeistMono-Regular', 'GeistMono-Medium', 'GeistMono-SemiBold', 'Archivo-Regular', 'Archivo-Medium', 'Archivo-SemiBold', 'Archivo-Bold', 'Archivo-ExtraBold', 'JetBrainsMono-Regular', 'JetBrainsMono-Medium', 'JetBrainsMono-SemiBold']);
     const typography = { ...merged.typography };
     for (const role of ['body', 'heading', 'mono'] as const) {
         const family: FontFamily | undefined = typography[role];

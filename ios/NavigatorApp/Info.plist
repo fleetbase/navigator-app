@@ -172,6 +172,14 @@
 		<string>Archivo-Bold.ttf</string>
 		<string>Archivo-ExtraBold.ttf</string>
 		<string>JetBrainsMono-Medium.ttf</string>
+		<string>Geist-Regular.ttf</string>
+		<string>Geist-Bold.ttf</string>
+		<string>GeistMono-SemiBold.ttf</string>
+		<string>Geist-ExtraBold.ttf</string>
+		<string>Geist-Medium.ttf</string>
+		<string>GeistMono-Medium.ttf</string>
+		<string>GeistMono-Regular.ttf</string>
+		<string>Geist-SemiBold.ttf</string>
 	</array>
 </dict>
 </plist>

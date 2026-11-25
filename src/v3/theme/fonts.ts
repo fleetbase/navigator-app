@@ -1,5 +1,5 @@
 /**
- * Waypoint typography — Archivo (UI) + JetBrains Mono (identifiers).
+ * Waypoint typography — Geist (UI) + Geist Mono (identifiers), design round 3.
  *
  * The v2 config had no font configuration at all: it spread @tamagui/config/v3
  * wholesale, so the app ran on stock Inter and components mixed `fontSize='$2'`
@@ -21,16 +21,16 @@ import type { FontFamily } from '../branding/schema';
 /** PostScript names — must match the `postScript` field of the shipped TTFs. */
 export const designFontFaces = {
     ui: {
-        400: 'Archivo-Regular',
-        500: 'Archivo-Medium',
-        600: 'Archivo-SemiBold',
-        700: 'Archivo-Bold',
-        800: 'Archivo-ExtraBold',
+        400: 'Geist-Regular',
+        500: 'Geist-Medium',
+        600: 'Geist-SemiBold',
+        700: 'Geist-Bold',
+        800: 'Geist-ExtraBold',
     },
     mono: {
-        400: 'JetBrainsMono-Regular',
-        500: 'JetBrainsMono-Medium',
-        600: 'JetBrainsMono-SemiBold',
+        400: 'GeistMono-Regular',
+        500: 'GeistMono-Medium',
+        600: 'GeistMono-SemiBold',
     },
 } as const;
 

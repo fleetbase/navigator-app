@@ -1443,13 +1443,17 @@
         "scanUnavailable": "Allow camera access for this site to scan."
     },
     "welcome": {
-        "title": "Your day, in order.",
-        "body": "Every waypoint, every order, one clear next step.",
-        "bodyWithOrg": "Every waypoint and order for %{organization}, one clear next step.",
+        "title": "Your whole day,\nwaypoint by waypoint.",
+        "body": "Routes, orders and proof of delivery in one place. It keeps working when the signal doesn't.",
+        "bodyWithOrg": "Routes, orders and proof of delivery for %{organization}. It keeps working when the signal doesn't.",
         "signIn": "Sign in",
         "link": "Connect to your company's server",
         "changeServer": "Change server",
-        "connectedTo": "Connected to %{host}"
+        "connectedTo": "Connected to %{host}",
+        "getStarted": "Get started",
+        "alreadyDrive": "I already drive with Navigator",
+        "ownServer": "Your company has its own server?",
+        "scan": "Scan its QR code"
     },
     "reset": {
         "title": "Forgot your password?",

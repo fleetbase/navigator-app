@@ -7,7 +7,7 @@
  * address really is a Fleetbase server before anything is saved.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spinner, XStack, YStack } from 'tamagui';
 import { Body, Caption, Display, Secondary } from '../ui/Text';
@@ -21,7 +21,7 @@ import { requestPermission } from '../permissions/permissions';
 import { AuthScaffold, BigButton, CARD_RADIUS, FieldAction, LinkButton, RoundButton, StepTitle } from './AuthScaffold';
 
 // Loaded on demand: the camera is native code this screen may never need.
-const lazyScanner = () => require('../../components/QrCodeScanner').QrCodeScanner as React.ComponentType<{ onScan: (code: { value?: string } | string) => void; scanCooldown?: number }>;
+const lazyScanner = () => require('../../components/QrCodeScanner').QrCodeScanner as React.ComponentType<{ onScan: (code: { value?: string } | string) => void; scanCooldown?: number; overlayStyle?: object; width?: number; height?: number }>;
 
 type Check = { state: 'idle' } | { state: 'checking' } | { state: 'ok'; version?: string } | { state: 'failed'; reason: ProbeFailure };
 
@@ -134,6 +134,8 @@ export function LinkScanScreen({ onFound, onManual, onCancel }: { onFound: (link
     const insets = useSafeAreaInsets();
     const [allowed, setAllowed] = useState<boolean | null>(Platform.OS === 'web' ? true : null);
     const [rejected, setRejected] = useState(false);
+    // Given real numbers: a percentage height left the camera a strip at the top of the screen.
+    const window = useWindowDimensions();
     const Scanner = useMemo(() => (allowed ? lazyScanner() : null), [allowed]);
 
     useEffect(() => {
@@ -159,7 +161,8 @@ export function LinkScanScreen({ onFound, onManual, onCancel }: { onFound: (link
 
     return (
         <YStack flex={1} backgroundColor="#05080D" testID="link-scan">
-            <View style={StyleSheet.absoluteFill}>{Scanner ? <Scanner onScan={onScan} scanCooldown={1500} /> : null}</View>
+            {/* The scanner draws its own guide box; this screen has one already, so that one is switched off. */}
+            <View style={StyleSheet.absoluteFill}>{Scanner ? <Scanner onScan={onScan} scanCooldown={1500} width={window.width} height={window.height} overlayStyle={{ borderWidth: 0, opacity: 0 }} /> : null}</View>
 
             <XStack alignItems="center" gap={space[3]} paddingHorizontal={space[4]} paddingTop={insets.top + space[2]}>
                 <RoundButton kind="close" onPress={onCancel} label={t('link.cancel')} testID="link-scan-close" />
