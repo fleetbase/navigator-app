@@ -216,9 +216,9 @@ function WaypointCard({
                 {last ? null : <Rail vertical done={waypoint.state === 'done'} />}
             </YStack>
             {/*
-              * Route card A with the time in a column of its own at the far right:
-              * what and where on the left, when on the right, so the eye runs down
-              * one edge of the list to read the day's times.
+              * Route card A with option C's time column: when comes first, in a
+              * column of its own at the card's left edge, then what and where. The
+              * eye runs down that one edge to read the day's times.
               */}
             <XStack
                 flex={1}
@@ -230,6 +230,35 @@ function WaypointCard({
                 borderColor={current ? '$primary' : '$border'}
                 opacity={done ? 0.72 : 1}
             >
+            {time || leg ? (
+                <YStack
+                    width={78}
+                    alignItems="center"
+                    justifyContent="center"
+                    gap={2}
+                    paddingHorizontal={6}
+                    borderRightWidth={1}
+                    borderColor={current ? '$primary' : '$border'}
+                    onPress={onOpen}
+                    testID={`jobs-waypoint-time-${waypoint.key}`}
+                >
+                    {time ? (
+                        <Body fontSize={18} fontWeight="800" tabular numberOfLines={1}>
+                            {formatClock(time)}
+                        </Body>
+                    ) : null}
+                    {legDistance ? (
+                        <Secondary fontSize={11} tabular numberOfLines={1}>
+                            {legDistance}
+                        </Secondary>
+                    ) : null}
+                    {legDuration ? (
+                        <Secondary fontSize={11} tabular numberOfLines={1}>
+                            {legDuration}
+                        </Secondary>
+                    ) : null}
+                </YStack>
+            ) : null}
             <YStack flex={1} padding={14} gap={10}>
                 <YStack
                     gap={2}
@@ -281,35 +310,6 @@ function WaypointCard({
                     </XStack>
                 ) : null}
             </YStack>
-            {time || leg ? (
-                <YStack
-                    width={78}
-                    alignItems="center"
-                    justifyContent="center"
-                    gap={2}
-                    paddingHorizontal={6}
-                    borderLeftWidth={1}
-                    borderColor={current ? '$primary' : '$border'}
-                    onPress={onOpen}
-                    testID={`jobs-waypoint-time-${waypoint.key}`}
-                >
-                    {time ? (
-                        <Body fontSize={18} fontWeight="800" tabular numberOfLines={1}>
-                            {formatClock(time)}
-                        </Body>
-                    ) : null}
-                    {legDistance ? (
-                        <Secondary fontSize={11} tabular numberOfLines={1}>
-                            {legDistance}
-                        </Secondary>
-                    ) : null}
-                    {legDuration ? (
-                        <Secondary fontSize={11} tabular numberOfLines={1}>
-                            {legDuration}
-                        </Secondary>
-                    ) : null}
-                </YStack>
-            ) : null}
             </XStack>
         </XStack>
     );
