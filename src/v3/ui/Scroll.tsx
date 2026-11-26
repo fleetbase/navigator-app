@@ -9,14 +9,15 @@ import { forwardRef } from 'react';
 import { FlatList as RNFlatList, ScrollView as RNScrollView, type FlatListProps, type ScrollViewProps } from 'react-native';
 
 export const ScrollView = forwardRef<RNScrollView, ScrollViewProps>(function ScrollView(props, ref) {
-    return <RNScrollView ref={ref} alwaysBounceVertical={Boolean(props.refreshControl)} alwaysBounceHorizontal={false} overScrollMode="auto" {...props} />;
+    // No scroll bars anywhere in the app, in either direction: the content itself shows there is more.
+    return <RNScrollView ref={ref} alwaysBounceVertical={Boolean(props.refreshControl)} alwaysBounceHorizontal={false} overScrollMode="auto" showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} {...props} />;
 });
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type ScrollView = RNScrollView;
 
 function FlatListInner<T>(props: FlatListProps<T>, ref: React.ForwardedRef<RNFlatList<T>>) {
     const refreshes = Boolean(props.refreshControl || props.onRefresh);
-    return <RNFlatList ref={ref} alwaysBounceVertical={refreshes} alwaysBounceHorizontal={false} overScrollMode="auto" {...props} />;
+    return <RNFlatList ref={ref} alwaysBounceVertical={refreshes} alwaysBounceHorizontal={false} overScrollMode="auto" showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} {...props} />;
 }
 
 export const FlatList = forwardRef(FlatListInner) as <T>(props: FlatListProps<T> & { ref?: React.ForwardedRef<RNFlatList<T>> }) => React.ReactElement;

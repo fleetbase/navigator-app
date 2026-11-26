@@ -251,6 +251,8 @@ const BottomSheetSelect = forwardRef<BottomSheetSelectRef, BottomSheetSelectProp
                         style={{ flex: 1, backgroundColor: theme.background.val, paddingHorizontal: 8, borderColor: theme.border.val, borderWidth: 1, borderTopWidth: 0 }}
                     >
                         <BottomSheetFlatList
+                            showsVerticalScrollIndicator={false}
+                            showsHorizontalScrollIndicator={false}
                             data={filteredOptions}
                             keyExtractor={(item, index) => String(index)}
                             renderItem={({ item, index }) => {

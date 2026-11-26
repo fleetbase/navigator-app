@@ -62,3 +62,15 @@ textarea {
         right: calc(50% - 240px) !important;
     }
 }
+
+/* No scroll bars anywhere in the app, as on the phone: content still scrolls. */
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
