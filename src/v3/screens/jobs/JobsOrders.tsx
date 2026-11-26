@@ -21,7 +21,8 @@ import { Banner, EmptyState, Skeleton } from '../../ui/Banner';
 import { FailureState } from '../../ui/FailureState';
 import { Field } from '../../ui/Field';
 import { useTranslation } from '../../i18n/useTranslation';
-import { formatClock, formatDateTime, formatMoney } from '../../format';
+import { formatClock, formatDateTime, formatMeters, formatMoney } from '../../format';
+import { useSettings } from '../../settings';
 import {
     cashOnDeliveryOf,
     customerNameOf,
@@ -36,7 +37,8 @@ import {
 import { dayKey } from '../../data/orderStore';
 import type { ApiError } from '../../api/NavigatorAdapter';
 import { CARD_RADIUS, FilterChip, Glyph, GUTTER, IconButton, OrderAvatar, Rail, Rise, SectionLabel, WaypointMark } from './parts';
-import { OrderCardMap } from './OrderCardMap';
+import { OrderCardMap, useOrderCardRoute } from './OrderCardMap';
+import { colorForId, describeWaypoint } from '../../ui/routeColors';
 import { isOrderStarted, nextPoint, orderPoints, orderShape, orderTypeLabel, segmentOf, type OrderMark, type OrderPoint, type OrderSegment } from './model';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
@@ -76,7 +78,39 @@ export function shapeLabel(points: OrderPoint[], t: T): string {
 const STRIP_MAX = 9;
 
 /** The order's points as marks joined by a rail. */
-export function ShapeStrip({ points, testID }: { points: OrderPoint[]; testID?: string }) {
+/**
+ * One point of the strip, drawn as the console draws a waypoint: a circle with P,
+ * D or the waypoint's number. Done is dimmed; the one being headed to has a ring.
+ */
+function StripMarker({ point, number, color }: { point: OrderPoint; number: number; color?: string }) {
+    const { label, color: fill } = describeWaypoint(point.role, point.waypointNumber ?? number, color);
+    const current = point.state === 'current';
+    const done = point.state === 'done';
+    const skipped = point.state === 'skipped';
+    const size = current ? 30 : 24;
+    return (
+        <YStack width={size + (current ? 8 : 0)} height={size + (current ? 8 : 0)} alignItems="center" justifyContent="center">
+            {current ? <YStack position="absolute" width={size + 8} height={size + 8} borderRadius={(size + 8) / 2} borderWidth={2} borderColor={fill as never} opacity={0.5} /> : null}
+            <YStack
+                width={size}
+                height={size}
+                borderRadius={size / 2}
+                alignItems="center"
+                justifyContent="center"
+                backgroundColor={(skipped ? 'transparent' : fill) as never}
+                borderWidth={2}
+                borderColor={(skipped ? fill : '#FFFFFF') as never}
+                opacity={done ? 0.55 : 1}
+            >
+                <Body fontSize={current ? 13 : 11} lineHeight={current ? 16 : 14} fontWeight="800" color={(skipped ? fill : '#FFFFFF') as never}>
+                    {skipped ? '–' : label}
+                </Body>
+            </YStack>
+        </YStack>
+    );
+}
+
+export function ShapeStrip({ points, color, testID }: { points: OrderPoint[]; /** The order's route colour, for its numbered waypoints. */ color?: string; testID?: string }) {
     if (!points.length) return null;
     // Too many to draw: keep both ends and the count of what is between them.
     const folded = points.length > STRIP_MAX;
@@ -88,7 +122,7 @@ export function ShapeStrip({ points, testID }: { points: OrderPoint[]; testID?: 
                 const last = index === shown.length - 1;
                 return (
                     <XStack key={index} flex={last ? undefined : 1} alignItems="center" gap={4}>
-                        <WaypointMark state={point.state} label={number} size={22} />
+                        <StripMarker point={point} number={number} color={color} />
                         {last ? null : folded && index === 3 ? (
                             <XStack flex={1} alignItems="center" justifyContent="center">
                                 <Secondary fontSize={12} fontWeight="700" tabular>
@@ -116,6 +150,7 @@ interface CardProps {
 
 const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress, t }: CardProps) {
     const theme = useTheme();
+    const { units } = useSettings();
     const points = orderPoints(order);
     const next = nextPoint(points);
     const started = isOrderStarted(order);
@@ -135,16 +170,21 @@ const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress,
     const nextName = next?.name ?? next?.address;
     const shape = shapeLabel(points, t);
 
-    const done = points.filter((p) => p.state === 'done').length;
-    const progress = points.length ? t('jobs.orders.progress', { done, total: points.length }) : undefined;
-    const under = [progress, itemCount ? t('ordersScreen.itemCount', { count: itemCount }) : null, type].filter(Boolean).join(' · ');
     const dueBy = !finished && next?.windowEnd ? t('jobs.byTime', { time: formatClock(next.windowEnd) }) : undefined;
-    const cashLine = !finished && cash?.toCollect ? t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }) : undefined;
+    // What is left to drive on this order, by road, from its tracker. Absent rather than estimated.
+    const { route, remainingM } = useOrderCardRoute(finished ? undefined : order.id);
+    const footer = [
+        itemCount ? { key: 'items', label: t('ordersScreen.itemCount', { count: itemCount }), tone: undefined } : null,
+        remainingM ? { key: 'distance', label: formatMeters(remainingM, units), tone: undefined } : null,
+        !finished && cash?.toCollect ? { key: 'cash', label: t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }), tone: 'warning' as const } : null,
+    ].filter(Boolean) as { key: string; label: string; tone?: 'warning' }[];
 
     /*
-     * Order card C: the order's route on a small map first, because where it goes
-     * is how a driver recognises a job; then the tracking number, the next place
-     * and when. The status sits on the map so the text below stays three lines.
+     * The order card, in three bands:
+     *   - a map of the one leg that matters now, from the driver to this order's next waypoint;
+     *   - the order itself: tracking number, type, status, its shape as a strip of markers, the next place and when;
+     *   - a footer of the figures a driver weighs a job by: items, distance left, cash to collect.
+     * A finished order has no next waypoint, so it has no map.
      */
     return (
         <YStack
@@ -159,54 +199,63 @@ const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress,
             accessibilityLabel={t('jobs.openOrder', { order: displayIdOf(order) })}
             testID={`order-${order.id}`}
         >
-            <YStack>
-                <OrderCardMap orderId={order.id} points={points} finished={finished} testID={`order-${order.id}-map`} />
-                <XStack position="absolute" top={10} left={10}>
+            {next && !finished ? <OrderCardMap orderId={order.id} target={next} route={route} testID={`order-${order.id}-map`} /> : null}
+
+            <YStack padding={14} gap={12}>
+                <XStack alignItems="flex-start" gap={12}>
+                    <YStack flex={1} gap={2}>
+                        {/* In full, on its own line: it is read against a parcel label. */}
+                        <Body fontFamily="$mono" fontSize={16} fontWeight="600" testID={`order-${order.id}-tracking`}>
+                            {displayIdOf(order)}
+                        </Body>
+                        <Secondary fontSize={13} numberOfLines={1}>
+                            {[type, customer].filter(Boolean).join(' · ')}
+                        </Secondary>
+                    </YStack>
                     <StatusPill status={order.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} />
                 </XStack>
+
+                <ShapeStrip points={points} color={colorForId(order.id)} testID={`order-${order.id}-shape`} />
+
+                {shape || nextName || time ? (
+                    <XStack alignItems="flex-end" justifyContent="space-between" gap={12}>
+                        <YStack flex={1} gap={2}>
+                            {shape ? <SectionLabel>{shape}</SectionLabel> : null}
+                            {nextName && !finished ? (
+                                <Body fontSize={15} fontWeight="800" numberOfLines={1}>
+                                    {t('jobs.orders.next', { name: nextName })}
+                                </Body>
+                            ) : null}
+                        </YStack>
+                        {time || dueBy ? (
+                            <YStack alignItems="flex-end" gap={1}>
+                                {time ? (
+                                    <Body fontSize={20} lineHeight={24} fontWeight="800" tabular numberOfLines={1}>
+                                        {time}
+                                    </Body>
+                                ) : null}
+                                {dueBy ? (
+                                    <Secondary fontSize={12} tabular numberOfLines={1}>
+                                        {dueBy}
+                                    </Secondary>
+                                ) : null}
+                            </YStack>
+                        ) : null}
+                    </XStack>
+                ) : null}
             </YStack>
 
-            <XStack alignItems="flex-end" justifyContent="space-between" gap={12} paddingHorizontal={14} paddingTop={12} paddingBottom={14}>
-                <YStack flex={1} gap={2}>
-                    {/* In full, on its own line: it is read against a parcel label. */}
-                    <Body fontFamily="$mono" fontSize={15} fontWeight="600" testID={`order-${order.id}-tracking`}>
-                        {displayIdOf(order)}
-                    </Body>
-                    {nextName && !finished ? (
-                        <Body fontSize={15} fontWeight="800" numberOfLines={1}>
-                            {t('jobs.orders.next', { name: nextName })}
-                        </Body>
-                    ) : shape ? (
-                        <Body fontSize={15} fontWeight="800" numberOfLines={1}>
-                            {shape}
-                        </Body>
-                    ) : null}
-                    {under ? (
-                        <Secondary fontSize={13} tabular numberOfLines={1}>
-                            {under}
-                        </Secondary>
-                    ) : null}
-                </YStack>
-                {time || dueBy || cashLine ? (
-                    <YStack alignItems="flex-end" gap={1}>
-                        {time ? (
-                            <Body fontSize={24} lineHeight={28} fontWeight="800" tabular numberOfLines={1}>
-                                {time}
+            {footer.length ? (
+                <XStack gap={6} paddingHorizontal={14} paddingVertical={10} borderTopWidth={1} borderColor="$border" backgroundColor="$background" testID={`order-${order.id}-footer`}>
+                    {footer.map((chip) => (
+                        <XStack key={chip.key} height={28} alignItems="center" paddingHorizontal={10} borderRadius={14} backgroundColor="$surfaceRaised">
+                            <Body fontSize={13} fontWeight="700" tabular numberOfLines={1} color={chip.tone === 'warning' ? '$warningText' : '$textPrimary'}>
+                                {chip.label}
                             </Body>
-                        ) : null}
-                        {dueBy ? (
-                            <Secondary fontSize={12} tabular numberOfLines={1}>
-                                {dueBy}
-                            </Secondary>
-                        ) : null}
-                        {cashLine ? (
-                            <Secondary fontSize={12} fontWeight="700" tabular numberOfLines={1} color="$warningText">
-                                {cashLine}
-                            </Secondary>
-                        ) : null}
-                    </YStack>
-                ) : null}
-            </XStack>
+                        </XStack>
+                    ))}
+                </XStack>
+            ) : null}
         </YStack>
     );
 });
