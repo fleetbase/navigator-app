@@ -292,6 +292,13 @@ export class OrderStore {
         this.notify();
     }
 
+    /** Clears every notice at once: several orders leaving together is one thing to acknowledge. */
+    dismissAllNotices(): void {
+        if (!this.noticeList.length) return;
+        this.noticeList = [];
+        this.notify();
+    }
+
     /** Recompute derived views without changing any record. */
     invalidate(): void {
         this.cache.clear();

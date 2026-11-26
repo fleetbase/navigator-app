@@ -38,6 +38,7 @@ import { dayKey } from '../../data/orderStore';
 import type { ApiError } from '../../api/NavigatorAdapter';
 import { CARD_RADIUS, FilterChip, Glyph, GUTTER, IconButton, OrderAvatar, Rail, Rise, SectionLabel, WaypointMark } from './parts';
 import { OrderCardMap, useOrderCardRoute } from './OrderCardMap';
+import { OrderNotices } from './OrderNotices';
 import { colorForId, describeWaypoint } from '../../ui/routeColors';
 import { isOrderStarted, nextPoint, orderPoints, orderShape, orderTypeLabel, segmentOf, type OrderMark, type OrderPoint, type OrderSegment } from './model';
 
@@ -370,19 +371,8 @@ export function JobsOrders({ orders, marks, nextEtas, notices, state, error, isO
                 {searching ? (
                     <Field value={query} onChangeText={setQuery} placeholder={t('ordersScreen.searchPlaceholder')} autoCapitalize="none" testID="orders-search" />
                 ) : null}
-                {/*
-                  * A reassigned order disappears from the list; this says so,
-                  * rather than leaving the driver to wonder where it went.
-                  */}
-                {notices.map((notice) => (
-                    <Banner
-                        key={notice.orderId}
-                        tone="warning"
-                        message={t('ordersScreen.reassigned', { order: notice.label })}
-                        action={{ label: t('common.dismiss'), onPress: () => orderStore.dismissNotice(notice.orderId) }}
-                        testID={`order-notice-${notice.orderId}`}
-                    />
-                ))}
+                {/* An order that left the list says so once, in one line, and clears itself. */}
+                <OrderNotices notices={notices} testID="order-notices" />
                 {onOpenOffers ? (
                     <XStack
                         minHeight={48}

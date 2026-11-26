@@ -23,6 +23,7 @@
  * reports `is_delayed` as a constant `false`, so "on time" is only ever said
  * when the waypoint has a time window to compare the arrival against.
  */
+import { OrderNotices } from './jobs/OrderNotices';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
@@ -292,15 +293,8 @@ export function TodayScreen({
 
     const header = <Header t={t} name={firstName} organization={organizationName} duty={duty} onDuty={openDutySheet} since={onDutySince} />;
 
-    const noticeBanners = notices.map((notice) => (
-        <Banner
-            key={notice.orderId}
-            tone="warning"
-            message={t('ordersScreen.reassigned', { order: notice.label })}
-            action={{ label: t('common.dismiss'), onPress: () => orderStore.dismissNotice(notice.orderId) }}
-            testID={`today-notice-${notice.orderId}`}
-        />
-    ));
+    // One line however many orders left, clearing itself: see OrderNotices.
+    const noticeBanners = notices.length ? <OrderNotices notices={notices} testID="today-notices" /> : null;
 
     const dutyErrorBanner = dutyError ? <Banner tone="danger" message={t('home.duty.failed')} meta={dutyError.message} testID="home-duty-error" /> : null;
 

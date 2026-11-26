@@ -179,8 +179,13 @@
         "noSearchResultsTitle": "No matches",
         "noSearchResultsBody": "Nothing matches “%{query}”.",
         "job": "Job",
-        "reassigned": "Order %{order} was reassigned",
-        "offers": "Offers"
+        "reassigned": "Order %{order} is no longer assigned to you",
+        "offers": "Offers",
+        "unassigned": "Order %{order} is no longer assigned to you",
+        "unassignedMany": {
+            "one": "%{count} order is no longer assigned to you",
+            "other": "%{count} orders are no longer assigned to you"
+        }
     },
     "jobs": {
         "title": "Jobs",
@@ -334,7 +339,7 @@
             "callWho": "Call %{name}",
             "messageWho": "Message %{name}"
         },
-        "reassigned": "This order was reassigned. It is no longer yours.",
+        "reassigned": "This order is no longer assigned to you.",
         "proofCaptured": "Proof captured",
         "noNextActivity": "There is no next step for this order yet. Ask dispatch to move it on.",
         "tabsLabel": "Order sections",
