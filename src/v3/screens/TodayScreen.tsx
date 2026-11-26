@@ -29,6 +29,7 @@
  * The tracker reports `is_delayed` as a constant `false`, so "on time" is only
  * ever said when the waypoint has a time window to compare the arrival against.
  */
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderNotices } from './jobs/OrderNotices';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
@@ -156,8 +157,8 @@ export function TodayScreen({
     const { isOnline, queuedCount, syncState, lastSyncedCount } = useSync();
     /*
      * The map runs to the very top of the screen, under the status bar. The shell
-     * pads every screen down by the status bar's height, so this screen pulls
-     * itself back up by the same amount and gives that height to the map. The one
+     * normally pads every screen down by the status bar's height; this screen asks
+     * it not to (see `setBleedTop`) and gives that height to the map. The one
      * exception is while the shell is showing its strip about signal or syncing
      * (same conditions as shell/OfflineBar): that strip sits where the map would
      * go, and it matters more than the bleed.
@@ -165,6 +166,14 @@ export function TodayScreen({
     const insets = useSafeAreaInsets();
     const shellStripShown = syncState === 'failed' || !isOnline || (syncState === 'syncing' && queuedCount > 0) || lastSyncedCount > 0;
     const bleed = shellStripShown ? 0 : insets.top;
+    // Ask the shell to give up its status-bar padding while this screen is in front.
+    const { setBleedTop } = useShell();
+    useFocusEffect(
+        useCallback(() => {
+            setBleedTop(true);
+            return () => setBleedTop(false);
+        }, [setBleedTop])
+    );
     const position = useDeviceLocation();
     const unreadChat = useChatUnreadTotal();
     const onDuty = duty !== 'off';
@@ -621,7 +630,7 @@ export function TodayScreen({
     /* -- The one layout ------------------------------------------------------ */
 
     return (
-        <ScrollView style={[screen, { marginTop: -bleed }]} contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }} refreshControl={refreshControl} testID="today">
+        <ScrollView style={screen} contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }} refreshControl={refreshControl} testID="today">
             {/* The map, full width and up to the top edge, with the organisation and the driver's status floating over it. */}
             <YStack height={MAP_HEIGHT + bleed}>
                 <HomeMap

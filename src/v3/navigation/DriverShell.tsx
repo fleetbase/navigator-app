@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 import { DriverTabs, type Features } from './DriverTabs';
 import type { TabBadges } from './TabBar';
-import { DutySheet, OfflineBar, useDuty } from '../shell';
+import { DutySheet, OfflineBar, useDuty, useSync } from '../shell';
 import { space } from '../theme/tokens';
 
 /**
@@ -24,9 +24,15 @@ export interface ShellValue {
     /** The driver's name, when known. */
     driverName?: string;
     openDutySheet: () => void;
+    /**
+     * Lets the screen in front draw up to the very top of the display, under the
+     * status bar (the dashboard's map does). The shell then stops padding for the
+     * status bar; the screen pads its own content. Set on focus, cleared on blur.
+     */
+    setBleedTop: (bleed: boolean) => void;
 }
 
-const ShellContext = createContext<ShellValue>({ organizationName: '', openDutySheet: () => {} });
+const ShellContext = createContext<ShellValue>({ organizationName: '', openDutySheet: () => {}, setBleedTop: () => {} });
 
 export function useShell(): ShellValue {
     return useContext(ShellContext);
@@ -70,11 +76,16 @@ export function DriverShell({
         [setDuty]
     );
 
-    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true) }), [organizationName, subtitle]);
+    const [bleedTop, setBleedTop] = useState(false);
+    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), setBleedTop }), [organizationName, subtitle]);
+    // The strip about signal and syncing keeps clear of the status bar even when the screen below does not.
+    const sync = useSync();
+    const stripShown = sync.syncState === 'failed' || !sync.isOnline || (sync.syncState === 'syncing' && sync.queuedCount > 0) || sync.lastSyncedCount > 0;
+    const padTop = bleedTop && !stripShown ? 0 : insets.top;
 
     return (
         <ShellContext.Provider value={shell}>
-        <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+        <YStack flex={1} backgroundColor="$background" paddingTop={padTop}>
             <YStack paddingHorizontal={space[4]}>
                 <OfflineBar />
             </YStack>
