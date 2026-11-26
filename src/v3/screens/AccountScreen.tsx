@@ -30,7 +30,7 @@ import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useSync } from '../shell';
 import { useQueue, useFleetbase } from '../api';
-import { useDriver, useCurrentOrganization, useDriverOrganizations, useOnboardingSummary, useIssues, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
+import { useDriver, useCurrentOrganization, useDriverOrganizations, useDriverDocuments, useIssues, vehicleOf, vehicleDescription, type DriverRecord } from '../data';
 import { vehiclePhotoOf } from '../data/useVehicle';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { getBuildBranding } from '../branding/build-branding';
@@ -64,8 +64,8 @@ const LINKS: AccountLink[] = [
     { route: 'Inspection', labelKey: 'me.inspection', icon: 'check' },
     { route: 'SyncQueue', labelKey: 'me.waitingToSend', icon: 'sync' },
     { route: 'Earnings', labelKey: 'account.earnings', blockedKey: 'account.notEnabled', feature: 'earnings', icon: 'wallet' },
-    // No screen exists for this and the server has no upload to build one on.
-    { route: 'Documents', labelKey: 'account.documents', blockedKey: 'account.notEnabled' },
+    // Shown only when the organisation asks its drivers for documents.
+    { route: 'Documents', labelKey: 'account.documents', icon: 'shield' },
     { route: 'Permissions', labelKey: 'me.permissions', icon: 'pin' },
     { route: 'Settings', labelKey: 'account.settings', icon: 'settings' },
     { route: 'Help', labelKey: 'me.help', icon: 'help' },
@@ -136,9 +136,8 @@ export function AccountScreen({
     const { organizations } = useDriverOrganizations(driverId, reloadToken);
     const { issues } = useIssues(driverId, reloadToken);
     const openIssues = (issues ?? []).filter(isOpenIssue).length;
-    // A driver who joined with a code is held at `pending` until the
-    // organisation has seen the documents it asks for; only then is this worth asking.
-    const onboarding = useOnboardingSummary(organization?.id ?? driver?.company, driver?.status === 'pending');
+    // What the organisation asks for and where the driver's copies stand. Empty when it asks for nothing.
+    const { summary: documents } = useDriverDocuments(driverId, reloadToken);
 
     if (isLoading) {
         return (
@@ -165,15 +164,23 @@ export function AccountScreen({
     const licence = driver?.drivers_license_number;
     const organizationName = organization?.name ?? driver?.company_name;
     const canSwitch = (organizations?.length ?? 0) > 1;
-    const documents = driver?.status === 'pending' && onboarding?.documents_required ? (onboarding.documents ?? []) : [];
+    const documentsAsked = (documents?.required ?? 0) > 0;
+    const documentsOutstanding = documentsAsked && documents?.state !== 'approved';
 
     const valueFor = (route: string): { value?: string; tone?: 'warning' | 'danger' } => {
         if (route === 'SyncQueue') return waiting > 0 ? { value: t('me.waitingCount', { count: waiting }), tone: failedCount > 0 ? 'danger' : 'warning' } : { value: t('me.allSent') };
         if (route === 'Issues' && openIssues > 0) return { value: t('me.openCount', { count: openIssues }), tone: 'warning' };
+        if (route === 'Documents' && documents) {
+            if (documents.state === 'approved') return { value: t('documents.row.approved') };
+            if (documents.state === 'in_review') return { value: t('documents.row.inReview'), tone: 'warning' };
+            return { value: t('documents.row.toSend', { count: documents.missing + documents.rejected }), tone: documents.rejected > 0 ? 'danger' : 'warning' };
+        }
         return {};
     };
 
-    const rows = MENU.filter((link) => !NOT_ROWS.has(link.route)).filter((link) => !link.blockedKey || (link.feature && features?.[link.feature]));
+    const rows = MENU.filter((link) => !NOT_ROWS.has(link.route))
+        .filter((link) => !link.blockedKey || (link.feature && features?.[link.feature]))
+        .filter((link) => link.route !== 'Documents' || documentsAsked);
 
     return (
         <ScrollView
@@ -236,13 +243,32 @@ export function AccountScreen({
                         </Card>
                     ) : null}
 
-                    {documents.length ? (
-                        <Card tone="warning" gap={4} testID="account-documents-notice">
-                            <Body fontSize={16} fontWeight="800" tone="warning">
-                                {t('me.documentsTitle')}
-                            </Body>
+                    {documentsOutstanding && documents ? (
+                        <Card
+                            tone="warning"
+                            gap={4}
+                            onPress={onNavigate ? () => onNavigate('Documents') : undefined}
+                            pressStyle={onNavigate ? { opacity: 0.8 } : undefined}
+                            accessibilityRole="button"
+                            testID="account-documents-notice"
+                        >
+                            <XStack alignItems="center" gap={space[2]}>
+                                <Body flex={1} fontSize={16} fontWeight="800" tone="warning">
+                                    {t(documents.state === 'in_review' ? 'documents.notice.inReviewTitle' : 'documents.notice.neededTitle')}
+                                </Body>
+                                {onNavigate ? <Chevron /> : null}
+                            </XStack>
                             <Secondary fontSize={14} lineHeight={20}>
-                                {t('me.documentsBody', { organization: organizationName ?? t('account.organization'), documents: documents.join(', ') })}
+                                {t(
+                                    documents.state === 'in_review'
+                                        ? documents.held
+                                            ? 'documents.inReviewHeld'
+                                            : 'documents.inReview'
+                                        : documents.held
+                                          ? 'documents.neededHeld'
+                                          : 'documents.needed',
+                                    { organization: organizationName ?? t('account.organization') }
+                                )}
                             </Secondary>
                         </Card>
                     ) : null}

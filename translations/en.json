@@ -2000,6 +2000,49 @@
         "documents": "%{organization} will ask you for: %{documents}.",
         "create": "Create my account"
     },
+    "documents": {
+        "status": {
+            "missing": "Not sent",
+            "submitted": "Waiting for review",
+            "approved": "Approved",
+            "rejected": "Sent back"
+        },
+        "row": {
+            "approved": "Approved",
+            "inReview": "In review",
+            "toSend": {
+                "one": "%{count} to send",
+                "other": "%{count} to send"
+            }
+        },
+        "notice": {
+            "neededTitle": "Your documents are needed",
+            "inReviewTitle": "Your documents are being checked"
+        },
+        "needed": "%{organization} asks its drivers for these documents. Send the ones still missing.",
+        "neededHeld": "%{organization} needs these documents before you can go online. Send the ones still missing.",
+        "inReview": "%{organization} has your documents and is checking them.",
+        "inReviewHeld": "%{organization} has your documents and is checking them. You can go online once they are approved.",
+        "allApproved": "All your documents are approved.",
+        "sentBackBecause": "Sent back because",
+        "waitingBody": "Sent. You will be told when it has been checked.",
+        "add": "Add document",
+        "replace": "Send again",
+        "view": "View",
+        "sending": "Sending",
+        "sent": "Document sent.",
+        "sendFailed": "The document could not be sent. Try again.",
+        "needsSignal": "No signal. Send the document when you are back in range.",
+        "noCamera": "Allow the camera in your phone's settings to take a photo.",
+        "sourceHint": "Make sure the whole document is in the photo and every word can be read.",
+        "takePhoto": "Take a photo",
+        "choosePhoto": "Choose a photo",
+        "privacy": "Only %{organization} can see the documents you send.",
+        "noneTitle": "No documents needed",
+        "noneBody": "%{organization} does not ask its drivers for any documents.",
+        "loadFailedTitle": "Your documents could not be loaded",
+        "loadFailedBody": "Check your signal and try again."
+    },
     "me": {
         "title": "Me",
         "issues": "Issues",
@@ -2017,8 +2060,6 @@
             "other": "%{count} open"
         },
         "drivingFor": "Driving for",
-        "documentsTitle": "Your documents are still needed",
-        "documentsBody": "%{organization} asks new drivers for: %{documents}. The app cannot send them yet, so give them to your dispatcher. You will be able to take work once they have been seen.",
         "version": "Navigator %{version}",
         "connectedTo": "connected to %{host}",
         "versionLabel": "Version",

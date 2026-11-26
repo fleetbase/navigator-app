@@ -8,8 +8,9 @@ import HelpScreen from '../../screens/HelpScreen';
 import SyncQueueScreen from '../../screens/SyncQueueScreen';
 import NotEnabledScreen from '../../screens/NotEnabledScreen';
 import EarningsScreen from '../../screens/EarningsScreen';
+import DocumentsScreen from '../../screens/DocumentsScreen';
 import { useFleetbase } from '../../api';
-import { useDriver } from '../../data';
+import { useCurrentOrganization, useDriver } from '../../data';
 import { useDriverId, useFeatures, useFocusCount, useOrganization, useSignOut, type Nav } from '../session';
 
 /** The native build's version, not package.json's — a bug report has to name the binary the driver is actually running. */
@@ -31,7 +32,10 @@ export function Settings({ navigation }: { navigation: Nav }) {
 /* -- Not enabled yet: honest states, not build-time placeholders. --------- */
 
 export function Documents() {
-    return <NotEnabledScreen feature="documents" />;
+    const driverId = useDriverId();
+    const reloadToken = useFocusCount();
+    const { organization } = useCurrentOrganization(reloadToken);
+    return <DocumentsScreen driverId={driverId} organizationName={organization?.name} reloadToken={reloadToken} />;
 }
 
 export function Earnings() {

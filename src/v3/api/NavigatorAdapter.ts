@@ -67,6 +67,8 @@ const NEVER_QUEUE = [
     /verify-code/,
     /switch-vehicle/,
     /change-password/,
+    // A document that arrives hours after the driver thought it had gone helps no one.
+    /drivers\/[^/]+\/documents/,
     /reset-password/,
     /*
      * Starting an order claims it. For an ad-hoc offer that is a race against
