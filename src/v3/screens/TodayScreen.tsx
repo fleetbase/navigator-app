@@ -32,8 +32,8 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderNotices } from './jobs/OrderNotices';
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { RefreshControl } from 'react-native';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, RefreshControl } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { ScrollView } from '../ui/Scroll';
 import { Body, Micro, Secondary } from '../ui/Text';
@@ -107,6 +107,8 @@ export interface TodayScreenProps {
 const MAP_HEIGHT = 280;
 /** How far the content sheet rides up over the bottom of the map. */
 const SHEET_OVERLAP = 22;
+/** Extra map drawn behind the sheet, uncovered when the page is pulled down. More than a pull can reach. */
+const MAP_PULL_ROOM = 320;
 /** The gap between the sheet's blocks. */
 const SHEET_GAP = 14;
 
@@ -630,26 +632,56 @@ export function TodayScreen({
             : undefined;
     const showProgress = (state === 'next' || state === 'before') && day.total > 0;
 
+    /*
+     * How far the page has been pulled down past its top, as a negative offset
+     * (zero once it is scrolled up). The map and the chips over it are moved by
+     * this amount so they stay put while the page is pulled.
+     */
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const pinned = useMemo(() => scrollY.interpolate({ inputRange: [-MAP_PULL_ROOM, 0], outputRange: [-MAP_PULL_ROOM, 0], extrapolate: 'clamp' }), [scrollY]);
+    const onScroll = useMemo(() => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false }), [scrollY]);
+
     /* -- The one layout ------------------------------------------------------ */
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }} refreshControl={refreshControl} testID="today">
-            {/* The map, full width and up to the top edge, with the organisation and the driver's status floating over it. */}
+        <ScrollView
+            style={screen}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }}
+            refreshControl={refreshControl}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            testID="today"
+        >
+            {/*
+              * The map, full width and up to the top edge, with the organisation and
+              * the driver's status floating over it.
+              *
+              * Pulling the page down must not drag the map away from the top and
+              * show bare background above it. So the map is pinned: it moves up by
+              * exactly as much as the page is pulled down, and it is drawn taller
+              * than its slot, the extra hidden behind the sheet, so that as the sheet
+              * slides down more map is uncovered rather than a gap.
+              */}
             <YStack height={MAP_HEIGHT + bleed}>
-                <HomeMap
-                    waypoints={day.waypoints}
-                    // Online, the view is the leg to the next waypoint; otherwise the whole day.
-                    activeKey={state === 'next' ? next?.key : undefined}
-                    route={state === 'next' ? route : undefined}
-                    position={position}
-                    dark={dark}
-                    height={MAP_HEIGHT + bleed}
-                    padding={{ top: 52 + bleed, bottom: SHEET_OVERLAP }}
-                />
-                <XStack position="absolute" top={bleed} left={space[3] - 2} right={space[3] - 2} alignItems="flex-start" justifyContent="space-between" gap={space[2]} testID="home-header">
-                    <OrgChip name={organizationName} dark={dark} onPress={onOpenOrganizations} />
-                    <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
-                </XStack>
+                <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: MAP_HEIGHT + bleed + MAP_PULL_ROOM, transform: [{ translateY: pinned }] }}>
+                    <HomeMap
+                        waypoints={day.waypoints}
+                        // Online, the view is the leg to the next waypoint; otherwise the whole day.
+                        activeKey={state === 'next' ? next?.key : undefined}
+                        route={state === 'next' ? route : undefined}
+                        position={position}
+                        dark={dark}
+                        height={MAP_HEIGHT + bleed + MAP_PULL_ROOM}
+                        // What the map frames is still the visible slot, not the part behind the sheet.
+                        padding={{ top: 52 + bleed, bottom: SHEET_OVERLAP + MAP_PULL_ROOM }}
+                    />
+                </Animated.View>
+                <Animated.View style={{ position: 'absolute', top: bleed, left: space[3] - 2, right: space[3] - 2, transform: [{ translateY: pinned }] }}>
+                    <XStack alignItems="flex-start" justifyContent="space-between" gap={space[2]} testID="home-header">
+                        <OrgChip name={organizationName} dark={dark} onPress={onOpenOrganizations} />
+                        <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
+                    </XStack>
+                </Animated.View>
             </YStack>
 
             {/* The sheet: rounded at the top, riding up over the map's bottom edge, and filling the rest of the screen. */}
