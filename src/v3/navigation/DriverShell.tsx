@@ -6,7 +6,7 @@
  * duty control, and renders nothing at all when there is nothing to say.
  */
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Modal, Pressable } from 'react-native';
+import { SheetModal } from '../ui/SheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 import { DriverTabs, type Features } from './DriverTabs';
@@ -94,8 +94,8 @@ export function DriverShell({
                 <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} organizationId={organizationId} onOrganizationSwitched={onOrganizationSwitched} features={features} />
             </YStack>
 
-            <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-                <Pressable style={{ flex: 1, backgroundColor: '#0008' }} onPress={() => setSheetOpen(false)} accessibilityLabel="Dismiss" />
+            {/* SheetModal fades the dimming and slides only the sheet. */}
+            <SheetModal visible={sheetOpen} onClose={() => setSheetOpen(false)} testID="duty-modal">
                 <YStack paddingBottom={Math.max(insets.bottom, space[4])} paddingHorizontal={space[3]} backgroundColor="$transparent">
                     <DutySheet
                         duty={duty}
@@ -107,7 +107,7 @@ export function DriverShell({
                         onDismiss={() => setSheetOpen(false)}
                     />
                 </YStack>
-            </Modal>
+            </SheetModal>
         </YStack>
         </ShellContext.Provider>
     );

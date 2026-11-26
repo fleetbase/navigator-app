@@ -7,7 +7,7 @@
  * exists yet: there is no document picker in the app, and the chat API has no
  * live location. A tile that does nothing is worse than no tile.
  */
-import { Modal, Pressable } from 'react-native';
+import { SheetModal } from '../../ui/SheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack } from 'tamagui';
 import { Body, Secondary } from '../../ui/Text';
@@ -71,8 +71,7 @@ export function AttachSheet({
 }) {
     const insets = useSafeAreaInsets();
     return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-            <Pressable style={{ flex: 1, backgroundColor: '#0008' }} onPress={onClose} accessibilityLabel={t('common.dismiss')} testID="attach-dismiss" />
+        <SheetModal visible={visible} onClose={onClose} dismissLabel={t('common.dismiss')} testID="attach">
             <YStack
                 paddingTop={10}
                 paddingHorizontal={space[4]}
@@ -98,7 +97,7 @@ export function AttachSheet({
 
                 {hasLocation ? <Secondary fontSize={13} lineHeight={18}>{t('chat.attach.locationNote')}</Secondary> : null}
             </YStack>
-        </Modal>
+        </SheetModal>
     );
 }
 

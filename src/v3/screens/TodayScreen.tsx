@@ -93,6 +93,8 @@ export interface TodayScreenProps {
     onOpenSyncQueue?: () => void;
     onOpenInspection?: (vehicleId?: string, vehicleName?: string) => void;
     onOpenVehicle?: () => void;
+    /** The organisation chip opens the switcher. */
+    onOpenOrganizations?: () => void;
     onOpenChat?: () => void;
     onLogFuel?: () => void;
 }
@@ -143,6 +145,7 @@ export function TodayScreen({
     onOpenSyncQueue,
     onOpenInspection,
     onOpenVehicle,
+    onOpenOrganizations,
     onOpenChat,
     onLogFuel,
 }: TodayScreenProps) {
@@ -643,8 +646,8 @@ export function TodayScreen({
                     height={MAP_HEIGHT + bleed}
                     padding={{ top: 52 + bleed, bottom: SHEET_OVERLAP }}
                 />
-                <XStack position="absolute" top={space[2] + bleed} left={space[4]} right={space[4]} alignItems="flex-start" justifyContent="space-between" gap={space[2]} testID="home-header">
-                    <OrgChip name={organizationName} dark={dark} />
+                <XStack position="absolute" top={bleed} left={space[3] - 2} right={space[3] - 2} alignItems="flex-start" justifyContent="space-between" gap={space[2]} testID="home-header">
+                    <OrgChip name={organizationName} dark={dark} onPress={onOpenOrganizations} />
                     <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
                 </XStack>
             </YStack>

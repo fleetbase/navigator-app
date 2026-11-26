@@ -42,7 +42,9 @@ export function DutySheet({
     activeStopCount?: number;
     testID?: string;
 }) {
-    const options: DutyState[] = ['on', 'break', 'off'];
+    // A break is offered only where the server can record one. Fleetbase has online and
+    // offline today, so the option is absent rather than shown greyed out with an excuse.
+    const options: DutyState[] = breakSupported ? ['on', 'break', 'off'] : ['on', 'off'];
 
     return (
         <Surface testID={testID ?? 'duty-sheet'} level="sheet" hero padding={space[4]} gap={space[3]}>

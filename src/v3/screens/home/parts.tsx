@@ -174,16 +174,29 @@ function useChipSkin(dark?: boolean) {
  * break. Once the server has said when the driver went online, that time sits
  * in a small tag under the chip.
  */
+/**
+ * The driver's status, floating over the map. Each state has its own colour for
+ * fill, border and text, and its own leading glyph, so it is never told by
+ * colour alone: online is green with a filled disc, offline is red with a power
+ * mark, on a break is amber with a pause mark.
+ */
 export function DutyChip({ duty, onPress, t, dark, since }: { duty: DutyState; onPress?: () => void; t: Translate; dark?: boolean; since?: string | null }) {
     const skin = useChipSkin(dark);
+    const theme = useTheme();
     const label = t(`home.duty.${duty}`);
+    const tone = duty === 'on' ? 'success' : duty === 'break' ? 'warning' : 'danger';
+    const ink = (duty === 'on' ? theme.successText?.val : duty === 'break' ? theme.warningText?.val : theme.dangerText?.val) as string;
     const mark =
         duty === 'on' ? (
-            <YStack width={10} height={10} borderRadius={5} backgroundColor="$successText" />
+            <YStack width={12} height={12} borderRadius={6} backgroundColor={ink as never} />
         ) : duty === 'break' ? (
-            <YStack width={10} height={10} borderRadius={5} borderWidth={2.5} borderColor="$warningText" />
+            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth={3.4} strokeLinecap="round">
+                <Path d="M8 5v14M16 5v14" />
+            </Svg>
         ) : (
-            <YStack width={10} height={10} borderRadius={2} backgroundColor="$textMuted" />
+            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth={2.8} strokeLinecap="round">
+                <Path d="M12 3v8M6.5 6.5a8 8 0 1 0 11 0" />
+            </Svg>
         );
     return (
         <YStack alignItems="flex-end" gap={space[1]} flexShrink={0}>
@@ -193,8 +206,8 @@ export function DutyChip({ duty, onPress, t, dark, since }: { duty: DutyState; o
                 gap={space[2]}
                 paddingHorizontal={14}
                 borderRadius={22}
-                borderWidth={1}
-                borderColor={duty === 'on' ? '$successBorder' : duty === 'break' ? '$warningBorder' : '$border'}
+                borderWidth={1.5}
+                borderColor={ink as never}
                 onPress={onPress}
                 pressStyle={{ opacity: 0.7 }}
                 accessibilityRole="button"
@@ -202,12 +215,10 @@ export function DutyChip({ duty, onPress, t, dark, since }: { duty: DutyState; o
                 testID="home-duty"
                 {...skin}
             >
-                {/* On a light map the chip is tinted with its state, as the light mockup draws it. */}
-                {!dark && duty !== 'off' ? (
-                    <YStack position="absolute" top={0} right={0} bottom={0} left={0} borderRadius={22} backgroundColor={duty === 'on' ? '$successFill' : '$warningFill'} pointerEvents="none" />
-                ) : null}
+                {/* The state's tint sits on the chip's own solid ground, so it reads over any map. */}
+                <YStack position="absolute" top={0} right={0} bottom={0} left={0} borderRadius={22} backgroundColor={`$${tone}Fill` as never} pointerEvents="none" />
                 {mark}
-                <Body fontSize={14} lineHeight={18} fontWeight="700" tone={duty === 'on' ? 'success' : duty === 'break' ? 'warning' : 'secondary'} numberOfLines={1}>
+                <Body fontSize={14} lineHeight={18} fontWeight="800" tone={tone} numberOfLines={1}>
                     {label}
                 </Body>
             </XStack>
@@ -223,11 +234,12 @@ export function DutyChip({ duty, onPress, t, dark, since }: { duty: DutyState; o
 }
 
 /** Whose work this is: the organisation's initial and its name, floating over the map. */
-export function OrgChip({ name, dark }: { name: string; dark?: boolean }) {
+export function OrgChip({ name, dark, onPress }: { name: string; dark?: boolean; /** Opens the organisation switcher. */ onPress?: () => void }) {
     const skin = useChipSkin(dark);
+    const ink = useTheme().textSecondary?.val as string;
     if (!name) return <YStack />;
     return (
-        <XStack flexShrink={1} height={44} alignItems="center" gap={10} paddingLeft={6} paddingRight={14} borderRadius={22} borderWidth={1} borderColor="$border" testID="home-organization" {...skin}>
+        <XStack flexShrink={1} height={44} alignItems="center" gap={10} paddingLeft={6} paddingRight={14} borderRadius={22} borderWidth={1} borderColor="$border" onPress={onPress} pressStyle={onPress ? { opacity: 0.7 } : undefined} accessibilityRole={onPress ? 'button' : undefined} testID="home-organization" {...skin}>
             <YStack width={32} height={32} borderRadius={16} backgroundColor="$primary" alignItems="center" justifyContent="center">
                 <Body fontSize={14} lineHeight={18} fontWeight="800" tone="onPrimary">
                     {name.trim().charAt(0).toUpperCase()}
@@ -236,6 +248,12 @@ export function OrgChip({ name, dark }: { name: string; dark?: boolean }) {
             <Body flexShrink={1} fontSize={15} lineHeight={20} fontWeight="700" numberOfLines={1}>
                 {name}
             </Body>
+            {/* A small chevron says the chip opens something. */}
+            {onPress ? (
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M6 9l6 6 6-6" />
+                </Svg>
+            ) : null}
         </XStack>
     );
 }
