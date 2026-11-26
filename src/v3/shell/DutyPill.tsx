@@ -12,8 +12,8 @@ import { hitTarget, radius, space } from '../theme/tokens';
 import type { DutyState } from './DutyContext';
 
 export const dutyLabel: Record<DutyState, string> = {
-    off: 'Off duty',
-    on: 'On duty',
+    off: 'Offline',
+    on: 'Online',
     break: 'On break',
 };
 
@@ -51,7 +51,7 @@ export function DutyPill({
             onPress={onPress}
             pressStyle={{ opacity: 0.7 }}
             accessibilityRole="button"
-            accessibilityLabel={`Duty status: ${dutyLabel[duty]}. Tap to change.`}
+            accessibilityLabel={`Status: ${dutyLabel[duty]}. Tap to change.`}
             accessibilityState={{ busy: !!isChanging }}
         >
             {isChanging ? (

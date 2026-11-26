@@ -399,7 +399,7 @@
             "commentYou": "You",
             "commentUnknown": "Someone",
             "commentPending": "Waiting to send",
-            "commentQueued": "Saved on this phone. Your comment will send when you are back online.",
+            "commentQueued": "Saved on this phone. Your comment will send when you have signal again.",
             "commentFailed": "Your comment was not posted. Try again.",
             "commentPlaceholder": "Add a comment for dispatch",
             "commentPost": "Post comment",
@@ -544,7 +544,7 @@
         "amountInvalid": "Enter the cost as a number.",
         "economyPreview": "Economy this fill",
         "unsupportedFields": "Fuel type, station and receipt photos are not stored by the server, so they are not asked for.",
-        "queued": "Saved on this device. It will sync when you are back online.",
+        "queued": "Saved on this device. It will sync when you have signal again.",
         "saveFailed": "Could not save this fill",
         "save": "Save fill"
     },
@@ -585,8 +585,8 @@
         "needsLocationHint": "The server records where an issue was raised. Turn location on, or wait for a fix.",
         "locationAttached": "Reporting from %{latitude}, %{longitude}",
         "noLocationAttached": "No location yet.",
-        "offlineNotice": "Offline — this will be sent when you are back online.",
-        "queued": "Saved on this device. It will be sent when you are back online.",
+        "offlineNotice": "No signal — this will be sent when you have signal again.",
+        "queued": "Saved on this device. It will be sent when you have signal again.",
         "saveFailed": "Could not report this issue",
         "save": "Report issue"
     },
@@ -616,8 +616,8 @@
             "other": "Read by %{count}"
         },
         "emptyBody": "No messages yet. Say something to get started.",
-        "offlineNotice": "Offline — your message will be sent when you are back online.",
-        "queued": "Saved on this device. It will send when you are back online.",
+        "offlineNotice": "No signal — your message will be sent when you have signal again.",
+        "queued": "Saved on this device. It will send when you have signal again.",
         "sendFailed": "Could not send that message",
         "notAParticipant": "You are not a participant in this conversation, so you cannot post to it.",
         "quick": {
@@ -631,7 +631,7 @@
             "other": "%{count} photos attached"
         },
         "removeAttachment": "Remove",
-        "attachmentsNeedConnection": "Photos need a connection to send. Text still goes when you are back online.",
+        "attachmentsNeedConnection": "Photos need a connection to send. Text still goes when you have signal again.",
         "attachmentFailed": "That photo could not be uploaded.",
         "attachment": "Attachment",
         "uploading": "Uploading…",
@@ -710,7 +710,7 @@
         "state": {
             "sent": "Sent",
             "read": "Read",
-            "queued": "Sending when you're back online"
+            "queued": "Sending when you have signal again"
         },
         "composer": {
             "placeholder": "Message"
@@ -754,7 +754,7 @@
             "lockedHint": "Recording. Send it when you're done, or delete it.",
             "noMicrophone": "Navigator can't use the microphone. Allow it in Settings to send voice messages.",
             "cannotRecord": "Recording could not start. Try again.",
-            "needsConnection": "Voice messages need a connection to send. Record it again when you are back online.",
+            "needsConnection": "Voice messages need a connection to send. Record it again once you have signal.",
             "notSent": "That voice message could not be sent."
         },
         "delete": {
@@ -818,10 +818,10 @@
         "country": "Country",
         "countryHint": "Two-letter country code, such as SG.",
         "countryInvalid": "Use the two-letter code, such as SG.",
-        "dispatchOwned": "Your duty status, assigned vehicle and current job are set by dispatch, not here.",
+        "dispatchOwned": "Your online status, assigned vehicle and current job are set by dispatch, not here.",
         "noPasswordChange": "To change your password, contact dispatch. It cannot be changed from the app yet.",
-        "offlineNotice": "Offline — your changes will be sent when you are back online.",
-        "queued": "Saved on this device. It will sync when you are back online.",
+        "offlineNotice": "No signal — your changes will be sent when you have signal again.",
+        "queued": "Saved on this device. It will sync when you have signal again.",
         "saveFailed": "Could not save your details",
         "save": "Save changes"
     },
@@ -915,7 +915,7 @@
         "discardConfirm": "Discard it",
         "emptyTitle": "Everything is synced",
         "emptyBody": "Work you do without signal waits here until it reaches dispatch.",
-        "offlineNotice": "Offline — this will send itself when you have signal again.",
+        "offlineNotice": "No signal — this will send itself when you have signal again.",
         "explainer": "Anything here is saved on this phone. It sends automatically when you have signal.",
         "work": {
             "advanceOrder": "Order progress",
@@ -992,12 +992,12 @@
             "evening": "Good evening"
         },
         "duty": {
-            "on": "On duty",
-            "off": "Off duty",
+            "on": "Online",
+            "off": "Offline",
             "break": "On break",
-            "change": "Duty status: %{status}. Change",
-            "failed": "Your duty status did not change. Try again.",
-            "since": "Since %{time}"
+            "change": "Status: %{status}. Change",
+            "failed": "Your status did not change. Try again.",
+            "since": "since %{time}"
         },
         "kind": {
             "pickup": "Pickup",
@@ -1010,9 +1010,22 @@
                 "other": "orders"
             },
             "toDrive": "planned route",
+            "waypoints": {
+                "one": "waypoint",
+                "other": "waypoints"
+            },
+            "waypointsLeft": {
+                "one": "waypoint left",
+                "other": "waypoints left"
+            },
+            "inOrders": {
+                "one": "%{count} order",
+                "other": "%{count} orders"
+            },
             "firstWaypoint": "first waypoint"
         },
         "before": {
+            "today": "Today",
             "route": "Today's route",
             "work": "Today's work",
             "waypoints": {
@@ -1026,18 +1039,25 @@
             "startsAt": "Starts at",
             "draft": "Dispatch is still building this route. Waypoints may change.",
             "nothingTitle": "Nothing assigned yet",
-            "nothingBody": "When dispatch assigns you work, it appears here. You can go on duty now so they know you are available.",
+            "nothingBody": "When dispatch assigns you work, it appears here. You can go online now so they know you are available.",
             "section": "Before you set off",
-            "goOnDuty": "Go on duty",
-            "locationNote": "Your location is shared with %{organization} only while you're on duty.",
-            "locationNoteNoOrg": "Your location is shared with dispatch only while you're on duty."
+            "goOnDuty": "Go online",
+            "locationNote": "Your location is shared with %{organization} only while you're online.",
+            "locationNoteNoOrg": "Your location is shared with dispatch only while you're online."
         },
         "vehicle": {
             "yours": "Your vehicle",
-            "assigned": "Assigned to you"
+            "assigned": "Assigned to you",
+            "checked": "Checked at %{time}",
+            "checkedClean": "Checked at %{time} · no defects",
+            "checkedDefects": {
+                "one": "Checked at %{time} · %{count} defect",
+                "other": "Checked at %{time} · %{count} defects"
+            }
         },
         "hero": {
             "next": "Next waypoint",
+            "first": "First waypoint",
             "arrived": "You are here",
             "arrive": "arrive",
             "start": "estimated start",
@@ -1074,7 +1094,7 @@
                 "other": "%{count} updates waiting to send"
             },
             "unsentOnline": "Saved on this phone. Open to send now.",
-            "unsentOffline": "Saved on this phone. It sends when you're back online.",
+            "unsentOffline": "Saved on this phone. It sends when you have signal again.",
             "inspection": "Check your vehicle",
             "unread": {
                 "one": "%{count} unread message",
@@ -1083,9 +1103,10 @@
             "unreadBody": "Open chat to read and reply"
         },
         "empty": {
+            "eyebrow": "You're online",
             "title": "Nothing assigned right now",
-            "body": "You're on duty, so dispatch can see you're available. New work appears here as soon as it is assigned.",
-            "bodyOffers": "You're on duty, and there is work nearby you can take."
+            "body": "You're online, so dispatch can see you're available. New work appears here as soon as it is assigned.",
+            "bodyOffers": "You're online, and there is work nearby you can take."
         },
         "end": {
             "finished": "All waypoints done",
@@ -1104,7 +1125,7 @@
             },
             "plannedRoute": "planned route",
             "driven": "driven",
-            "onDuty": "on duty",
+            "onDuty": "time online",
             "routeTime": "on the route",
             "cash": "Cash on delivery",
             "cashBody": {
@@ -1115,8 +1136,9 @@
             "skippedBody": "Dispatch can see which ones",
             "allSent": "Everything is sent",
             "allSentBody": "Nothing waiting on this phone",
-            "goOffDuty": "Go off duty",
-            "logFuel": "Log a fill-up first"
+            "goOffDuty": "Go offline",
+            "logFuel": "Log a fill-up first",
+            "logFuelOnly": "Log a fill-up"
         }
     },
     "today": {
@@ -1169,14 +1191,14 @@
         "resendIn": "Send it again in %{time}"
     },
     "ui": {
-        "offline": "You are offline — work is saved on this device",
+        "offline": "No signal — your work is saved on this phone",
         "offlineQueued": {
             "one": "%{count} queued",
             "other": "%{count} queued"
         },
         "backOnline": {
-            "one": "Back online — %{count} action synced",
-            "other": "Back online — %{count} actions synced"
+            "one": "Signal is back — %{count} action synced",
+            "other": "Signal is back — %{count} actions synced"
         },
         "trackingNumber": "TRACKING NUMBER",
         "newOfferNearby": "NEW OFFER NEARBY",
@@ -1222,13 +1244,13 @@
         "unitsImperial": "Imperial",
         "navigationApp": "Navigation app",
         "trackingOff": "Background tracking is off",
-        "trackingOffHint": "Dispatch cannot see your progress. It is required while on duty.",
+        "trackingOffHint": "Dispatch cannot see your progress. It is required while you are online.",
         "turnOn": "Turn on",
         "notifyNewWork": "New work assigned",
         "notifyDispatch": "Dispatch messages",
         "notifyOffers": "Nearby offers",
         "notifyOffersHint": "Interrupts even in Do Not Disturb",
-        "offlineCache": "Offline cache",
+        "offlineCache": "Stored on this phone",
         "manage": "Manage",
         "sendDiagnostics": "Send diagnostics",
         "languageSystem": "Follow the phone",
@@ -1294,7 +1316,7 @@
         "diagnosticsNote": "Only what is listed above is attached. No location, no order details.",
         "send": "Send report",
         "reportSent": "Thanks — your report was sent.",
-        "reportQueued": "Saved on this device. It will send when you are back online.",
+        "reportQueued": "Saved on this device. It will send when you have signal again.",
         "reportFailed": "Could not send that report"
     },
     "proof": {
@@ -1319,7 +1341,7 @@
         "clear": "Clear",
         "confirm": "Done",
         "failed": "Could not send that proof. It stays on this phone until it does.",
-        "queued": "Saved on this device. It will send when you are back online."
+        "queued": "Saved on this device. It will send when you have signal again."
     },
     "vehicle": {
         "unnamed": "Vehicle",
@@ -1351,7 +1373,7 @@
             "dropoff": "Drop-off",
             "waypoint": "Waypoint"
         },
-        "queued": "Saved on this device. Dispatch will see it when you are back online.",
+        "queued": "Saved on this device. Dispatch will see it when you have signal again.",
         "failed": "Could not change the destination",
         "emptyTitle": "No waypoints on this order",
         "emptyBody": "There is nothing to head to yet.",
@@ -1359,7 +1381,7 @@
     },
     "changeVehicle": {
         "current": "Yours",
-        "queued": "Saved on this device. Dispatch will see it when you are back online.",
+        "queued": "Saved on this device. Dispatch will see it when you have signal again.",
         "failed": "Could not change your vehicle",
         "emptyTitle": "No vehicles",
         "emptyBody": "Your organisation has no vehicles set up.",
@@ -1461,9 +1483,9 @@
         "skipConfirmBody": "It stays on the manifest marked as skipped, and dispatch is told.",
         "skipReasonPlaceholder": "Why is it being skipped? (optional)",
         "skipConfirm": "Skip waypoint",
-        "arrivedQueued": "Arrival saved on this device. It is sent when you are back online.",
+        "arrivedQueued": "Arrival saved on this device. It is sent when you have signal again.",
         "arrivedSent": "Arrival recorded",
-        "skippedQueued": "Skip saved on this device. It is sent when you are back online.",
+        "skippedQueued": "Skip saved on this device. It is sent when you have signal again.",
         "updateFailed": "That did not save. Try again.",
         "completedNotice": "Completed %{time}",
         "skippedNotice": "Skipped",
@@ -1499,7 +1521,7 @@
         "complete": "Complete waypoint",
         "completeBlocked": "Complete waypoint · blocked",
         "openOrder": "Open order",
-        "queued": "Saved on this device — it is sent when you are back online.",
+        "queued": "Saved on this device — it is sent when you have signal again.",
         "doneTitle": "Waypoint %{sequence} complete",
         "nextStop": "Next: waypoint %{sequence} · %{name}",
         "navigateNext": "Navigate to waypoint %{sequence}",
@@ -1527,7 +1549,7 @@
         "tooFewTitle": "Nothing to optimise",
         "tooFewBody": "Optimising needs at least three waypoints still to do.",
         "offlineTitle": "Optimise needs a connection",
-        "offlineBody": "The new order is applied on the server. Try again when you are back online.",
+        "offlineBody": "The new order is applied on the server. Try again when you have signal.",
         "noPositionNote": "Worked out from the first remaining waypoint — turn location on to start from where you are.",
         "worse": "This order is longer than the current one.",
         "failed": "The route could not be re-ordered. The current order is unchanged."
@@ -1627,7 +1649,7 @@
         "title": "Vehicle inspection",
         "hubIntro": "Pre-trip and post-trip checks for your assigned vehicle.",
         "afterSwapTitle": "A pre-trip inspection is required before you drive this vehicle.",
-        "afterSwapBody": "It takes a few minutes and works offline.",
+        "afterSwapBody": "It takes a few minutes and works without signal.",
         "dueTitle": "CHECKS FOR THIS VEHICLE",
         "noVehicle": "No vehicle is assigned to you, so there is nothing to inspect.",
         "noForms": "Your organisation has not published any inspection checklists for this vehicle.",
@@ -1676,7 +1698,7 @@
         "historyEmptyBody": "Inspections you submit are kept here with their outcome.",
         "checklist": {
             "template": "template “%{name}”",
-            "offline": "Offline. Every answer is saved on this device.",
+            "offline": "No signal. Every answer is saved on this device.",
             "savedOnDevice": "Every answer is saved on this device as you go.",
             "progress": "%{answered} / %{total}",
             "groupProgress": "%{category} · %{answered} OF %{total}",
@@ -1752,7 +1774,7 @@
             "clearSignature": "Clear",
             "signed": "Signed",
             "submit": "Submit inspection",
-            "offlineNote": "Stored on device now, sent when you're back online",
+            "offlineNote": "Stored on device now, sent when you have signal again",
             "incomplete": "Answer every required item before submitting.",
             "needsCertification": "Tick the certification to submit.",
             "needsSignature": "This checklist needs your signature to submit.",
@@ -1936,12 +1958,12 @@
         "openSettings": "Open Settings",
         "blocked": "This is switched off for Navigator in your phone's settings. Turn it on there.",
         "location": {
-            "eyebrow": "Before you go on duty",
+            "eyebrow": "Before you go online",
             "title": "Share your location while you work",
             "allow": "Allow location",
             "skip": "Not now",
-            "dutyTitle": "Only while you're on duty",
-            "dutyBody": "Sharing stops the moment you go off duty.",
+            "dutyTitle": "Only while you're online",
+            "dutyBody": "Sharing stops the moment you go offline.",
             "etaTitle": "Customers get a real arrival time",
             "etaBody": "Your organisation and the customer see where the delivery is.",
             "arriveTitle": "Arrivals mark themselves",
@@ -2010,7 +2032,7 @@
         "openDirectionsIn": "Open directions in",
         "helpSection": "Help",
         "sendDiagnostics": "Send a diagnostics report",
-        "offlineWillSend": "You're offline. This is saved on this phone and sends itself when you have signal.",
+        "offlineWillSend": "No signal. This is saved on this phone and sends itself when you have signal.",
         "savedOnPhone": "Saved on this phone. It sends itself when you have signal.",
         "todayAt": "Today %{time}",
         "vehicle": {
@@ -2154,7 +2176,7 @@
             }
         },
         "sync": {
-            "offlineTitle": "You're offline",
+            "offlineTitle": "No signal",
             "offlineBody": "Carry on as normal. Everything is saved on this phone and sends itself when you have signal.",
             "waitingTitle": "Waiting to send",
             "needsYouTitle": "Something didn't send",
@@ -2187,7 +2209,7 @@
             "passwordHint": "At least %{count} characters.",
             "passwordFailed": "Could not change your password.",
             "passwordSignsOthersOut": "Changing it signs you out on every other phone. You stay signed in on this one.",
-            "dispatchOwned": "Your duty status and current job are set by dispatch, not here."
+            "dispatchOwned": "Your online status and current job are set by dispatch, not here."
         }
     }
 }

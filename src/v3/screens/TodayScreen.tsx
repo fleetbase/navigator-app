@@ -1,39 +1,45 @@
 /**
- * Home — the signed-in dashboard, design round 3 (HomeBefore, Home, EndDay).
+ * Home — the signed-in dashboard, design round 3 (mockups s25 `Home` and s26
+ * `HomeLight`, the same screen in the two themes).
  *
- * One screen, four states, chosen from what is actually loaded:
+ * One layout in every state: the map is the top of the screen with the
+ * organisation and the driver's status floating over it, and a sheet rides up
+ * over the map's bottom edge carrying, in this order, a hero, a card of
+ * figures, the action row, the day's progress line, and a list of rows. What
+ * changes between states is only what fills those places:
  *
- *   - **Off duty**: what is assigned today, the vehicle and its pre-trip check,
- *     and one action — go on duty.
- *   - **On duty with work**: the next waypoint over a real map, then how far
- *     through the day the driver is and what comes after.
- *   - **On duty with nothing assigned**: says so, and points at open offers.
- *   - **Every waypoint done**: a short summary and the way off duty.
+ *   - **Online with a next waypoint**: the waypoint, its arrival figures,
+ *     Navigate and Open.
+ *   - **Offline**: the first waypoint and what is assigned today, with Go
+ *     online where Navigate sits.
+ *   - **Online with nothing assigned**: says so; the map centres on the driver.
+ *   - **Every waypoint done**: the day's summary, with Go offline.
  *
  * The day is the manifest's waypoints when the driver has one, plus the
  * waypoints of any order the manifest does not cover (see `home/homeModel`).
  *
- * Time on duty, distance driven and the end-of-day counts come from the
+ * Time online, distance driven and the end-of-day counts come from the
  * server's day summary (`useDaySummary`) when it has one; against an older
  * server, or with work still waiting to send, the screen's own figures stand.
  *
  * What the mockups draw that this screen leaves out, because nothing on the
- * driver API supplies it: a name for the route, drive time and breaks, and
- * the vehicle's range. The tracker
- * reports `is_delayed` as a constant `false`, so "on time" is only ever said
- * when the waypoint has a time window to compare the arrival against.
+ * driver API supplies it: how far an offered job is from the driver's route
+ * (the offers row names the pickup instead), and a one-tap "I'm here" (arrival
+ * is recorded on the waypoint's own screen, which the second button opens).
+ * The tracker reports `is_delayed` as a constant `false`, so "on time" is only
+ * ever said when the waypoint has a time window to compare the arrival against.
  */
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderNotices } from './jobs/OrderNotices';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { RefreshControl } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { ScrollView } from '../ui/Scroll';
-import { Body, Display, Micro, Secondary } from '../ui/Text';
+import { Body, Micro, Secondary } from '../ui/Text';
 import { Banner, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { currentLocale } from '../i18n';
 import { useSettings, useResolvedScheme } from '../settings';
 import { useDuty, useSync, useDeviceLocation } from '../shell';
 import { useShell } from '../navigation/DriverShell';
@@ -68,8 +74,8 @@ import { useLiveRefresh } from '../realtime/liveRefresh';
 import { formatClock, formatDuration, formatMeters, formatMoney } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { HomeMap } from './home/HomeMap';
-import { buildDay, dayPart, firstNameOf, pickTodayManifest, secondsBetween, trackerIsFor, type HomeDay, type HomeWaypoint } from './home/homeModel';
-import { Card, DutyChip, EntryCard, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatRow, SummaryRow, WaypointRow, type Stat } from './home/parts';
+import { buildDay, firstNameOf, pickTodayManifest, secondsBetween, trackerIsFor, type HomeDay, type HomeWaypoint } from './home/homeModel';
+import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, type Stat } from './home/parts';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 type Destination = { latitude: number; longitude: number; label?: string };
@@ -90,70 +96,39 @@ export interface TodayScreenProps {
     onLogFuel?: () => void;
 }
 
-const MAP_HEIGHT = 300;
+/*
+ * The mockup's map is 318 tall in an 844 frame, 44 of it under the status bar.
+ * The shell keeps the status bar clear above this screen, so the map here is
+ * the part of the mockup's that is below it.
+ */
+const MAP_HEIGHT = 280;
 /** How far the content sheet rides up over the bottom of the map. */
 const SHEET_OVERLAP = 22;
+/** The gap between the sheet's blocks. */
+const SHEET_GAP = 14;
 
-/** The duty control, with when the driver went on duty under it once the server has said. */
-function DutyControl({ t, duty, onPress, since }: { t: Translate; duty: ReturnType<typeof useDuty>['duty']; onPress: () => void; since?: string | null }) {
+/** The hero's text: an eyebrow, a title, and whatever lines there are under it. */
+function HeroText({ eyebrow, eyebrowTone = 'brand', title, lines = [], mono, titleTestID = 'home-next-name' }: { eyebrow: string; eyebrowTone?: 'brand' | 'success' | 'muted'; title: string; lines?: (string | undefined)[]; mono?: string; titleTestID?: string }) {
     return (
-        <YStack alignItems="flex-end" gap={space[1]}>
-            <DutyChip duty={duty} onPress={onPress} t={t} />
-            {since ? (
-                <Micro fontSize={12} lineHeight={16} tabular testID="home-duty-since">
-                    {t('home.duty.since', { time: formatClock(since) })}
-                </Micro>
+        <YStack flex={1} gap={3} minWidth={0}>
+            <SectionLabel tone={eyebrowTone} weight="700">
+                {eyebrow}
+            </SectionLabel>
+            <Body fontSize={21} lineHeight={25} fontWeight="800" letterSpacing={-0.2} testID={titleTestID}>
+                {title}
+            </Body>
+            {lines.filter(Boolean).map((line) => (
+                <Secondary key={line} fontSize={14} lineHeight={19}>
+                    {line}
+                </Secondary>
+            ))}
+            {mono ? (
+                // Never truncated: the driver reads this out, or matches it to a label.
+                <Secondary fontFamily="$mono" fontSize={13} lineHeight={18} selectable testID="home-next-tracking">
+                    {mono}
+                </Secondary>
             ) : null}
         </YStack>
-    );
-}
-
-/** The date and greeting on the left, the duty control on the right. */
-function Header({ t, name, organization, duty, onDuty, since }: { t: Translate; name?: string; organization: string; duty: ReturnType<typeof useDuty>['duty']; onDuty: () => void; since?: string | null }) {
-    const part = dayPart();
-    const date = new Date().toLocaleDateString(currentLocale(), { weekday: 'long', day: 'numeric', month: 'long' });
-    return (
-        <XStack alignItems="center" justifyContent="space-between" gap={space[3]} paddingHorizontal={space[4]} paddingTop={space[2]} testID="home-header">
-            <YStack flex={1} gap={2} minWidth={0}>
-                <Secondary fontSize={14} lineHeight={19} numberOfLines={1}>
-                    {[date, organization].filter(Boolean).join(' · ')}
-                </Secondary>
-                <Display fontSize={30} lineHeight={36} fontWeight="800" letterSpacing={-0.6} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} testID="home-greeting">
-                    {name ? t(`home.greeting.${part}`, { name }) : t(`home.greetingNoName.${part}`)}
-                </Display>
-            </YStack>
-            <DutyControl t={t} duty={duty} onPress={onDuty} since={since} />
-        </XStack>
-    );
-}
-
-/** A waypoint's place and the order it belongs to: name, address, then the tracking number in full. */
-function WaypointTitle({ waypoint, eyebrow, t }: { waypoint: HomeWaypoint; eyebrow: string; t: Translate }) {
-    return (
-        <XStack alignItems="flex-start" gap={space[3]}>
-            <YStack width={48} height={48} borderRadius={14} backgroundColor="$primary" alignItems="center" justifyContent="center" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                <Body fontSize={22} lineHeight={28} fontWeight="800" tone="onPrimary" tabular>
-                    {waypoint.number}
-                </Body>
-            </YStack>
-            <YStack flex={1} gap={3} minWidth={0}>
-                <SectionLabel tone="brand">{eyebrow}</SectionLabel>
-                <Body fontSize={21} lineHeight={25} fontWeight="800" letterSpacing={-0.2} testID="home-next-name">
-                    {waypoint.name ?? waypoint.address ?? t('today.noStopRecorded')}
-                </Body>
-                {waypoint.name && waypoint.address ? (
-                    <Secondary fontSize={14} lineHeight={19}>
-                        {waypoint.address}
-                    </Secondary>
-                ) : null}
-                {waypoint.trackingNumber ? (
-                    // Never truncated: the driver reads this out, or matches it to a label.
-                    <Secondary fontFamily="$mono" fontSize={13} lineHeight={18} selectable testID="home-next-tracking">
-                        {waypoint.trackingNumber}
-                    </Secondary>
-                ) : null}
-            </YStack>
-        </XStack>
     );
 }
 
@@ -178,7 +153,18 @@ export function TodayScreen({
     const scheme = useResolvedScheme();
     const { organizationName, driverName, openDutySheet } = useShell();
     const { duty, isChanging, setDuty, error: dutyError } = useDuty();
-    const { isOnline, queuedCount } = useSync();
+    const { isOnline, queuedCount, syncState, lastSyncedCount } = useSync();
+    /*
+     * The map runs to the very top of the screen, under the status bar. The shell
+     * pads every screen down by the status bar's height, so this screen pulls
+     * itself back up by the same amount and gives that height to the map. The one
+     * exception is while the shell is showing its strip about signal or syncing
+     * (same conditions as shell/OfflineBar): that strip sits where the map would
+     * go, and it matters more than the bleed.
+     */
+    const insets = useSafeAreaInsets();
+    const shellStripShown = syncState === 'failed' || !isOnline || (syncState === 'syncing' && queuedCount > 0) || lastSyncedCount > 0;
+    const bleed = shellStripShown ? 0 : insets.top;
     const position = useDeviceLocation();
     const unreadChat = useChatUnreadTotal();
     const onDuty = duty !== 'off';
@@ -218,10 +204,11 @@ export function TodayScreen({
     const vehiclePlate = vehicle?.plate_number ?? undefined;
 
     /*
-     * The server's own count of the day. Asked again once a duty change has
-     * gone through, so the time on duty starts and stops with the chip. With work still waiting to
-     * send the server has not heard all of it, so its counts are set aside and
-     * the screen's own are shown; time on duty and distance are still its to give.
+     * The server's own count of the day. Asked again once a change of status
+     * has gone through, so the time online starts and stops with the chip. With
+     * work still waiting to send the server has not heard all of it, so its
+     * counts are set aside and the screen's own are shown; time online and
+     * distance are still its to give.
      */
     const [summaryPulls, setSummaryPulls] = useState(0);
     const { summary, fetchedAt: summaryAt } = useDaySummary(driverId, `${reloadToken}:${duty}:${isChanging}:${summaryPulls}`, dayKey());
@@ -240,19 +227,23 @@ export function TodayScreen({
     const forms = useInspectionForms(vehicle?.id, reloadToken);
     const history = useInspectionHistory({ vehicle: vehicle?.id }, reloadToken);
     const pendingInspections = usePendingInspections();
-    const inspectionDue = useMemo(() => {
+    const { inspectionDue, checkedToday } = useMemo(() => {
         // A refresh keeps the last answer on screen; only a first load or a failure is "not known yet".
         const known = (state: string) => state === 'ready' || state === 'refreshing';
-        if (!vehicle?.id || !known(forms.state) || !known(history.state)) return false;
+        if (!vehicle?.id || !known(history.state)) return { inspectionDue: false, checkedToday: undefined };
         const isPreTrip = (type: unknown) => String(type ?? '').toLowerCase() === 'pre_trip';
-        if (!forms.forms.some((form) => isPreTrip(form.type))) return false;
         const today = dayKey();
-        const filedToday = [...history.submissions, ...pendingInspections].some((s) => {
-            const when = s.submitted_at ?? s.started_at ?? (s.created_at as string | undefined);
-            const sameVehicle = !s.vehicle?.id || s.vehicle.id === vehicle.id;
-            return isPreTrip(s.type) && sameVehicle && !!when && dayKey(when) === today;
-        });
-        return !filedToday;
+        const whenOf = (s: (typeof history.submissions)[number]) => s.submitted_at ?? s.started_at ?? (s.created_at as string | undefined);
+        // Today's pre-trip check of this vehicle, the latest when there are several: the vehicle row says when it was done.
+        const filedToday = [...history.submissions, ...pendingInspections]
+            .filter((s) => {
+                const when = whenOf(s);
+                const sameVehicle = !s.vehicle?.id || s.vehicle.id === vehicle.id;
+                return isPreTrip(s.type) && sameVehicle && !!when && dayKey(when) === today;
+            })
+            .sort((a, b) => String(whenOf(b)).localeCompare(String(whenOf(a))))[0];
+        const hasForm = known(forms.state) && forms.forms.some((form) => isPreTrip(form.type));
+        return { inspectionDue: hasForm && !filedToday, checkedToday: filedToday ? { at: whenOf(filedToday) as string, record: filedToday } : undefined };
     }, [vehicle?.id, forms.state, forms.forms, history.state, history.submissions, pendingInspections]);
 
     /* -- Refresh ------------------------------------------------------------ */
@@ -280,29 +271,70 @@ export function TodayScreen({
 
     const refreshControl = <RefreshControl refreshing={pulling} onRefresh={refreshAll} tintColor={theme.textMuted?.val as string} testID="home-refresh" />;
 
+
     /* -- Pieces shared by the states ---------------------------------------- */
 
     const firstName = firstNameOf(driverName);
     const dark = scheme !== 'light' && scheme !== 'sunlight';
-    const hasMapPoints = day.waypoints.some((w) => !!w.point);
     const openWaypoint = (waypoint: HomeWaypoint) => {
         if (waypoint.source === 'manifest' && waypoint.manifestId && waypoint.stopId && onOpenWaypoint) onOpenWaypoint(waypoint.manifestId, waypoint.stopId);
         else if (waypoint.orderId) onOpenOrder?.(waypoint.orderId);
     };
     const canOpen = (waypoint: HomeWaypoint) => (waypoint.source === 'manifest' && !!onOpenWaypoint) || (!!waypoint.orderId && !!onOpenOrder);
 
-    const header = <Header t={t} name={firstName} organization={organizationName} duty={duty} onDuty={openDutySheet} since={onDutySince} />;
-
     // One line however many orders left, clearing itself: see OrderNotices.
     const noticeBanners = notices.length ? <OrderNotices notices={notices} testID="today-notices" /> : null;
 
     const dutyErrorBanner = dutyError ? <Banner tone="danger" message={t('home.duty.failed')} meta={dutyError.message} testID="home-duty-error" /> : null;
 
-    // Only what is true right now; a section with nothing in it is not drawn.
-    const attention = [
-        queuedCount > 0 ? (
-            <EntryCard key="sync" icon="upload" title={t('home.attention.unsent', { count: queuedCount })} body={isOnline ? t('home.attention.unsentOnline') : t('home.attention.unsentOffline')} onPress={onOpenSyncQueue} testID="home-attention-sync" />
-        ) : null,
+    /* -- What the tracker says about the next waypoint (online only) --------- */
+
+    const eta: ChosenEta = tracker ? chooseEta(tracker) : { kind: 'none', stale: false };
+    const etaAt = eta.kind === 'none' ? undefined : (eta.at ?? (eta.seconds != null ? new Date(Date.now() + eta.seconds * 1000).toISOString() : undefined));
+    const insights = tracker?.insights;
+    // The road to the next waypoint, for the map. Empty while offline, when the map draws the day's road instead.
+    const route = useMemo(() => (tracker ? decodePolyline(tracker.route?.polyline) : []), [tracker]);
+
+    /* -- Loading and failure ------------------------------------------------ */
+
+    const nothingYet = day.total === 0;
+    const cold = !!driverId && nothingYet && (ordersQuery.state === 'loading' || ordersQuery.state === 'idle' || manifestsQuery.isLoading || (!!todayManifestId && manifestQuery.isLoading));
+    const failed = !cold && nothingYet && ordersQuery.state === 'error';
+
+    /* -- The rows under the progress line ------------------------------------ */
+
+    const offersCard =
+        onDuty && offers.length > 0 ? (
+            <EntryCard
+                key="offers"
+                icon="bolt"
+                accent="warning"
+                title={t('home.offers.title', { count: offers.length })}
+                body={(() => {
+                    const pickup = payloadOf(offers[0]).pickup;
+                    const place = pickup?.name ?? pickup?.address;
+                    return place ? t('home.offers.pickupAt', { place }) : t('home.offers.body');
+                })()}
+                onPress={onOpenOffers}
+                testID="home-offers"
+            />
+        ) : null;
+
+    // With a check due, the check's row names the vehicle; otherwise the vehicle has its own, saying when it was checked.
+    const hasVehicle = !!vehicle && (!!vehicleName || !!vehiclePlate);
+    const failedItems = Number(checkedToday?.record.failed_items ?? 0) || 0;
+    const checkedClean = !!checkedToday && (checkedToday.record.has_failures === false || checkedToday.record.result === 'passed') && failedItems === 0;
+    const vehicleBody = !checkedToday
+        ? t('home.vehicle.assigned')
+        : failedItems > 0
+          ? t('home.vehicle.checkedDefects', { time: formatClock(checkedToday.at), count: failedItems })
+          : checkedClean
+            ? t('home.vehicle.checkedClean', { time: formatClock(checkedToday.at) })
+            : t('home.vehicle.checked', { time: formatClock(checkedToday.at) });
+
+    // Only what is true right now; a row with nothing behind it is not drawn.
+    const rows = [
+        offersCard,
         inspectionDue ? (
             <EntryCard
                 key="inspection"
@@ -315,153 +347,54 @@ export function TodayScreen({
                 testID="home-attention-inspection"
             />
         ) : null,
+        queuedCount > 0 ? (
+            <EntryCard key="sync" icon="upload" title={t('home.attention.unsent', { count: queuedCount })} body={isOnline ? t('home.attention.unsentOnline') : t('home.attention.unsentOffline')} onPress={onOpenSyncQueue} testID="home-attention-sync" />
+        ) : null,
         unreadChat > 0 ? (
             <EntryCard key="chat" icon="chat" title={t('home.attention.unread', { count: unreadChat })} body={t('home.attention.unreadBody')} count={unreadChat} onPress={onOpenChat} testID="home-attention-chat" />
         ) : null,
+        hasVehicle && !inspectionDue ? (
+            <EntryCard key="vehicle" icon="vehicle" title={vehicleName ?? t('home.vehicle.yours')} body={vehicleBody} mono={vehiclePlate} onPress={onOpenVehicle} testID="home-vehicle" />
+        ) : null,
     ].filter(Boolean);
 
-    const offersCard =
-        onDuty && offers.length > 0 ? (
-            <EntryCard
-                icon="bolt"
-                title={t('home.offers.title', { count: offers.length })}
-                body={(() => {
-                    const pickup = payloadOf(offers[0]).pickup;
-                    const place = pickup?.name ?? pickup?.address;
-                    return place ? t('home.offers.pickupAt', { place }) : t('home.offers.body');
-                })()}
-                onPress={onOpenOffers}
-                testID="home-offers"
-            />
+    /* -- What fills the sheet, by state --------------------------------------- */
+
+    let hero: ReactNode = null;
+    let stats: Stat[] = [];
+    let statsTestID = 'home-stats';
+    let notes: ReactNode = null;
+    let actions: ReactNode = null;
+    let summaryList: ReactNode = null;
+    let state: 'loading' | 'error' | 'end' | 'next' | 'before' | 'empty' = 'empty';
+
+    const goOnline = (
+        <BigButton onPress={() => void setDuty('on')} loading={isChanging} icon={<HomeIcon name="power" color={theme.onPrimary?.val as string} />} gap={10} testID="home-go-on-duty">
+            {t('home.before.goOnDuty')}
+        </BigButton>
+    );
+    // Said under "Go online", because that tap is what starts the sharing.
+    const locationNote = (
+        <Micro center fontSize={12} lineHeight={16} testID="home-location-note">
+            {organizationName ? t('home.before.locationNote', { organization: organizationName }) : t('home.before.locationNoteNoOrg')}
+        </Micro>
+    );
+    // The mockup's second button: as wide as its words, beside the primary one.
+    const openNext = (waypoint: HomeWaypoint) =>
+        canOpen(waypoint) ? (
+            <YStack flexShrink={0}>
+                <BigButton variant="secondary" fullWidth={false} paddingHorizontal={20} onPress={() => openWaypoint(waypoint)} testID="today-open-order">
+                    {waypoint.source === 'manifest' ? t('home.hero.openWaypoint') : t('today.openOrder')}
+                </BigButton>
+            </YStack>
         ) : null;
 
-    /* -- Loading and failure ------------------------------------------------ */
-
-    const nothingYet = day.total === 0;
-    const cold = nothingYet && (ordersQuery.state === 'loading' || ordersQuery.state === 'idle' || manifestsQuery.isLoading || (!!todayManifestId && manifestQuery.isLoading));
-
-    if (cold && !!driverId) {
-        return (
-            <YStack flex={1} backgroundColor="$background" gap={space[4]} testID="today-loading">
-                {header}
-                <YStack paddingHorizontal={space[4]} gap={space[3]}>
-                    <Skeleton height={220} borderRadius={CARD_RADIUS} />
-                    <Skeleton height={76} borderRadius={CARD_RADIUS} />
-                    <Skeleton height={76} borderRadius={CARD_RADIUS} />
-                </YStack>
-            </YStack>
-        );
-    }
-
-    if (nothingYet && ordersQuery.state === 'error') {
-        return (
-            <YStack flex={1} backgroundColor="$background" gap={space[4]} testID="today-error">
-                {header}
-                <YStack flex={1} paddingHorizontal={space[4]} justifyContent="center">
-                    <FailureState error={ordersQuery.error} isOnline={isOnline} onRetry={refreshAll} t={t} />
-                </YStack>
-            </YStack>
-        );
-    }
-
-    /* -- Off duty: before the shift ----------------------------------------- */
-
-    if (!onDuty) {
-        const remaining = Math.max(0, day.total - day.done);
-        const stats: Stat[] = [
-            { key: 'orders', value: String(day.orderCount), label: t('home.stat.orders', { count: day.orderCount }) },
-            ...(day.plannedDistanceM ? [{ key: 'distance', value: formatMeters(day.plannedDistanceM, units), label: t('home.stat.toDrive') }] : []),
-            ...(day.firstAt ? [{ key: 'first', value: formatClock(day.firstAt), label: t('home.stat.firstWaypoint') }] : []),
-        ];
-        const hasVehicleCard = !!vehicle && (!!vehicleName || !!vehiclePlate);
-
-        return (
-            <YStack flex={1} backgroundColor="$background" testID="today">
-                <ScrollView style={screen} contentContainerStyle={{ gap: space[4], paddingBottom: space[4] }} refreshControl={refreshControl} testID="home-before">
-                    {header}
-                    <YStack paddingHorizontal={space[4]} gap={space[4]}>
-                        {noticeBanners}
-                        {dutyErrorBanner}
-
-                        <Rise>
-                            {day.total > 0 ? (
-                                <Card padded={false} testID="home-today-card">
-                                    {hasMapPoints ? <HomeMap waypoints={day.waypoints} activeKey={next?.key} position={position} dark={dark} height={150} testID="home-before-map" /> : null}
-                                    <YStack padding={space[4]} gap={14}>
-                                        <YStack gap={space[1]}>
-                                            <SectionLabel>{day.manifest ? t('home.before.route') : t('home.before.work')}</SectionLabel>
-                                            <Body fontSize={22} lineHeight={27} fontWeight="800" letterSpacing={-0.2} testID="home-today-count">
-                                                {day.done > 0 ? t('home.before.waypointsLeft', { count: remaining }) : t('home.before.waypoints', { count: day.total })}
-                                            </Body>
-                                        </YStack>
-                                        <StatRow stats={stats} testID="home-today-stats" />
-                                        {day.manifest?.status === 'draft' ? (
-                                            <Micro tone="warning" testID="home-draft-route">
-                                                {t('home.before.draft')}
-                                            </Micro>
-                                        ) : null}
-                                        {next ? (
-                                            <YStack gap={2} testID="home-first-waypoint">
-                                                <Secondary fontSize={12} lineHeight={16}>
-                                                    {t('home.before.startsAt')}
-                                                </Secondary>
-                                                <Body fontSize={16} lineHeight={21} fontWeight="700">
-                                                    {next.name ?? next.address ?? t('today.noStopRecorded')}
-                                                </Body>
-                                                {next.name && next.address ? (
-                                                    <Secondary fontSize={13} lineHeight={18}>
-                                                        {next.address}
-                                                    </Secondary>
-                                                ) : null}
-                                            </YStack>
-                                        ) : null}
-                                    </YStack>
-                                </Card>
-                            ) : (
-                                <Card testID="today-empty">
-                                    <YStack gap={space[1]} paddingVertical={space[2]}>
-                                        <Body fontSize={18} lineHeight={24} fontWeight="800">
-                                            {t('home.before.nothingTitle')}
-                                        </Body>
-                                        <Secondary fontSize={14} lineHeight={20}>
-                                            {t('home.before.nothingBody')}
-                                        </Secondary>
-                                    </YStack>
-                                </Card>
-                            )}
-                        </Rise>
-
-                        {hasVehicleCard || attention.length ? (
-                            <Rise delay={70}>
-                                <YStack gap={10} testID="home-before-list">
-                                    <SectionLabel>{t('home.before.section')}</SectionLabel>
-                                    {/* With a check due, the inspection card names the vehicle; otherwise the vehicle has its own. */}
-                                    {hasVehicleCard && !inspectionDue ? (
-                                        <EntryCard icon="vehicle" title={vehicleName ?? t('home.vehicle.yours')} body={t('home.vehicle.assigned')} mono={vehiclePlate} onPress={onOpenVehicle} testID="home-vehicle" />
-                                    ) : null}
-                                    {attention}
-                                </YStack>
-                            </Rise>
-                        ) : null}
-                    </YStack>
-                </ScrollView>
-
-                {/* The one action, where a thumb is, clear of the floating tab bar. */}
-                <YStack paddingHorizontal={space[4]} paddingTop={space[2]} paddingBottom={tabBarSpace} gap={space[2]}>
-                    <BigButton onPress={() => void setDuty('on')} loading={isChanging} icon={<HomeIcon name="power" color={theme.onPrimary?.val as string} />} gap={10} testID="home-go-on-duty">
-                        {t('home.before.goOnDuty')}
-                    </BigButton>
-                    <Micro center fontSize={12} lineHeight={16} testID="home-location-note">
-                        {organizationName ? t('home.before.locationNote', { organization: organizationName }) : t('home.before.locationNoteNoOrg')}
-                    </Micro>
-                </YStack>
-            </YStack>
-        );
-    }
-
-    /* -- On duty, every waypoint done --------------------------------------- */
-
-    if (day.allDone) {
+    if (cold) {
+        state = 'loading';
+    } else if (failed) {
+        state = 'error';
+    } else if (day.allDone) {
+        state = 'end';
         // The server's counts when it has them; the screen's own otherwise.
         const counted = serverCounts?.waypoints;
         const completed = counted ? counted.completed : day.done - day.skipped;
@@ -470,22 +403,35 @@ export function TodayScreen({
         const ordersDone = serverCounts?.orders_completed;
         const plannedM = serverCounts?.planned_distance_m ?? day.plannedDistanceM;
         const drivenM = todaySummary?.distance_driven_m;
-        const dutySeconds = secondsOnDuty(todaySummary, summaryAt);
+        const onlineSeconds = secondsOnDuty(todaySummary, summaryAt);
         const cashRows: { currency?: string | null; amount: number; orders: number }[] = serverCounts?.cash_on_delivery_due ?? day.cash;
         const routeSeconds = secondsBetween(day.manifest?.started_at, day.manifest?.completed_at);
-        const tiles: Stat[] = [
+
+        hero = (
+            <XStack alignItems="flex-start" gap={space[3]} testID="home-end">
+                <HeroBadge icon="tick" tone="success" />
+                <HeroText
+                    eyebrowTone="success"
+                    eyebrow={day.manifest?.completed_at ? t('home.end.finishedAt', { time: formatClock(day.manifest.completed_at) }) : t('home.end.finished')}
+                    title={firstName ? t('home.end.title', { name: firstName }) : t('home.end.titleNoName')}
+                    titleTestID="home-end-title"
+                />
+            </XStack>
+        );
+        statsTestID = 'home-end-stats';
+        stats = [
             { key: 'waypoints', value: t('home.end.ofTotal', { done: completed, total }), label: t('home.end.waypoints') },
             ordersDone != null
                 ? { key: 'orders', value: String(ordersDone), label: t('home.end.ordersCompleted', { count: ordersDone }) }
                 : { key: 'orders', value: day.finishedOrderCount === day.orderCount ? String(day.orderCount) : t('home.end.ofTotal', { done: day.finishedOrderCount, total: day.orderCount }), label: t('home.end.orders', { count: day.orderCount }) },
-            ...(dutySeconds ? [{ key: 'duty', value: formatDuration(dutySeconds), label: t('home.end.onDuty') }] : []),
+            ...(onlineSeconds ? [{ key: 'duty', value: formatDuration(onlineSeconds), label: t('home.end.onDuty') }] : []),
             // Measured from the positions this phone reported, so it is only there when the server could measure it.
             ...(drivenM ? [{ key: 'driven', value: formatMeters(drivenM, units), label: t('home.end.driven') }] : []),
             // The plan's length, labelled as that.
             ...(plannedM ? [{ key: 'distance', value: formatMeters(plannedM, units), label: t('home.end.plannedRoute') }] : []),
             ...(routeSeconds ? [{ key: 'time', value: formatDuration(routeSeconds), label: t('home.end.routeTime') }] : []),
         ];
-        const rows: { key: string; kind: 'ok' | 'attention'; title: string; body?: string; value?: string }[] = [
+        const summaryRows: { key: string; kind: 'ok' | 'attention'; title: string; body?: string; value?: string }[] = [
             ...cashRows.map((cash) => ({
                 key: `cash-${cash.currency ?? ''}`,
                 kind: 'attention' as const,
@@ -494,277 +440,297 @@ export function TodayScreen({
                 value: formatMoney(cash.amount, cash.currency ?? undefined),
             })),
             ...(skipped > 0 ? [{ key: 'skipped', kind: 'attention' as const, title: t('home.end.skipped'), body: t('home.end.skippedBody'), value: String(skipped) }] : []),
-            // Unsent work has its own card below, which opens the queue; this row only ever confirms there is none.
+            // Unsent work has its own row below, which opens the queue; this one only ever confirms there is none.
             ...(queuedCount === 0 ? [{ key: 'sent', kind: 'ok' as const, title: t('home.end.allSent'), body: t('home.end.allSentBody') }] : []),
         ];
-
-        return (
-            <YStack flex={1} backgroundColor="$background" testID="today">
-                <ScrollView style={screen} contentContainerStyle={{ gap: space[4], paddingBottom: space[4] }} refreshControl={refreshControl} testID="home-end">
-                    <XStack justifyContent="flex-end" paddingHorizontal={space[4]} paddingTop={space[2]}>
-                        <DutyControl t={t} duty={duty} onPress={openDutySheet} since={onDutySince} />
-                    </XStack>
-                    <YStack paddingHorizontal={space[4]} gap={space[4]}>
-                        {noticeBanners}
-                        {dutyErrorBanner}
-                        <YStack gap={6}>
-                            <SectionLabel tone="success">
-                                {day.manifest?.completed_at ? t('home.end.finishedAt', { time: formatClock(day.manifest.completed_at) }) : t('home.end.finished')}
-                            </SectionLabel>
-                            <Display fontSize={32} lineHeight={36} fontWeight="800" letterSpacing={-0.6} testID="home-end-title">
-                                {firstName ? t('home.end.title', { name: firstName }) : t('home.end.titleNoName')}
-                            </Display>
-                        </YStack>
-
-                        <Rise delay={60}>
-                            <XStack flexWrap="wrap" gap={space[2]} testID="home-end-stats">
-                                {tiles.map((stat) => (
-                                    <YStack key={stat.key} flexBasis="47%" flexGrow={1} gap={2} padding={14} borderRadius={CARD_RADIUS} borderWidth={1} borderColor="$border" backgroundColor="$surface" testID={`home-end-stat-${stat.key}`}>
-                                        <Body fontSize={26} lineHeight={32} fontWeight="800" tabular numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
-                                            {stat.value}
-                                        </Body>
-                                        <Secondary fontSize={13} lineHeight={18}>
-                                            {stat.label}
-                                        </Secondary>
-                                    </YStack>
-                                ))}
-                            </XStack>
-                        </Rise>
-
-                        {rows.length ? (
-                            <Rise delay={130}>
-                                <Card padded={false} testID="home-end-list">
-                                    {rows.map((row, index) => (
-                                        <SummaryRow key={row.key} kind={row.kind} title={row.title} body={row.body} value={row.value} first={index === 0} testID={`home-end-${row.key}`} />
-                                    ))}
-                                </Card>
-                            </Rise>
-                        ) : null}
-
-                        {offersCard}
-                        {attention.length ? <YStack gap={10}>{attention}</YStack> : null}
-                    </YStack>
-                </ScrollView>
-
-                <YStack paddingHorizontal={space[4]} paddingTop={space[2]} paddingBottom={tabBarSpace} gap={space[2]}>
-                    <BigButton onPress={openDutySheet} testID="home-go-off-duty">
-                        {t('home.end.goOffDuty')}
-                    </BigButton>
+        summaryList = summaryRows.length ? (
+            <Card padded={false} testID="home-end-list">
+                {summaryRows.map((row, index) => (
+                    <SummaryRow key={row.key} kind={row.kind} title={row.title} body={row.body} value={row.value} first={index === 0} testID={`home-end-${row.key}`} />
+                ))}
+            </Card>
+        ) : null;
+        // "Log a fill-up first" is too long to share a row with the primary action without one of them shrinking, so it sits under it.
+        actions =
+            onDuty || onLogFuel ? (
+                <YStack gap={space[2]}>
+                    {onDuty ? (
+                        <BigButton onPress={openDutySheet} testID="home-go-off-duty">
+                            {t('home.end.goOffDuty')}
+                        </BigButton>
+                    ) : null}
                     {onLogFuel ? (
                         <BigButton variant="secondary" onPress={onLogFuel} testID="home-log-fuel">
-                            {t('home.end.logFuel')}
+                            {onDuty ? t('home.end.logFuel') : t('home.end.logFuelOnly')}
                         </BigButton>
                     ) : null}
                 </YStack>
+            ) : null;
+    } else if (next && onDuty) {
+        state = 'next';
+        // The first leg ends at the waypoint being headed to, so its length is the road distance to it.
+        const roadM = tracker?.route?.legs?.[0]?.distance_m;
+        const straightM = position && next.point ? haversineM(position, next.point) : undefined;
+        const arrived = manifest?.stops?.find((stop) => stop.id === next.stopId)?.status === 'arrived';
+
+        if (etaAt && eta.kind === 'live') stats.push({ key: 'arrive', value: formatClock(etaAt), label: t('home.hero.arrive') });
+        else if (etaAt && eta.kind === 'start') stats.push({ key: 'start', value: formatClock(etaAt), label: t('home.hero.start') });
+        else if (next.plannedAt) stats.push({ key: 'planned', value: formatClock(next.plannedAt), label: t('home.hero.planned') });
+
+        if (roadM != null && Number.isFinite(Number(roadM))) {
+            stats.push({
+                key: 'distance',
+                value: formatMeters(Number(roadM), units),
+                label: eta.kind === 'live' && eta.seconds != null ? t('home.hero.away', { duration: formatDuration(eta.seconds) }) : t('home.hero.byRoad'),
+            });
+        } else if (straightM != null) {
+            // Not a road distance, and it says so.
+            stats.push({ key: 'distance', value: formatMeters(straightM, units), label: t('home.hero.straightLine') });
+        }
+
+        // The waypoint's own window, else the one the tracker reports for where the driver is heading.
+        const windowEnd = next.windowEnd ?? (eta.kind === 'live' ? (insights?.due_by ?? undefined) : undefined);
+        if (windowEnd) {
+            const due = formatClock(windowEnd);
+            if (etaAt && eta.kind === 'live') {
+                const late = Date.parse(etaAt) > Date.parse(windowEnd);
+                stats.push({ key: 'due', value: late ? t('home.hero.late') : t('home.hero.onTime'), tone: late ? 'danger' : 'success', label: t('home.hero.dueBy', { time: due }) });
+            } else {
+                stats.push({ key: 'due', value: due, label: t('home.hero.deliverBy') });
+            }
+        }
+        statsTestID = `today-eta-${eta.kind}`;
+
+        const kindLabel = next.kind ? t(`home.kind.${next.kind}`) : undefined;
+        hero = (
+            <XStack alignItems="flex-start" gap={space[3]}>
+                <HeroBadge number={next.number} />
+                <HeroText
+                    eyebrow={[arrived ? t('home.hero.arrived') : t('home.hero.next'), kindLabel].filter(Boolean).join(' · ')}
+                    title={next.name ?? next.address ?? t('today.noStopRecorded')}
+                    lines={[next.name ? next.address : undefined]}
+                    mono={next.trackingNumber}
+                />
+            </XStack>
+        );
+        notes = (
+            <>
+                {/* Only warn when a number drawn from the position is on screen. */}
+                {eta.stale && eta.kind !== 'none' ? (
+                    <Micro tone="warning" testID="today-stale-location">
+                        {t('today.staleLocation')}
+                    </Micro>
+                ) : null}
+                {insights?.is_off_route ? (
+                    <Micro tone="warning" testID="today-off-route">
+                        {t('today.offRoute')}
+                    </Micro>
+                ) : null}
+            </>
+        );
+        const destination: Destination | undefined = next.point ? { ...next.point, label: next.name ?? next.address } : undefined;
+        const canNavigate = !!onNavigate && !!destination;
+        const open = openNext(next);
+        actions =
+            canNavigate || open ? (
+                <XStack gap={space[2]}>
+                    {canNavigate ? (
+                        <YStack flex={1}>
+                            <BigButton
+                                onPress={() => onNavigate?.(destination as Destination, next.source === 'order' ? next.orderId : undefined)}
+                                icon={<HomeIcon name="navigate" color={theme.onPrimary?.val as string} />}
+                                gap={10}
+                                testID="today-navigate"
+                            >
+                                {t('today.navigate')}
+                            </BigButton>
+                        </YStack>
+                    ) : null}
+                    {/* With nowhere to navigate to, Open is the only action and takes the row. */}
+                    {canNavigate ? open : open ? <YStack flex={1}>{open}</YStack> : null}
+                </XStack>
+            ) : null;
+    } else if (next) {
+        // Offline with work assigned: the same hero, about where the day starts, and the way online.
+        state = 'before';
+        const remaining = Math.max(0, day.total - day.done);
+        const started = day.done > 0;
+        const kindLabel = next.kind ? t(`home.kind.${next.kind}`) : undefined;
+        hero = (
+            <XStack alignItems="flex-start" gap={space[3]} testID="home-first-waypoint">
+                <HeroBadge number={next.number} />
+                <HeroText
+                    eyebrow={[started ? t('home.hero.next') : t('home.hero.first'), kindLabel].filter(Boolean).join(' · ')}
+                    title={next.name ?? next.address ?? t('today.noStopRecorded')}
+                    lines={[next.name ? next.address : undefined]}
+                    mono={next.trackingNumber}
+                />
+            </XStack>
+        );
+        statsTestID = 'home-today-stats';
+        stats = [
+            {
+                key: 'waypoints',
+                value: String(started ? remaining : day.total),
+                label: [started ? t('home.stat.waypointsLeft', { count: remaining }) : t('home.stat.waypoints', { count: day.total }), day.orderCount ? t('home.stat.inOrders', { count: day.orderCount }) : undefined]
+                    .filter(Boolean)
+                    .join(' · '),
+            },
+            ...(day.firstAt && !started ? [{ key: 'first', value: formatClock(day.firstAt), label: t('home.stat.firstWaypoint') }] : next.plannedAt ? [{ key: 'planned', value: formatClock(next.plannedAt), label: t('home.hero.planned') }] : []),
+            ...(day.plannedDistanceM ? [{ key: 'distance', value: formatMeters(day.plannedDistanceM, units), label: t('home.stat.toDrive') }] : []),
+        ];
+        const open = openNext(next);
+        actions = (
+            <YStack gap={space[2]}>
+                <XStack gap={space[2]}>
+                    <YStack flex={1}>{goOnline}</YStack>
+                    {open}
+                </XStack>
+                {locationNote}
+            </YStack>
+        );
+    } else {
+        // Nothing assigned. Online, that is news dispatch can act on; offline, the way online is the action.
+        state = 'empty';
+        hero = (
+            <XStack alignItems="flex-start" gap={space[3]} testID="today-empty">
+                <HeroBadge icon={onDuty ? 'tick' : 'power'} tone={onDuty ? 'success' : 'neutral'} />
+                <HeroText
+                    eyebrowTone={onDuty ? 'success' : 'muted'}
+                    eyebrow={onDuty ? t('home.empty.eyebrow') : t('home.before.today')}
+                    title={onDuty ? t('home.empty.title') : t('home.before.nothingTitle')}
+                    lines={[onDuty ? (offers.length ? t('home.empty.bodyOffers') : t('home.empty.body')) : t('home.before.nothingBody')]}
+                    titleTestID="home-empty-title"
+                />
+            </XStack>
+        );
+        actions = onDuty ? null : (
+            <YStack gap={space[2]}>
+                {goOnline}
+                {locationNote}
             </YStack>
         );
     }
 
-    /* -- On duty, nothing assigned ------------------------------------------ */
+    const finishAt =
+        state === 'next' || state === 'before'
+            ? (day.finishAt ?? (eta.kind === 'live' && day.total - day.done === (tracker?.progress?.remaining_stops ?? -1) ? (tracker?.eta?.completion_at ?? undefined) : undefined))
+            : undefined;
+    const showProgress = (state === 'next' || state === 'before') && day.total > 0;
 
-    if (!next) {
-        return (
-            <ScrollView style={screen} contentContainerStyle={{ gap: space[4], paddingBottom: tabBarSpace }} refreshControl={refreshControl} testID="today">
-                {header}
-                <YStack paddingHorizontal={space[4]} gap={space[4]}>
-                    {noticeBanners}
-                    {dutyErrorBanner}
-                    <Rise>
-                        <Card testID="today-empty">
-                            <YStack gap={space[2]} paddingVertical={space[4]} alignItems="center">
-                                <YStack width={12} height={12} borderRadius={6} backgroundColor="$successText" />
-                                <Body fontSize={20} lineHeight={26} fontWeight="800" center>
-                                    {t('home.empty.title')}
-                                </Body>
-                                <Secondary fontSize={14} lineHeight={20} center>
-                                    {offers.length ? t('home.empty.bodyOffers') : t('home.empty.body')}
-                                </Secondary>
-                            </YStack>
-                        </Card>
-                    </Rise>
-                    {offersCard ? <Rise delay={70}>{offersCard}</Rise> : null}
-                    {attention.length ? (
-                        <Rise delay={140}>
-                            <YStack gap={10} testID="home-attention">
-                                <SectionLabel>{t('home.attention.section')}</SectionLabel>
-                                {attention}
-                            </YStack>
-                        </Rise>
-                    ) : null}
-                </YStack>
-            </ScrollView>
-        );
-    }
-
-    /* -- On duty with work: the next waypoint -------------------------------- */
-
-    const eta: ChosenEta = tracker ? chooseEta(tracker) : { kind: 'none', stale: false };
-    const etaAt = eta.kind === 'none' ? undefined : (eta.at ?? (eta.seconds != null ? new Date(Date.now() + eta.seconds * 1000).toISOString() : undefined));
-    const insights = tracker?.insights;
-    // The first leg ends at the waypoint being headed to, so its length is the road distance to it.
-    const roadM = tracker?.route?.legs?.[0]?.distance_m;
-    const straightM = position && next.point ? haversineM(position, next.point) : undefined;
-    const arrived = manifest?.stops?.find((stop) => stop.id === next.stopId)?.status === 'arrived';
-
-    const heroStats: Stat[] = [];
-    if (etaAt && eta.kind === 'live') heroStats.push({ key: 'arrive', value: formatClock(etaAt), label: t('home.hero.arrive') });
-    else if (etaAt && eta.kind === 'start') heroStats.push({ key: 'start', value: formatClock(etaAt), label: t('home.hero.start') });
-    else if (next.plannedAt) heroStats.push({ key: 'planned', value: formatClock(next.plannedAt), label: t('home.hero.planned') });
-
-    if (roadM != null && Number.isFinite(Number(roadM))) {
-        heroStats.push({
-            key: 'distance',
-            value: formatMeters(Number(roadM), units),
-            label: eta.kind === 'live' && eta.seconds != null ? t('home.hero.away', { duration: formatDuration(eta.seconds) }) : t('home.hero.byRoad'),
-        });
-    } else if (straightM != null) {
-        // Not a road distance, and it says so.
-        heroStats.push({ key: 'distance', value: formatMeters(straightM, units), label: t('home.hero.straightLine') });
-    }
-
-    // The waypoint's own window, else the one the tracker reports for where the driver is heading.
-    const windowEnd = next.windowEnd ?? (eta.kind === 'live' ? (insights?.due_by ?? undefined) : undefined);
-    if (windowEnd) {
-        const due = formatClock(windowEnd);
-        if (etaAt && eta.kind === 'live') {
-            const late = Date.parse(etaAt) > Date.parse(windowEnd);
-            heroStats.push({ key: 'due', value: late ? t('home.hero.late') : t('home.hero.onTime'), tone: late ? 'danger' : 'success', label: t('home.hero.dueBy', { time: due }) });
-        } else {
-            heroStats.push({ key: 'due', value: due, label: t('home.hero.deliverBy') });
-        }
-    }
-
-    const kindLabel = next.kind ? t(`home.kind.${next.kind}`) : undefined;
-    const eyebrow = [arrived ? t('home.hero.arrived') : t('home.hero.next'), kindLabel].filter(Boolean).join(' · ');
-    const route = tracker ? decodePolyline(tracker.route?.polyline) : [];
-    const destination: Destination | undefined = next.point ? { ...next.point, label: next.name ?? next.address } : undefined;
-    const finishAt = day.finishAt ?? (eta.kind === 'live' && day.total - day.done === (tracker?.progress?.remaining_stops ?? -1) ? (tracker?.eta?.completion_at ?? undefined) : undefined);
-    const showMap = !!next.point;
+    /* -- The one layout ------------------------------------------------------ */
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ paddingBottom: tabBarSpace }} refreshControl={refreshControl} testID="today">
-            {showMap ? (
-                <YStack>
-                    <HomeMap waypoints={day.waypoints} activeKey={next.key} route={route} position={position} dark={dark} height={MAP_HEIGHT} padding={{ top: 52, bottom: SHEET_OVERLAP }} />
-                    <XStack position="absolute" top={space[2]} left={space[4]} right={space[4]} alignItems="center" justifyContent="space-between" gap={space[2]}>
-                        <OrgChip name={organizationName} />
-                        <DutyChip duty={duty} onPress={openDutySheet} t={t} floating />
-                    </XStack>
-                </YStack>
-            ) : (
-                header
-            )}
+        <ScrollView style={[screen, { marginTop: -bleed }]} contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }} refreshControl={refreshControl} testID="today">
+            {/* The map, full width and up to the top edge, with the organisation and the driver's status floating over it. */}
+            <YStack height={MAP_HEIGHT + bleed}>
+                <HomeMap
+                    waypoints={day.waypoints}
+                    // Online, the view is the leg to the next waypoint; otherwise the whole day.
+                    activeKey={state === 'next' ? next?.key : undefined}
+                    route={state === 'next' ? route : undefined}
+                    position={position}
+                    dark={dark}
+                    height={MAP_HEIGHT + bleed}
+                    padding={{ top: 52 + bleed, bottom: SHEET_OVERLAP }}
+                />
+                <XStack position="absolute" top={space[2] + bleed} left={space[4]} right={space[4]} alignItems="flex-start" justifyContent="space-between" gap={space[2]} testID="home-header">
+                    <OrgChip name={organizationName} dark={dark} />
+                    <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
+                </XStack>
+            </YStack>
 
+            {/* The sheet: rounded at the top, riding up over the map's bottom edge, and filling the rest of the screen. */}
             <YStack
-                marginTop={showMap ? -SHEET_OVERLAP : space[4]}
-                borderTopLeftRadius={showMap ? 22 : 0}
-                borderTopRightRadius={showMap ? 22 : 0}
-                borderTopWidth={showMap ? 1 : 0}
+                flexGrow={1}
+                marginTop={-SHEET_OVERLAP}
+                borderTopLeftRadius={22}
+                borderTopRightRadius={22}
+                borderTopWidth={1}
                 borderColor="$border"
                 backgroundColor="$background"
-                paddingTop={showMap ? 18 : 0}
+                paddingTop={18}
                 paddingHorizontal={space[4]}
-                gap={14}
+                gap={SHEET_GAP}
+                testID={`home-sheet-${state}`}
             >
                 {noticeBanners}
                 {dutyErrorBanner}
 
-                <Rise>
-                    <YStack gap={14} testID="today-next-stop">
-                        <WaypointTitle waypoint={next} eyebrow={eyebrow} t={t} />
-
-                        {heroStats.length ? (
-                            <Card testID={`today-eta-${eta.kind}`}>
-                                <StatRow stats={heroStats} size={heroStats.length > 2 ? 24 : 26} />
-                            </Card>
-                        ) : null}
-
-                        {/* Only warn when a number drawn from the position is on screen. */}
-                        {eta.stale && eta.kind !== 'none' ? (
-                            <Micro tone="warning" testID="today-stale-location">
-                                {t('today.staleLocation')}
-                            </Micro>
-                        ) : null}
-                        {insights?.is_off_route ? (
-                            <Micro tone="warning" testID="today-off-route">
-                                {t('today.offRoute')}
-                            </Micro>
-                        ) : null}
-
-                        <XStack gap={space[2]}>
-                            {onNavigate && destination ? (
-                                <YStack flex={1}>
-                                    <BigButton
-                                        onPress={() => onNavigate(destination, next.source === 'order' ? next.orderId : undefined)}
-                                        icon={<HomeIcon name="navigate" color={theme.onPrimary?.val as string} />}
-                                        gap={10}
-                                        testID="today-navigate"
-                                    >
-                                        {t('today.navigate')}
-                                    </BigButton>
-                                </YStack>
-                            ) : null}
-                            {canOpen(next) ? (
-                                <YStack flex={onNavigate && destination ? undefined : 1}>
-                                    <BigButton variant="secondary" fullWidth={!(onNavigate && destination)} paddingHorizontal={20} onPress={() => openWaypoint(next)} testID="today-open-order">
-                                        {next.source === 'manifest' ? t('home.hero.openWaypoint') : t('today.openOrder')}
-                                    </BigButton>
-                                </YStack>
-                            ) : null}
-                        </XStack>
+                {state === 'loading' ? (
+                    <YStack gap={SHEET_GAP} testID="today-loading">
+                        <Skeleton height={92} borderRadius={CARD_RADIUS} />
+                        <Skeleton height={84} borderRadius={CARD_RADIUS} />
+                        <Skeleton height={60} borderRadius={16} />
                     </YStack>
-                </Rise>
-
-                <Rise delay={70}>
-                    <YStack gap={space[2]} testID="today-progress">
-                        <XStack alignItems="baseline" justifyContent="space-between" gap={space[2]}>
-                            <Body fontSize={14} lineHeight={19} fontWeight="700" tabular>
-                                {t('home.progress.done', { done: day.done, total: day.total })}
-                            </Body>
-                            {finishAt ? (
-                                <Secondary fontSize={13} lineHeight={18} tabular testID="home-finish">
-                                    {t('home.progress.finish', { time: formatClock(finishAt) })}
-                                </Secondary>
-                            ) : null}
-                        </XStack>
-                        <SegmentBar total={day.total} done={day.done} hasCurrent />
-                        {day.manifest?.status === 'draft' ? (
-                            <Micro tone="warning" testID="home-draft-route">
-                                {t('home.before.draft')}
-                            </Micro>
-                        ) : null}
+                ) : state === 'error' ? (
+                    <YStack paddingVertical={space[4]} testID="today-error">
+                        <FailureState error={ordersQuery.error} isOnline={isOnline} onRetry={refreshAll} t={t} />
                     </YStack>
-                </Rise>
+                ) : (
+                    <>
+                        <Rise>
+                            <YStack gap={SHEET_GAP} testID={state === 'next' ? 'today-next-stop' : `home-hero-${state}`}>
+                                {hero}
+                                <StatCard stats={stats} testID={statsTestID} />
+                                {notes}
+                                {actions}
+                            </YStack>
+                        </Rise>
 
-                {day.upcoming.length ? (
-                    <Rise delay={140}>
-                        <YStack gap={10} testID="home-upcoming">
-                            <SectionLabel>{t('home.upcoming.section')}</SectionLabel>
-                            <Card padded={false}>
-                                {day.upcoming.map((waypoint, index) => (
-                                    <WaypointRow
-                                        key={waypoint.key}
-                                        waypoint={waypoint}
-                                        first={index === 0}
-                                        time={waypoint.plannedAt ? formatClock(waypoint.plannedAt) : waypoint.windowEnd ? t('home.upcoming.by', { time: formatClock(waypoint.windowEnd) }) : undefined}
-                                        onPress={canOpen(waypoint) ? () => openWaypoint(waypoint) : undefined}
-                                    />
-                                ))}
-                            </Card>
-                        </YStack>
-                    </Rise>
-                ) : null}
+                        {showProgress ? (
+                            <Rise delay={70}>
+                                <YStack gap={space[2]} testID="today-progress">
+                                    <XStack alignItems="baseline" justifyContent="space-between" gap={space[2]}>
+                                        <Body fontSize={14} lineHeight={19} fontWeight="700" tabular>
+                                            {t('home.progress.done', { done: day.done, total: day.total })}
+                                        </Body>
+                                        {finishAt ? (
+                                            <Secondary fontSize={13} lineHeight={18} tabular testID="home-finish">
+                                                {t('home.progress.finish', { time: formatClock(finishAt) })}
+                                            </Secondary>
+                                        ) : null}
+                                    </XStack>
+                                    <SegmentBar total={day.total} done={day.done} hasCurrent={state === 'next'} />
+                                    {day.manifest?.status === 'draft' ? (
+                                        <Micro tone="warning" testID="home-draft-route">
+                                            {t('home.before.draft')}
+                                        </Micro>
+                                    ) : null}
+                                </YStack>
+                            </Rise>
+                        ) : null}
 
-                {offersCard ? <Rise delay={200}>{offersCard}</Rise> : null}
+                        {summaryList ? <Rise delay={70}>{summaryList}</Rise> : null}
 
-                {attention.length ? (
-                    <Rise delay={240}>
-                        <YStack gap={10} testID="home-attention">
-                            <SectionLabel>{t('home.attention.section')}</SectionLabel>
-                            {attention}
-                        </YStack>
-                    </Rise>
-                ) : null}
+                        {rows.length ? (
+                            <Rise delay={140}>
+                                <YStack gap={10} testID="home-attention">
+                                    {rows}
+                                </YStack>
+                            </Rise>
+                        ) : null}
+
+                        {showProgress && day.upcoming.length ? (
+                            <Rise delay={200}>
+                                <YStack gap={10} testID="home-upcoming">
+                                    <SectionLabel>{t('home.upcoming.section')}</SectionLabel>
+                                    <Card padded={false}>
+                                        {day.upcoming.map((waypoint, index) => (
+                                            <WaypointRow
+                                                key={waypoint.key}
+                                                waypoint={waypoint}
+                                                first={index === 0}
+                                                time={waypoint.plannedAt ? formatClock(waypoint.plannedAt) : waypoint.windowEnd ? t('home.upcoming.by', { time: formatClock(waypoint.windowEnd) }) : undefined}
+                                                onPress={canOpen(waypoint) ? () => openWaypoint(waypoint) : undefined}
+                                            />
+                                        ))}
+                                    </Card>
+                                </YStack>
+                            </Rise>
+                        ) : null}
+                    </>
+                )}
             </YStack>
         </ScrollView>
     );

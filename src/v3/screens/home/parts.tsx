@@ -12,6 +12,7 @@ import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Caption, Secondary } from '../../ui/Text';
 import { space } from '../../theme/tokens';
 import { CARD_RADIUS } from '../../onboarding/AuthScaffold';
+import { formatClock } from '../../format';
 import type { DutyState } from '../../shell';
 import type { HomeWaypoint } from './homeModel';
 
@@ -47,7 +48,7 @@ export function Rise({ delay = 0, children }: { delay?: number; children: React.
 
 /* -- Icons ----------------------------------------------------------------- */
 
-export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel';
+export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick';
 
 const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     power: ['M12 3v9', 'M6.3 7.5a8 8 0 1 0 11.4 0'],
@@ -55,8 +56,10 @@ const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     check: ['M9 4h6l1 3h3v13H5V7h3l1-3z', 'M9 13l2 2 4-4'],
     bolt: ['M13 3L5 14h6l-1 7 8-11h-6z'],
     upload: ['M12 16V5', 'M7 10l5-5 5 5', 'M5 19h14'],
-    vehicle: ['M3 7h11v9H3z', 'M14 10h4l3 3v3h-7z', 'M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', 'M17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'],
+    // The mockup's van: a cab and body outline over two wheels.
+    vehicle: ['M3 16V8l4-3h7l5 5v6', 'M5.5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0', 'M14.5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0'],
     chevron: ['M9 5l7 7-7 7'],
+    tick: ['M5 12l5 5 9-10'],
     fuel: ['M5 20V5h9v15', 'M4 20h11', 'M7 9h5', 'M14 11h3v6a1.5 1.5 0 0 0 3 0V9l-3-3'],
 };
 
@@ -79,10 +82,10 @@ export function HomeIcon({ name, color, size = 20 }: { name: HomeIconName; color
 
 /* -- Labels and tiles ------------------------------------------------------- */
 
-/** 12/800, tracked, upper case: the label above a group of cards. */
-export function SectionLabel({ children, tone = 'muted', testID }: { children: string; tone?: 'muted' | 'brand' | 'success'; testID?: string }) {
+/** 12/800, tracked, upper case: the label above a group of cards. The hero's eyebrow is the same at 700. */
+export function SectionLabel({ children, tone = 'muted', weight = '800', testID }: { children: string; tone?: 'muted' | 'brand' | 'success'; weight?: '700' | '800'; testID?: string }) {
     return (
-        <Caption fontSize={12} lineHeight={16} fontWeight="800" letterSpacing={0.7} tone={tone} numberOfLines={1} testID={testID}>
+        <Caption fontSize={12} lineHeight={16} fontWeight={weight} letterSpacing={0.7} tone={tone} numberOfLines={1} testID={testID}>
             {children.toUpperCase()}
         </Caption>
     );
@@ -117,7 +120,7 @@ export interface Stat {
 }
 
 /** A big tabular figure over a small label. Never more than three or four in a row. */
-export function StatTile({ stat, size = 24 }: { stat: Stat; size?: number }) {
+export function StatTile({ stat, size = 26 }: { stat: Stat; size?: number }) {
     return (
         <YStack flex={1} flexBasis={0} gap={2} minWidth={0} testID={`home-stat-${stat.key}`}>
             <Body fontSize={size} lineHeight={size + 6} fontWeight="800" tabular tone={stat.tone ?? 'primary'} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
@@ -141,13 +144,38 @@ export function StatRow({ stats, size, testID }: { stats: Stat[]; size?: number;
     );
 }
 
-/* -- Header controls -------------------------------------------------------- */
+/* -- Over the map ----------------------------------------------------------- */
 
 /**
- * The duty control. Shape carries the state as well as colour: a filled disc
- * for on duty, a square for off, a ring for a break.
+ * What a chip floating on the map is painted with. In the dark schemes it is
+ * the page colour at 88%, so the map shows faintly through; in the light ones
+ * it is a solid surface with a soft shadow, because a translucent white chip
+ * over a pale map has no edge.
  */
-export function DutyChip({ duty, onPress, t, floating }: { duty: DutyState; onPress?: () => void; t: Translate; floating?: boolean }) {
+function useChipSkin(dark?: boolean) {
+    const theme = useTheme();
+    const page = theme.background?.val as string;
+    return dark
+        ? // 88% of the page colour; a brand override that is not a six-digit hex is used as it is.
+          { backgroundColor: /^#[0-9a-f]{6}$/i.test(page) ? `${page}E0` : page }
+        : {
+              backgroundColor: theme.surface?.val as string,
+              shadowColor: theme.shadowColor?.val as string,
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 2,
+          };
+}
+
+/**
+ * The driver's status, and the way to change it. Shape carries the state as
+ * well as colour: a filled disc for online, a square for offline, a ring for a
+ * break. Once the server has said when the driver went online, that time sits
+ * in a small tag under the chip.
+ */
+export function DutyChip({ duty, onPress, t, dark, since }: { duty: DutyState; onPress?: () => void; t: Translate; dark?: boolean; since?: string | null }) {
+    const skin = useChipSkin(dark);
     const label = t(`home.duty.${duty}`);
     const mark =
         duty === 'on' ? (
@@ -158,34 +186,48 @@ export function DutyChip({ duty, onPress, t, floating }: { duty: DutyState; onPr
             <YStack width={10} height={10} borderRadius={2} backgroundColor="$textMuted" />
         );
     return (
-        <XStack
-            height={44}
-            alignItems="center"
-            gap={space[2]}
-            paddingHorizontal={14}
-            borderRadius={22}
-            backgroundColor={floating ? '$background' : '$surface'}
-            borderWidth={1}
-            borderColor={duty === 'on' ? '$successBorder' : duty === 'break' ? '$warningBorder' : '$border'}
-            onPress={onPress}
-            pressStyle={{ opacity: 0.7 }}
-            accessibilityRole="button"
-            accessibilityLabel={t('home.duty.change', { status: label })}
-            testID="home-duty"
-        >
-            {mark}
-            <Body fontSize={14} lineHeight={18} fontWeight="700" tone={duty === 'on' ? 'success' : duty === 'break' ? 'warning' : 'secondary'} numberOfLines={1}>
-                {label}
-            </Body>
-        </XStack>
+        <YStack alignItems="flex-end" gap={space[1]} flexShrink={0}>
+            <XStack
+                height={44}
+                alignItems="center"
+                gap={space[2]}
+                paddingHorizontal={14}
+                borderRadius={22}
+                borderWidth={1}
+                borderColor={duty === 'on' ? '$successBorder' : duty === 'break' ? '$warningBorder' : '$border'}
+                onPress={onPress}
+                pressStyle={{ opacity: 0.7 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('home.duty.change', { status: label })}
+                testID="home-duty"
+                {...skin}
+            >
+                {/* On a light map the chip is tinted with its state, as the light mockup draws it. */}
+                {!dark && duty !== 'off' ? (
+                    <YStack position="absolute" top={0} right={0} bottom={0} left={0} borderRadius={22} backgroundColor={duty === 'on' ? '$successFill' : '$warningFill'} pointerEvents="none" />
+                ) : null}
+                {mark}
+                <Body fontSize={14} lineHeight={18} fontWeight="700" tone={duty === 'on' ? 'success' : duty === 'break' ? 'warning' : 'secondary'} numberOfLines={1}>
+                    {label}
+                </Body>
+            </XStack>
+            {since ? (
+                <XStack height={22} alignItems="center" paddingHorizontal={10} borderRadius={11} borderWidth={1} borderColor="$border" {...skin}>
+                    <Secondary fontSize={12} lineHeight={16} tabular numberOfLines={1} testID="home-duty-since">
+                        {t('home.duty.since', { time: formatClock(since) })}
+                    </Secondary>
+                </XStack>
+            ) : null}
+        </YStack>
     );
 }
 
 /** Whose work this is: the organisation's initial and its name, floating over the map. */
-export function OrgChip({ name }: { name: string }) {
+export function OrgChip({ name, dark }: { name: string; dark?: boolean }) {
+    const skin = useChipSkin(dark);
     if (!name) return <YStack />;
     return (
-        <XStack flexShrink={1} height={44} alignItems="center" gap={10} paddingLeft={6} paddingRight={14} borderRadius={22} backgroundColor="$background" borderWidth={1} borderColor="$border" testID="home-organization">
+        <XStack flexShrink={1} height={44} alignItems="center" gap={10} paddingLeft={6} paddingRight={14} borderRadius={22} borderWidth={1} borderColor="$border" testID="home-organization" {...skin}>
             <YStack width={32} height={32} borderRadius={16} backgroundColor="$primary" alignItems="center" justifyContent="center">
                 <Body fontSize={14} lineHeight={18} fontWeight="800" tone="onPrimary">
                     {name.trim().charAt(0).toUpperCase()}
@@ -195,6 +237,64 @@ export function OrgChip({ name }: { name: string }) {
                 {name}
             </Body>
         </XStack>
+    );
+}
+
+/* -- The sheet's hero -------------------------------------------------------- */
+
+/**
+ * The 48px tile that leads the hero. A waypoint's number on the brand colour
+ * when the hero is a waypoint; otherwise a glyph on a quiet tile, so a hero
+ * that is not a place does not pretend to be one.
+ */
+export function HeroBadge({ number, icon, tone = 'brand' }: { number?: number; icon?: HomeIconName; tone?: 'brand' | 'success' | 'neutral' }) {
+    const theme = useTheme();
+    const brand = tone === 'brand';
+    const glyph = (brand ? theme.onPrimary?.val : tone === 'success' ? theme.successText?.val : theme.textSecondary?.val) as string;
+    return (
+        <YStack
+            width={48}
+            height={48}
+            borderRadius={14}
+            flexShrink={0}
+            alignItems="center"
+            justifyContent="center"
+            backgroundColor={brand ? '$primary' : tone === 'success' ? '$successFill' : '$surface'}
+            borderWidth={brand ? 0 : 1}
+            borderColor={tone === 'success' ? '$successBorder' : '$border'}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+        >
+            {number != null ? (
+                <Body fontSize={22} lineHeight={28} fontWeight="800" tone={brand ? 'onPrimary' : 'primary'} tabular>
+                    {number}
+                </Body>
+            ) : icon ? (
+                <HomeIcon name={icon} color={glyph} size={24} />
+            ) : null}
+        </YStack>
+    );
+}
+
+/** The stat card: figures three to a row, as many rows as there are figures. */
+export function StatCard({ stats, testID }: { stats: Stat[]; testID?: string }) {
+    if (!stats.length) return null;
+    const rows: Stat[][] = [];
+    for (let index = 0; index < stats.length; index += 3) rows.push(stats.slice(index, index + 3));
+    return (
+        <Card testID={testID}>
+            <YStack gap={14}>
+                {rows.map((row) => (
+                    <XStack key={row[0].key} gap={space[2]}>
+                        {row.map((stat) => (
+                            <StatTile key={stat.key} stat={stat} />
+                        ))}
+                        {/* A short last row keeps the column width of the rows above it. */}
+                        {rows.length > 1 ? Array.from({ length: 3 - row.length }, (_, index) => <YStack key={`pad-${index}`} flex={1} flexBasis={0} />) : null}
+                    </XStack>
+                ))}
+            </YStack>
+        </Card>
     );
 }
 
@@ -212,29 +312,33 @@ export function EntryCard({
     mono,
     count,
     tone,
+    accent: accentTone,
     onPress,
     testID,
 }: {
     icon: HomeIconName;
     title: string;
     body?: string;
-    /** An identifier shown under the body, monospaced and in full. */
+    /** An identifier (a plate) at the row's right edge, monospaced and in full. */
     mono?: string;
     count?: number;
     tone?: 'warning';
+    /** Colours the glyph alone, on a plain card: the offers row's amber bolt. */
+    accent?: 'warning';
     onPress?: () => void;
     testID?: string;
 }) {
     const theme = useTheme();
-    const accent = (tone === 'warning' ? theme.warningText?.val : theme.textSecondary?.val) as string;
+    const accent = (tone === 'warning' || accentTone === 'warning' ? theme.warningText?.val : theme.textSecondary?.val) as string;
+    const chevron = (tone === 'warning' ? theme.warningText?.val : theme.textSecondary?.val) as string;
     return (
         <Card onPress={onPress} tone={tone} testID={testID} label={[title, body].filter(Boolean).join('. ')}>
             <XStack alignItems="center" gap={space[3]}>
-                <YStack width={40} height={40} borderRadius={12} backgroundColor={tone === 'warning' ? '$warningFill' : '$surfaceRaised'} alignItems="center" justifyContent="center">
-                    <HomeIcon name={icon} color={accent} />
+                <YStack width={36} height={36} borderRadius={10} flexShrink={0} backgroundColor={tone === 'warning' ? '$warningFill' : '$surfaceRaised'} alignItems="center" justifyContent="center">
+                    <HomeIcon name={icon} color={accent} size={18} />
                 </YStack>
-                <YStack flex={1} gap={2} minWidth={0}>
-                    <Body fontSize={16} lineHeight={21} fontWeight="700" numberOfLines={2}>
+                <YStack flex={1} gap={1} minWidth={0}>
+                    <Body fontSize={15} lineHeight={20} fontWeight="700" numberOfLines={2}>
                         {title}
                     </Body>
                     {body ? (
@@ -242,12 +346,12 @@ export function EntryCard({
                             {body}
                         </Secondary>
                     ) : null}
-                    {mono ? (
-                        <Secondary fontFamily="$mono" fontSize={13} lineHeight={18}>
-                            {mono}
-                        </Secondary>
-                    ) : null}
                 </YStack>
+                {mono ? (
+                    <Secondary fontFamily="$mono" fontSize={13} lineHeight={18} flexShrink={0}>
+                        {mono}
+                    </Secondary>
+                ) : null}
                 {count ? (
                     <YStack minWidth={24} height={24} paddingHorizontal={6} borderRadius={12} backgroundColor="$primary" alignItems="center" justifyContent="center">
                         <Body fontSize={12} lineHeight={16} fontWeight="800" tone="onPrimary" tabular>
@@ -255,7 +359,7 @@ export function EntryCard({
                         </Body>
                     </YStack>
                 ) : onPress ? (
-                    <HomeIcon name="chevron" color={accent} size={18} />
+                    <HomeIcon name="chevron" color={chevron} size={18} />
                 ) : null}
             </XStack>
         </Card>

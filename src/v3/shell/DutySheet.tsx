@@ -19,7 +19,7 @@ import type { DutyState } from './DutyContext';
 const description: Record<DutyState, string> = {
     off: 'Not receiving work. Location tracking stops.',
     on: 'Receiving work. Location is shared with dispatch.',
-    break: 'Stay on shift without receiving new work.',
+    break: 'Stay online without receiving new work.',
 };
 
 export function DutySheet({
@@ -47,8 +47,8 @@ export function DutySheet({
     return (
         <Surface testID={testID ?? 'duty-sheet'} level="sheet" hero padding={space[4]} gap={space[3]}>
             <YStack gap={space[1]}>
-                <Heading>Duty status</Heading>
-                <Secondary>Tracking runs only while you are on duty.</Secondary>
+                <Heading>Your status</Heading>
+                <Secondary>Tracking runs only while you are online.</Secondary>
             </YStack>
 
             {error ? <Banner tone="danger" message={error.message} /> : null}

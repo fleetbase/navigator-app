@@ -17,6 +17,10 @@
  * The map finds the manifest's road itself from the waypoints it is given, so
  * the screens that show it pass nothing extra. Markers are the console's (see
  * `StopBadge`), numbered within their order and coloured by it.
+ *
+ * The map is the top of the dashboard in every state, so it always takes its
+ * height: with no waypoint to show it centres on the driver, and before there
+ * is anything at all to centre on it is a plain block in the map's own colour.
  */
 import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -97,6 +101,11 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
         const focus = active ? [active.point, ...route, ...(position ? [position] : [])] : [];
         const coordinates = focus.length > 1 ? focus : [...placed.map((w) => w.point), ...(position ? [position] : [])];
         if (!coordinates.length) return;
+        // One point has no extent to fit; a street-level region around it instead.
+        if (coordinates.length === 1) {
+            ref.current?.animateToRegion({ ...coordinates[0], latitudeDelta: 0.02, longitudeDelta: 0.02 }, 0);
+            return;
+        }
         ref.current?.fitToCoordinates(coordinates, {
             edgePadding: { top: 40 + (padding?.top ?? 0), right: 48, bottom: 40 + (padding?.bottom ?? 0), left: 48 },
             animated: false,
@@ -104,14 +113,16 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fitKey]);
 
-    if (!placed.length) return null;
+    const centre = placed[0]?.point ?? position;
+    // Nothing to centre on yet: hold the map's place rather than show the whole world.
+    if (!centre) return <YStack height={height} backgroundColor="$mapBackground" testID={`${testID}-empty`} />;
 
     return (
-        <YStack height={height} backgroundColor="$surface" pointerEvents="none" testID={testID}>
+        <YStack height={height} backgroundColor="$mapBackground" pointerEvents="none" testID={testID}>
             <MapView
                 ref={ref}
                 style={{ flex: 1 }}
-                initialRegion={{ ...placed[0].point, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
+                initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.length ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : { latitudeDelta: 0.02, longitudeDelta: 0.02 }) }}
                 userInterfaceStyle={dark ? 'dark' : 'light'}
                 showsUserLocation
                 showsMyLocationButton={false}
