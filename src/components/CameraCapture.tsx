@@ -6,6 +6,7 @@ import type { Camera as CameraRef } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import useDimensions from '../hooks/use-dimensions';
+import { useCameraActive } from '../hooks/use-camera-active';
 import { toast, ToastPosition } from '../utils/toast';
 
 const MENU_BAR_HEIGHT = 160;
@@ -28,6 +29,9 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
     const cameraRef = useRef<CameraRef>(null);
     const device = useCameraDevice('back');
     const { screenHeight } = useDimensions();
+    // Running only while its screen is in front and the app is in the foreground: a camera left
+    // running on a screen in another tab keeps the capture session, and the next one shows black.
+    const cameraActive = useCameraActive();
     const [hasPermission, setHasPermission] = useState<boolean>(false);
     const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
     const [showGalleryOverlay, setShowGalleryOverlay] = useState<boolean>(false);
@@ -120,7 +124,7 @@ const CameraCapture = ({ onDone }: CameraCaptureScreenProps) => {
     return (
         <YStack flex={1}>
             <YStack flex={1} height={screenHeight - MENU_BAR_HEIGHT}>
-                <Camera ref={cameraRef} style={{ flex: 1, width: '100%', height: '100%' }} device={device} isActive={true} photo={true} />
+                <Camera ref={cameraRef} style={{ flex: 1, width: '100%', height: '100%' }} device={device} isActive={cameraActive} photo={true} />
             </YStack>
             <YStack width='100%' height={MENU_BAR_HEIGHT} bg='$background' py='$3' space='$4' borderTopWidth={1} borderColor='$borderColorWithShadow'>
                 <XStack ai='center' jc='space-between' px='$4'>

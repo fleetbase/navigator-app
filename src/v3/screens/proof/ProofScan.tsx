@@ -26,7 +26,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { AccessibilityInfo, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Secondary } from '../../ui/Text';
@@ -42,9 +42,10 @@ import { useOrder } from '../../data/useOrders';
 import { payloadOf, trackingNumberOf } from '../../data/accessors';
 import { matchScan, parseScanCode, scanIdentityOf, scanItemsOf, scanLabelOf, scanSubjectOf, scanTextOf, type ScanItem } from '../../data/scanCode';
 import { formatClock } from '../../format';
-import { CameraProblem, DrawerHandleRow, GlassAction, GlassButton, GlassLine, MessageCard, PrimaryAction, ProgressPill, Rise, ScannedCard, ScannedStrip, TypeCodeSheet, type MessageLine } from './parts';
+import { CameraProblem, CameraSlow, DrawerHandleRow, GlassAction, GlassButton, GlassLine, MessageCard, PrimaryAction, ProgressPill, Rise, ScannedCard, ScannedStrip, TypeCodeSheet, type MessageLine } from './parts';
 
-type CameraState = 'ready' | 'denied' | 'unavailable';
+/** Where the camera has got to, as the scanner tells it (components/QrCodeScanner). */
+type CameraState = 'starting' | 'ready' | 'stalled' | 'denied' | 'unavailable';
 
 /*
  * Loaded only when this screen is: VisionCamera initialises its native module
@@ -58,7 +59,7 @@ const lazyScanner = () =>
         scanCooldown?: number;
         torch?: boolean;
         onTorchAvailable?: (available: boolean) => void;
-        onCameraState?: (state: CameraState) => void;
+        onCameraState?: (state: CameraState, detail?: string) => void;
     }>;
 
 interface ScanProblem {
@@ -95,8 +96,27 @@ const SAVED_MS = 4000;
 const FRAME_WIDTH = 300;
 const FRAME_HEIGHT = 190;
 const FRAME_RADIUS = 22;
-/** The dimming is one very thick border round the frame, so its inner corners are the frame's. */
-const DIM = 1600;
+/** The scan frame is never narrower than this, whatever the window says it measures. */
+const FRAME_MIN_WIDTH = 160;
+
+/**
+ * The dimming outside the scan frame, as one path: the whole screen with the
+ * frame's rounded rectangle cut out of it (even-odd).
+ *
+ * It was a view with a 1600-point border. On iOS a translucent border on a view
+ * that does not clip is not drawn by the layer: React Native paints it into a
+ * bitmap as wide as the border and the corner together, here about 3245 points
+ * square, which at three pixels a point is several hundred megabytes, made on
+ * the main thread as the screen opens. A path the size of the screen is not.
+ */
+function dimPath(width: number, height: number, x: number, y: number, w: number, h: number, r: number): string {
+    const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+    return (
+        `M0 0H${width}V${height}H0Z` +
+        `M${x + radius} ${y}H${x + w - radius}A${radius} ${radius} 0 0 1 ${x + w} ${y + radius}V${y + h - radius}A${radius} ${radius} 0 0 1 ${x + w - radius} ${y + h}` +
+        `H${x + radius}A${radius} ${radius} 0 0 1 ${x} ${y + h - radius}V${y + radius}A${radius} ${radius} 0 0 1 ${x + radius} ${y}Z`
+    );
+}
 
 export interface ProofScanProps {
     orderId: string;
@@ -165,6 +185,20 @@ export function ProofScan({ orderId, activityCode, activityLabel, expected, subj
     const [torch, setTorch] = useState(false);
     const [torchAvailable, setTorchAvailable] = useState(false);
     const [camera, setCamera] = useState<CameraState | null>(null);
+    /** Why the camera stalled, when it gave a reason: shown small, so it can be reported. */
+    const [cameraDetail, setCameraDetail] = useState<string | undefined>(undefined);
+    /** Changed to mount the camera afresh ("Try again"). */
+    const [cameraRound, setCameraRound] = useState(0);
+    const onCameraState = useCallback((state: CameraState, detail?: string) => {
+        setCamera(state);
+        setCameraDetail(state === 'stalled' ? detail : undefined);
+    }, []);
+    const restartCamera = useCallback(() => {
+        setCamera(null);
+        setCameraDetail(undefined);
+        setTorch(false);
+        setCameraRound((round) => round + 1);
+    }, []);
 
     const sendingRef = useRef(false);
     const alive = useRef(true);
@@ -406,12 +440,18 @@ export function ProofScan({ orderId, activityCode, activityLabel, expected, subj
     const actLabel = total > 0 && allScanned ? t('proof.scan.complete') : pendingScans || !takenScans ? (total > 0 ? t('proof.scan.sendSome', { scanned: countedScans, total }) : t('proof.submitScan', { count: pendingScans })) : t('proof.scan.continue');
 
     const cameraUnusable = camera === 'denied' || camera === 'unavailable';
+    /** Allowed, in front, and still no picture after a few seconds (or it reported an error). */
+    const cameraStalled = camera === 'stalled';
+    /** Not yet giving a picture: said, so the dark behind the frame is never unexplained. */
+    const cameraStarting = camera === 'starting';
+    /** The frame and its instruction give way to a message about the camera. */
+    const cameraAside = cameraUnusable || cameraStalled;
 
     /* -- Layout, from the mockup's 390 by 844. ----------------------------------- */
 
     const top = Math.max(insets.top, 16) + 1;
     const compact = height < 720;
-    const frameWidth = Math.min(compact ? 260 : FRAME_WIDTH, width - 90);
+    const frameWidth = Math.max(FRAME_MIN_WIDTH, Math.min(compact ? 260 : FRAME_WIDTH, width - 90));
     const frameHeight = Math.round((frameWidth * FRAME_HEIGHT) / FRAME_WIDTH);
     const frameLeft = Math.round((width - frameWidth) / 2);
     const frameTop = top + (compact ? 104 : 128);
@@ -530,28 +570,29 @@ export function ProofScan({ orderId, activityCode, activityLabel, expected, subj
 
             {/* The camera fills the screen, under the status bar. `frame={false}`: the one scan frame is drawn below. */}
             <View style={StyleSheet.absoluteFill} testID="proof-scan">
-                <Scanner onScan={onRead} frame={false} scanCooldown={1500} torch={torch} onTorchAvailable={setTorchAvailable} onCameraState={setCamera} />
+                {/* `key`: "Try again" mounts the camera afresh. It runs only while this screen is in front (see the scanner). */}
+                <Scanner key={cameraRound} onScan={onRead} frame={false} scanCooldown={1500} torch={torch} onTorchAvailable={setTorchAvailable} onCameraState={onCameraState} />
             </View>
 
-            {cameraUnusable ? null : (
+            {cameraAside ? null : (
                 <>
-                    {/* Everything outside the frame is dimmed: one thick border, so the opening has the frame's round corners. */}
-                    <View
-                        pointerEvents="none"
-                        style={{
-                            position: 'absolute',
-                            left: frameLeft - DIM,
-                            top: frameTop - DIM,
-                            width: frameWidth + DIM * 2,
-                            height: frameHeight + DIM * 2,
-                            borderWidth: DIM,
-                            borderRadius: FRAME_RADIUS + DIM,
-                            borderColor: onCamera.dim,
-                        }}
-                    />
+                    {/* Everything outside the frame is dimmed: one path with the frame cut out, so the opening has the frame's round corners. */}
+                    {width > 0 && height > 0 ? (
+                        <View pointerEvents="none" style={styles.dim}>
+                            <Svg width={width} height={height}>
+                                <Path d={dimPath(width, height, frameLeft, frameTop, frameWidth, frameHeight, FRAME_RADIUS)} fill={onCamera.dim} fillRule="evenodd" />
+                            </Svg>
+                        </View>
+                    ) : null}
                     <View pointerEvents="none" style={{ position: 'absolute', left: frameLeft, top: frameTop }}>
                         <ScanFrame width={frameWidth} height={frameHeight} tone={notice ? notice.kind : 'idle'} readLabel={t('proof.scan.read')} testID="proof-scan-frame" />
                     </View>
+                    {cameraStarting ? (
+                        // In the frame, where the picture is about to be: the camera has not shown one yet.
+                        <YStack position="absolute" left={16} right={16} top={frameTop + Math.round(frameHeight / 2) - 18} alignItems="center" pointerEvents="none">
+                            <GlassLine testID="proof-camera-starting">{t('proof.scan.camera.starting')}</GlassLine>
+                        </YStack>
+                    ) : null}
                 </>
             )}
 
@@ -572,7 +613,7 @@ export function ProofScan({ orderId, activityCode, activityLabel, expected, subj
             <XStack position="absolute" left={16} right={16} top={top} height={48} alignItems="center" justifyContent="space-between" gap={10} pointerEvents="box-none">
                 <GlassButton icon="close" label={t('proof.scan.close')} onPress={() => (leavingWith.current ? finishScans() : onCancel?.())} testID="proof-cancel" />
                 <ProgressPill scanned={scannedOfList} total={total} text={progressText} label={progressLabel} testID="proof-progress" />
-                {torchAvailable && !cameraUnusable ? (
+                {torchAvailable && !cameraAside ? (
                     <GlassButton icon="torch" label={t(torch ? 'proof.scan.torchOff' : 'proof.scan.torchOn')} on={torch} onPress={() => setTorch((lit) => !lit)} testID="proof-torch" />
                 ) : (
                     // Keeps the pill in the middle on a phone with no light.
@@ -598,6 +639,11 @@ export function ProofScan({ orderId, activityCode, activityLabel, expected, subj
                 // No camera to scan with: what to do about it, and typing still open.
                 <YStack position="absolute" left={0} right={0} top={frameTop}>
                     <CameraProblem denied={camera === 'denied'} onType={openTyping} testID="proof-camera-problem" />
+                </YStack>
+            ) : cameraStalled ? (
+                // The camera has not started: said, with a way to start it again and typing still open.
+                <YStack position="absolute" left={0} right={0} top={frameTop}>
+                    <CameraSlow detail={cameraDetail} onRetry={restartCamera} onType={openTyping} testID="proof-camera-slow" />
                 </YStack>
             ) : (
                 // One instruction, and the way out for a damaged label.
@@ -715,6 +761,7 @@ export function ProofScan({ orderId, activityCode, activityLabel, expected, subj
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: onCamera.ground, overflow: 'hidden' },
     fade: { position: 'absolute', left: 0, right: 0, top: 0 },
+    dim: { position: 'absolute', left: 0, top: 0 },
     drawerShadow: { shadowColor: '#000000', shadowOpacity: 0.5, shadowRadius: 18, shadowOffset: { width: 0, height: -14 } },
 });
 

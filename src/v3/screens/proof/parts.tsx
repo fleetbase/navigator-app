@@ -411,6 +411,41 @@ export function CameraProblem({ denied, onType, testID }: { denied: boolean; onT
     );
 }
 
+/**
+ * Shown in place of the scan frame when the camera is allowed and in front and
+ * still has not given a picture after a few seconds, or has reported an error.
+ * It turns a black screen into something the driver can act on: start the
+ * camera again, or type the code. `detail` is the camera's own reason when it
+ * gave one, small, so it can be read out when the fault is reported.
+ */
+export function CameraSlow({ detail, onRetry, onType, testID }: { detail?: string; onRetry: () => void; onType: () => void; testID?: string }) {
+    const { t } = useTranslation();
+    return (
+        <YStack alignItems="center" gap={14} paddingHorizontal={24} testID={testID}>
+            <YStack width={64} height={64} borderRadius={32} alignItems="center" justifyContent="center" backgroundColor={onCamera.calmIcon} borderWidth={1} borderColor={onCamera.quietBorder}>
+                <ProofIcon name="cameraOff" size={30} color={onCamera.textSoft} />
+            </YStack>
+            <YStack alignItems="center" gap={6} accessible accessibilityRole="alert" accessibilityLiveRegion="polite">
+                <Body fontSize={19} lineHeight={24} fontWeight="800" letterSpacing={-0.19} color={onCamera.text} center>
+                    {t('proof.scan.camera.slowTitle')}
+                </Body>
+                <Body fontSize={14} lineHeight={19} color={onCamera.textSoft} center>
+                    {t('proof.scan.camera.slowBody')}
+                </Body>
+                {detail ? (
+                    <Body fontFamily="$mono" fontSize={12} lineHeight={16} color={onCamera.textFaint} center testID={testID ? `${testID}-detail` : undefined}>
+                        {detail}
+                    </Body>
+                ) : null}
+            </YStack>
+            <YStack alignSelf="stretch" gap={10} paddingTop={4}>
+                <GlassAction icon="retry" label={t('proof.scan.camera.slowRetry')} onPress={onRetry} testID="proof-camera-retry" />
+                <GlassAction icon="keyboard" label={t('proof.scan.camera.typeCode')} onPress={onType} testID="proof-camera-type" />
+            </YStack>
+        </YStack>
+    );
+}
+
 /* -- The drawer's handle row (a surface of the app: theme tokens). -------------- */
 
 /** How many item marks the handle draws before the words alone say it. */

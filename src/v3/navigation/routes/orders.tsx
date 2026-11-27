@@ -7,7 +7,7 @@ import OrderTimelineScreen from '../../screens/OrderTimelineScreen';
 import ProofCaptureScreen from '../../screens/ProofCaptureScreen';
 import DestinationScreen from '../../screens/DestinationScreen';
 import OffersScreen from '../../screens/OffersScreen';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useShell } from '../DriverShell';
 import { useSync } from '../../shell/SyncContext';
@@ -57,6 +57,23 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
     );
     // Navigate opens the choice of app as a sheet over the order.
     const handoff = useNavigationHandoffSheet();
+    /*
+     * One confirmation opens the proof screen once. A second request that comes
+     * while this screen is no longer the one in front (the proof screen is
+     * already opening over it), or straight after the first, is let go: two
+     * proof screens would be two cameras, and the second one shows black.
+     */
+    const proofOpenedAt = useRef(0);
+    const openProof = useCallback(
+        (request: object) => {
+            const now = Date.now();
+            const focused = (navigation as { isFocused?: () => boolean }).isFocused?.() ?? true;
+            if (!focused || now - proofOpenedAt.current < 1000) return;
+            proofOpenedAt.current = now;
+            navigation.navigate('ProofCapture', request);
+        },
+        [navigation]
+    );
     return (
         <>
         <OrderDetailScreen
@@ -73,7 +90,7 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             // While the footer shows its slide to confirm, the system's swipe back (which starts at
             // the same edge of the screen as the slide) is off, so the slide is not taken for it.
             onConfirmingChange={(confirming) => (navigation as { setOptions?: (options: object) => void }).setOptions?.({ gestureEnabled: !confirming })}
-            onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
+            onCaptureProof={openProof}
             onChangeDestination={() => navigation.navigate('Destination', { orderId })}
             // The order's activity history opens in a sheet over the order now, so there is no timeline to navigate to from here.
             // The order's chat with dispatch (asked for from the server, which starts it when needed) and the customer's thread open here.

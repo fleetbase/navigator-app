@@ -1770,7 +1770,11 @@
                 "openSettings": "Open Settings",
                 "unavailableTitle": "The camera could not be started",
                 "unavailableBody": "You can type the code printed on each label instead.",
-                "typeCode": "Type the code"
+                "typeCode": "Type the code",
+                "starting": "Starting the camera…",
+                "slowTitle": "The camera is taking a while to start",
+                "slowBody": "Try again, or type the code printed on each label.",
+                "slowRetry": "Try again"
             },
             "failure": {
                 "mismatch": "The server did not accept %{code}: it is not the label of an item on this order.",
