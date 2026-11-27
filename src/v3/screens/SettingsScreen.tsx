@@ -313,32 +313,13 @@ export function SettingsScreen({ trackingEnabled = true, onEnableTracking, onSen
                         <Body flex={1} fontSize={15} fontWeight="800">
                             {t('me.distance')}
                         </Body>
-                        <XStack gap={4} padding={4} borderRadius={14} backgroundColor="$surfaceRaised" accessibilityRole="radiogroup" accessibilityLabel={t('me.distance')} testID="units">
-                            {UNIT_OPTIONS.map((option) => {
-                                const selected = settings.units === option.value;
-                                return (
-                                    <XStack
-                                        key={option.value}
-                                        width={68}
-                                        height={36}
-                                        alignItems="center"
-                                        justifyContent="center"
-                                        borderRadius={10}
-                                        backgroundColor={selected ? '$textPrimary' : '$transparent'}
-                                        onPress={() => set('units', option.value)}
-                                        // 36 high inside a 60 row; the slop makes the target the row.
-                                        hitSlop={{ top: 10, bottom: 10 }}
-                                        accessibilityRole="radio"
-                                        accessibilityState={{ selected }}
-                                        testID={`units-${option.value}`}
-                                    >
-                                        <Body fontSize={14} fontWeight={selected ? '800' : '700'} color={selected ? '$background' : '$textSecondary'} numberOfLines={1}>
-                                            {t(option.labelKey)}
-                                        </Body>
-                                    </XStack>
-                                );
-                            })}
-                        </XStack>
+                        {/* The organisation's choice (its routing settings), so it is shown, not offered. */}
+                        <YStack alignItems="flex-end" gap={1} testID="units">
+                            <Body fontSize={15} fontWeight="700">
+                                {t(settings.units === 'imperial' ? 'me.unitMiles' : 'me.unitKm')}
+                            </Body>
+                            <Micro>{t('settings.unitsSetByOrganisation')}</Micro>
+                        </YStack>
                     </XStack>
                 </Card>
             </Section>

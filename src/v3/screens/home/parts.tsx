@@ -48,7 +48,7 @@ export function Rise({ delay = 0, children }: { delay?: number; children: React.
 
 /* -- Icons ----------------------------------------------------------------- */
 
-export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick' | 'issue' | 'box' | 'cash' | 'pen' | 'note' | 'calendar' | 'camera' | 'scan';
+export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick' | 'issue' | 'box' | 'cash' | 'pen' | 'note' | 'calendar' | 'camera' | 'scan' | 'clock';
 
 const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     power: ['M12 3v9', 'M6.3 7.5a8 8 0 1 0 11.4 0'],
@@ -68,6 +68,7 @@ const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     calendar: ['M4 6h16v14H4z', 'M4 10h16', 'M8 3v4', 'M16 3v4'],
     camera: ['M4 8h3l2-3h6l2 3h3v11H4z', 'M12 16.500a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7z'],
     scan: ['M4 8V5h3', 'M17 5h3v3', 'M20 16v3h-3', 'M7 19H4v-3', 'M8 9v6', 'M12 9v6', 'M16 9v6'],
+    clock: ['M12 20.500a8.500 8.500 0 1 0 0-17 8.500 8.500 0 0 0 0 17z', 'M12 7.500V12l3 2'],
     fuel: ['M5 20V5h9v15', 'M4 20h11', 'M7 9h5', 'M14 11h3v6a1.5 1.5 0 0 0 3 0V9l-3-3'],
 };
 

@@ -5,7 +5,9 @@
  * The strip sits below the header so it pushes content rather than covering the
  * duty control, and renders nothing at all when there is nothing to say.
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigatorSettings } from '../data/useNavigatorSettings';
+import { settingsStore } from '../settings/settingsStore';
 import { SheetModal } from '../ui/SheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
@@ -80,6 +82,11 @@ export function DriverShell({
     );
 
     const [bleedTop, setBleedTop] = useState(false);
+    // Kilometres or miles is the organisation's choice (FleetOps → Settings → Routing), so the app shows distances as the console does.
+    const { distanceUnit } = useNavigatorSettings(organizationId);
+    useEffect(() => {
+        if (distanceUnit && settingsStore.getState().units !== distanceUnit) settingsStore.set('units', distanceUnit);
+    }, [distanceUnit]);
     const [orgSheetOpen, setOrgSheetOpen] = useState(false);
     const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), openOrgSheet: () => setOrgSheetOpen(true), setBleedTop }), [organizationName, subtitle]);
     /*

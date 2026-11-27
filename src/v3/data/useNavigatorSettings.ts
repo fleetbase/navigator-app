@@ -11,6 +11,8 @@ import { useFleetbase } from '../api';
 export interface NavigatorSettings {
     /** Whether drivers see what an order is charged at (its service rate). */
     showServiceRate: boolean;
+    /** The organisation's routing distance unit; undefined until the server says. */
+    distanceUnit?: 'metric' | 'imperial';
 }
 
 export const DEFAULT_NAVIGATOR_SETTINGS: NavigatorSettings = { showServiceRate: true };
@@ -31,8 +33,11 @@ export function useNavigatorSettings(organizationId?: string): NavigatorSettings
         adapter
             .get('navigator/settings')
             .then((raw) => {
-                const body = ((raw as { data?: unknown })?.data ?? raw) as { show_service_rate?: unknown };
-                const next: NavigatorSettings = { showServiceRate: body?.show_service_rate !== false };
+                const body = ((raw as { data?: unknown })?.data ?? raw) as { show_service_rate?: unknown; distance_unit?: unknown };
+                const next: NavigatorSettings = {
+                    showServiceRate: body?.show_service_rate !== false,
+                    distanceUnit: body?.distance_unit === 'mi' ? 'imperial' : body?.distance_unit === 'km' ? 'metric' : undefined,
+                };
                 cached = { key, settings: next };
                 if (live) setSettings(next);
             })

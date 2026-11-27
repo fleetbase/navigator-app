@@ -1147,7 +1147,10 @@
             "title": "Nothing assigned right now",
             "body": "You're online, so dispatch can see you're available. New work appears here as soon as it is assigned.",
             "bodyOffers": "You're online, and there is work nearby you can take.",
-            "onlineFor": "Online for %{duration} today"
+            "onlineFor": "Online %{duration}",
+            "headline": "You're online",
+            "waiting": "Waiting for work",
+            "offersNearby": "There is work nearby you can take"
         },
         "end": {
             "finished": "All waypoints done",
@@ -1270,6 +1273,7 @@
         }
     },
     "settings": {
+        "unitsSetByOrganisation": "Set by your organisation",
         "alerts": {
             "title": "Tell me about",
             "new_work": "New work",

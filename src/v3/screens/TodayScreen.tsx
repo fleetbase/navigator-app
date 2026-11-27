@@ -33,7 +33,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderNotices } from './jobs/OrderNotices';
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useWindowDimensions } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { XStack, YStack, useTheme } from 'tamagui';
@@ -116,6 +116,15 @@ const CHIPS_ROOM = 56;
 const PEEK_BODY = 128;
 /** The gap between the sheet's blocks. */
 const SHEET_GAP = 14;
+
+/** Time online in hours and minutes, without seconds: "2 h 14 min", "14 min". */
+function formatOnline(seconds: number): string {
+    const minutes = Math.floor(Math.max(0, seconds) / 60);
+    if (minutes < 1) return '<1 min';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`;
+}
 
 /** The hero's text: an eyebrow, a title, and whatever lines there are under it. */
 function HeroText({ eyebrow, eyebrowTone = 'brand', title, lines = [], mono, titleTestID = 'home-next-name' }: { eyebrow: string; eyebrowTone?: 'brand' | 'success' | 'muted'; title: string; lines?: (string | undefined)[]; mono?: string; titleTestID?: string }) {
@@ -283,6 +292,13 @@ export function TodayScreen({
         return { comingUp: upcoming, lastJob: finished };
     }, [allOrders]);
 
+    // A clock that moves every half minute, so the time online counts up while the screen is open.
+    const [clock, setClock] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = setInterval(() => setClock(Date.now()), 30_000);
+        return () => clearInterval(timer);
+    }, []);
+
     /* -- Refresh ------------------------------------------------------------ */
 
     const [pulling, setPulling] = useState(false);
@@ -437,7 +453,7 @@ export function TodayScreen({
     const itemCount = (order?: (typeof allOrders)[number]) => (order ? (payloadOf(order).entities?.length ?? 0) : 0);
 
     // How long the driver has been online today, as the server recorded it.
-    const onlineSecondsNow = onDuty ? secondsOnDuty(todaySummary, summaryAt) : undefined;
+    const onlineSecondsNow = onDuty ? secondsOnDuty(todaySummary, summaryAt, clock) : undefined;
 
     if (cold) {
         state = 'loading';
@@ -713,16 +729,30 @@ export function TodayScreen({
     } else {
         // Nothing assigned. Online, that is news dispatch can act on; offline, the way online is the action.
         state = 'empty';
-        hero = (
+        hero = onDuty ? (
+            // Online and waiting: the headline, and a chip counting the time online today.
+            <XStack alignItems="center" justifyContent="space-between" gap={space[3]} testID="today-empty">
+                <YStack flex={1} gap={2} minWidth={0}>
+                    <Body fontSize={24} lineHeight={28} fontWeight="800" numberOfLines={1} testID="home-empty-title">
+                        {t('home.empty.headline')}
+                    </Body>
+                    <Secondary fontSize={14} lineHeight={19} numberOfLines={2}>
+                        {offers.length ? t('home.empty.offersNearby') : t('home.empty.waiting')}
+                    </Secondary>
+                </YStack>
+                {onlineSecondsNow ? (
+                    <XStack flexShrink={0} alignItems="center" gap={7} height={32} paddingHorizontal={12} borderRadius={16} borderWidth={1} borderColor="$successBorder" backgroundColor="$successFill" testID="home-online-for">
+                        <HomeIcon name="clock" color={theme.successText?.val as string} size={14} />
+                        <Body fontSize={13} lineHeight={17} fontWeight="700" tabular tone="success" numberOfLines={1}>
+                            {t('home.empty.onlineFor', { duration: formatOnline(onlineSecondsNow) })}
+                        </Body>
+                    </XStack>
+                ) : null}
+            </XStack>
+        ) : (
             <XStack alignItems="flex-start" gap={space[3]} testID="today-empty">
-                <HeroBadge icon={onDuty ? 'tick' : 'power'} tone={onDuty ? 'success' : 'neutral'} />
-                <HeroText
-                    eyebrowTone={onDuty ? 'success' : 'muted'}
-                    eyebrow={onDuty ? t('home.empty.eyebrow') : t('home.before.today')}
-                    title={onDuty ? t('home.empty.title') : t('home.before.nothingTitle')}
-                    lines={[onDuty ? (offers.length ? t('home.empty.bodyOffers') : t('home.empty.body')) : t('home.before.nothingBody'), onDuty && onlineSecondsNow ? t('home.empty.onlineFor', { duration: formatDuration(onlineSecondsNow) }) : undefined]}
-                    titleTestID="home-empty-title"
-                />
+                <HeroBadge icon="power" tone="neutral" />
+                <HeroText eyebrowTone="muted" eyebrow={t('home.before.today')} title={t('home.before.nothingTitle')} lines={[t('home.before.nothingBody')]} titleTestID="home-empty-title" />
             </XStack>
         );
         actions = onDuty ? null : (
@@ -756,11 +786,13 @@ export function TodayScreen({
                     today: weekDay.isToday,
                 };
             });
+            // Today's time online keeps counting past what the server last said.
+            const liveExtra = week.days[week.days.length - 1]?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0;
             const weekStats: Stat[] = [
                 { key: 'week-waypoints', value: String(week.totals.waypoints), label: t('home.week.waypoints', { count: week.totals.waypoints }) },
-                ...(week.totals.distanceM > 0 ? [{ key: 'week-driven', value: formatMeters(week.totals.distanceM, units), label: t('home.week.driven') }] : []),
-                ...(week.totals.seconds > 0 ? [{ key: 'week-online', value: formatDuration(week.totals.seconds), label: t('home.week.online') }] : []),
-            ];
+                { key: 'week-driven', value: week.totals.distanceM > 0 ? formatMeters(week.totals.distanceM, units) : units === 'imperial' ? '0 mi' : '0 km', label: t('home.week.driven') },
+                { key: 'week-online', value: formatDuration(week.totals.seconds + (week.days[week.days.length - 1]?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0)), label: t('home.week.online') },
+            ].map((stat) => (stat.key === 'week-online' ? { ...stat, value: formatOnline(week.totals.seconds + liveExtra) } : stat));
             const lastStamp = lastJob ? String((lastJob as Record<string, unknown>).updated_at ?? '') : '';
             extras = (
                 <>
