@@ -671,7 +671,7 @@ export function TodayScreen({
 
             {/* Fixed over the map; the sheet never reaches them. */}
             <XStack position="absolute" top={bleed} left={space[3] - 2} right={space[3] - 2} alignItems="flex-start" justifyContent="space-between" gap={space[2]} pointerEvents="box-none" testID="home-header">
-                <OrgChip name={organizationName} dark={dark} onPress={onOpenOrganizations ?? openOrgSheet} />
+                <OrgChip name={organizationName} dark={dark} onPress={openOrgSheet} />
                 <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
             </XStack>
 
@@ -713,6 +713,10 @@ export function TodayScreen({
             >
                 <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
+                    // Content that fits stays still; only content taller than the sheet scrolls, and it does not bounce.
+                    bounces={false}
+                    alwaysBounceVertical={false}
+                    overScrollMode="never"
                     contentContainerStyle={{ paddingHorizontal: space[4], paddingTop: 6, paddingBottom: tabBarSpace + space[2], gap: SHEET_GAP }}
                     testID={`home-sheet-${state}`}
                 >
