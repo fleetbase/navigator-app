@@ -805,7 +805,9 @@
         "warning": "Switching signs you in again for the new organisation. Anything not yet synced is sent first.",
         "noneTitle": "No organisations",
         "noneBody": "This driver is not attached to an organisation. Ask dispatch to add you to one.",
-        "switchFailed": "Could not switch organisation"
+        "switchFailed": "Could not switch organisation",
+        "loadFailed": "Your organisations could not be loaded.",
+        "tapToSwitch": "Tap to switch to this organisation"
     },
     "profile": {
         "title": "Your details",
@@ -1144,7 +1146,8 @@
             "eyebrow": "You're online",
             "title": "Nothing assigned right now",
             "body": "You're online, so dispatch can see you're available. New work appears here as soon as it is assigned.",
-            "bodyOffers": "You're online, and there is work nearby you can take."
+            "bodyOffers": "You're online, and there is work nearby you can take.",
+            "onlineFor": "Online for %{duration} today"
         },
         "end": {
             "finished": "All waypoints done",

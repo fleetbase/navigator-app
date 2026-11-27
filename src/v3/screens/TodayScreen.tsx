@@ -436,6 +436,9 @@ export function TodayScreen({
     };
     const itemCount = (order?: (typeof allOrders)[number]) => (order ? (payloadOf(order).entities?.length ?? 0) : 0);
 
+    // How long the driver has been online today, as the server recorded it.
+    const onlineSecondsNow = onDuty ? secondsOnDuty(todaySummary, summaryAt) : undefined;
+
     if (cold) {
         state = 'loading';
     } else if (failed) {
@@ -717,7 +720,7 @@ export function TodayScreen({
                     eyebrowTone={onDuty ? 'success' : 'muted'}
                     eyebrow={onDuty ? t('home.empty.eyebrow') : t('home.before.today')}
                     title={onDuty ? t('home.empty.title') : t('home.before.nothingTitle')}
-                    lines={[onDuty ? (offers.length ? t('home.empty.bodyOffers') : t('home.empty.body')) : t('home.before.nothingBody')]}
+                    lines={[onDuty ? (offers.length ? t('home.empty.bodyOffers') : t('home.empty.body')) : t('home.before.nothingBody'), onDuty && onlineSecondsNow ? t('home.empty.onlineFor', { duration: formatDuration(onlineSecondsNow) }) : undefined]}
                     titleTestID="home-empty-title"
                 />
             </XStack>

@@ -128,7 +128,7 @@ export function DriverShell({
             </SheetModal>
 
             <SheetModal visible={orgSheetOpen} onClose={() => setOrgSheetOpen(false)} testID="org-modal">
-                <YStack paddingBottom={Math.max(insets.bottom, space[4])} backgroundColor="$surface" borderTopLeftRadius={26} borderTopRightRadius={26}>
+                <YStack paddingBottom={Math.max(insets.bottom, space[4])} paddingHorizontal={space[3]} backgroundColor="$transparent">
                     <OrgSheet visible={orgSheetOpen} driverId={driverId} currentOrganizationId={organizationId} onSwitched={onOrganizationSwitched} onDismiss={() => setOrgSheetOpen(false)} />
                 </YStack>
             </SheetModal>
