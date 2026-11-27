@@ -1851,6 +1851,50 @@
             "withdrawn": "This offer is no longer available.",
             "acceptFailed": "Could not accept this offer. Check your connection and try again.",
             "declineFailed": "Could not decline this offer. Check your connection and try again."
+        },
+        "deck": {
+            "count": "Offer %{number} of %{total}",
+            "next": "Next · offer %{number} of %{total}",
+            "open": {
+                "one": "%{count} offer open",
+                "other": "%{count} offers open"
+            },
+            "leftToDecide": "left to decide",
+            "timeToDecide": "%{time} left to decide",
+            "toPickup": "to pickup",
+            "trip": "trip",
+            "waypoints": {
+                "one": "waypoint",
+                "other": "waypoints"
+            },
+            "items": {
+                "one": "item",
+                "other": "items"
+            },
+            "itemCount": {
+                "one": "%{count} item",
+                "other": "%{count} items"
+            },
+            "waypointCount": {
+                "one": "%{count} waypoint",
+                "other": "%{count} waypoints"
+            },
+            "collect": "Collect %{amount}",
+            "firstWins": "First driver to accept gets it",
+            "swipeHint": "Swipe the card, or use the buttons",
+            "accepted": "It's yours",
+            "opening": "Opening the order…",
+            "takenTitle": "Taken by another driver",
+            "expiredTitle": "Offer expired",
+            "expiredBody": "Nothing was accepted.",
+            "nextOffer": "Next",
+            "tagTaken": "Taken",
+            "tagYours": "Yours",
+            "pin": "Offer %{number}. %{place}. Bring this offer to the top",
+            "pinTop": "Offer %{number}, on top of the deck. %{place}",
+            "fromYou": "%{distance} from you",
+            "tripLength": "%{distance} trip",
+            "noTimeLimit": "no time limit"
         }
     },
     "route": {

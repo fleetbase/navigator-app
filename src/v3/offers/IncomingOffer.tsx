@@ -1,6 +1,6 @@
 /**
  * The incoming offer: a job offered to this driver rises over whatever screen
- * they are on, with accept and decline on it.
+ * they are on, as the offers deck over its map (`OfferDeck`).
  *
  * Before this existed an offer only lit the Offers button on Jobs. A driver on
  * Home, in a chat or on an order never saw it, and an offer made to them alone
@@ -20,68 +20,41 @@
  * A job that was already listed for everyone when the app opened is left on the
  * Offers screen until the server rings about it again.
  *
- * **One at a time.** The newest raised offer is shown; the rest are a count and
- * a way to the Offers screen. The offer on screen is not swapped for a newer one
+ * **What is shown.** The deck, with the offer that raised it on top and every
+ * other open offer behind it. The offer on top is not swapped for a newer one
  * while the driver is looking at it, because Accept must never change meaning
- * under a thumb. When the sheet closes the others are left on the Offers screen
- * rather than raised one after another; the next offer the server rings about
- * raises it again.
+ * under a thumb: a newer one joins the back of the deck. The phone gives one
+ * short vibration per offer when it arrives.
  *
- * **Answering.** Accept and decline are the same calls the Offers screen makes
+ * **Answering.** Accept and decline are the calls the Offers screen makes
  * (`orders/{id}/start`, `orders/{id}/decline`), with the same rule: never
- * queued. "Not now" puts the sheet away and declines nothing; the offer stays on
- * the Offers screen. An offer that runs out or is taken back while it is on
- * screen says so and closes.
+ * queued. The round close button (and Android's back) puts the deck away and
+ * declines nothing; the offers stay on the Offers screen, and the next offer the
+ * server rings about raises the deck again. When the Offers screen is already in
+ * front, nothing is raised: the driver is looking at the same deck.
  *
  * **Drawn in the tree, not in a `Modal`.** iOS presents one native modal at a
  * time: a second one asked for while a sheet or the item pager is open is
  * dropped without a word, and an offer must not be the thing that is dropped.
- * So this is an ordinary view laid over the app, with the same motion as
- * `SheetModal` (the dimming fades, only the sheet slides). The cost is that a
- * native modal already open stays in front of it until it is closed.
+ * So this is an ordinary view laid over the whole app, tab bar included. The
+ * cost is that a native modal already open stays in front of it until it is
+ * closed; it is not disturbed.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, BackHandler, Easing, Keyboard, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Heading, Secondary } from '../ui/Text';
-import { Identifier } from '../ui/Identifier';
-import { Surface, Divider } from '../ui/Surface';
-import { Button } from '../ui/Button';
-import { Banner } from '../ui/Banner';
-import { radius, space } from '../theme/tokens';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, AppState, Easing, Keyboard, Platform, StyleSheet, Vibration } from 'react-native';
 import { useTranslation } from '../i18n/useTranslation';
-import { useSettings } from '../settings';
-import { useDeviceLocation, useDuty } from '../shell';
+import { useDuty } from '../shell';
 import { useOfferSignals } from '../realtime/offerSignals';
-import { useOffers, useAcceptOffer, useDeclineOffer, secondsLeft } from '../data/useOffers';
-import { trackingNumberOf } from '../data/accessors';
-import { haversineM } from '../data/routeGeo';
-import { formatMeters } from '../format';
-import { navigateWhenReady, navigationRef, openOrder } from '../navigation/navigationRef';
-import { orderPoints, type OrderPoint } from '../screens/jobs/model';
+import { useOffers, secondsLeft } from '../data/useOffers';
+import { openOrder } from '../navigation/navigationRef';
 import type { OrderRecord } from '../data/orderStore';
+import { OfferDeck } from './OfferDeck';
+import { useOffersScreenOpen } from './offerModel';
+
+export { formatCountdown } from './offerModel';
 
 const IN_MS = 240;
 const OUT_MS = 180;
-/** How far below its resting place the sheet starts, as in `SheetModal`. */
-const TRAVEL = 360;
-/** How long "this offer ran out" stays up before the sheet closes by itself. */
-const ENDED_MS = 4000;
-
-/** Why the offer on screen is over. */
-type Ended = 'expired' | 'withdrawn' | 'taken';
-
-type T = (key: string, options?: Record<string, unknown>) => string;
-
-export function formatCountdown(seconds: number): string {
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
-/** The Offers screen, from anywhere, with the Jobs list beneath it. */
-function openOffersList(): void {
-    navigateWhenReady(() => navigationRef.navigate('Orders', { screen: 'Offers', initial: false }));
-}
 
 /**
  * Which listed offer to raise, and bookkeeping for the ones already answered.
@@ -174,172 +147,98 @@ function useRaisedOffer(offers: OrderRecord[] | null, listening: boolean) {
     return { candidate, openCount: othersOpen, putAway, signals };
 }
 
+/** One short buzz for an offer that arrives while the app is open. Never throws: a phone that cannot vibrate still shows the offer. */
+function buzz(): void {
+    try {
+        if (AppState.currentState !== 'active') return;
+        // iOS has one length of vibration; Android takes a pattern, here two short beats.
+        if (Platform.OS === 'android') Vibration.vibrate([0, 160, 110, 160]);
+        else Vibration.vibrate();
+    } catch {
+        // Nothing to do.
+    }
+}
+
 /**
  * Mount once, above the tabs. Draws nothing until an offer is raised.
  */
-export function IncomingOfferHost({ driverId }: { driverId?: string }) {
+export function IncomingOfferHost({ driverId, organizationName }: { driverId?: string; organizationName?: string }) {
     const { t } = useTranslation();
-    const insets = useSafeAreaInsets();
-    const { units } = useSettings();
-    const position = useDeviceLocation();
     const { duty } = useDuty();
     // Offers are only asked for while the driver is online, as on Jobs.
     const listening = duty !== 'off' && !!driverId;
     const { offers, reload } = useOffers(listening ? driverId : undefined);
-    const { accept, isAccepting } = useAcceptOffer(driverId);
-    const { decline, isDeclining } = useDeclineOffer();
-    const { candidate, openCount, putAway, signals } = useRaisedOffer(offers, listening);
+    const { candidate, putAway } = useRaisedOffer(offers, listening);
+    const offersScreenOpen = useOffersScreenOpen();
 
-    /** The offer on screen. Kept after the sheet closes so its contents do not vanish mid-slide. */
-    const [shown, setShown] = useState<OrderRecord | null>(null);
     const [visible, setVisible] = useState(false);
-    const [shownAt, setShownAt] = useState(0);
-    const [ended, setEnded] = useState<Ended | null>(null);
-    const [problem, setProblem] = useState<string | null>(null);
-    const [now, setNow] = useState(() => Date.now());
-    const busy = isAccepting || isDeclining;
+    /** The offer that raised the deck: it starts on top. */
+    const [leadId, setLeadId] = useState<string | undefined>(undefined);
+    /** A new deck each time it is raised, so it never opens on what the last one was showing. */
+    const [session, setSession] = useState(0);
+    /** Offers already buzzed for: once each, not again while it stays listed. */
+    const buzzed = useRef(new Set<string>());
 
-    // Raise the candidate when nothing is on screen. Never swap the one the driver is reading.
+    const candidateId = candidate?.id;
     useEffect(() => {
-        if (visible || !candidate) return;
-        setShown(candidate);
-        setShownAt(Date.now());
-        setEnded(null);
-        setProblem(null);
-        setNow(Date.now());
+        if (!candidateId) return;
+        if (!buzzed.current.has(candidateId)) {
+            if (buzzed.current.size > 200) buzzed.current.clear();
+            buzzed.current.add(candidateId);
+            buzz();
+        }
+        // The Offers screen is in front: the offer has joined the deck the driver is looking at.
+        if (offersScreenOpen) {
+            putAway();
+            return;
+        }
+        // Already up: the new offer joins the back of the deck. The one on top is never swapped.
+        if (visible) return;
+        setLeadId(candidateId);
+        setSession((n) => n + 1);
         setVisible(true);
         Keyboard.dismiss();
         AccessibilityInfo.announceForAccessibility(t('offers.overlay.title'));
-    }, [candidate, visible, t]);
+    }, [candidateId, visible, offersScreenOpen, putAway, t]);
 
     const close = useCallback(() => {
         putAway();
         setVisible(false);
     }, [putAway]);
 
-    // The countdown, while there is one to show.
-    const timed = !!shown && secondsLeft(shown) !== null;
-    useEffect(() => {
-        if (!visible || !timed || ended) return undefined;
-        const tick = setInterval(() => setNow(Date.now()), 1000);
-        return () => clearInterval(tick);
-    }, [visible, timed, ended]);
-    const left = shown ? secondsLeft(shown, now) : null;
-
-    // Over: the time ran out here, the server said it closed, or the list no longer has it.
-    useEffect(() => {
-        if (!visible || !shown || ended || busy) return;
-        const closed = signals.closed[shown.id];
-        if (closed && closed.at >= shownAt) {
-            setEnded(closed.status);
-            return;
-        }
-        if (left === 0) {
-            setEnded('expired');
-            void reload();
-            return;
-        }
-        if (offers && !offers.some((order) => order.id === shown.id)) setEnded('withdrawn');
-    }, [visible, shown, ended, busy, signals, shownAt, left, offers, reload]);
-
-    // Says why for a moment, then closes by itself.
-    useEffect(() => {
-        if (!visible || !ended) return undefined;
-        const timer = setTimeout(close, ENDED_MS);
-        return () => clearTimeout(timer);
-    }, [visible, ended, close]);
-
-    const take = useCallback(async () => {
-        if (!shown) return;
-        setProblem(null);
-        const outcome = await accept(shown.id);
-        if (outcome === 'accepted') {
+    const accepted = useCallback(
+        (orderId: string) => {
             putAway();
             setVisible(false);
-            openOrder(shown.id);
+            openOrder(orderId);
             void reload();
-            return;
-        }
-        if (outcome === 'taken') {
-            setEnded('taken');
-            void reload();
-            return;
-        }
-        // Nothing is assumed: the offer stays up, still answerable.
-        setProblem(t('offers.overlay.acceptFailed'));
-    }, [shown, accept, putAway, reload, t]);
-
-    const refuse = useCallback(async () => {
-        if (!shown) return;
-        setProblem(null);
-        if (await decline(shown.id)) {
-            putAway();
-            setVisible(false);
-            void reload();
-            return;
-        }
-        setProblem(t('offers.overlay.declineFailed'));
-    }, [shown, decline, putAway, reload, t]);
-
-    const seeAll = useCallback(() => {
-        close();
-        openOffersList();
-    }, [close]);
-
-    // Android's back button puts the sheet away, as it would a modal.
-    useEffect(() => {
-        if (!visible) return undefined;
-        const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-            if (!busy) close();
-            return true;
-        });
-        return () => subscription.remove();
-    }, [visible, busy, close]);
-
-    // Other offers still open, beside the one on screen.
-    const others = Math.max(0, openCount - (shown && offers?.some((order) => order.id === shown.id) ? 1 : 0));
+        },
+        [putAway, reload]
+    );
 
     return (
-        <RisingSheet visible={visible} onDismiss={busy ? undefined : close} dismissLabel={t('offers.overlay.notNow')} bottomInset={Math.max(insets.bottom, space[4])}>
-            {shown ? (
-                <OfferSheet
-                    order={shown}
-                    left={left}
-                    ended={ended}
-                    problem={problem}
-                    others={others}
-                    position={position}
-                    units={units}
-                    isAccepting={isAccepting}
-                    isDeclining={isDeclining}
-                    onAccept={() => void take()}
-                    onDecline={() => void refuse()}
-                    onNotNow={close}
-                    onSeeAll={seeAll}
-                    t={t}
-                />
-            ) : null}
-        </RisingSheet>
+        <RisingLayer visible={visible}>
+            <OfferDeck
+                key={session}
+                mode="overlay"
+                driverId={driverId}
+                offers={offers ?? []}
+                reload={reload}
+                leadId={leadId}
+                organizationName={organizationName}
+                onPutAway={close}
+                onEmpty={close}
+                onAccepted={accepted}
+            />
+        </RisingLayer>
     );
 }
 
 /**
- * `SheetModal`'s motion without the native modal: the dimming fades in place and
- * only the sheet slides. Stays mounted until the closing animation has finished.
+ * The layer the deck is drawn in: over everything in the tree, faded in and out
+ * in place. Stays mounted until the closing fade has finished.
  */
-function RisingSheet({
-    visible,
-    onDismiss,
-    dismissLabel,
-    bottomInset,
-    children,
-}: {
-    visible: boolean;
-    onDismiss?: () => void;
-    dismissLabel: string;
-    bottomInset: number;
-    children: React.ReactNode;
-}) {
+function RisingLayer({ visible, children }: { visible: boolean; children: React.ReactNode }) {
     const progress = useRef(new Animated.Value(0)).current;
     const [mounted, setMounted] = useState(visible);
 
@@ -372,172 +271,15 @@ function RisingSheet({
     if (!mounted) return null;
 
     return (
-        <View style={styles.root} pointerEvents={visible ? 'auto' : 'none'} accessibilityViewIsModal testID="incoming-offer">
-            {/* The dimming: fades, never moves. */}
-            <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: progress }]} pointerEvents="none" />
-            <Pressable style={styles.dismiss} onPress={onDismiss} accessibilityRole="button" accessibilityLabel={dismissLabel} testID="incoming-offer-dismiss" />
-            {/* The sheet: the only thing that slides. */}
-            <Animated.View
-                style={{
-                    paddingHorizontal: space[3],
-                    paddingBottom: bottomInset,
-                    opacity: progress.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
-                    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [TRAVEL, 0] }) }],
-                }}
-            >
-                {children}
-            </Animated.View>
-        </View>
-    );
-}
-
-/** First and last points in full, the ones between as a count. */
-function summarise(points: OrderPoint[]): { first?: OrderPoint; last?: OrderPoint; between: number } {
-    if (!points.length) return { between: 0 };
-    if (points.length === 1) return { first: points[0], between: 0 };
-    return { first: points[0], last: points[points.length - 1], between: points.length - 2 };
-}
-
-function roleLabel(point: OrderPoint, t: T): string {
-    if (point.role === 'pickup') return t('jobs.role.pickup');
-    if (point.role === 'dropoff') return t('jobs.role.dropoff');
-    return point.waypointNumber && point.waypointTotal ? t('jobs.role.waypointOf', { number: point.waypointNumber, total: point.waypointTotal }) : t('jobs.role.waypoint');
-}
-
-function PointLines({ point, t, testID }: { point: OrderPoint; t: T; testID: string }) {
-    // The name when the place has one, the address under it; the address alone when it does not.
-    const title = point.name ?? point.address;
-    const under = point.name && point.address && point.address.toLowerCase() !== point.name.toLowerCase() ? point.address : undefined;
-    return (
-        <YStack gap={2} testID={testID}>
-            <Caption>{roleLabel(point, t)}</Caption>
-            {title ? (
-                <Body fontWeight="700" numberOfLines={2}>
-                    {title}
-                </Body>
-            ) : null}
-            {under ? <Secondary numberOfLines={2}>{under}</Secondary> : null}
-        </YStack>
-    );
-}
-
-function OfferSheet({
-    order,
-    left,
-    ended,
-    problem,
-    others,
-    position,
-    units,
-    isAccepting,
-    isDeclining,
-    onAccept,
-    onDecline,
-    onNotNow,
-    onSeeAll,
-    t,
-}: {
-    order: OrderRecord;
-    /** Seconds until the offer runs out; null when it has no time limit. */
-    left: number | null;
-    ended: Ended | null;
-    problem: string | null;
-    others: number;
-    position: { latitude: number; longitude: number } | null;
-    units: 'metric' | 'imperial';
-    isAccepting: boolean;
-    isDeclining: boolean;
-    onAccept: () => void;
-    onDecline: () => void;
-    onNotNow: () => void;
-    onSeeAll: () => void;
-    t: T;
-}) {
-    const points = useMemo(() => orderPoints(order), [order]);
-    const { first, last, between } = summarise(points);
-    // In a straight line from the phone to where the job starts. Absent when either end is unknown.
-    const meters = position && first?.point ? haversineM(position, first.point) : undefined;
-    const tracking = trackingNumberOf(order) ?? order.id;
-    const endedLine = ended === 'expired' ? t('offers.overlay.expired') : ended === 'taken' ? t('offers.taken') : ended ? t('offers.overlay.withdrawn') : null;
-
-    return (
-        <Surface level="sheet" hero padding={space[4]} gap={space[3]} testID={`incoming-offer-${order.id}`}>
-            <YStack gap={space[1]}>
-                <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                    <Caption>{t('offers.available')}</Caption>
-                    {left !== null && !ended ? (
-                        // The words carry it; the tint only adds to them.
-                        <YStack paddingHorizontal={space[2]} paddingVertical={2} borderRadius={radius.compact} borderWidth={1} borderColor="$warningBorder" backgroundColor="$warningFill">
-                            <Body fontWeight="800" tabular tone="warning" numberOfLines={1} testID="incoming-offer-countdown">
-                                {t('offers.timeLeft', { time: formatCountdown(left) })}
-                            </Body>
-                        </YStack>
-                    ) : null}
-                </XStack>
-                <Heading>{t('offers.overlay.title')}</Heading>
-                {meters !== undefined ? (
-                    <Secondary tabular testID="incoming-offer-distance">
-                        {t('offers.overlay.fromYou', { distance: formatMeters(meters, units) })}
-                    </Secondary>
-                ) : null}
-            </YStack>
-
-            {endedLine ? <Banner tone="neutral" message={endedLine} testID="incoming-offer-ended" /> : null}
-            {problem && !ended ? <Banner tone="danger" message={problem} testID="incoming-offer-problem" /> : null}
-
-            <YStack gap={space[3]} opacity={ended ? 0.6 : 1}>
-                {first ? <PointLines point={first} t={t} testID="incoming-offer-first" /> : null}
-                {between > 0 ? (
-                    <Secondary fontWeight="700" testID="incoming-offer-between">
-                        {t('jobs.orders.moreWaypoints', { count: between })}
-                    </Secondary>
-                ) : null}
-                {last ? <PointLines point={last} t={t} testID="incoming-offer-last" /> : null}
-                <Identifier value={tracking} boxed={false} />
-            </YStack>
-
-            <Divider />
-
-            {ended ? (
-                <Button variant="secondary" onPress={onNotNow} testID="incoming-offer-close">
-                    {t('common.close')}
-                </Button>
-            ) : (
-                <YStack gap={space[2]}>
-                    <XStack gap={space[2]}>
-                        <Button flex={1} variant="secondary" loading={isDeclining} disabled={isAccepting} onPress={onDecline} testID="incoming-offer-decline">
-                            {t('offers.decline')}
-                        </Button>
-                        <Button flex={1} loading={isAccepting} disabled={isDeclining} onPress={onAccept} testID="incoming-offer-accept">
-                            {t('offers.accept')}
-                        </Button>
-                    </XStack>
-                    {/* The dimmed area is at the top of the screen; one-handed, the sheet needs its own way out. */}
-                    <Button variant="ghost" disabled={isAccepting || isDeclining} onPress={onNotNow} testID="incoming-offer-not-now">
-                        {t('offers.overlay.notNow')}
-                    </Button>
-                </YStack>
-            )}
-
-            {others > 0 ? (
-                <XStack alignItems="center" justifyContent="space-between" gap={space[2]}>
-                    <Secondary flex={1} testID="incoming-offer-others">
-                        {t('offers.overlay.others', { count: others })}
-                    </Secondary>
-                    <Button variant="ghost" height={40} paddingHorizontal={space[3]} disabled={isAccepting || isDeclining} onPress={onSeeAll} testID="incoming-offer-see-all">
-                        {t('offers.overlay.seeAll')}
-                    </Button>
-                </XStack>
-            ) : null}
-        </Surface>
+        <Animated.View style={[styles.root, { opacity: progress }]} pointerEvents={visible ? 'auto' : 'none'} accessibilityViewIsModal testID="incoming-offer">
+            {children}
+        </Animated.View>
     );
 }
 
 const styles = StyleSheet.create({
     // Above the tabs, the toasts and the portals; `elevation` is what puts it in front on Android.
-    root: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', zIndex: 1000, elevation: 1000 },
-    backdrop: { backgroundColor: 'rgba(0,0,0,0.55)' },
-    dismiss: { flex: 1 },
+    root: { ...StyleSheet.absoluteFillObject, zIndex: 1000, elevation: 1000 },
 });
 
 export default IncomingOfferHost;

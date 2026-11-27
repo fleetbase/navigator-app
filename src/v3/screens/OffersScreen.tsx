@@ -6,80 +6,55 @@
  * only lists orders this driver can take, so this screen is a race and is
  * built like one.
  *
- * **Nothing is hidden optimistically.** Tapping accept does not remove the card
- * or grey the others; the server decides who got it, and pretending otherwise
- * would show a driver a job they do not have. A lost race is reported in the
- * server's own terms — the order has already started — rather than as a
- * failure, because losing is a normal outcome here and not an error.
+ * The offers are shown as the deck over its map (`OfferDeck`), the same view
+ * that rises when an offer arrives. This screen is that deck under a title bar:
+ * its loading, failure and empty states are here, the cards, the map and the
+ * answering are the deck's. While it is in front the incoming overlay does not
+ * rise over it; a new offer joins the back of this deck instead.
+ *
+ * **Nothing is hidden optimistically.** The server decides who got a job. A
+ * lost race is reported in the server's own terms rather than as a failure,
+ * because losing is a normal outcome here and not an error.
  *
  * **Offers arrive without asking.** `order.ping` on the driver's channel bumps
  * the live-refresh signal, so a new offer appears while this screen is open.
  */
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView } from '../ui/Scroll';
-import { XStack, YStack } from 'tamagui';
-import { Body, Caption, Micro, Secondary } from '../ui/Text';
-import { Identifier } from '../ui/Identifier';
-import { Surface, Divider } from '../ui/Surface';
-import { Button } from '../ui/Button';
-import { Banner, EmptyState, Skeleton } from '../ui/Banner';
+import { useContext, useEffect, useState } from 'react';
+import { NavigationContext } from '@react-navigation/native';
+import { YStack } from 'tamagui';
+import { Secondary } from '../ui/Text';
+import { EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
-import { useScreenStyle } from '../ui/useScreenStyle';
-import { useDeviceLocation, useSync } from '../shell';
-import { useSettings } from '../settings';
-import { useOffers, useAcceptOffer, useDeclineOffer, secondsLeft } from '../data/useOffers';
-import { trackingNumberOf, payloadOf } from '../data/accessors';
-import { currentDestination, orderStops, stopLabel } from '../data/orderStops';
-import { coordsOfPoint, haversineM } from '../data/routeGeo';
-import { formatMeters } from '../format';
-import type { OrderRecord } from '../data/orderStore';
+import { useSync } from '../shell';
+import { useOffers } from '../data/useOffers';
+import { OfferDeck } from '../offers/OfferDeck';
+import { noteOffersScreenOpen } from '../offers/offerModel';
 
 export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onOpenOrder?: (orderId: string) => void }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { isOnline } = useSync();
-    const { units } = useSettings();
-    const position = useDeviceLocation();
     const { offers, isLoading, error, reload } = useOffers(driverId);
-    const { accept, isAccepting } = useAcceptOffer(driverId);
-    const { decline, isDeclining } = useDeclineOffer();
-    const [taken, setTaken] = useState<string | null>(null);
-    const [declined, setDeclined] = useState<string[]>([]);
-    const [now, setNow] = useState(() => Date.now());
 
-    // The countdown on a one-at-a-time offer ticks while any is on screen.
-    const timed = (offers ?? []).some((order) => secondsLeft(order) !== null);
+    /*
+     * In front or not. Read from the navigator when there is one (the screen is
+     * also drawn on its own, in a slot or a test, and is then simply in front).
+     * Under an order opened from here the screen is still mounted but not in
+     * front, and an offer that arrives then must rise as usual.
+     */
+    const navigation = useContext(NavigationContext);
+    const [focused, setFocused] = useState(() => navigation?.isFocused?.() ?? true);
     useEffect(() => {
-        if (!timed) return undefined;
-        const tick = setInterval(() => setNow(Date.now()), 1000);
-        return () => clearInterval(tick);
-    }, [timed]);
-
-    const refuse = useCallback(
-        async (order: OrderRecord) => {
-            if (await decline(order.id)) {
-                setDeclined((ids) => [...ids, order.id]);
-            }
-            void reload();
-        },
-        [decline, reload]
-    );
-
-    const take = useCallback(
-        async (order: OrderRecord) => {
-            const outcome = await accept(order.id);
-            if (outcome === 'accepted') {
-                onOpenOrder?.(order.id);
-                return;
-            }
-            // 'taken' and 'failed' both leave the list alone and say why.
-            setTaken(outcome === 'taken' ? order.id : null);
-            void reload();
-        },
-        [accept, onOpenOrder, reload]
-    );
+        if (!navigation) return undefined;
+        const onFocus = navigation.addListener('focus', () => setFocused(true));
+        const onBlur = navigation.addListener('blur', () => setFocused(false));
+        return () => {
+            onFocus();
+            onBlur();
+        };
+    }, [navigation]);
+    useEffect(() => (focused ? noteOffersScreenOpen() : undefined), [focused]);
 
     if (isLoading && !offers) {
         return (
@@ -99,84 +74,22 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
     }
 
     return (
-        <ScrollView style={screen} contentContainerStyle={{ padding: space[4], gap: space[4] }} testID="offers-screen">
-            {taken ? <Banner tone="neutral" message={t('offers.taken')} testID="offer-taken" /> : null}
-
-            {visible(offers, declined, now).length ? (
-                visible(offers, declined, now).map((order) => {
-                    const payload = payloadOf(order);
-                    const destination = stopLabel(currentDestination(payload));
-                    /*
-                     * From the phone to where the job starts, in a straight line. `adhoc_distance`
-                     * is not that: it is the radius the order is offered within, the same for every
-                     * driver, and it was being shown here as if it were how far away the job is.
-                     */
-                    const start = coordsOfPoint(orderStops(payload)[0]?.location as never);
-                    const distance = position && start ? haversineM(position, start) : undefined;
-                    const left = secondsLeft(order, now);
-
-                    return (
-                        <Surface key={order.id} padded testID={`offer-${order.id}`}>
-                            <YStack gap={space[2]}>
-                                <XStack justifyContent="space-between" alignItems="center" gap={space[2]}>
-                                    <Caption>{t('offers.available')}</Caption>
-                                    {left !== null ? (
-                                        <Micro tabular tone="brand" testID={`offer-countdown-${order.id}`}>
-                                            {t('offers.timeLeft', { time: formatCountdown(left) })}
-                                        </Micro>
-                                    ) : typeof distance === 'number' ? (
-                                        <Micro tabular testID={`offer-distance-${order.id}`}>
-                                            {formatMeters(distance, units)}
-                                        </Micro>
-                                    ) : null}
-                                </XStack>
-
-                                {destination ? (
-                                    <Body fontSize={17} fontWeight="800" numberOfLines={2}>
-                                        {destination}
-                                    </Body>
-                                ) : null}
-
-                                <Identifier value={trackingNumberOf(order) ?? order.id} boxed={false} />
-
-                                <Divider />
-
-                                <XStack gap={space[2]}>
-                                    <Button flex={1} variant="ghost" loading={isDeclining} onPress={() => void refuse(order)} testID={`offer-decline-${order.id}`}>
-                                        {t('offers.decline')}
-                                    </Button>
-                                    <Button
-                                        flex={1}
-                                        variant="ghost"
-                                        onPress={onOpenOrder ? () => onOpenOrder(order.id) : undefined}
-                                        testID={`offer-view-${order.id}`}
-                                    >
-                                        {t('offers.view')}
-                                    </Button>
-                                    <Button flex={1} loading={isAccepting} onPress={() => void take(order)} testID={`offer-accept-${order.id}`}>
-                                        {t('offers.accept')}
-                                    </Button>
-                                </XStack>
-                            </YStack>
-                        </Surface>
-                    );
-                })
-            ) : (
-                <EmptyState testID="offers-empty" title={t('offers.emptyTitle')} body={t('offers.emptyBody')} />
-            )}
-
-            <Secondary fontSize={13}>{t('offers.note')}</Secondary>
-        </ScrollView>
+        <YStack flex={1} backgroundColor="$mapBackground">
+            <OfferDeck
+                mode="screen"
+                driverId={driverId}
+                offers={offers}
+                reload={reload}
+                onAccepted={(orderId) => onOpenOrder?.(orderId)}
+                emptyState={
+                    <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[4]} testID="offers-screen">
+                        <EmptyState testID="offers-empty" title={t('offers.emptyTitle')} body={t('offers.emptyBody')} />
+                        <Secondary fontSize={13}>{t('offers.note')}</Secondary>
+                    </YStack>
+                }
+            />
+        </YStack>
     );
-}
-
-/** Offers still open to this driver: not declined here, and not out of time. */
-function visible(offers: OrderRecord[], declined: string[], now: number): OrderRecord[] {
-    return offers.filter((order) => !declined.includes(order.id) && secondsLeft(order, now) !== 0);
-}
-
-function formatCountdown(seconds: number): string {
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 export default OffersScreen;

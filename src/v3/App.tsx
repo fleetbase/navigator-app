@@ -359,7 +359,7 @@ export function V3App({
                                             <PortalHost name="MainPortal" />
                                             <PortalHost name="BottomSheetPanelPortal" />
                                             {/* A job offered to this driver rises over whatever screen is in front. Last, so it is above the tabs, the toasts and the portals. */}
-                                            {isAuthenticated && !linkWaiting && onboardingComplete ? <IncomingOfferHost driverId={driverId} /> : null}
+                                            {isAuthenticated && !linkWaiting && onboardingComplete ? <IncomingOfferHost driverId={driverId} organizationName={organizationName} /> : null}
                                             </LocationProvider>
                                         </DutyProvider>
                                     </QueueBoundSync>
