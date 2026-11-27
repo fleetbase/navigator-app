@@ -1,51 +1,59 @@
 /**
- * Jobs → Orders — design round 3 (Work.dc.html).
+ * Jobs → Orders — the simple Jobs design (JobsSimpleOrders.dc.html).
  *
- * The orders assigned to the driver. The card leads with the tracking number,
- * in full and monospaced, then shows the order's shape as a strip — one mark
- * per pickup, waypoint and drop-off — so "Pickup → 2 waypoints → Drop-off" is
- * read at a glance and the driver sees how far through it they are.
+ * Every order the driver has, with the one in hand in focus:
  *
- * Every shape the server allows goes through the same strip: pickup +
- * drop-off, pickup + waypoints + drop-off, pickup + waypoints, waypoints only
- * (see jobs/model). An order with a great many waypoints keeps its first and
- * last marks and counts the rest, rather than shrinking them to dots.
+ *   - the **current job** is one large card with its places, what it carries
+ *     and a Continue button;
+ *   - **offers nearby** stay in view as one row that opens the Offers screen;
+ *   - the other orders follow as itinerary cards (card option B): every place
+ *     named, in order, with its time when the plan gives one;
+ *   - a **Completed** row at the foot opens the finished orders in place.
+ *
+ * Every shape the server allows goes through the same card: pickup + drop-off,
+ * pickup + waypoints + drop-off, pickup + waypoints, and waypoints only (see
+ * jobs/model). Only what the data supports is drawn: a place with no time shows
+ * no time, and a card with nothing for its footer has no footer.
  */
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { FlatList } from '../../ui/Scroll';
 import { Body, Secondary } from '../../ui/Text';
-import { StatusPill } from '../../ui/StatusPill';
-import { Banner, EmptyState, Skeleton } from '../../ui/Banner';
+import { EmptyState, Skeleton } from '../../ui/Banner';
 import { FailureState } from '../../ui/FailureState';
-import { Field } from '../../ui/Field';
+import { StopBadge } from '../../ui/RouteMap';
+import { colorForId, describeWaypoint } from '../../ui/routeColors';
+import { describeStatus } from '../../theme/status';
 import { useTranslation } from '../../i18n/useTranslation';
-import { formatClock, formatDateTime, formatMeters, formatMoney } from '../../format';
-import { useSettings } from '../../settings';
+import { formatClock, formatDuration, formatMeters, formatMoney } from '../../format';
 import {
     cashOnDeliveryOf,
     customerNameOf,
     displayIdOf,
-    isBookingOrder,
-    orderStore,
+    haversineM,
+    isOrderAbandoned,
+    isOrderFinished,
     payloadOf,
     trackingNumberOf,
+    useTracker,
+    type LatLng,
     type OrderNotice,
     type OrderRecord,
 } from '../../data';
 import { dayKey } from '../../data/orderStore';
+import { secondsLeft } from '../../data/useOffers';
 import type { ApiError } from '../../api/NavigatorAdapter';
-import { CARD_RADIUS, FilterChip, Glyph, GUTTER, IconButton, OrderAvatar, Rail, Rise, SectionLabel, WaypointMark } from './parts';
-import { OrderCardMap, useOrderCardRoute } from './OrderCardMap';
+import { DottedRail } from '../home/parts';
+import { CARD_RADIUS, FootChip, Glyph, GUTTER, ListHeading, Rise, SmallMark, SmallRail, TagPill } from './parts';
 import { OrderNotices } from './OrderNotices';
-import { colorForId, describeWaypoint } from '../../ui/routeColors';
-import { isOrderStarted, nextPoint, orderPoints, orderShape, orderTypeLabel, segmentOf, type OrderMark, type OrderPoint, type OrderSegment } from './model';
+import { addDays, weekdayDayMonth, mondayOf } from './dates';
+import { inWorkingOrder, isOrderStarted, orderPoints, orderTypeLabel, scheduleDayOf, type OrderPoint, type PointTime } from './model';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
 /** Case-insensitive match across the fields a driver would actually search by. */
-function matches(order: OrderRecord, query: string): boolean {
+export function orderMatches(order: OrderRecord, query: string): boolean {
     if (!query) return true;
     const q = query.toLowerCase();
     const payload = payloadOf(order);
@@ -64,196 +72,156 @@ function matches(order: OrderRecord, query: string): boolean {
         .some((v) => String(v).toLowerCase().includes(q));
 }
 
-/** "Pickup → 2 waypoints → Drop-off", for whichever of the three the order has. */
-export function shapeLabel(points: OrderPoint[], t: T): string {
-    const shape = orderShape(points);
-    return [
-        shape.hasPickup ? t('jobs.role.pickup') : null,
-        shape.waypointCount ? t('jobs.orders.waypoints', { count: shape.waypointCount }) : null,
-        shape.hasDropoff ? t('jobs.role.dropoff') : null,
-    ]
-        .filter(Boolean)
-        .join(' → ');
+/** "Pickup", "Dropoff", "Waypoint": what a place is to its order, in the Jobs wording. */
+export function kindLabel(role: OrderPoint['role'] | undefined, t: T): string {
+    return t(`jobs.kind.${role ?? 'waypoint'}`);
 }
 
-const STRIP_MAX = 9;
-
-/** The order's points as marks joined by a rail. */
-/**
- * One point of the strip, drawn as the console draws a waypoint: a circle with P,
- * D or the waypoint's number. Done is dimmed; the one being headed to has a ring.
- */
-function StripMarker({ point, number, color }: { point: OrderPoint; number: number; color?: string }) {
-    const { label, color: fill } = describeWaypoint(point.role, point.waypointNumber ?? number, color);
-    const current = point.state === 'current';
-    const done = point.state === 'done';
-    const skipped = point.state === 'skipped';
-    const size = current ? 30 : 24;
-    return (
-        <YStack width={size + (current ? 8 : 0)} height={size + (current ? 8 : 0)} alignItems="center" justifyContent="center">
-            {current ? <YStack position="absolute" width={size + 8} height={size + 8} borderRadius={(size + 8) / 2} borderWidth={2} borderColor={fill as never} opacity={0.5} /> : null}
-            <YStack
-                width={size}
-                height={size}
-                borderRadius={size / 2}
-                alignItems="center"
-                justifyContent="center"
-                backgroundColor={(skipped ? 'transparent' : fill) as never}
-                borderWidth={2}
-                borderColor={(skipped ? fill : '#FFFFFF') as never}
-                opacity={done ? 0.55 : 1}
-            >
-                <Body fontSize={current ? 13 : 11} lineHeight={current ? 16 : 14} fontWeight="800" color={(skipped ? fill : '#FFFFFF') as never}>
-                    {skipped ? '–' : label}
-                </Body>
-            </YStack>
-        </YStack>
-    );
+/** The order's state as a pill: a word and an icon, so it never rests on colour. */
+function OrderPill({ order, t }: { order: OrderRecord; t: T }) {
+    const status = describeStatus(order.status);
+    const own = order.status ? t(status.labelKey, { defaultValue: status.defaultLabel }) : undefined;
+    if (isOrderFinished(order)) {
+        return isOrderAbandoned(order as { status?: string }) ? (own ? <TagPill label={own} icon="close" /> : null) : <TagPill label={own ?? t('jobs.state.done')} icon="check" tone="success" />;
+    }
+    if (isOrderStarted(order)) return <TagPill label={t('jobs.pill.inProgress')} icon="play" tone="brand" />;
+    if (order.scheduled_at) return <TagPill label={t('jobs.pill.scheduled')} icon="clock" />;
+    return own ? <TagPill label={own} icon="clock" /> : null;
 }
 
-export function ShapeStrip({ points, color, testID }: { points: OrderPoint[]; /** The order's route colour, for its numbered waypoints. */ color?: string; testID?: string }) {
-    if (!points.length) return null;
-    // Too many to draw: keep both ends and the count of what is between them.
-    const folded = points.length > STRIP_MAX;
-    const shown = folded ? [...points.slice(0, 4), ...points.slice(-4)] : points;
-    return (
-        <XStack alignItems="center" gap={4} testID={testID} accessibilityElementsHidden importantForAccessibility="no">
-            {shown.map((point, index) => {
-                const number = folded && index >= 4 ? points.length - (shown.length - index) + 1 : index + 1;
-                const last = index === shown.length - 1;
-                return (
-                    <XStack key={index} flex={last ? undefined : 1} alignItems="center" gap={4}>
-                        <StripMarker point={point} number={number} color={color} />
-                        {last ? null : folded && index === 3 ? (
-                            <XStack flex={1} alignItems="center" justifyContent="center">
-                                <Secondary fontSize={12} fontWeight="700" tabular>
-                                    +{points.length - shown.length}
-                                </Secondary>
-                            </XStack>
-                        ) : (
-                            <Rail done={point.state === 'done'} />
-                        )}
-                    </XStack>
-                );
-            })}
-        </XStack>
-    );
-}
+/** More places than this and the middle of the itinerary is counted, not listed. */
+const ITINERARY_MAX = 7;
 
-interface CardProps {
+export interface OrderCardProps {
     order: OrderRecord;
-    mark?: OrderMark;
-    /** The manifest's estimate for this order's next waypoint, when there is one. */
-    nextEta?: string;
+    /** `orderId:placeId` → the day plan's times for that place. */
+    times?: Map<string, PointTime>;
+    /** Say the day beside the first time: the card sits in a list that runs over several days. */
+    showDay?: boolean;
     onPress?: () => void;
     t: T;
 }
 
-const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress, t }: CardProps) {
-    const theme = useTheme();
-    const { units } = useSettings();
+/**
+ * The order card, option B (CardOptions.dc.html): the tracking number and who it
+ * is for, the order's places as an itinerary, and a footer of what it carries.
+ */
+export const OrderCard = memo(function OrderCard({ order, times, showDay, onPress, t }: OrderCardProps) {
     const points = orderPoints(order);
-    const next = nextPoint(points);
     const started = isOrderStarted(order);
-    const finished = segmentOf(order) === 'completed';
+    const finished = isOrderFinished(order);
+    const inHand = started && !finished;
+    const color = colorForId(order.id);
+    const customer = customerNameOf(order);
+    const sub = customer ?? orderTypeLabel(order);
     const itemCount = payloadOf(order).entities?.length ?? 0;
     const cash = cashOnDeliveryOf(order);
-    const type = isBookingOrder(order) ? t('ordersScreen.job') : orderTypeLabel(order);
-    const customer = customerNameOf(order);
+
+    // The place the eye should land on: the one being headed to, else the first still to do.
+    const nextIndex = finished ? -1 : points.findIndex((p) => p.state === 'current') >= 0 ? points.findIndex((p) => p.state === 'current') : points.findIndex((p) => p.state === 'later');
+
+    const folded = points.length > ITINERARY_MAX;
+    const shown = folded ? [...points.slice(0, 3).map((p, i) => ({ p, i })), ...points.slice(-3).map((p, i) => ({ p, i: points.length - 3 + i }))] : points.map((p, i) => ({ p, i }));
 
     /*
-     * The time on the right is whichever is true for this order: the manifest's
-     * estimate for the waypoint being headed to, else when it is scheduled. No
-     * time is shown rather than one worked out on the device.
+     * A place's time is the day plan's when there is one (the manifest's
+     * estimate, or when the driver got there). Without a plan, the only time the
+     * order itself carries is when it is scheduled to start, which is the time
+     * of its first place. Nothing is worked out on the phone.
      */
-    const scheduledToday = order.scheduled_at && dayKey(order.scheduled_at) === dayKey();
-    const time = finished ? undefined : nextEta ? formatClock(nextEta) : order.scheduled_at && !started ? (scheduledToday ? formatClock(order.scheduled_at) : formatDateTime(order.scheduled_at)) : undefined;
-    const nextName = next?.name ?? next?.address;
-    const shape = shapeLabel(points, t);
+    const timeOf = (point: OrderPoint, index: number): { text: string; done?: boolean } | undefined => {
+        const planned = point.id ? times?.get(`${order.id}:${point.id}`) : undefined;
+        if (point.state === 'done') return { text: planned?.arrivedAt ? t('jobs.orders.doneAt', { time: formatClock(planned.arrivedAt) }) : t('jobs.state.done'), done: true };
+        if (point.state === 'skipped') return { text: t('jobs.state.skipped') };
+        if (planned?.eta) return { text: formatClock(planned.eta) };
+        if (index === 0 && !started && order.scheduled_at) {
+            const clock = formatClock(order.scheduled_at);
+            return { text: showDay ? `${weekdayDayMonth(dayKey(order.scheduled_at))} · ${clock}` : clock };
+        }
+        return undefined;
+    };
 
-    const dueBy = !finished && next?.windowEnd ? t('jobs.byTime', { time: formatClock(next.windowEnd) }) : undefined;
-    // What is left to drive on this order, by road, from its tracker. Absent rather than estimated.
-    const { route, remainingM } = useOrderCardRoute(finished ? undefined : order.id);
-    const footer = [
-        itemCount ? { key: 'items', label: t('ordersScreen.itemCount', { count: itemCount }), tone: undefined } : null,
-        remainingM ? { key: 'distance', label: formatMeters(remainingM, units), tone: undefined } : null,
+    const chips = [
+        points.length > 2 || (!itemCount && !cash?.toCollect && points.length > 0) ? { key: 'waypoints', label: t('jobs.orders.waypoints', { count: points.length }) } : null,
+        itemCount ? { key: 'items', label: t('ordersScreen.itemCount', { count: itemCount }) } : null,
         !finished && cash?.toCollect ? { key: 'cash', label: t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }), tone: 'warning' as const } : null,
     ].filter(Boolean) as { key: string; label: string; tone?: 'warning' }[];
 
-    /*
-     * The order card, in three bands:
-     *   - a map of the one leg that matters now, from the driver to this order's next waypoint;
-     *   - the order itself: tracking number, type, status, its shape as a strip of markers, the next place and when;
-     *   - a footer of the figures a driver weighs a job by: items, distance left, cash to collect.
-     * A finished order has no next waypoint, so it has no map.
-     */
     return (
         <YStack
             borderRadius={CARD_RADIUS}
             overflow="hidden"
-            backgroundColor="$surface"
-            borderWidth={started && !finished ? 1.5 : 1}
-            borderColor={started && !finished ? '$primary' : '$border'}
+            backgroundColor={inHand ? '$primaryFill' : '$surface'}
+            borderWidth={inHand ? 1.5 : 1}
+            borderColor={inHand ? '$primary' : '$border'}
             onPress={onPress}
             pressStyle={onPress ? { opacity: 0.75 } : undefined}
             accessibilityRole="button"
             accessibilityLabel={t('jobs.openOrder', { order: displayIdOf(order) })}
             testID={`order-${order.id}`}
         >
-            {next && !finished ? <OrderCardMap orderId={order.id} target={next} route={route} testID={`order-${order.id}-map`} /> : null}
-
-            <YStack padding={14} gap={12}>
-                <XStack alignItems="flex-start" gap={12}>
-                    <YStack flex={1} gap={2}>
-                        {/* In full, on its own line: it is read against a parcel label. */}
-                        <Body fontFamily="$mono" fontSize={16} fontWeight="600" testID={`order-${order.id}-tracking`}>
-                            {displayIdOf(order)}
-                        </Body>
-                        <Secondary fontSize={13} numberOfLines={1}>
-                            {[type, customer].filter(Boolean).join(' · ')}
+            <XStack alignItems="center" gap={12} paddingHorizontal={14} paddingTop={14} paddingBottom={12}>
+                <YStack flex={1} minWidth={0} gap={2}>
+                    {/* In full, on its own line: it is read against a parcel label. */}
+                    <Body fontFamily="$mono" fontSize={16} lineHeight={21} fontWeight="600" testID={`order-${order.id}-tracking`}>
+                        {displayIdOf(order)}
+                    </Body>
+                    {sub ? (
+                        <Secondary fontSize={13} lineHeight={17} numberOfLines={1}>
+                            {sub}
                         </Secondary>
-                    </YStack>
-                    <StatusPill status={order.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} />
-                </XStack>
+                    ) : null}
+                </YStack>
+                <OrderPill order={order} t={t} />
+            </XStack>
 
-                <ShapeStrip points={points} color={colorForId(order.id)} testID={`order-${order.id}-shape`} />
-
-                {shape || nextName || time ? (
-                    <XStack alignItems="flex-end" justifyContent="space-between" gap={12}>
-                        <YStack flex={1} gap={2}>
-                            {shape ? <SectionLabel>{shape}</SectionLabel> : null}
-                            {nextName && !finished ? (
-                                <Body fontSize={15} fontWeight="800" numberOfLines={1}>
-                                    {t('jobs.orders.next', { name: nextName })}
-                                </Body>
-                            ) : null}
-                        </YStack>
-                        {time || dueBy ? (
-                            <YStack alignItems="flex-end" gap={1}>
-                                {time ? (
-                                    <Body fontSize={20} lineHeight={24} fontWeight="800" tabular numberOfLines={1}>
-                                        {time}
-                                    </Body>
-                                ) : null}
-                                {dueBy ? (
-                                    <Secondary fontSize={12} tabular numberOfLines={1}>
-                                        {dueBy}
-                                    </Secondary>
+            {shown.length ? (
+                <YStack paddingHorizontal={14} paddingBottom={chips.length ? 0 : 2} testID={`order-${order.id}-shape`}>
+                    {shown.map(({ p, i }, row) => {
+                        const last = row === shown.length - 1;
+                        const mark = describeWaypoint(p.role, p.waypointNumber ?? i + 1, color);
+                        const time = timeOf(p, i);
+                        const isNext = i === nextIndex;
+                        const quiet = p.state === 'done' || p.state === 'skipped';
+                        const hidden = folded && row === 2 ? points.length - shown.length : 0;
+                        return (
+                            <YStack key={p.id ?? i}>
+                                <XStack gap={12}>
+                                    <YStack width={26} alignItems="center">
+                                        <SmallMark label={mark.label} color={mark.color} state={p.state} />
+                                        {last ? null : <SmallRail done={p.state === 'done'} />}
+                                    </YStack>
+                                    <XStack flex={1} minWidth={0} alignItems="baseline" justifyContent="space-between" gap={10} paddingTop={3} paddingBottom={12}>
+                                        <Body flex={1} fontSize={15} lineHeight={20} fontWeight={isNext ? '800' : quiet ? '600' : '700'} tone={quiet ? 'secondary' : 'primary'} numberOfLines={1}>
+                                            {p.name ?? p.address ?? kindLabel(p.role, t)}
+                                        </Body>
+                                        {time ? (
+                                            <Body flexShrink={0} fontSize={13} lineHeight={20} fontWeight="700" tabular numberOfLines={1} tone={time.done ? 'success' : isNext ? 'primary' : 'secondary'}>
+                                                {time.text}
+                                            </Body>
+                                        ) : null}
+                                    </XStack>
+                                </XStack>
+                                {hidden ? (
+                                    <XStack gap={12}>
+                                        <YStack width={26} alignItems="center">
+                                            <SmallRail minHeight={30} />
+                                        </YStack>
+                                        <Secondary flex={1} fontSize={13} lineHeight={18} fontWeight="700" tabular paddingBottom={12}>
+                                            {t('jobs.orders.moreWaypoints', { count: hidden })}
+                                        </Secondary>
+                                    </XStack>
                                 ) : null}
                             </YStack>
-                        ) : null}
-                    </XStack>
-                ) : null}
-            </YStack>
+                        );
+                    })}
+                </YStack>
+            ) : null}
 
-            {footer.length ? (
-                <XStack gap={6} paddingHorizontal={14} paddingVertical={10} borderTopWidth={1} borderColor="$border" backgroundColor="$background" testID={`order-${order.id}-footer`}>
-                    {footer.map((chip) => (
-                        <XStack key={chip.key} height={28} alignItems="center" paddingHorizontal={10} borderRadius={14} backgroundColor="$surfaceRaised">
-                            <Body fontSize={13} fontWeight="700" tabular numberOfLines={1} color={chip.tone === 'warning' ? '$warningText' : '$textPrimary'}>
-                                {chip.label}
-                            </Body>
-                        </XStack>
+            {chips.length ? (
+                <XStack flexWrap="wrap" gap={6} paddingHorizontal={14} paddingVertical={10} borderTopWidth={1} borderColor="$border" backgroundColor="$background" testID={`order-${order.id}-footer`}>
+                    {chips.map((chip) => (
+                        <FootChip key={chip.key} label={chip.label} tone={chip.tone} />
                     ))}
                 </XStack>
             ) : null}
@@ -261,12 +229,264 @@ const OrderJobCard = memo(function OrderJobCard({ order, mark, nextEta, onPress,
     );
 });
 
+/** More places than this still to do and the focused card counts the rest. */
+const CURRENT_MAX = 4;
+
+/**
+ * The job in hand: one card in focus, with the places still to drive to, what
+ * the order carries, and Continue.
+ */
+function CurrentJobCard({ order, units, onContinue, t }: { order: OrderRecord; units: 'metric' | 'imperial'; onContinue?: () => void; t: T }) {
+    const theme = useTheme();
+    const points = orderPoints(order);
+    const ahead = points.filter((p) => p.state === 'current' || p.state === 'later');
+    const heading = ahead.find((p) => p.state === 'current') ?? ahead[0];
+    const shown = ahead.slice(0, CURRENT_MAX);
+    const more = ahead.length - shown.length;
+    const color = colorForId(order.id);
+    const customer = customerNameOf(order);
+    const itemCount = payloadOf(order).entities?.length ?? 0;
+    const cash = cashOnDeliveryOf(order);
+
+    // The road to the place being headed to, from the order's tracker. Absent rather than estimated.
+    const { tracker } = useTracker(order.id);
+    const leg = tracker?.route?.legs?.[0];
+    const legLine = [leg?.distance_m != null && Number.isFinite(Number(leg.distance_m)) ? formatMeters(Number(leg.distance_m), units) : null, leg?.duration_s != null && Number.isFinite(Number(leg.duration_s)) ? formatDuration(Number(leg.duration_s)) : null]
+        .filter(Boolean)
+        .join(' · ');
+
+    const eyebrow = [t('jobs.current.label'), order.scheduled_at && dayKey(order.scheduled_at) === dayKey() ? formatClock(order.scheduled_at) : null].filter(Boolean).join(' · ');
+
+    return (
+        <YStack
+            padding={14}
+            borderRadius={CARD_RADIUS}
+            backgroundColor="$primaryFill"
+            borderWidth={1.5}
+            borderColor="$primary"
+            shadowColor="$shadowColor"
+            shadowOpacity={0.3}
+            shadowRadius={16}
+            shadowOffset={{ width: 0, height: 10 }}
+            onPress={onContinue}
+            pressStyle={onContinue ? { opacity: 0.85 } : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={t('jobs.current.open', { order: displayIdOf(order) })}
+            testID="jobs-current"
+        >
+            <XStack alignItems="center" justifyContent="space-between" gap={12}>
+                <Body flexShrink={1} fontSize={13} lineHeight={18} fontWeight="800" letterSpacing={0.8} textTransform="uppercase" tabular tone="brand" numberOfLines={1}>
+                    {eyebrow}
+                </Body>
+                {heading ? <TagPill label={t(`jobs.current.heading.${heading.role}`)} icon="navigate" tone="brand" testID="jobs-current-heading" /> : null}
+            </XStack>
+            {/* In full, never cut short: it is read against a label. */}
+            <Body fontFamily="$mono" paddingTop={6} fontSize={18} lineHeight={24} fontWeight="600" testID={`order-${order.id}-tracking`}>
+                {displayIdOf(order)}
+            </Body>
+            {customer ? (
+                <Body fontSize={16} lineHeight={22} tone="secondary" numberOfLines={1}>
+                    {customer}
+                </Body>
+            ) : null}
+
+            {shown.length ? (
+                <YStack paddingTop={14}>
+                    {shown.map((p, index) => {
+                        const last = index === shown.length - 1;
+                        const current = p === heading && p.state === 'current';
+                        return (
+                            <XStack key={p.id ?? index} gap={12}>
+                                <YStack width={32} alignItems="center">
+                                    {/* The console's marker, the same one as on the map. Its frame is wider than the rail, so it is centred over it. */}
+                                    <YStack width={32} height={32} alignItems="center" justifyContent="center">
+                                        <StopBadge kind={p.role} number={p.waypointNumber} color={color} state={current ? 'current' : 'pending'} />
+                                    </YStack>
+                                    {last ? null : <DottedRail />}
+                                </YStack>
+                                <YStack flex={1} minWidth={0} paddingBottom={last ? 0 : 12}>
+                                    <Body fontSize={13} lineHeight={18} fontWeight="800" letterSpacing={0.8} textTransform="uppercase" tone={current ? 'success' : 'secondary'} numberOfLines={1}>
+                                        {current ? `${kindLabel(p.role, t)} · ${t('jobs.state.heading')}` : kindLabel(p.role, t)}
+                                    </Body>
+                                    <Body fontSize={18} lineHeight={24} fontWeight={current ? '800' : '700'} letterSpacing={current ? -0.2 : 0} numberOfLines={1}>
+                                        {p.name ?? p.address ?? kindLabel(p.role, t)}
+                                    </Body>
+                                    {current && legLine ? (
+                                        <Body fontSize={15} lineHeight={20} fontWeight="700" tabular tone="secondary" numberOfLines={1} testID="jobs-current-leg">
+                                            {legLine}
+                                        </Body>
+                                    ) : null}
+                                </YStack>
+                            </XStack>
+                        );
+                    })}
+                    {more > 0 ? (
+                        <Secondary paddingStart={44} paddingTop={8} fontSize={15} lineHeight={20} fontWeight="700" tabular>
+                            {t('jobs.orders.moreWaypoints', { count: more })}
+                        </Secondary>
+                    ) : null}
+                </YStack>
+            ) : null}
+
+            {itemCount || cash?.toCollect ? (
+                <XStack flexWrap="wrap" gap={6} paddingTop={12}>
+                    {itemCount ? <FootChip large icon="box" label={t('ordersScreen.itemCount', { count: itemCount })} /> : null}
+                    {cash?.toCollect ? <FootChip large icon="cash" tone="warning" label={t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) })} /> : null}
+                </XStack>
+            ) : null}
+
+            <XStack
+                marginTop={12}
+                height={56}
+                borderRadius={16}
+                alignItems="center"
+                justifyContent="center"
+                gap={10}
+                backgroundColor="$primary"
+                onPress={onContinue}
+                pressStyle={{ opacity: 0.8 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('jobs.current.continue')}
+                testID="jobs-current-continue"
+            >
+                <Glyph name="navigate" size={19} color={theme.onPrimary?.val as string} />
+                <Body fontSize={18} lineHeight={24} fontWeight="800" tone="onPrimary" numberOfLines={1}>
+                    {t('jobs.current.continue')}
+                </Body>
+            </XStack>
+        </YStack>
+    );
+}
+
+function formatCountdown(seconds: number): string {
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+/**
+ * Offers nearby, kept in view as one row. It says how many, how far the nearest
+ * pickup is, and how long is left on an offer made to this driver alone. The
+ * accepting is done on the Offers screen, which this opens.
+ */
+function OffersRow({ offers, position, units, onPress, t }: { offers: OrderRecord[]; position?: LatLng | null; units: 'metric' | 'imperial'; onPress?: () => void; t: T }) {
+    const theme = useTheme();
+    const timed = offers.some((order) => secondsLeft(order) !== null);
+    const [now, setNow] = useState(() => Date.now());
+    // The countdown ticks only while there is one to show.
+    useEffect(() => {
+        if (!timed) return undefined;
+        const tick = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(tick);
+    }, [timed]);
+
+    const open = offers.filter((order) => secondsLeft(order, now) !== 0);
+    if (!open.length) return null;
+
+    // In a straight line from the phone to where each offer starts; the nearest one is the one spoken for.
+    const withDistance = open
+        .map((order) => {
+            const first = orderPoints(order)[0]?.point;
+            return { order, meters: position && first ? haversineM(position, first) : undefined };
+        })
+        .sort((a, b) => (a.meters ?? Infinity) - (b.meters ?? Infinity));
+    const nearest = withDistance[0];
+    const away = nearest.meters != null ? t('jobs.offers.away', { distance: formatMeters(nearest.meters, units) }) : undefined;
+    const waypointCount = open.length === 1 ? orderPoints(nearest.order).length : 0;
+    const detail = [open.length > 1 && away ? t('jobs.offers.nearest', { distance: away }) : away, waypointCount ? t('jobs.orders.waypoints', { count: waypointCount }) : null].filter(Boolean).join(' · ');
+    const lefts = open.map((order) => secondsLeft(order, now)).filter((s): s is number => s !== null);
+    const left = lefts.length ? Math.min(...lefts) : null;
+
+    return (
+        <XStack
+            height={68}
+            alignItems="center"
+            gap={12}
+            paddingStart={14}
+            paddingEnd={12}
+            borderRadius={CARD_RADIUS}
+            backgroundColor="$warningFill"
+            borderWidth={1.5}
+            borderColor="$warningBorder"
+            onPress={onPress}
+            pressStyle={onPress ? { opacity: 0.75 } : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={[t('jobs.offers.nearby', { count: open.length }), detail, left !== null ? t('jobs.offers.left', { time: formatCountdown(left) }) : null, t('jobs.offers.opens')].filter(Boolean).join(', ')}
+            testID="orders-open-offers"
+        >
+            <YStack width={40} height={40} borderRadius={20} alignItems="center" justifyContent="center" backgroundColor="$warningFill" borderWidth={1} borderColor="$warningBorder">
+                <Glyph name="bolt" size={18} color={theme.warningText?.val as string} />
+            </YStack>
+            <YStack flex={1} minWidth={0}>
+                <Body fontSize={17} lineHeight={23} fontWeight="800" tabular numberOfLines={1}>
+                    {t('jobs.offers.nearby', { count: open.length })}
+                </Body>
+                {detail ? (
+                    <Body fontSize={15} lineHeight={20} tabular tone="secondary" numberOfLines={1}>
+                        {detail}
+                    </Body>
+                ) : null}
+            </YStack>
+            {left !== null ? (
+                <Body flexShrink={0} fontSize={17} fontWeight="800" tabular tone="warning" numberOfLines={1} testID="orders-offers-countdown">
+                    {t('jobs.offers.left', { time: formatCountdown(left) })}
+                </Body>
+            ) : null}
+            <Glyph name="chevron" size={16} color={theme.textSecondary?.val as string} strokeWidth={2.6} />
+        </XStack>
+    );
+}
+
+/** The row that leads to past work: a tick, the word, and how much there is. */
+function CompletedRow({ summary, open, onPress, t }: { summary?: string; open: boolean; onPress: () => void; t: T }) {
+    const theme = useTheme();
+    return (
+        <XStack
+            height={56}
+            alignItems="center"
+            gap={12}
+            paddingStart={14}
+            paddingEnd={12}
+            borderRadius={CARD_RADIUS}
+            borderWidth={1}
+            borderColor="$border"
+            onPress={onPress}
+            pressStyle={{ opacity: 0.7 }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={[t('jobs.completed.title'), summary].filter(Boolean).join(', ')}
+            testID="orders-completed"
+        >
+            <YStack width={28} height={28} borderRadius={14} alignItems="center" justifyContent="center" backgroundColor="$successFill" borderWidth={1} borderColor="$successBorder">
+                <Glyph name="check" size={14} color={theme.successText?.val as string} strokeWidth={3.6} />
+            </YStack>
+            <Body flexShrink={0} fontSize={17} fontWeight="800" numberOfLines={1}>
+                {t('jobs.completed.title')}
+            </Body>
+            <Body flex={1} fontSize={15} tabular tone="secondary" numberOfLines={1}>
+                {summary ?? ''}
+            </Body>
+            <Glyph name={open ? 'chevronDown' : 'chevron'} size={16} color={theme.textSecondary?.val as string} strokeWidth={2.4} />
+        </XStack>
+    );
+}
+
+type Row =
+    | { key: string; kind: 'heading'; title: string; aside?: string }
+    | { key: string; kind: 'order'; order: OrderRecord; showDay?: boolean }
+    | { key: string; kind: 'completed' }
+    | { key: string; kind: 'empty' };
+
 export interface JobsOrdersProps {
     orders: OrderRecord[];
-    marks: Map<string, OrderMark>;
-    /** Order id → the manifest's estimate for its next waypoint. */
-    nextEtas: Map<string, string>;
+    /** `orderId:placeId` → the day plan's times for that place. */
+    times: Map<string, PointTime>;
     notices: OrderNotice[];
+    /** Offers this driver could take. Empty when there are none, or when the driver is offline. */
+    offers: OrderRecord[];
+    position?: LatLng | null;
+    units: 'metric' | 'imperial';
+    /** What the driver typed in the header's search; empty when not searching. */
+    query: string;
+    onClearQuery: () => void;
     state: 'idle' | 'loading' | 'refreshing' | 'ready' | 'error' | string;
     error?: ApiError | null;
     isOnline: boolean;
@@ -278,128 +498,149 @@ export interface JobsOrdersProps {
     bottomSpace: number;
 }
 
-export function JobsOrders({ orders, marks, nextEtas, notices, state, error, isOnline, isRefreshing, onRefresh, onRetry, onOpenOrder, onOpenOffers, bottomSpace }: JobsOrdersProps) {
+export function JobsOrders({ orders, times, notices, offers, position, units, query, onClearQuery, state, error, isOnline, isRefreshing, onRefresh, onRetry, onOpenOrder, onOpenOffers, bottomSpace }: JobsOrdersProps) {
     const { t } = useTranslation();
     const theme = useTheme();
-    const [segment, setSegment] = useState<OrderSegment>('active');
-    const [query, setQuery] = useState('');
-    const [searching, setSearching] = useState(false);
+    const [showCompleted, setShowCompleted] = useState(false);
 
-    const bySegment = useMemo(() => {
-        const groups: Record<OrderSegment, OrderRecord[]> = { active: [], scheduled: [], completed: [] };
-        for (const order of orders) groups[segmentOf(order)].push(order);
-        return groups;
+    const groups = useMemo(() => {
+        const today = dayKey();
+        const open = inWorkingOrder(orders.filter((o) => !isOrderFinished(o)));
+        const current = open.find((o) => isOrderStarted(o));
+        const rest = open.filter((o) => o !== current);
+        const todays = rest.filter((o) => (scheduleDayOf(o, today) ?? today) <= today);
+        const later = rest.filter((o) => (scheduleDayOf(o, today) ?? today) > today).sort((a, b) => String(a.scheduled_at ?? '').localeCompare(String(b.scheduled_at ?? '')));
+        const stamp = (o: OrderRecord) => String(o.scheduled_at ?? (o as { updated_at?: unknown }).updated_at ?? o.created_at ?? '');
+        const completed = orders.filter((o) => isOrderFinished(o)).sort((a, b) => stamp(b).localeCompare(stamp(a)));
+
+        // "Yesterday 4 · this week 11": finished orders by the day they were scheduled for, cancelled ones left out.
+        const done = completed.filter((o) => !isOrderAbandoned(o as { status?: string }));
+        const yesterday = addDays(today, -1);
+        const monday = mondayOf(today);
+        let onYesterday = 0;
+        let thisWeek = 0;
+        for (const order of done) {
+            const day = scheduleDayOf(order, today);
+            if (!day) continue;
+            if (day === yesterday) onYesterday += 1;
+            if (day >= monday && day <= today) thisWeek += 1;
+        }
+        return { current, todays, later, completed, onYesterday, thisWeek };
     }, [orders]);
 
-    const rows = useMemo(() => bySegment[segment].filter((o) => matches(o, query)), [bySegment, segment, query]);
+    const completedSummary = useMemo(() => {
+        const text = [groups.onYesterday ? t('jobs.completed.yesterday', { count: groups.onYesterday }) : null, groups.thisWeek ? t('jobs.completed.thisWeek', { count: groups.thisWeek }) : null].filter(Boolean).join(' · ');
+        return text ? text.charAt(0).toUpperCase() + text.slice(1) : undefined;
+    }, [groups.onYesterday, groups.thisWeek, t]);
 
-    const chips: { value: OrderSegment; label: string }[] = [
-        { value: 'active', label: bySegment.active.length ? t('jobs.orders.activeCount', { count: bySegment.active.length }) : t('jobs.orders.active') },
-        { value: 'scheduled', label: bySegment.scheduled.length ? t('jobs.orders.scheduledCount', { count: bySegment.scheduled.length }) : t('jobs.orders.scheduled') },
-        { value: 'completed', label: t('jobs.orders.done') },
-    ];
+    const searching = query.trim().length > 0;
+
+    const rows = useMemo<Row[]>(() => {
+        if (searching) {
+            const found = orders.filter((o) => orderMatches(o, query.trim()));
+            return found.map((order) => ({ key: order.id, kind: 'order' as const, order, showDay: true }));
+        }
+        const list: Row[] = [];
+        if (groups.todays.length) {
+            list.push({ key: 'h-today', kind: 'heading', title: t(groups.current ? 'jobs.orders.nextToday' : 'jobs.orders.today'), aside: t('jobs.orders.count', { count: groups.todays.length }) });
+            for (const order of groups.todays) list.push({ key: order.id, kind: 'order', order });
+        }
+        if (groups.later.length) {
+            list.push({ key: 'h-later', kind: 'heading', title: t('jobs.orders.later'), aside: t('jobs.orders.count', { count: groups.later.length }) });
+            for (const order of groups.later) list.push({ key: order.id, kind: 'order', order, showDay: true });
+        }
+        // Nothing in hand and nothing waiting: say so, above the way to past work.
+        if (!groups.current && !groups.todays.length && !groups.later.length) list.push({ key: 'empty', kind: 'empty' });
+        if (groups.completed.length) {
+            list.push({ key: 'completed', kind: 'completed' });
+            if (showCompleted) for (const order of groups.completed) list.push({ key: order.id, kind: 'order', order, showDay: true });
+        }
+        return list;
+    }, [searching, query, orders, groups, showCompleted, t]);
 
     const renderItem = useCallback(
-        ({ item, index }: { item: OrderRecord; index: number }) => (
-            <YStack paddingHorizontal={GUTTER} paddingBottom={8}>
-                <Rise index={index}>
-                    <OrderJobCard order={item} mark={marks.get(item.id)} nextEta={nextEtas.get(item.id)} onPress={onOpenOrder ? () => onOpenOrder(item.id) : undefined} t={t} />
-                </Rise>
-            </YStack>
-        ),
-        [marks, nextEtas, onOpenOrder, t]
+        ({ item, index }: { item: Row; index: number }) => {
+            if (item.kind === 'heading') {
+                return (
+                    <YStack paddingHorizontal={GUTTER} paddingTop={18} paddingBottom={8}>
+                        <ListHeading title={item.title} aside={item.aside} testID={`orders-${item.key}`} />
+                    </YStack>
+                );
+            }
+            if (item.kind === 'completed') {
+                return (
+                    <YStack paddingHorizontal={GUTTER} paddingTop={index === 0 ? 16 : 8} paddingBottom={8}>
+                        <CompletedRow summary={completedSummary} open={showCompleted} onPress={() => setShowCompleted((v) => !v)} t={t} />
+                    </YStack>
+                );
+            }
+            if (item.kind === 'empty') {
+                return (
+                    <YStack paddingHorizontal={GUTTER} paddingTop={16} paddingBottom={8}>
+                        <EmptyState testID="orders-empty" title={t('ordersScreen.emptyActiveTitle')} body={t('ordersScreen.emptyActiveBody')} />
+                    </YStack>
+                );
+            }
+            return (
+                <YStack paddingHorizontal={GUTTER} paddingBottom={8} paddingTop={searching && index === 0 ? 16 : 0}>
+                    <Rise index={index}>
+                        <OrderCard order={item.order} times={times} showDay={item.showDay} onPress={onOpenOrder ? () => onOpenOrder(item.order.id) : undefined} t={t} />
+                    </Rise>
+                </YStack>
+            );
+        },
+        [completedSummary, showCompleted, searching, times, onOpenOrder, t]
     );
 
-    const empty = useMemo(() => {
-        if (state === 'loading') {
-            return (
-                <YStack paddingHorizontal={GUTTER} gap={8} testID="orders-skeleton">
-                    {[0, 1, 2].map((i) => (
-                        <Skeleton key={i} height={148} borderRadius={CARD_RADIUS} />
-                    ))}
+    const loading = state === 'loading' && !orders.length;
+    const failed = state === 'error' && !orders.length;
+
+    const header = (
+        <YStack>
+            {notices.length ? (
+                <YStack paddingHorizontal={GUTTER} paddingTop={12}>
+                    {/* An order that left the list says so once, in one line, and clears itself. */}
+                    <OrderNotices notices={notices} testID="order-notices" />
                 </YStack>
-            );
-        }
-        if (state === 'error') {
-            return (
-                <YStack paddingHorizontal={GUTTER}>
-                    <FailureState error={error} isOnline={isOnline} onRetry={onRetry} t={t} testID="orders-error" />
+            ) : null}
+            {!searching && groups.current ? (
+                <YStack paddingHorizontal={GUTTER} paddingTop={16}>
+                    <Rise>
+                        <CurrentJobCard key={groups.current.id} order={groups.current} units={units} onContinue={onOpenOrder ? () => onOpenOrder((groups.current as OrderRecord).id) : undefined} t={t} />
+                    </Rise>
                 </YStack>
-            );
-        }
-        if (query) {
-            return (
-                <YStack paddingHorizontal={GUTTER}>
-                    <EmptyState
-                        testID="orders-no-results"
-                        title={t('ordersScreen.noSearchResultsTitle')}
-                        body={t('ordersScreen.noSearchResultsBody', { query })}
-                        action={{ label: t('common.clear'), onPress: () => setQuery('') }}
-                    />
+            ) : null}
+            {!searching && offers.length ? (
+                <YStack paddingHorizontal={GUTTER} paddingTop={groups.current ? 12 : 16}>
+                    <OffersRow offers={offers} position={position} units={units} onPress={onOpenOffers} t={t} />
                 </YStack>
-            );
-        }
-        const key = segment.charAt(0).toUpperCase() + segment.slice(1);
-        return (
-            <YStack paddingHorizontal={GUTTER}>
-                <EmptyState testID="orders-empty" title={t(`ordersScreen.empty${key}Title`)} body={t(`ordersScreen.empty${key}Body`)} />
-            </YStack>
-        );
-    }, [state, error, query, segment, t, onRetry, isOnline]);
+            ) : null}
+        </YStack>
+    );
+
+    const empty = loading ? (
+        <YStack paddingHorizontal={GUTTER} paddingTop={16} gap={8} testID="orders-skeleton">
+            {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height={148} borderRadius={CARD_RADIUS} />
+            ))}
+        </YStack>
+    ) : failed ? (
+        <YStack paddingHorizontal={GUTTER} paddingTop={16}>
+            <FailureState error={error} isOnline={isOnline} onRetry={onRetry} t={t} testID="orders-error" />
+        </YStack>
+    ) : searching ? (
+        <YStack paddingHorizontal={GUTTER} paddingTop={16}>
+            <EmptyState testID="orders-no-results" title={t('ordersScreen.noSearchResultsTitle')} body={t('ordersScreen.noSearchResultsBody', { query: query.trim() })} action={{ label: t('common.clear'), onPress: onClearQuery }} />
+        </YStack>
+    ) : null;
 
     return (
         <YStack flex={1} testID="orders-list-view">
-            <YStack paddingHorizontal={GUTTER} paddingBottom={12} gap={12}>
-                <XStack gap={8} alignItems="center" testID="orders-segments">
-                    {chips.map((chip) => (
-                        <FilterChip key={chip.value} label={chip.label} on={segment === chip.value} onPress={() => setSegment(chip.value)} testID={`orders-segments-${chip.value}`} />
-                    ))}
-                    <YStack flex={1} />
-                    <IconButton
-                        name={searching ? 'close' : 'search'}
-                        label={t(searching ? 'jobs.orders.closeSearch' : 'jobs.orders.search')}
-                        size={36}
-                        round
-                        onPress={() => {
-                            // Closing the search clears it, or the list stays filtered by a field nobody can see.
-                            if (searching) setQuery('');
-                            setSearching((v) => !v);
-                        }}
-                        testID="orders-search-toggle"
-                    />
-                </XStack>
-                {searching ? (
-                    <Field value={query} onChangeText={setQuery} placeholder={t('ordersScreen.searchPlaceholder')} autoCapitalize="none" testID="orders-search" />
-                ) : null}
-                {/* An order that left the list says so once, in one line, and clears itself. */}
-                <OrderNotices notices={notices} testID="order-notices" />
-                {onOpenOffers ? (
-                    <XStack
-                        minHeight={48}
-                        paddingHorizontal={14}
-                        gap={10}
-                        alignItems="center"
-                        borderRadius={14}
-                        borderWidth={1}
-                        borderColor="$border"
-                        backgroundColor="$surfaceRaised"
-                        onPress={onOpenOffers}
-                        pressStyle={{ opacity: 0.7 }}
-                        accessibilityRole="button"
-                        testID="orders-open-offers"
-                    >
-                        <Body flex={1} fontSize={15} fontWeight="700" numberOfLines={1}>
-                            {t('jobs.orders.offers')}
-                        </Body>
-                        <Glyph name="chevron" size={16} color={theme.textSecondary?.val as string} strokeWidth={2.4} />
-                    </XStack>
-                ) : null}
-            </YStack>
-
             <FlatList
-                data={rows}
-                keyExtractor={(o) => o.id}
+                data={loading || failed ? [] : rows}
+                keyExtractor={(row) => row.key}
                 renderItem={renderItem}
+                ListHeaderComponent={loading || failed ? null : header}
                 ListEmptyComponent={empty}
                 contentContainerStyle={{ paddingBottom: bottomSpace, flexGrow: 1 }}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.primary?.val as string} />}

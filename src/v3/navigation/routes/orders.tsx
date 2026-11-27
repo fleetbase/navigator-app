@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useShell } from '../DriverShell';
 import { useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
 
-export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { params?: { mode?: 'route' | 'orders' | 'map' } } }) {
+export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { params?: { mode?: 'orders' | 'route' | 'map' | 'schedule' } } }) {
     const driverId = useDriverId();
     // Focus is a refetch: back from a waypoint or an order, the route may have moved on.
     const reloadToken = useFocusCount();
@@ -21,6 +21,7 @@ export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { p
             driverId={driverId}
             reloadToken={reloadToken}
             // Another tab may ask for a view: navigate('Orders', { screen: 'OrdersHome', params: { mode: 'route' } }).
+            // 'orders', 'route' and 'map' are the views they always were; 'schedule' is the new one.
             initialMode={route?.params?.mode}
             modeRequest={route?.params}
             onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })}

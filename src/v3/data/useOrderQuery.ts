@@ -25,19 +25,38 @@ export interface OrderQueryParams {
     [key: string]: unknown;
 }
 
-export function useOrderQuery(params: OrderQueryParams = {}, options: { enabled?: boolean } = {}) {
-    const { enabled = true } = options;
+export function useOrderQuery(
+    params: OrderQueryParams = {},
+    options: {
+        enabled?: boolean;
+        /**
+         * False for a query that is only a *part* of the driver's orders (a
+         * date range, say). Its rows are stored like any other, but what it
+         * does not return says nothing about the rest, so nothing is removed.
+         */
+        reconcile?: boolean;
+    } = {}
+) {
+    const { enabled = true, reconcile = true } = options;
     const { adapter } = useFleetbase();
     const [state, setState] = useState<LoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
+    /** A load asked for while another was running: run once more when it ends, with whatever the parameters are by then. */
+    const queued = useRef<'loading' | 'refreshing' | null>(null);
+    const latest = useRef<(mode?: 'loading' | 'refreshing') => Promise<void>>(async () => undefined);
 
     // Serialised so the effect does not refire on a fresh object literal.
     const key = JSON.stringify(params);
 
     const load = useCallback(
         async (mode: 'loading' | 'refreshing' = 'loading') => {
-            if (!enabled || inFlight.current) return;
+            if (!enabled) return;
+            if (inFlight.current) {
+                // Not dropped: the parameters may have changed (another date range), or the server may have moved.
+                queued.current = queued.current === 'loading' ? 'loading' : mode;
+                return;
+            }
             inFlight.current = true;
             setState(mode);
             setError(null);
@@ -55,7 +74,7 @@ export function useOrderQuery(params: OrderQueryParams = {}, options: { enabled?
                 const scope = typeof query.driver_assigned === 'string' ? query.driver_assigned : typeof query.driver === 'string' ? query.driver : undefined;
                 const valid = rows.filter((r) => r && typeof r.id === 'string');
                 orderStore.upsertMany(scope ? valid.map((r) => ({ ...r, [LISTED_FOR]: scope })) : valid);
-                if (scope && Array.isArray(rows)) {
+                if (scope && reconcile && Array.isArray(rows)) {
                     const limit = Number(query.limit);
                     orderStore.reconcile(scope, valid, { complete: !(limit > 0) || rows.length < limit });
                 }
@@ -73,10 +92,14 @@ export function useOrderQuery(params: OrderQueryParams = {}, options: { enabled?
                 setState('error');
             } finally {
                 inFlight.current = false;
+                const again = queued.current;
+                queued.current = null;
+                if (again) void latest.current(again === 'loading' ? 'refreshing' : again);
             }
         },
-        [adapter, enabled, key]
+        [adapter, enabled, key, reconcile]
     );
+    latest.current = load;
 
     /*
      * `revision` is the socket's way in. The connection never writes to the

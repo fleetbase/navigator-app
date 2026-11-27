@@ -1,33 +1,30 @@
 /**
- * Jobs → Route — design round 3 (Route.dc.html).
+ * Jobs → Route — the simple Jobs design (JobsSimpleRoute.dc.html).
  *
  * Every waypoint of the day in driving order, whichever order it belongs to,
- * each with a row that opens its order. The sequence is the manifest's when
- * dispatch built one. When there is none the view is still useful: it lists
- * the active orders' own waypoints one order after another, and says plainly
- * that this is the order of the orders and not a planned route.
+ * as waypoint cards (card option A): what the place is, its name, when, and a
+ * row naming its order that opens that order. The sequence is the manifest's
+ * when dispatch built one. When there is none the list is the active orders'
+ * own waypoints one order after another, and a line under it says so.
  *
- * What the mockup draws that the API does not carry, and is therefore absent:
+ * What the API does not carry is absent rather than made up:
  *
- *   - one row for several orders at the same place ("Pickup · 2 orders"): the
- *     manifest has one stop per order and place, so each is its own row;
- *   - legs (distance and minutes from the previous waypoint) when there is no
- *     manifest: those are the manifest's numbers, and nothing here asks a
- *     routing service for its own.
+ *   - legs (distance and minutes from the previous waypoint) and times when
+ *     there is no manifest: those are the manifest's numbers, and nothing here
+ *     asks a routing service for its own;
+ *   - one row for several orders at the same place: the manifest has one stop
+ *     per order and place, so each is its own row.
  */
 import { useEffect, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { ScrollView } from '../../ui/Scroll';
 import { Body, Secondary } from '../../ui/Text';
-import { StatusPill } from '../../ui/StatusPill';
 import { Banner, EmptyState, Skeleton } from '../../ui/Banner';
 import { FailureState } from '../../ui/FailureState';
 import { useTranslation } from '../../i18n/useTranslation';
-import { formatClock, formatDay, formatDuration, formatMeters, formatMoney } from '../../format';
-import { dayKey } from '../../data/orderStore';
+import { formatClock, formatDuration, formatMeters } from '../../format';
 import {
-    scheduledDayOf,
     useAutoArrive,
     useStopUpdate,
     type ManifestRecord,
@@ -36,143 +33,48 @@ import {
 import type { ApiError } from '../../api/NavigatorAdapter';
 import { toGeoPoint, useDeviceLocation } from '../../shell';
 import { StopBadge } from '../../ui/RouteMap';
-import { colorForId } from '../../ui/routeColors';
-import { Card, CARD_RADIUS, Glyph, GUTTER, OrderAvatar, Rail, Rise, SectionLabel, SegmentBar, WaypointMark } from './parts';
-import type { JobWaypoint, OrderMark, RouteCounts } from './model';
+import { ROUTE_COLOR_PALETTE, colorForId, describeWaypoint } from '../../ui/routeColors';
+import { DottedRail } from '../home/parts';
+import { CARD_RADIUS, Glyph, GUTTER, ListHeading, Rise, SmallMark } from './parts';
+import type { JobWaypoint, RouteCounts } from './model';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
-/** "Drop-off", "Waypoint 1 of 2" — what this place is to its order, when known. */
-export function roleLabel(waypoint: Pick<JobWaypoint, 'role' | 'waypointNumber' | 'waypointTotal'>, t: T, numbered = false): string | undefined {
-    if (waypoint.role === 'pickup') return t('jobs.role.pickup');
-    if (waypoint.role === 'dropoff') return t('jobs.role.dropoff');
+/** "Dropoff", "Waypoint 1 of 2" — what this place is to its order, when known. */
+export function roleLabel(waypoint: Pick<JobWaypoint, 'role' | 'waypointNumber' | 'waypointTotal' | 'isReturn'>, t: T, numbered = false): string | undefined {
+    if (waypoint.isReturn) return t('jobs.kind.return');
+    if (waypoint.role === 'pickup') return t('jobs.kind.pickup');
+    if (waypoint.role === 'dropoff') return t('jobs.kind.dropoff');
     if (waypoint.role === 'waypoint') {
         return numbered && waypoint.waypointNumber && waypoint.waypointTotal && waypoint.waypointTotal > 1
             ? t('jobs.role.waypointOf', { number: waypoint.waypointNumber, total: waypoint.waypointTotal })
-            : t('jobs.role.waypoint');
+            : t('jobs.kind.waypoint');
     }
     return undefined;
 }
 
-/** The line over a waypoint's name: its state in a word, then its role. */
-export function waypointTag(waypoint: JobWaypoint, t: T): string {
-    const state =
-        waypoint.state === 'current'
-            ? t(waypoint.arrived ? 'jobs.state.here' : 'jobs.state.heading')
-            : waypoint.state === 'done'
-              ? t('jobs.state.done')
-              : waypoint.state === 'skipped'
-                ? t('jobs.state.skipped')
-                : undefined;
-    const parts = [state, roleLabel(waypoint, t), waypoint.state === 'later' && waypoint.windowEnd ? t('jobs.byTime', { time: formatClock(waypoint.windowEnd) }) : undefined].filter(Boolean);
-    // A waypoint still to come, whose role the server did not say: it is a waypoint.
-    return parts.length ? parts.join(' · ') : t('jobs.role.waypoint');
+/**
+ * The line over a waypoint's name. The one being headed to leads with that
+ * ("Heading here · Pickup"); the others lead with what they are ("Dropoff ·
+ * Done", "Waypoint 1 of 2 · by 15:00", "Dropoff · Last one").
+ */
+export function waypointTag(waypoint: JobWaypoint, t: T, last = false): string {
+    // A waypoint whose role the server did not say is still a waypoint.
+    const role = roleLabel(waypoint, t, true) ?? t('jobs.kind.waypoint');
+    if (waypoint.state === 'current') return `${t(waypoint.arrived ? 'jobs.state.here' : 'jobs.state.heading')} · ${role}`;
+    if (waypoint.state === 'done') return `${role} · ${t('jobs.state.done')}`;
+    if (waypoint.state === 'skipped') return `${role} · ${t('jobs.state.skipped')}`;
+    return [role, waypoint.windowEnd ? t('jobs.byTime', { time: formatClock(waypoint.windowEnd) }) : undefined, last ? t('jobs.route.lastOne') : undefined].filter(Boolean).join(' · ');
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-    return (
-        <YStack flex={1} gap={2}>
-            <Body fontSize={20} fontWeight="800" tabular numberOfLines={1} adjustsFontSizeToFit>
-                {value}
-            </Body>
-            <Secondary fontSize={12} numberOfLines={1}>
-                {label}
-            </Secondary>
-        </YStack>
-    );
+/** Distance and minutes from the previous waypoint, as the plan has them. */
+function legOf(waypoint: JobWaypoint, units: 'metric' | 'imperial', withDuration: boolean): string {
+    return [waypoint.distanceFromPrevM != null ? formatMeters(waypoint.distanceFromPrevM, units) : null, withDuration && waypoint.durationFromPrevS ? formatDuration(waypoint.durationFromPrevS) : null].filter(Boolean).join(' · ');
 }
 
-function dateLabel(manifest: ManifestRecord, t: T): string {
-    const day = scheduledDayOf(manifest);
-    const today = dayKey();
-    if (!day || day === today) return t('jobs.route.today', { date: formatDay(today, { weekday: true }) });
-    return t('jobs.route.onDay', { date: formatDay(day, { weekday: true }) });
-}
-
-function Summary({
-    manifest,
-    waypoints,
-    counts,
-    units,
-    canReorder,
-    isOnline,
-    onOptimise,
-    t,
-}: {
-    manifest?: ManifestRecord;
-    waypoints: JobWaypoint[];
-    counts: RouteCounts;
-    units: 'metric' | 'imperial';
-    canReorder: boolean;
-    isOnline: boolean;
-    onOptimise?: () => void;
-    t: T;
-}) {
-    const lastEta = [...waypoints].reverse().find((w) => w.eta && w.state !== 'done' && w.state !== 'skipped')?.eta;
-    return (
-        <Card testID="jobs-route-summary">
-            <YStack gap={14}>
-                <XStack alignItems="flex-start" justifyContent="space-between" gap={12}>
-                    <YStack flex={1} gap={2}>
-                        <SectionLabel>{manifest ? dateLabel(manifest, t) : t('jobs.route.derivedLabel')}</SectionLabel>
-                        {manifest ? (
-                            <Body fontFamily="$mono" fontSize={16} fontWeight="600" selectable testID="jobs-route-manifest-id">
-                                {manifest.id}
-                            </Body>
-                        ) : (
-                            <Body fontSize={15} lineHeight={21} testID="jobs-route-derived-note">
-                                {t('jobs.route.derivedNote')}
-                            </Body>
-                        )}
-                    </YStack>
-                    {manifest?.status ? <StatusPill status={manifest.status} size="sm" t={(k, fb) => t(k, { defaultValue: fb })} /> : null}
-                </XStack>
-
-                <XStack gap={8}>
-                    <Stat value={String(counts.total)} label={t('jobs.route.statWaypoints', { count: counts.total })} />
-                    <Stat value={String(counts.orders)} label={t('jobs.route.statOrders', { count: counts.orders })} />
-                    {manifest?.total_distance_m ? <Stat value={formatMeters(manifest.total_distance_m, units)} label={t('jobs.route.statDistance')} /> : null}
-                    {lastEta ? <Stat value={formatClock(lastEta)} label={t('jobs.route.statLast')} /> : null}
-                </XStack>
-
-                <XStack alignItems="center" gap={12}>
-                    <SegmentBar total={counts.total} done={counts.done} currentIndex={counts.currentIndex} testID="jobs-route-progress" />
-                    <Secondary fontSize={13} fontWeight="700" tabular numberOfLines={1}>
-                        {t('jobs.route.doneOf', { done: counts.done, total: counts.total })}
-                    </Secondary>
-                </XStack>
-
-                {canReorder && onOptimise ? (
-                    <XStack
-                        height={48}
-                        borderRadius={14}
-                        borderWidth={1}
-                        borderColor="$border"
-                        backgroundColor="$surfaceRaised"
-                        alignItems="center"
-                        justifyContent="center"
-                        gap={8}
-                        opacity={isOnline ? 1 : 0.4}
-                        onPress={isOnline ? onOptimise : undefined}
-                        pressStyle={{ opacity: 0.7 }}
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: !isOnline }}
-                        testID="route-optimise"
-                    >
-                        <Glyph name="reorder" size={18} strokeWidth={2.4} />
-                        <Body fontSize={15} fontWeight="700" numberOfLines={1}>
-                            {t('jobs.route.reorder', { count: counts.left })}
-                        </Body>
-                    </XStack>
-                ) : null}
-            </YStack>
-        </Card>
-    );
-}
-
+/** The waypoint card, option A (CardOptions.dc.html): the place, when, and a row for its order. */
 function WaypointCard({
     waypoint,
-    mark,
     last,
     units,
     onOpen,
@@ -180,7 +82,6 @@ function WaypointCard({
     t,
 }: {
     waypoint: JobWaypoint;
-    mark?: OrderMark;
     last: boolean;
     units: 'metric' | 'imperial';
     onOpen?: () => void;
@@ -191,126 +92,134 @@ function WaypointCard({
     const done = waypoint.state === 'done' || waypoint.state === 'skipped';
     const current = waypoint.state === 'current';
     const time = done ? waypoint.arrivedAt : waypoint.eta;
-    const leg = done
-        ? t(waypoint.state === 'skipped' ? 'jobs.state.skipped' : 'jobs.state.done')
-        : [waypoint.distanceFromPrevM != null ? formatMeters(waypoint.distanceFromPrevM, units) : null, waypoint.durationFromPrevS ? formatDuration(waypoint.durationFromPrevS) : null]
-              .filter(Boolean)
-              .join(' · ');
-    // The time column is narrow, so distance and minutes each get a line of their own.
-    const legDistance = done ? leg : waypoint.distanceFromPrevM != null ? formatMeters(waypoint.distanceFromPrevM, units) : undefined;
-    const legDuration = !done && waypoint.durationFromPrevS ? formatDuration(waypoint.durationFromPrevS) : undefined;
-    const part = [roleLabel(waypoint, t, true), waypoint.itemCount ? t('ordersScreen.itemCount', { count: waypoint.itemCount }) : null, waypoint.cash ? t('jobs.collect', { amount: formatMoney(waypoint.cash.amount, waypoint.cash.currency) }) : null].filter(Boolean).join(' · ');
-    const tag = waypointTag(waypoint, t);
+    const leg = done ? '' : legOf(waypoint, units, current);
+    const tag = waypointTag(waypoint, t, last);
     const title = waypoint.name ?? waypoint.address ?? t('jobs.unnamed', { sequence: waypoint.sequence });
+    const orderColor = waypoint.orderId ? colorForId(waypoint.orderId) : undefined;
 
     return (
         <XStack gap={12} testID={`jobs-waypoint-${waypoint.key}`}>
-            <YStack width={44} alignItems="center">
-                {/* The same marker as on the map and in the console: P, D or the waypoint's number, in its order's colour. */}
-                <StopBadge
-                    kind={waypoint.isReturn ? 'return' : waypoint.role}
-                    number={waypoint.waypointNumber ?? waypoint.sequence}
-                    color={waypoint.orderId ? colorForId(waypoint.orderId) : undefined}
-                    state={waypoint.state === 'later' ? 'pending' : waypoint.state}
-                />
-                {last ? null : <Rail vertical done={waypoint.state === 'done'} />}
+            <YStack width={32} alignItems="center">
+                {/* The same marker as on the map and in the console: P, D, R or the waypoint's number, in its order's colour. Its frame is wider than the rail, so it is centred over it. */}
+                <YStack width={32} height={32} alignItems="center" justifyContent="center">
+                    <StopBadge kind={waypoint.isReturn ? 'return' : waypoint.role} number={waypoint.waypointNumber ?? waypoint.sequence} color={orderColor} state={waypoint.state === 'later' ? 'pending' : waypoint.state} />
+                </YStack>
+                {last ? null : waypoint.state === 'done' ? <YStack flexGrow={1} width={3} marginVertical={4} borderRadius={1.5} backgroundColor="$success" /> : <DottedRail />}
             </YStack>
-            {/*
-              * Route card A with option C's time column: when comes first, in a
-              * column of its own at the card's left edge, then what and where. The
-              * eye runs down that one edge to read the day's times.
-              */}
-            <XStack
+            <YStack
                 flex={1}
-                marginBottom={12}
+                minWidth={0}
+                marginBottom={10}
+                padding={12}
+                gap={10}
                 borderRadius={CARD_RADIUS}
-                overflow="hidden"
                 backgroundColor={current ? '$primaryFill' : '$surface'}
                 borderWidth={current ? 1.5 : 1}
                 borderColor={current ? '$primary' : '$border'}
-                opacity={done ? 0.72 : 1}
+                opacity={done ? 0.7 : 1}
             >
-            {time || leg ? (
-                <YStack
-                    width={78}
-                    alignItems="center"
-                    justifyContent="center"
-                    gap={2}
-                    paddingHorizontal={6}
-                    borderRightWidth={1}
-                    borderColor={current ? '$primary' : '$border'}
-                    onPress={onOpen}
-                    testID={`jobs-waypoint-time-${waypoint.key}`}
-                >
-                    {time ? (
-                        <Body fontSize={18} fontWeight="800" tabular numberOfLines={1}>
-                            {formatClock(time)}
-                        </Body>
-                    ) : null}
-                    {legDistance ? (
-                        <Secondary fontSize={11} tabular numberOfLines={1}>
-                            {legDistance}
-                        </Secondary>
-                    ) : null}
-                    {legDuration ? (
-                        <Secondary fontSize={11} tabular numberOfLines={1}>
-                            {legDuration}
-                        </Secondary>
-                    ) : null}
-                </YStack>
-            ) : null}
-            <YStack flex={1} padding={14} gap={10}>
-                <YStack
-                    gap={2}
+                <XStack
+                    alignItems="flex-start"
+                    gap={10}
                     onPress={onOpen}
                     pressStyle={onOpen ? { opacity: 0.7 } : undefined}
                     accessibilityRole={onOpen ? 'button' : undefined}
                     accessibilityLabel={`${waypoint.sequence}. ${tag}. ${title}`}
                     testID={`route-stop-${waypoint.stopId ?? waypoint.key}`}
                 >
-                    <SectionLabel tone={waypoint.state === 'done' ? 'success' : current ? 'brand' : 'muted'}>{tag}</SectionLabel>
-                    <Body fontSize={17} fontWeight="800" numberOfLines={1}>
-                        {title}
-                    </Body>
-                    {waypoint.name && waypoint.address ? (
-                        <Secondary fontSize={13} numberOfLines={1}>
-                            {waypoint.address}
-                        </Secondary>
+                    <YStack flex={1} minWidth={0} gap={2}>
+                        <Body fontSize={12} lineHeight={16} fontWeight="800" letterSpacing={0.7} textTransform="uppercase" tabular tone={waypoint.state === 'done' ? 'success' : current ? 'brand' : 'secondary'} numberOfLines={1}>
+                            {tag}
+                        </Body>
+                        <Body fontSize={16} lineHeight={21} fontWeight="800" numberOfLines={1}>
+                            {title}
+                        </Body>
+                    </YStack>
+                    {time || leg ? (
+                        <YStack flexShrink={0} alignItems="flex-end" testID={`jobs-waypoint-time-${waypoint.key}`}>
+                            {time ? (
+                                <Body fontSize={17} lineHeight={22} fontWeight="800" tabular numberOfLines={1}>
+                                    {formatClock(time)}
+                                </Body>
+                            ) : null}
+                            {leg ? (
+                                <Secondary fontSize={12} lineHeight={16} tabular numberOfLines={1}>
+                                    {leg}
+                                </Secondary>
+                            ) : null}
+                        </YStack>
                     ) : null}
-                </YStack>
+                </XStack>
 
                 {waypoint.orderId && waypoint.trackingNumber ? (
                     <XStack
-                        minHeight={48}
-                        paddingVertical={6}
+                        minHeight={36}
                         paddingHorizontal={10}
-                        gap={10}
+                        paddingVertical={4}
+                        gap={8}
                         alignItems="center"
-                        borderRadius={12}
+                        borderRadius={10}
                         backgroundColor="$surfaceRaised"
                         onPress={onOpenOrder}
+                        // 36 high as drawn; the touch reaches into the card's own padding.
+                        hitSlop={{ top: 5, bottom: 6 }}
                         pressStyle={onOpenOrder ? { opacity: 0.7 } : undefined}
                         accessibilityRole="button"
                         accessibilityLabel={t('jobs.openOrder', { order: waypoint.trackingNumber })}
                         testID={`jobs-waypoint-order-${waypoint.key}`}
                     >
-                        <OrderAvatar mark={mark} size={28} />
-                        <YStack flex={1} gap={1}>
-                            {/* In full, never cut short: it is read against a label. */}
-                            <Body fontFamily="$mono" fontSize={13} fontWeight="600">
-                                {waypoint.trackingNumber}
-                            </Body>
-                            {part ? (
-                                <Secondary fontSize={12} tabular numberOfLines={1}>
-                                    {part}
-                                </Secondary>
-                            ) : null}
-                        </YStack>
-                        <Glyph name="chevron" size={16} color={theme.textSecondary?.val as string} strokeWidth={2.4} />
+                        {/* The order's colour: the same on its markers and on its line on the map. */}
+                        <YStack width={10} height={10} borderRadius={3} backgroundColor={(orderColor ?? theme.textMuted?.val) as never} />
+                        {/* In full, never cut short: it is read against a label. */}
+                        <Body flex={1} fontFamily="$mono" fontSize={13} lineHeight={18} fontWeight="600">
+                            {waypoint.trackingNumber}
+                        </Body>
+                        <Glyph name="chevron" size={14} color={theme.textSecondary?.val as string} strokeWidth={2.6} />
+                    </XStack>
+                ) : null}
+
+                {current && onOpen ? (
+                    <XStack
+                        height={52}
+                        borderRadius={16}
+                        alignItems="center"
+                        justifyContent="center"
+                        gap={10}
+                        paddingHorizontal={12}
+                        backgroundColor="$primary"
+                        onPress={onOpen}
+                        pressStyle={{ opacity: 0.8 }}
+                        accessibilityRole="button"
+                        testID="route-continue"
+                    >
+                        <Glyph name="navigate" size={17} color={theme.onPrimary?.val as string} />
+                        <Body flexShrink={1} fontSize={17} lineHeight={22} fontWeight="800" tabular tone="onPrimary" numberOfLines={1}>
+                            {[t('jobs.current.continue'), leg].filter(Boolean).join(' · ')}
+                        </Body>
                     </XStack>
                 ) : null}
             </YStack>
-            </XStack>
+        </XStack>
+    );
+}
+
+/** What the markers mean, under the list. */
+function MarkerKey({ t }: { t: T }) {
+    const keys = [
+        { ...describeWaypoint('pickup', undefined), word: t('jobs.kind.pickup') },
+        { ...describeWaypoint('dropoff', undefined), word: t('jobs.kind.dropoff') },
+        { ...describeWaypoint('waypoint', 1, ROUTE_COLOR_PALETTE[1]), word: t('jobs.kind.waypoint') },
+    ];
+    return (
+        <XStack alignItems="center" justifyContent="space-between" gap={10} paddingTop={6} accessibilityLabel={t('jobs.route.keyLabel')} testID="jobs-route-key">
+            {keys.map((key) => (
+                <XStack key={key.word} alignItems="center" gap={7}>
+                    <SmallMark label={key.label} color={key.color} size={22} />
+                    <Body fontSize={15} lineHeight={20} fontWeight="700" tone="secondary" numberOfLines={1}>
+                        {key.word}
+                    </Body>
+                </XStack>
+            ))}
         </XStack>
     );
 }
@@ -321,7 +230,6 @@ export interface JobsRouteProps {
     stops: ManifestStopRecord[];
     waypoints: JobWaypoint[];
     counts: RouteCounts;
-    marks: Map<string, OrderMark>;
     units: 'metric' | 'imperial';
     isOnline: boolean;
     isLoading: boolean;
@@ -331,7 +239,6 @@ export interface JobsRouteProps {
     onRetry: () => void;
     onOpenWaypoint?: (waypoint: JobWaypoint) => void;
     onOpenOrder?: (orderId: string) => void;
-    onOptimise?: () => void;
     /** Room for the floating tab bar. */
     bottomSpace: number;
 }
@@ -341,7 +248,6 @@ export function JobsRoute({
     stops,
     waypoints,
     counts,
-    marks,
     units,
     isOnline,
     isLoading,
@@ -351,7 +257,6 @@ export function JobsRoute({
     onRetry,
     onOpenWaypoint,
     onOpenOrder,
-    onOptimise,
     bottomSpace,
 }: JobsRouteProps) {
     const { t } = useTranslation();
@@ -384,10 +289,31 @@ export function JobsRoute({
 
     const current = counts.currentIndex >= 0 ? waypoints[counts.currentIndex] : undefined;
 
+    // The plan's own length. Without a manifest there is no figure, and none is worked out here.
+    const totalM = typeof manifest?.total_distance_m === 'number' && manifest.total_distance_m > 0 ? manifest.total_distance_m : undefined;
+
+    const banners = [
+        manifest?.status === 'draft' ? <Banner key="draft" tone="neutral" message={t('jobs.route.draft')} testID="route-draft" /> : null,
+        manifest?.status === 'cancelled' ? <Banner key="cancelled" tone="neutral" message={t('jobs.route.cancelled')} testID="route-cancelled" /> : null,
+        autoArrive.state.kind === 'pending' && current ? (
+            <Banner
+                key="auto-arrive"
+                tone="brand"
+                message={t('jobs.route.autoArriveTitle', { sequence: current.sequence })}
+                meta={t('jobs.route.autoArriveBody', { seconds: Math.max(0, Math.ceil((autoArrive.state.endsAt - Date.now()) / 1000)) })}
+                action={{ label: t('jobs.route.undo'), onPress: autoArrive.undo }}
+                testID="route-auto-arrive"
+            />
+        ) : autoArrivedId && autoArrivedId === current?.stopId ? (
+            <Banner key="auto-arrived" tone="success" message={t('jobs.route.autoArrived')} testID="route-auto-arrived" />
+        ) : null,
+        counts.total > 0 && counts.left === 0 ? <Banner key="all-done" tone="success" message={t('jobs.route.allDone')} testID="route-all-done" /> : null,
+    ].filter(Boolean);
+
     if (isLoading && !waypoints.length) {
         return (
-            <YStack flex={1} paddingHorizontal={GUTTER} gap={12} testID="route-loading">
-                <Skeleton height={190} borderRadius={CARD_RADIUS} />
+            <YStack flex={1} paddingHorizontal={GUTTER} paddingTop={18} gap={12} testID="route-loading">
+                <Skeleton height={26} borderRadius={8} />
                 <Skeleton height={120} borderRadius={CARD_RADIUS} />
                 <Skeleton height={120} borderRadius={CARD_RADIUS} />
             </YStack>
@@ -403,51 +329,47 @@ export function JobsRoute({
             testID="route-list-view"
         >
             {error && !waypoints.length ? (
-                <FailureState error={error} isOnline={isOnline} onRetry={onRetry} t={t} testID="route-error" />
+                <YStack paddingTop={16}>
+                    <FailureState error={error} isOnline={isOnline} onRetry={onRetry} t={t} testID="route-error" />
+                </YStack>
             ) : !waypoints.length ? (
-                <EmptyState title={t('jobs.route.emptyTitle')} body={t('jobs.route.emptyBody')} testID="route-empty-today" />
+                <YStack paddingTop={16}>
+                    <EmptyState title={t('jobs.route.emptyTitle')} body={t('jobs.route.emptyBody')} testID="route-empty-today" />
+                </YStack>
             ) : (
                 <YStack>
-                    <YStack gap={12} paddingBottom={16}>
-                        <Summary
-                            manifest={manifest}
-                            waypoints={waypoints}
-                            counts={counts}
-                            units={units}
-                            canReorder={Boolean(manifest) && counts.left >= 3}
-                            isOnline={isOnline}
-                            onOptimise={onOptimise}
-                            t={t}
-                        />
-                        {manifest?.status === 'draft' ? <Banner tone="neutral" message={t('jobs.route.draft')} testID="route-draft" /> : null}
-                        {manifest?.status === 'cancelled' ? <Banner tone="neutral" message={t('jobs.route.cancelled')} testID="route-cancelled" /> : null}
-                        {autoArrive.state.kind === 'pending' && current ? (
-                            <Banner
-                                tone="brand"
-                                message={t('jobs.route.autoArriveTitle', { sequence: current.sequence })}
-                                meta={t('jobs.route.autoArriveBody', { seconds: Math.max(0, Math.ceil((autoArrive.state.endsAt - Date.now()) / 1000)) })}
-                                action={{ label: t('jobs.route.undo'), onPress: autoArrive.undo }}
-                                testID="route-auto-arrive"
-                            />
-                        ) : autoArrivedId && autoArrivedId === current?.stopId ? (
-                            <Banner tone="success" message={t('jobs.route.autoArrived')} testID="route-auto-arrived" />
-                        ) : null}
-                        {counts.total > 0 && counts.left === 0 ? <Banner tone="success" message={t('jobs.route.allDone')} testID="route-all-done" /> : null}
+                    <YStack paddingTop={18} paddingBottom={12} testID="jobs-route-summary">
+                        <ListHeading title={t('jobs.route.title')} aside={[t('jobs.route.doneOf', { done: counts.done, total: counts.total }), totalM ? formatMeters(totalM, units) : null].filter(Boolean).join(' · ')} />
                     </YStack>
 
-                    {waypoints.map((waypoint, index) => (
-                        <Rise key={waypoint.key} index={index}>
-                            <WaypointCard
-                                waypoint={waypoint}
-                                mark={waypoint.orderId ? marks.get(waypoint.orderId) : undefined}
-                                last={index === waypoints.length - 1}
-                                units={units}
-                                onOpen={onOpenWaypoint ? () => onOpenWaypoint(waypoint) : undefined}
-                                onOpenOrder={onOpenOrder && waypoint.orderId ? () => onOpenOrder(waypoint.orderId as string) : undefined}
-                                t={t}
-                            />
-                        </Rise>
-                    ))}
+                    {banners.length ? (
+                        <YStack gap={8} paddingBottom={12}>
+                            {banners}
+                        </YStack>
+                    ) : null}
+
+                    <YStack accessibilityLabel={t('jobs.route.listLabel', { count: counts.total })}>
+                        {waypoints.map((waypoint, index) => (
+                            <Rise key={waypoint.key} index={index}>
+                                <WaypointCard
+                                    waypoint={waypoint}
+                                    last={index === waypoints.length - 1}
+                                    units={units}
+                                    onOpen={onOpenWaypoint ? () => onOpenWaypoint(waypoint) : undefined}
+                                    onOpenOrder={onOpenOrder && waypoint.orderId ? () => onOpenOrder(waypoint.orderId as string) : undefined}
+                                    t={t}
+                                />
+                            </Rise>
+                        ))}
+                    </YStack>
+
+                    <MarkerKey t={t} />
+
+                    {manifest ? null : (
+                        <Secondary paddingTop={14} fontSize={14} lineHeight={20} testID="jobs-route-derived-note">
+                            {t('jobs.route.derivedNote')}
+                        </Secondary>
+                    )}
                 </YStack>
             )}
         </ScrollView>

@@ -1,26 +1,28 @@
 /**
- * Jobs — design round 3 (Route.dc.html, Work.dc.html, WorkMap.dc.html).
+ * Jobs — the simple Jobs design (JobsSimple*.dc.html).
  *
- * The root of the Jobs tab: one header and a three-way switch over the same
- * day's work.
+ * The root of the Jobs tab: one header, the same on every view (the title, a
+ * Search button and an Offers button that carries a count when there are open
+ * offers), and under it the four views of the driver's work:
  *
- *   - **Route** — every waypoint in driving order, whichever order it is for.
- *   - **Orders** — the orders assigned to the driver, each showing its shape.
- *   - **Map** — the same waypoints on a map.
+ *   - **Orders** — every order, with the one in hand in focus;
+ *   - **Route** — every waypoint of the day in driving order, whichever order
+ *     it is for;
+ *   - **Map** — the same waypoints as one route on a map, with the way to
+ *     optimise it;
+ *   - **Schedule** — the orders by time: a date strip, a day, a week, a month.
  *
- * The sequence comes from today's manifest when dispatch built one. Without a
- * manifest there is still work to show, so Route and Map fall back to the
- * active orders' own waypoints, one order after another, and Route says that
- * this is the order of the orders rather than a planned route. The switch
- * opens on Route when there is a manifest and on Orders when there is not,
- * until the driver picks for themselves.
+ * The day's sequence comes from today's manifest when dispatch built one.
+ * Without a manifest there is still work to show, so Route and Map fall back
+ * to the active orders' own waypoints, one order after another.
  *
  * The file keeps its old name because the screen slot (`orders.list`) and the
  * route (`OrdersHome`) did not change; only what it shows did.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { XStack, YStack } from 'tamagui';
+import { XStack, YStack, useTheme } from 'tamagui';
 import { Body } from '../ui/Text';
+import { Field } from '../ui/Field';
 import { useTranslation } from '../i18n/useTranslation';
 import { useTabBarSpace } from '../navigation/TabBar';
 import {
@@ -33,15 +35,33 @@ import {
     orderStore,
     type ManifestStopRecord,
 } from '../data';
-import { useSync } from '../shell';
+import { secondsLeft, useOffers } from '../data/useOffers';
+import { useDeviceLocation, useDuty, useSync } from '../shell';
 import { useSettings } from '../settings';
-import { GUTTER, ModeSwitch } from './jobs/parts';
-import { countWaypoints, fromManifest, fromOrders, inWorkingOrder, orderMarks, segmentOf, type JobWaypoint } from './jobs/model';
+import { Glyph, GUTTER, JobsTabs } from './jobs/parts';
+import { countWaypoints, fromManifest, fromOrders, inWorkingOrder, pointTimes, segmentOf, type JobWaypoint } from './jobs/model';
 import { JobsRoute } from './jobs/JobsRoute';
 import { JobsOrders } from './jobs/JobsOrders';
 import { JobsMap } from './jobs/JobsMap';
+import { JobsSchedule } from './jobs/JobsSchedule';
 
-export type JobsMode = 'route' | 'orders' | 'map';
+export type JobsMode = 'orders' | 'route' | 'map' | 'schedule';
+
+const MODES: readonly JobsMode[] = ['orders', 'route', 'map', 'schedule'];
+
+/**
+ * Whether the driver is online (working). Offers are only asked for while they
+ * are, and their mark on the map is grey while they are not. Read without
+ * insisting on the provider, so the screen can still be drawn on its own.
+ */
+function useOnDuty(): boolean {
+    try {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return useDuty().duty !== 'off';
+    } catch {
+        return true;
+    }
+}
 
 /** Running first, then ready to run, then still being built. Finished and cancelled routes are not today's work. */
 const MANIFEST_RANK: Record<string, number> = { in_progress: 0, active: 1, draft: 2 };
@@ -62,7 +82,7 @@ export function OrdersScreen({
     driverId?: string;
     /** Bumped on screen focus: the orders and the manifest are asked again. */
     reloadToken?: number;
-    /** Opens on this view instead of choosing by whether there is a manifest. */
+    /** Opens on this view instead of on Orders. */
     initialMode?: JobsMode;
     /** Changes identity each time another screen asks for `initialMode` again (the route's params). */
     modeRequest?: unknown;
@@ -71,12 +91,15 @@ export function OrdersScreen({
     onOpenOffers?: () => void;
     /** Opens a manifest waypoint's own screen. */
     onOpenStop?: (manifestId: string, stopId: string) => void;
-    /** Opens the re-order preview for the manifest. */
+    /** Opens the before / after preview that re-orders what is left of the manifest. */
     onOptimise?: (manifestId: string) => void;
 }) {
     const { t } = useTranslation();
+    const theme = useTheme();
     const { units } = useSettings();
     const { isOnline } = useSync();
+    const onDuty = useOnDuty();
+    const position = useDeviceLocation();
     const bottomSpace = useTabBarSpace();
 
     const orderQuery = useOrderQuery({ driver_assigned: driverId, limit: 50 }, { enabled: !!driverId });
@@ -92,16 +115,34 @@ export function OrdersScreen({
     const manifest = todays ? (manifestDetail.manifest ?? todays) : undefined;
     const stops = todays ? manifestDetail.stops : NO_STOPS;
 
-    // The driver's choice wins once made; until then the manifest decides.
-    const [picked, setPicked] = useState<JobsMode | undefined>(initialMode);
-    const mode: JobsMode = picked ?? (todays ? 'route' : 'orders');
+    // Opens on Orders, the first view, unless another screen asked for one.
+    const [mode, setMode] = useState<JobsMode>(initialMode && MODES.includes(initialMode) ? initialMode : 'orders');
     // Asked for again while already mounted — tabs keep their screens alive.
     useEffect(() => {
-        if (initialMode) setPicked(initialMode);
+        if (initialMode && MODES.includes(initialMode)) setMode(initialMode);
     }, [initialMode, modeRequest]);
 
+    // Search is the header's, and what it finds is orders: opening it shows the Orders view.
+    const [searching, setSearching] = useState(false);
+    const [query, setQuery] = useState('');
+    const closeSearch = useCallback(() => {
+        // Closing the search clears it, or the list stays filtered by a field nobody can see.
+        setQuery('');
+        setSearching(false);
+    }, []);
+    const pickMode = useCallback(
+        (next: JobsMode) => {
+            if (next !== 'orders') closeSearch();
+            setMode(next);
+        },
+        [closeSearch]
+    );
+
+    // Offers this driver could take, while they are online. An offer whose time has run out is not one.
+    const offersQuery = useOffers(onDuty ? driverId : undefined);
+    const offers = useMemo(() => (offersQuery.offers ?? []).filter((order) => secondsLeft(order) !== 0), [offersQuery.offers]);
+
     const active = useMemo(() => inWorkingOrder(all.filter((o) => segmentOf(o) === 'active')), [all]);
-    const marks = useMemo(() => orderMarks(active), [active]);
 
     const waypoints = useMemo<JobWaypoint[]>(
         // `all` is a dependency on purpose: a role is matched against the stored order, which may load later.
@@ -111,15 +152,8 @@ export function OrdersScreen({
     );
     const counts = useMemo(() => countWaypoints(waypoints), [waypoints]);
 
-    /** Order id → the manifest's estimate for the next waypoint of that order. */
-    const nextEtas = useMemo(() => {
-        const etas = new Map<string, string>();
-        for (const w of waypoints) {
-            if (!w.orderId || !w.eta || w.state === 'done' || w.state === 'skipped' || etas.has(w.orderId)) continue;
-            etas.set(w.orderId, w.eta);
-        }
-        return etas;
-    }, [waypoints]);
+    /** What the day's plan says about each place of each order: when the driver is due, or when they got there. */
+    const times = useMemo(() => pointTimes(waypoints), [waypoints]);
 
     const openWaypoint = useCallback(
         (waypoint: JobWaypoint) => {
@@ -136,11 +170,17 @@ export function OrdersScreen({
         void orderQuery.refresh();
     }, [manifestList, manifestDetail, orderQuery]);
 
+    const refreshOrders = useCallback(() => {
+        void orderQuery.refresh();
+        void offersQuery.reload();
+    }, [orderQuery, offersQuery]);
+
     const modes = useMemo(
         () => [
-            { value: 'route' as const, label: t('jobs.modeRoute') },
             { value: 'orders' as const, label: t('jobs.modeOrders') },
+            { value: 'route' as const, label: t('jobs.modeRoute') },
             { value: 'map' as const, label: t('jobs.modeMap') },
+            { value: 'schedule' as const, label: t('jobs.modeSchedule') },
         ],
         [t]
     );
@@ -150,20 +190,103 @@ export function OrdersScreen({
 
     return (
         <YStack flex={1} backgroundColor="$background" testID="orders-screen">
-            <XStack paddingHorizontal={GUTTER} paddingTop={8} paddingBottom={12} alignItems="center" justifyContent="space-between" gap={12}>
-                <Body fontSize={30} lineHeight={36} fontWeight="800" letterSpacing={-0.6} numberOfLines={1} accessibilityRole="header" testID="jobs-title">
+            <XStack paddingHorizontal={GUTTER} paddingTop={4} alignItems="center" gap={8}>
+                <Body flex={1} fontSize={30} lineHeight={48} fontWeight="800" letterSpacing={-0.6} numberOfLines={1} accessibilityRole="header" testID="jobs-title">
                     {t('jobs.title')}
                 </Body>
-                <ModeSwitch options={modes} value={mode} onChange={setPicked} label={t('jobs.modeLabel')} testID="jobs-mode" />
+                <YStack
+                    width={48}
+                    height={48}
+                    borderRadius={24}
+                    alignItems="center"
+                    justifyContent="center"
+                    borderWidth={1}
+                    borderColor={searching ? '$primary' : '$border'}
+                    backgroundColor="$surface"
+                    onPress={() => {
+                        if (searching) closeSearch();
+                        else {
+                            setMode('orders');
+                            setSearching(true);
+                        }
+                    }}
+                    pressStyle={{ opacity: 0.6 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(searching ? 'jobs.orders.closeSearch' : 'jobs.searchLabel')}
+                    testID="orders-search-toggle"
+                >
+                    <Glyph name={searching ? 'close' : 'search'} size={20} strokeWidth={2.6} />
+                </YStack>
+                {onOpenOffers ? (
+                    // Amber with a count while there is an offer to look at; a plain button otherwise. The count is a number beside the word, never the colour alone.
+                    <XStack
+                        height={48}
+                        alignItems="center"
+                        gap={8}
+                        paddingStart={14}
+                        paddingEnd={offers.length ? 10 : 14}
+                        borderRadius={24}
+                        borderWidth={1}
+                        borderColor={offers.length ? '$warningBorder' : '$border'}
+                        backgroundColor={offers.length ? '$warningFill' : '$surface'}
+                        onPress={onOpenOffers}
+                        pressStyle={{ opacity: 0.7 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={offers.length ? t('jobs.offers.buttonOpen', { count: offers.length }) : t('jobs.offers.button')}
+                        testID="jobs-offers"
+                    >
+                        <Glyph name="bolt" size={16} color={(offers.length ? theme.warningText?.val : theme.textSecondary?.val) as string} />
+                        <Body fontSize={16} lineHeight={21} fontWeight="800" numberOfLines={1} tone={offers.length ? 'warning' : 'primary'}>
+                            {t('jobs.offers.button')}
+                        </Body>
+                        {offers.length ? (
+                            <YStack minWidth={26} height={26} paddingHorizontal={6} borderRadius={13} alignItems="center" justifyContent="center" backgroundColor="$warning" testID="jobs-offers-count">
+                                {/* Dark ink on amber in every scheme: the amber does not change with the theme. */}
+                                <Body fontSize={15} lineHeight={20} fontWeight="800" tabular color="#1D1808">
+                                    {offers.length}
+                                </Body>
+                            </YStack>
+                        ) : null}
+                    </XStack>
+                ) : null}
             </XStack>
 
-            {mode === 'route' ? (
+            <YStack paddingHorizontal={GUTTER} paddingTop={12} paddingBottom={mode === 'map' ? 12 : 0}>
+                <JobsTabs options={modes} value={mode} onChange={pickMode} label={t('jobs.modeLabel')} testID="jobs-mode" />
+            </YStack>
+
+            {searching && mode === 'orders' ? (
+                <YStack paddingHorizontal={GUTTER} paddingTop={10}>
+                    <Field value={query} onChangeText={setQuery} placeholder={t('ordersScreen.searchPlaceholder')} autoCapitalize="none" testID="orders-search" />
+                </YStack>
+            ) : null}
+
+            {mode === 'orders' ? (
+                <JobsOrders
+                    orders={all}
+                    times={times}
+                    notices={notices}
+                    offers={offers}
+                    position={position}
+                    units={units}
+                    query={searching ? query : ''}
+                    onClearQuery={() => setQuery('')}
+                    state={orderQuery.state}
+                    error={orderQuery.error}
+                    isOnline={isOnline}
+                    isRefreshing={orderQuery.isRefreshing}
+                    onRefresh={refreshOrders}
+                    onRetry={orderQuery.retry}
+                    onOpenOrder={onOpenOrder}
+                    onOpenOffers={onOpenOffers}
+                    bottomSpace={bottomSpace}
+                />
+            ) : mode === 'route' ? (
                 <JobsRoute
                     manifest={manifest}
                     stops={stops}
                     waypoints={waypoints}
                     counts={counts}
-                    marks={marks}
                     units={units}
                     isOnline={isOnline}
                     isLoading={routeLoading}
@@ -173,27 +296,22 @@ export function OrdersScreen({
                     onRetry={refreshRoute}
                     onOpenWaypoint={openWaypoint}
                     onOpenOrder={onOpenOrder}
+                    bottomSpace={bottomSpace}
+                />
+            ) : mode === 'map' ? (
+                <JobsMap
+                    manifest={manifest}
+                    waypoints={waypoints}
+                    counts={counts}
+                    units={units}
+                    isOnline={isOnline}
+                    offDuty={!onDuty}
+                    onOpenWaypoint={openWaypoint}
                     onOptimise={todays && onOptimise ? () => onOptimise(todays.id) : undefined}
                     bottomSpace={bottomSpace}
                 />
-            ) : mode === 'orders' ? (
-                <JobsOrders
-                    orders={all}
-                    marks={marks}
-                    nextEtas={nextEtas}
-                    notices={notices}
-                    state={orderQuery.state}
-                    error={orderQuery.error}
-                    isOnline={isOnline}
-                    isRefreshing={orderQuery.isRefreshing}
-                    onRefresh={orderQuery.refresh}
-                    onRetry={orderQuery.retry}
-                    onOpenOrder={onOpenOrder}
-                    onOpenOffers={onOpenOffers}
-                    bottomSpace={bottomSpace}
-                />
             ) : (
-                <JobsMap waypoints={waypoints} units={units} onOpenWaypoint={openWaypoint} bottomSpace={bottomSpace} />
+                <JobsSchedule driverId={driverId} orders={all} times={times} isRefreshing={orderQuery.isRefreshing} onRefresh={refreshOrders} onOpenOrder={onOpenOrder} bottomSpace={bottomSpace} />
             )}
         </YStack>
     );

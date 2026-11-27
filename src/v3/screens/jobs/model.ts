@@ -37,6 +37,7 @@ import {
 } from '../../data';
 import { cachedOrderConfig } from '../../data/orderConfigCache';
 import { humanizeStatus } from '../../theme/status';
+import { dayKey } from '../../data/orderStore';
 
 export type PointRole = 'pickup' | 'waypoint' | 'dropoff';
 export type PointState = 'done' | 'current' | 'later' | 'skipped';
@@ -189,6 +190,43 @@ export function segmentOf(order: OrderRecord): OrderSegment {
     return 'active';
 }
 
+/* -- Which day an order belongs to. ----------------------------------------- */
+
+/**
+ * The local day an order is counted on (a `dayKey`).
+ *
+ * The day it is scheduled for, when it has one — finished or not. An order
+ * with no schedule that is still in hand is today's work. A finished order
+ * that never had a schedule is counted on the day it was last touched, which
+ * is the nearest thing the record has to "when it was done".
+ */
+export function scheduleDayOf(order: OrderRecord, today: string = dayKey()): string | undefined {
+    if (order.scheduled_at) {
+        const key = dayKey(order.scheduled_at);
+        if (key !== 'invalid') return key;
+    }
+    if (!isOrderFinished(order)) return today;
+    const stamp = text((order as { updated_at?: unknown }).updated_at) ?? text(order.created_at);
+    const key = stamp ? dayKey(stamp) : 'invalid';
+    return key === 'invalid' ? undefined : key;
+}
+
+/** What the day's plan says about one place of one order: when the driver is due, or when they got there. */
+export interface PointTime {
+    eta?: string;
+    arrivedAt?: string;
+}
+
+/** `orderId:placeId` → the plan's times for that place, from the day's waypoints. */
+export function pointTimes(waypoints: JobWaypoint[]): Map<string, PointTime> {
+    const times = new Map<string, PointTime>();
+    for (const w of waypoints) {
+        if (!w.orderId || !w.placeId || (!w.eta && !w.arrivedAt)) continue;
+        times.set(`${w.orderId}:${w.placeId}`, { eta: w.eta, arrivedAt: w.arrivedAt });
+    }
+    return times;
+}
+
 /* -- A stable letter and colour per order. --------------------------------- */
 
 /**
@@ -240,6 +278,8 @@ export interface JobWaypoint {
     /** Items of that order handled at this waypoint, when the order says. */
     itemCount?: number;
     cash?: CashOnDelivery;
+    /** The place's own id, so a waypoint can be matched to its order's point. */
+    placeId?: string;
     /** Set when the waypoint is a manifest stop, which has a screen of its own. */
     manifestId?: string;
     stopId?: string;
@@ -296,6 +336,7 @@ export function fromManifest(manifestId: string, stops: ManifestStopRecord[], or
             trackingNumber: text(stop.order?.tracking_number) ?? trackingNumberOf(order),
             itemCount: match?.itemCount,
             cash: cash?.toCollect ? cash : undefined,
+            placeId: text(place?.id),
             manifestId,
             stopId: stop.id,
         };
@@ -343,6 +384,7 @@ export function fromOrders(orders: OrderRecord[]): JobWaypoint[] {
                 itemCount: p.itemCount,
                 // Cash changes hands at the end of the order.
                 cash: p === last && cash?.toCollect ? cash : undefined,
+                placeId: p.id,
             });
         });
     }

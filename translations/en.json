@@ -237,7 +237,14 @@
             "autoArriveTitle": "Arrived at waypoint %{sequence}?",
             "autoArriveBody": "You are at the waypoint. Recording your arrival in %{seconds}s.",
             "undo": "Undo",
-            "autoArrived": "Arrival recorded for you"
+            "autoArrived": "Arrival recorded for you",
+            "title": "Today's waypoints",
+            "lastOne": "Last one",
+            "keyLabel": "What the markers mean",
+            "listLabel": {
+                "one": "Today's %{count} waypoint",
+                "other": "Today's %{count} waypoints in driving order"
+            }
         },
         "orders": {
             "active": "Active",
@@ -254,7 +261,19 @@
             },
             "next": "Next: %{name}",
             "cash": "%{amount} cash",
-            "progress": "%{done} of %{total} done"
+            "progress": "%{done} of %{total} done",
+            "nextToday": "Next today",
+            "today": "Today",
+            "later": "Later",
+            "count": {
+                "one": "%{count} order",
+                "other": "%{count} orders"
+            },
+            "doneAt": "Done %{time}",
+            "moreWaypoints": {
+                "one": "+%{count} more waypoint",
+                "other": "+%{count} more waypoints"
+            }
         },
         "map": {
             "noPositions": "These waypoints have no coordinates, so the map cannot place them.",
@@ -263,7 +282,82 @@
             "legendDone": "Done",
             "legendNow": "Now",
             "legendLater": "Later",
-            "legendStraight": "Not by road"
+            "legendStraight": "Not by road",
+            "title": "Today's route",
+            "optimise": "Optimise route",
+            "optimiseHint": "Optimise route: put the waypoints still to do in the shortest driving order",
+            "straightNote": "A dashed line is a straight line, not the road."
+        },
+        "modeSchedule": "Schedule",
+        "searchLabel": "Search by tracking number, customer or address",
+        "kind": {
+            "pickup": "Pickup",
+            "dropoff": "Dropoff",
+            "waypoint": "Waypoint",
+            "return": "Return"
+        },
+        "pill": {
+            "inProgress": "In progress",
+            "scheduled": "Scheduled"
+        },
+        "current": {
+            "label": "Current job",
+            "continue": "Continue",
+            "open": "Current job, order %{order}",
+            "heading": {
+                "pickup": "Heading to pickup",
+                "dropoff": "Heading to dropoff",
+                "waypoint": "Heading to waypoint"
+            }
+        },
+        "offers": {
+            "button": "Offers",
+            "buttonOpen": {
+                "one": "Offers, %{count} open",
+                "other": "Offers, %{count} open"
+            },
+            "nearby": {
+                "one": "%{count} offer nearby",
+                "other": "%{count} offers nearby"
+            },
+            "away": "%{distance} away",
+            "nearest": "Nearest %{distance}",
+            "left": "%{time} left",
+            "opens": "Opens Offers"
+        },
+        "completed": {
+            "title": "Completed",
+            "yesterday": "yesterday %{count}",
+            "thisWeek": "this week %{count}"
+        },
+        "schedule": {
+            "viewLabel": "Show the schedule by",
+            "viewDates": "Dates",
+            "viewDay": "Day",
+            "viewWeek": "Week",
+            "viewMonth": "Month",
+            "today": "Today",
+            "tomorrow": "Tomorrow",
+            "yesterday": "Yesterday",
+            "nothing": "Nothing scheduled",
+            "nothingBody": "Orders scheduled for this day will appear here.",
+            "completed": {
+                "one": "%{count} completed",
+                "other": "%{count} completed"
+            },
+            "noSetTime": "No set time",
+            "now": "Now",
+            "thisWeek": "This week",
+            "nextWeek": "Next week",
+            "lastWeek": "Last week",
+            "weekOf": "Week of %{date}",
+            "previousDay": "Previous day, %{day}",
+            "nextDay": "Next day, %{day}",
+            "previousWeek": "Previous week, %{range}",
+            "nextWeekRange": "Next week, %{range}",
+            "previousMonth": "Previous month, %{month}",
+            "nextMonth": "Next month, %{month}",
+            "stripLabel": "Pick a day. Swipe sideways for other weeks."
         }
     },
     "orderDetail": {
