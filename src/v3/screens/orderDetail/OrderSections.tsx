@@ -8,6 +8,7 @@
  * do, the trip) are in OrderSheetParts.
  */
 import { useState } from 'react';
+import Svg, { Path } from 'react-native-svg';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../../ui/Text';
 import { Surface } from '../../ui/Surface';
@@ -326,18 +327,33 @@ export function CountBadge({ count, offset = -6 }: { count?: number; offset?: nu
     );
 }
 
-/** A 48dp square with its icon over its word: "Message", "Call". */
-function SquareAction({ icon, text, label, onPress, badge, testID }: { icon: HomeIconName; text: string; label: string; onPress: () => void; badge?: number; testID?: string }) {
-    const theme = useTheme();
+/** The envelope, which the shared icon set does not have. */
+function MailIcon({ color, size = 18 }: { color: string; size?: number }) {
     return (
-        <YStack
-            width={48}
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M3 6h18v12H3z" />
+            <Path d="M3 7l9 6 9-6" />
+        </Svg>
+    );
+}
+
+/**
+ * One way to reach someone: a 48dp-high button with its icon beside its word
+ * ("Call", "Message", "Email"). The buttons of a card share its width equally.
+ */
+function ContactAction({ icon, text, label, onPress, badge, testID }: { icon: HomeIconName | 'mail'; text: string; label: string; onPress: () => void; badge?: number; testID?: string }) {
+    const theme = useTheme();
+    const ink = theme.textPrimary?.val as string;
+    return (
+        <XStack
+            flex={1}
+            minWidth={0}
             height={48}
+            gap={8}
+            paddingHorizontal={8}
             borderRadius={14}
-            flexShrink={0}
             alignItems="center"
             justifyContent="center"
-            gap={2}
             backgroundColor="$surfaceRaised"
             borderWidth={1}
             borderColor="$border"
@@ -347,54 +363,76 @@ function SquareAction({ icon, text, label, onPress, badge, testID }: { icon: Hom
             accessibilityLabel={badge ? `${label}, ${badge}` : label}
             testID={testID}
         >
-            <HomeIcon name={icon} color={theme.textPrimary?.val as string} size={18} />
-            <Body fontSize={10} lineHeight={12} fontWeight="700" numberOfLines={1} adjustsFontSizeToFit>
+            {icon === 'mail' ? <MailIcon color={ink} /> : <HomeIcon name={icon} color={ink} size={18} />}
+            <Body flexShrink={1} fontSize={15} lineHeight={20} fontWeight="700" numberOfLines={1} adjustsFontSizeToFit>
                 {text}
             </Body>
             <CountBadge count={badge} />
-        </YStack>
+        </XStack>
     );
 }
 
-/** The customer, with the two ways to reach them. Absent when the order names nobody. */
+/**
+ * The customer and the ways to reach them: who they are, their phone number
+ * and email address in full, then Call, Message and Email. Each is there only
+ * when the order gives what it needs: no phone, no Call; no address, no Email.
+ * Absent when the order names nobody.
+ */
 export function ContactSection({
     contact,
     t,
     onCall,
     onMessageCustomer,
+    onEmail,
     unread,
 }: {
     contact?: ContactPerson;
     t: T;
     onCall?: () => void;
+    /** The order's chat with the customer when it has one, else a text message to their phone. */
     onMessageCustomer?: () => void;
+    onEmail?: () => void;
     /** Unread messages in the thread `onMessageCustomer` opens. */
     unread?: number;
 }) {
     if (!contact) return null;
-    const who = contact.name ?? contact.phone ?? '';
+    const who = contact.name ?? contact.phone ?? contact.email ?? '';
+    const hasActions = Boolean(onCall || onMessageCustomer || onEmail);
     return (
         <Section label={t('orderDetail.customerHeading')}>
             <Card testID="order-contact">
-                <XStack alignItems="center" gap={10}>
-                    <Initials name={contact.name} size={40} />
-                    <YStack flex={1} minWidth={0}>
-                        {contact.name ? (
-                            <Body fontSize={16} lineHeight={21} fontWeight="800">
-                                {contact.name}
-                            </Body>
-                        ) : null}
-                        {contact.phone ? (
-                            <Body fontFamily="$mono" fontSize={13} lineHeight={17} fontWeight="500" tone="secondary" selectable testID="contact-phone">
-                                {contact.phone}
-                            </Body>
-                        ) : null}
-                    </YStack>
-                    {onMessageCustomer ? (
-                        <SquareAction icon="chat" text={t('orderDetail.contact.message')} label={t('orderDetail.contact.messageWho', { name: who })} onPress={onMessageCustomer} badge={unread} testID="message-customer" />
+                <YStack gap={12}>
+                    <XStack alignItems="center" gap={10}>
+                        <Initials name={contact.name} size={40} />
+                        <YStack flex={1} minWidth={0}>
+                            {contact.name ? (
+                                <Body fontSize={16} lineHeight={21} fontWeight="800">
+                                    {contact.name}
+                                </Body>
+                            ) : null}
+                            {contact.phone ? (
+                                <Body fontFamily="$mono" fontSize={14} lineHeight={19} fontWeight="500" tone="secondary" selectable testID="contact-phone">
+                                    {contact.phone}
+                                </Body>
+                            ) : null}
+                            {contact.email ? (
+                                // In full, wrapping if it must: an address cut short cannot be written to.
+                                <Body fontSize={14} lineHeight={19} tone="secondary" selectable testID="contact-email">
+                                    {contact.email}
+                                </Body>
+                            ) : null}
+                        </YStack>
+                    </XStack>
+                    {hasActions ? (
+                        <XStack gap={8} testID="order-contact-actions">
+                            {onCall ? <ContactAction icon="phone" text={t('orderDetail.contact.call')} label={t('orderDetail.contact.callWho', { name: who })} onPress={onCall} testID="call-customer" /> : null}
+                            {onMessageCustomer ? (
+                                <ContactAction icon="chat" text={t('orderDetail.contact.message')} label={t('orderDetail.contact.messageWho', { name: who })} onPress={onMessageCustomer} badge={unread} testID="message-customer" />
+                            ) : null}
+                            {onEmail ? <ContactAction icon="mail" text={t('orderDetail.contact.email')} label={t('orderDetail.contact.emailWho', { name: who })} onPress={onEmail} testID="email-customer" /> : null}
+                        </XStack>
                     ) : null}
-                    {onCall ? <SquareAction icon="phone" text={t('orderDetail.contact.call')} label={t('orderDetail.contact.callWho', { name: who })} onPress={onCall} testID="call-customer" /> : null}
-                </XStack>
+                </YStack>
             </Card>
         </Section>
     );

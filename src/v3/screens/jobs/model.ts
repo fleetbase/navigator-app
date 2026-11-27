@@ -36,6 +36,7 @@ import {
     type OrderRecord,
 } from '../../data';
 import { cachedOrderConfig } from '../../data/orderConfigCache';
+import { placeAddressOf, placeNameOf } from '../../data/placeText';
 import { humanizeStatus } from '../../theme/status';
 import { dayKey } from '../../data/orderStore';
 
@@ -46,6 +47,9 @@ interface RawPlace {
     id?: string;
     name?: string | null;
     address?: string | null;
+    street1?: string | null;
+    city?: string | null;
+    country?: string | null;
     location?: { type?: string; coordinates?: number[] } | null;
     /** Waypoints only: the server's own word on whether this one is finished. */
     complete?: boolean | null;
@@ -61,7 +65,9 @@ export interface OrderPoint {
     id?: string;
     role: PointRole;
     state: PointState;
+    /** The place's own name, when it has a real one (tidied: see data/placeText). */
     name?: string;
+    /** The place's address with the separators its empty parts leave behind trimmed off. */
     address?: string;
     point?: LatLng;
     /** 1-based position among the order's waypoints, for "Waypoint 1 of 2". */
@@ -79,6 +85,22 @@ export interface OrderPoint {
 
 function text(value: unknown): string | undefined {
     return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+/**
+ * A place's name and address as Jobs shows them. Fleetbase builds `address`
+ * from the place's parts, so a place saved with only a city and a country
+ * arrives as " - ULAANBAATAR, MONGOLIA" and its name can be a single space.
+ * Every point and waypoint is named through here, so no view reads them raw.
+ */
+function placeText(place: unknown): { name?: string; address?: string } {
+    const record = place as Record<string, unknown> | null | undefined;
+    return { name: placeNameOf(record), address: placeAddressOf(record) };
+}
+
+/** What to call a point or a waypoint: its name, else its address. */
+export function placeTitle(place?: { name?: string; address?: string } | null): string | undefined {
+    return place?.name ?? place?.address;
 }
 
 /** True once the driver has started the order. */
@@ -137,8 +159,7 @@ export function orderPoints(order?: Partial<OrderRecord> | null): OrderPoint[] {
             id: place.id,
             role,
             state,
-            name: text(place.name),
-            address: text(place.address),
+            ...placeText(place),
             point: coordsOfPoint(place.location),
             ...(role === 'waypoint' ? { waypointNumber, waypointTotal } : {}),
             windowStart: text(place.time_window_start),
@@ -215,14 +236,18 @@ export function scheduleDayOf(order: OrderRecord, today: string = dayKey()): str
 export interface PointTime {
     eta?: string;
     arrivedAt?: string;
+    /** The plan's own leg to this place from the waypoint before it on the route. */
+    distanceFromPrevM?: number;
+    durationFromPrevS?: number;
 }
 
 /** `orderId:placeId` → the plan's times for that place, from the day's waypoints. */
 export function pointTimes(waypoints: JobWaypoint[]): Map<string, PointTime> {
     const times = new Map<string, PointTime>();
     for (const w of waypoints) {
-        if (!w.orderId || !w.placeId || (!w.eta && !w.arrivedAt)) continue;
-        times.set(`${w.orderId}:${w.placeId}`, { eta: w.eta, arrivedAt: w.arrivedAt });
+        const hasLeg = w.distanceFromPrevM != null || w.durationFromPrevS != null;
+        if (!w.orderId || !w.placeId || (!w.eta && !w.arrivedAt && !hasLeg)) continue;
+        times.set(`${w.orderId}:${w.placeId}`, { eta: w.eta, arrivedAt: w.arrivedAt, distanceFromPrevM: w.distanceFromPrevM, durationFromPrevS: w.durationFromPrevS });
     }
     return times;
 }
@@ -324,8 +349,7 @@ export function fromManifest(manifestId: string, stops: ManifestStopRecord[], or
             isReturn: stop.type === 'return' || undefined,
             waypointNumber: num(stop.waypoint_index) ?? match?.waypointNumber,
             waypointTotal: num(stop.waypoint_total) ?? match?.waypointTotal,
-            name: text(place?.name),
-            address: text(place?.address),
+            ...placeText(place),
             point: coordsOfPoint(place?.location),
             eta: text(stop.estimated_arrival),
             arrivedAt: text(stop.actual_arrival),

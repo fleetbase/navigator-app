@@ -426,18 +426,23 @@ export function SmallMark({ label, color, state = 'later', size = 26 }: { label:
 }
 
 /**
- * The rail under a small marker. Dotted ahead of the driver, solid green behind.
- * The dots are views laid over the slot (a dotted border on one side of a view
- * is not drawn on iOS), so the rail takes the row's height and never adds to it.
+ * The rail that joins one marker to the next. Dotted ahead of the driver, solid
+ * green behind. The dots are views laid over the slot (a dotted border on one
+ * side of a view is not drawn on iOS), so the rail takes the row's height and
+ * never adds to it. `inset` keeps it clear of a marker that is drawn larger
+ * than its box (the ring round the one being headed to).
+ *
+ * The dots are the secondary ink at full strength: the muted tone was too faint
+ * to see on a card, most of all on the tinted card of the order in hand.
  */
-export function SmallRail({ done, minHeight = 10 }: { done?: boolean; minHeight?: number }) {
-    const color = useTheme().textMuted?.val as string;
-    if (done) return <YStack flexGrow={1} width={3} minHeight={minHeight} backgroundColor="$success" />;
+export function SmallRail({ done, minHeight = 14, inset = 2, dot = 4 }: { done?: boolean; minHeight?: number; inset?: number; dot?: number }) {
+    const color = useTheme().textSecondary?.val as string;
+    if (done) return <YStack flexGrow={1} width={3} minHeight={minHeight} marginTop={inset} marginBottom={2} borderRadius={1.5} backgroundColor="$success" />;
     return (
-        <View style={{ flexGrow: 1, minHeight, width: 3, overflow: 'hidden' }}>
-            <View style={{ position: 'absolute', top: 1, left: 0, width: 3 }}>
-                {Array.from({ length: 40 }, (_, index) => (
-                    <View key={index} style={{ width: 3, height: 3, borderRadius: 1.5, marginBottom: 3, backgroundColor: color, opacity: 0.7 }} />
+        <View style={{ flexGrow: 1, minHeight, width: dot, marginTop: inset, marginBottom: 2, overflow: 'hidden' }} accessibilityElementsHidden importantForAccessibility="no">
+            <View style={{ position: 'absolute', top: 0, left: 0, width: dot }}>
+                {Array.from({ length: 48 }, (_, index) => (
+                    <View key={index} style={{ width: dot, height: dot, borderRadius: dot / 2, marginBottom: dot, backgroundColor: color, opacity: 0.9 }} />
                 ))}
             </View>
         </View>

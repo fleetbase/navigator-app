@@ -36,7 +36,6 @@ import {
     isOrderFinished,
     payloadOf,
     trackingNumberOf,
-    useTracker,
     type LatLng,
     type OrderNotice,
     type OrderRecord,
@@ -44,11 +43,12 @@ import {
 import { dayKey } from '../../data/orderStore';
 import { secondsLeft } from '../../data/useOffers';
 import type { ApiError } from '../../api/NavigatorAdapter';
-import { DottedRail } from '../home/parts';
+import { useSettings } from '../../settings';
 import { CARD_RADIUS, FootChip, Glyph, GUTTER, ListHeading, Rise, SmallMark, SmallRail, TagPill } from './parts';
 import { OrderNotices } from './OrderNotices';
 import { addDays, weekdayDayMonth, mondayOf } from './dates';
-import { inWorkingOrder, isOrderStarted, orderPoints, orderTypeLabel, scheduleDayOf, type OrderPoint, type PointTime } from './model';
+import { inWorkingOrder, isOrderStarted, orderPoints, orderTypeLabel, placeTitle, scheduleDayOf, type OrderPoint, type PointTime } from './model';
+import { ORDER_CARD_TRACKERS, trackerLegs, useCachedTracker, useJobTrackers, type PlaceLeg, type TrackerRequest } from './trackers';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
@@ -56,18 +56,8 @@ type T = (key: string, options?: Record<string, unknown>) => string;
 export function orderMatches(order: OrderRecord, query: string): boolean {
     if (!query) return true;
     const q = query.toLowerCase();
-    const payload = payloadOf(order);
-    return [
-        trackingNumberOf(order),
-        order.internal_id,
-        order.id,
-        customerNameOf(order),
-        payload?.pickup?.name,
-        payload?.pickup?.address,
-        payload?.dropoff?.name,
-        payload?.dropoff?.address,
-        ...(payload?.waypoints ?? []).flatMap((w) => [w?.name, w?.address]),
-    ]
+    // The places as the cards name them (tidied), so what is searched is what is read.
+    return [trackingNumberOf(order), order.internal_id, order.id, customerNameOf(order), ...orderPoints(order).flatMap((point) => [point.name, point.address])]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
 }
@@ -87,6 +77,72 @@ function OrderPill({ order, t }: { order: OrderRecord; t: T }) {
     if (isOrderStarted(order)) return <TagPill label={t('jobs.pill.inProgress')} icon="play" tone="brand" />;
     if (order.scheduled_at) return <TagPill label={t('jobs.pill.scheduled')} icon="clock" />;
     return own ? <TagPill label={own} icon="clock" /> : null;
+}
+
+/* -- How far and how long to each place. ------------------------------------- */
+
+type Units = 'metric' | 'imperial';
+
+const positive = (value: unknown): number | undefined => {
+    const n = Number(value);
+    return value != null && Number.isFinite(n) && n > 0 ? n : undefined;
+};
+
+/** The order's places still to do, in working order. */
+function remainingOf(points: OrderPoint[]): OrderPoint[] {
+    return points.filter((p) => p.state === 'current' || p.state === 'later');
+}
+
+/** The day plan's own leg to a place, when the order is on a planned route. */
+function plannedLeg(time?: PointTime): PlaceLeg | undefined {
+    const distanceM = positive(time?.distanceFromPrevM);
+    const durationS = positive(time?.durationFromPrevS);
+    return distanceM != null || durationS != null ? { distanceM, durationS } : undefined;
+}
+
+/** "1.1 km · 3 m": what the source gave, and nothing when it gave neither. Under a minute stays in seconds; over it, whole minutes. */
+export function legText(leg: PlaceLeg | undefined, units: Units): string {
+    if (!leg) return '';
+    return [leg.distanceM != null ? formatMeters(leg.distanceM, units) : null, leg.durationS != null ? formatDuration(leg.durationS >= 60 ? Math.round(leg.durationS / 60) * 60 : leg.durationS) : null].filter(Boolean).join(' · ');
+}
+
+/**
+ * How far and how long to each place of an order still to do, by place id: the
+ * first from the driver, each later one from the place before it.
+ *
+ * The figures are the server's, in this order of preference: the day plan's
+ * own legs when the order is on a planned route; else the order's tracker,
+ * when a list has asked for it (see jobs/trackers: this never asks); else the
+ * order's own totals, given as `total` and shown once for the order. With none
+ * of them, nothing: no figure is worked out on the phone.
+ */
+function usePlaceLegs(order: OrderRecord, points: OrderPoint[], times?: Map<string, PointTime>): { legs: Map<string, PlaceLeg>; total?: PlaceLeg } {
+    const tracker = useCachedTracker(order.id);
+    return useMemo(() => {
+        const none = new Map<string, PlaceLeg>();
+        if (isOrderFinished(order)) return { legs: none };
+        const remaining = remainingOf(points);
+        if (!remaining.length) return { legs: none };
+
+        const planned = new Map<string, PlaceLeg>();
+        for (const point of remaining) {
+            const leg = point.id ? plannedLeg(times?.get(`${order.id}:${point.id}`)) : undefined;
+            if (leg && point.id) planned.set(point.id, leg);
+        }
+        if (planned.size) return { legs: planned };
+
+        const tracked = trackerLegs(
+            tracker,
+            remaining.map((p) => p.id)
+        );
+        if (tracked.size) return { legs: tracked };
+
+        const distanceM = positive(order.distance);
+        const durationS = positive(order.time);
+        return { legs: none, total: distanceM != null || durationS != null ? { distanceM, durationS } : undefined };
+        // `points` is rebuilt from `order` on every render; the order is what changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [order, times, tracker]);
 }
 
 /** More places than this and the middle of the itinerary is counted, not listed. */
@@ -116,6 +172,9 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
     const sub = customer ?? orderTypeLabel(order);
     const itemCount = payloadOf(order).entities?.length ?? 0;
     const cash = cashOnDeliveryOf(order);
+    const { units } = useSettings();
+    const { legs, total } = usePlaceLegs(order, points, times);
+    const totalText = legText(total, units);
 
     // The place the eye should land on: the one being headed to, else the first still to do.
     const nextIndex = finished ? -1 : points.findIndex((p) => p.state === 'current') >= 0 ? points.findIndex((p) => p.state === 'current') : points.findIndex((p) => p.state === 'later');
@@ -144,6 +203,8 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
     const chips = [
         points.length > 2 || (!itemCount && !cash?.toCollect && points.length > 0) ? { key: 'waypoints', label: t('jobs.orders.waypoints', { count: points.length }) } : null,
         itemCount ? { key: 'items', label: t('ordersScreen.itemCount', { count: itemCount }) } : null,
+        // The order's own length and time, once for the order, when nothing says it place by place.
+        totalText ? { key: 'trip', label: totalText } : null,
         !finished && cash?.toCollect ? { key: 'cash', label: t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }), tone: 'warning' as const } : null,
     ].filter(Boolean) as { key: string; label: string; tone?: 'warning' }[];
 
@@ -184,17 +245,27 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
                         const isNext = i === nextIndex;
                         const quiet = p.state === 'done' || p.state === 'skipped';
                         const hidden = folded && row === 2 ? points.length - shown.length : 0;
+                        // How far and how long to get here: from the driver for the next place, from the place before for the rest.
+                        const leg = quiet || !p.id ? '' : legText(legs.get(p.id), units);
                         return (
                             <YStack key={p.id ?? i}>
                                 <XStack gap={12}>
                                     <YStack width={26} alignItems="center">
                                         <SmallMark label={mark.label} color={mark.color} state={p.state} />
+                                        {/* The rail joins this marker to the next one down. */}
                                         {last ? null : <SmallRail done={p.state === 'done'} />}
                                     </YStack>
-                                    <XStack flex={1} minWidth={0} alignItems="baseline" justifyContent="space-between" gap={10} paddingTop={3} paddingBottom={12}>
-                                        <Body flex={1} fontSize={15} lineHeight={20} fontWeight={isNext ? '800' : quiet ? '600' : '700'} tone={quiet ? 'secondary' : 'primary'} numberOfLines={1}>
-                                            {p.name ?? p.address ?? kindLabel(p.role, t)}
-                                        </Body>
+                                    <XStack flex={1} minWidth={0} alignItems="flex-start" justifyContent="space-between" gap={10} paddingTop={3} paddingBottom={14}>
+                                        <YStack flex={1} minWidth={0}>
+                                            <Body fontSize={15} lineHeight={20} fontWeight={isNext ? '800' : quiet ? '600' : '700'} tone={quiet ? 'secondary' : 'primary'} numberOfLines={1}>
+                                                {placeTitle(p) ?? kindLabel(p.role, t)}
+                                            </Body>
+                                            {leg ? (
+                                                <Body fontSize={13} lineHeight={17} fontWeight="700" tabular tone="secondary" numberOfLines={1} testID={`order-${order.id}-leg-${p.id}`}>
+                                                    {leg}
+                                                </Body>
+                                            ) : null}
+                                        </YStack>
                                         {time ? (
                                             <Body flexShrink={0} fontSize={13} lineHeight={20} fontWeight="700" tabular numberOfLines={1} tone={time.done ? 'success' : isNext ? 'primary' : 'secondary'}>
                                                 {time.text}
@@ -205,9 +276,9 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
                                 {hidden ? (
                                     <XStack gap={12}>
                                         <YStack width={26} alignItems="center">
-                                            <SmallRail minHeight={30} />
+                                            <SmallRail minHeight={30} inset={0} />
                                         </YStack>
-                                        <Secondary flex={1} fontSize={13} lineHeight={18} fontWeight="700" tabular paddingBottom={12}>
+                                        <Secondary flex={1} fontSize={13} lineHeight={18} fontWeight="700" tabular paddingBottom={14}>
                                             {t('jobs.orders.moreWaypoints', { count: hidden })}
                                         </Secondary>
                                     </XStack>
@@ -236,7 +307,7 @@ const CURRENT_MAX = 4;
  * The job in hand: one card in focus, with the places still to drive to, what
  * the order carries, and Continue.
  */
-function CurrentJobCard({ order, units, onContinue, t }: { order: OrderRecord; units: 'metric' | 'imperial'; onContinue?: () => void; t: T }) {
+function CurrentJobCard({ order, times, units, onContinue, t }: { order: OrderRecord; times?: Map<string, PointTime>; units: Units; onContinue?: () => void; t: T }) {
     const theme = useTheme();
     const points = orderPoints(order);
     const ahead = points.filter((p) => p.state === 'current' || p.state === 'later');
@@ -248,12 +319,9 @@ function CurrentJobCard({ order, units, onContinue, t }: { order: OrderRecord; u
     const itemCount = payloadOf(order).entities?.length ?? 0;
     const cash = cashOnDeliveryOf(order);
 
-    // The road to the place being headed to, from the order's tracker. Absent rather than estimated.
-    const { tracker } = useTracker(order.id);
-    const leg = tracker?.route?.legs?.[0];
-    const legLine = [leg?.distance_m != null && Number.isFinite(Number(leg.distance_m)) ? formatMeters(Number(leg.distance_m), units) : null, leg?.duration_s != null && Number.isFinite(Number(leg.duration_s)) ? formatDuration(Number(leg.duration_s)) : null]
-        .filter(Boolean)
-        .join(' · ');
+    // The road to each place still to do: the day plan's, else the order's tracker. Absent rather than estimated.
+    const { legs, total } = usePlaceLegs(order, points, times);
+    const totalText = legText(total, units);
 
     const eyebrow = [t('jobs.current.label'), order.scheduled_at && dayKey(order.scheduled_at) === dayKey() ? formatClock(order.scheduled_at) : null].filter(Boolean).join(' · ');
 
@@ -295,6 +363,7 @@ function CurrentJobCard({ order, units, onContinue, t }: { order: OrderRecord; u
                     {shown.map((p, index) => {
                         const last = index === shown.length - 1;
                         const current = p === heading && p.state === 'current';
+                        const legLine = p.id ? legText(legs.get(p.id), units) : '';
                         return (
                             <XStack key={p.id ?? index} gap={12}>
                                 <YStack width={32} alignItems="center">
@@ -302,17 +371,18 @@ function CurrentJobCard({ order, units, onContinue, t }: { order: OrderRecord; u
                                     <YStack width={32} height={32} alignItems="center" justifyContent="center">
                                         <StopBadge kind={p.role} number={p.waypointNumber} color={color} state={current ? 'current' : 'pending'} />
                                     </YStack>
-                                    {last ? null : <DottedRail />}
+                                    {/* The rail joins this marker to the next; it starts below the ring round the one being headed to. */}
+                                    {last ? null : <SmallRail minHeight={18} inset={current ? 9 : 4} />}
                                 </YStack>
                                 <YStack flex={1} minWidth={0} paddingBottom={last ? 0 : 12}>
                                     <Body fontSize={13} lineHeight={18} fontWeight="800" letterSpacing={0.8} textTransform="uppercase" tone={current ? 'success' : 'secondary'} numberOfLines={1}>
                                         {current ? `${kindLabel(p.role, t)} · ${t('jobs.state.heading')}` : kindLabel(p.role, t)}
                                     </Body>
                                     <Body fontSize={18} lineHeight={24} fontWeight={current ? '800' : '700'} letterSpacing={current ? -0.2 : 0} numberOfLines={1}>
-                                        {p.name ?? p.address ?? kindLabel(p.role, t)}
+                                        {placeTitle(p) ?? kindLabel(p.role, t)}
                                     </Body>
-                                    {current && legLine ? (
-                                        <Body fontSize={15} lineHeight={20} fontWeight="700" tabular tone="secondary" numberOfLines={1} testID="jobs-current-leg">
+                                    {legLine ? (
+                                        <Body fontSize={15} lineHeight={20} fontWeight="700" tabular tone="secondary" numberOfLines={1} testID={p === heading ? 'jobs-current-leg' : `jobs-current-leg-${p.id}`}>
                                             {legLine}
                                         </Body>
                                     ) : null}
@@ -328,9 +398,10 @@ function CurrentJobCard({ order, units, onContinue, t }: { order: OrderRecord; u
                 </YStack>
             ) : null}
 
-            {itemCount || cash?.toCollect ? (
+            {itemCount || cash?.toCollect || totalText ? (
                 <XStack flexWrap="wrap" gap={6} paddingTop={12}>
                     {itemCount ? <FootChip large icon="box" label={t('ordersScreen.itemCount', { count: itemCount })} /> : null}
+                    {totalText ? <FootChip large icon="navigate" label={totalText} /> : null}
                     {cash?.toCollect ? <FootChip large icon="cash" tone="warning" label={t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) })} /> : null}
                 </XStack>
             ) : null}
@@ -367,7 +438,7 @@ function formatCountdown(seconds: number): string {
  * pickup is, and how long is left on an offer made to this driver alone. The
  * accepting is done on the Offers screen, which this opens.
  */
-function OffersRow({ offers, position, units, onPress, t }: { offers: OrderRecord[]; position?: LatLng | null; units: 'metric' | 'imperial'; onPress?: () => void; t: T }) {
+function OffersRow({ offers, position, units, onPress, t }: { offers: OrderRecord[]; position?: LatLng | null; units: Units; onPress?: () => void; t: T }) {
     const theme = useTheme();
     const timed = offers.some((order) => secondsLeft(order) !== null);
     const [now, setNow] = useState(() => Date.now());
@@ -558,6 +629,34 @@ export function JobsOrders({ orders, times, notices, offers, position, units, qu
         return list;
     }, [searching, query, orders, groups, showCompleted, t]);
 
+    /*
+     * The trackers behind the cards' distances and times. One request per order,
+     * so only for the cards a driver meets first: the job in hand and the next
+     * few of today's, never a finished order, never one the day plan already
+     * gives legs for, and never one for a later day (how far it is from here
+     * today says nothing about then). Answers are shared with the Map and kept
+     * for the session (jobs/trackers).
+     */
+    const trackerRequests = useMemo<TrackerRequest[]>(() => {
+        const today = dayKey();
+        const listed = rows.flatMap((row) => (row.kind === 'order' ? [row.order] : []));
+        const candidates = !searching && groups.current ? [groups.current, ...listed] : listed;
+        const requests: TrackerRequest[] = [];
+        for (const order of candidates) {
+            if (requests.length >= ORDER_CARD_TRACKERS) break;
+            if (isOrderFinished(order) || (scheduleDayOf(order, today) ?? today) > today) continue;
+            const points = orderPoints(order);
+            const remaining = remainingOf(points);
+            if (!remaining.length) continue;
+            if (remaining.some((p) => p.id && plannedLeg(times.get(`${order.id}:${p.id}`)))) continue;
+            // The count of places behind the driver: when it moves on, the legs are asked again.
+            requests.push({ id: order.id, version: points.length - remaining.length });
+        }
+        return requests;
+    }, [rows, groups.current, searching, times]);
+    // Offline nothing is asked; the cards still show what was fetched earlier this session.
+    useJobTrackers(trackerRequests, isOnline);
+
     const renderItem = useCallback(
         ({ item, index }: { item: Row; index: number }) => {
             if (item.kind === 'heading') {
@@ -606,7 +705,7 @@ export function JobsOrders({ orders, times, notices, offers, position, units, qu
             {!searching && groups.current ? (
                 <YStack paddingHorizontal={GUTTER} paddingTop={16}>
                     <Rise>
-                        <CurrentJobCard key={groups.current.id} order={groups.current} units={units} onContinue={onOpenOrder ? () => onOpenOrder((groups.current as OrderRecord).id) : undefined} t={t} />
+                        <CurrentJobCard key={groups.current.id} order={groups.current} times={times} units={units} onContinue={onOpenOrder ? () => onOpenOrder((groups.current as OrderRecord).id) : undefined} t={t} />
                     </Rise>
                 </YStack>
             ) : null}

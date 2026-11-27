@@ -8,14 +8,20 @@
  * Lines follow the app's rules (MapMarkers.dc.html):
  *
  *   - the road is the server's, never the app's own guess: the manifest's
- *     route when dispatch built one, otherwise the tracker's route for the one
- *     order being driven;
+ *     route when dispatch built one, otherwise each unfinished order's own
+ *     road from its tracker, which runs from the driver through what is left
+ *     of that order;
  *   - each order keeps the colour the console gives it, so one order is one
  *     colour everywhere: its markers, its row in the Route list, and its part
  *     of the line here. The part already driven is the same colour, thinner
  *     and fainter;
  *   - where the app has no road it joins waypoints with a straight **dashed**
- *     grey line, so a dashed line always reads as "not the road".
+ *     grey line, so a dashed line always reads as "not the road". That is the
+ *     last resort, for an order whose road did not come back.
+ *
+ * When the waypoints of more than one order share the map, each marker carries
+ * its order's tracking number in a small label, above or below it by turns so
+ * two neighbours' labels do not sit on each other.
  *
  * Markers are the console's (`StopBadge`): P, D and R for the ends of an order,
  * a number on the order's own colour for the waypoints in between. Tapping one
@@ -40,9 +46,11 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useResolvedScheme } from '../../settings';
 import { useDeviceLocation } from '../../shell';
 import { formatMeters } from '../../format';
-import { decodePolyline, useManifestRoute, useTracker, type LatLng, type ManifestRecord } from '../../data';
+import { decodePolyline, useManifestRoute, type LatLng, type ManifestRecord } from '../../data';
+import { hitTarget } from '../../theme/tokens';
 import { CARD_RADIUS, Glyph, GUTTER } from './parts';
-import type { JobWaypoint, RouteCounts } from './model';
+import { placeTitle, type JobWaypoint, type RouteCounts } from './model';
+import { MAP_TRACKERS, useJobTrackers, type TrackerRequest } from './trackers';
 
 type Placed = JobWaypoint & { point: LatLng };
 
@@ -53,6 +61,30 @@ interface RoadLine {
 }
 
 const isBehind = (state: JobWaypoint['state']) => state === 'done' || state === 'skipped';
+
+/* -- The order's tracking number beside its markers. ------------------------- */
+
+/** The marker's own box (`StopBadge`), and the label's: fixed, so the marker can be anchored on the badge's centre. */
+const BADGE = hitTarget.min;
+const LABEL_HEIGHT = 20;
+const LABEL_GAP = 1;
+const LABELLED = BADGE + LABEL_GAP + LABEL_HEIGHT;
+
+/**
+ * A waypoint's order, by tracking number: mono, in full, on a dark pill edged
+ * in the order's colour. It sits in the marker's own view, in flow, because a
+ * marker is drawn to the size of its view and anything hung outside it is cut
+ * off on Android.
+ */
+function OrderLabel({ text, color }: { text: string; color: string }) {
+    return (
+        <YStack height={LABEL_HEIGHT} paddingHorizontal={6} borderRadius={6} alignItems="center" justifyContent="center" backgroundColor="#10151F" borderWidth={1.5} borderColor={color as never}>
+            <Body fontFamily="$mono" fontSize={11} lineHeight={14} fontWeight="700" color="#FFFFFF">
+                {text}
+            </Body>
+        </YStack>
+    );
+}
 
 /** With only one place to show, a few streets around it. */
 const STREET = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
@@ -92,20 +124,33 @@ export function JobsMap({ manifest, waypoints, counts, units, isOnline, offDuty,
     const { route: manifestRoute } = useManifestRoute(manifestId, routeStops);
 
     /*
-     * No manifest: the only road worth asking for is the one being driven. One
-     * tracker request for that order, asked again when one of its waypoints is
-     * finished; every other order is joined by straight dashed lines. A request
-     * per order would be a routing call per order each time the map opens.
+     * No manifest: each unfinished order's own road, from its tracker. One
+     * request per order, so it is capped, shared with the order cards and kept
+     * for the session (jobs/trackers); an order is asked again when one of its
+     * waypoints is finished. Orders past the cap, and any whose road did not
+     * come back, are joined by straight dashed lines.
      */
-    const drivenOrderId = !manifestId ? current?.orderId : undefined;
-    const drivenDone = drivenOrderId ? waypoints.filter((w) => w.orderId === drivenOrderId && isBehind(w.state)).length : 0;
-    const { tracker } = useTracker(drivenOrderId, drivenDone);
-    const trackerRoute = useMemo(() => {
-        if (!drivenOrderId) return [];
-        // The hook keeps its last answer while the order changes: only draw a route that is about this order's places.
-        const mine = (tracker?.stops ?? []).some((stop) => waypoints.some((w) => w.key === `${drivenOrderId}:${stop.public_id}`));
-        return mine ? decodePolyline(tracker?.route?.polyline) : [];
-    }, [tracker, drivenOrderId, waypoints]);
+    const trackerRequests = useMemo<TrackerRequest[]>(() => {
+        if (manifestId) return [];
+        // The orders with something still to drive to, in driving order.
+        const ahead: string[] = [];
+        for (const w of placed) {
+            if (w.orderId && !isBehind(w.state) && !ahead.includes(w.orderId)) ahead.push(w.orderId);
+        }
+        // The count of waypoints behind the driver is the same figure the order cards ask with, so the answer is shared.
+        return ahead.slice(0, MAP_TRACKERS).map((id) => ({ id, version: waypoints.filter((w) => w.orderId === id && isBehind(w.state)).length }));
+    }, [manifestId, placed, waypoints]);
+    // Offline nothing is asked, but a road already fetched this session is still drawn.
+    const trackers = useJobTrackers(trackerRequests, isOnline);
+    /** Order id → its road, decoded. Only orders whose road came back. */
+    const orderRoads = useMemo(() => {
+        const roads = new Map<string, LatLng[]>();
+        for (const { id } of trackerRequests) {
+            const coordinates = decodePolyline(trackers.get(id)?.route?.polyline);
+            if (coordinates.length > 1) roads.set(id, coordinates);
+        }
+        return roads;
+    }, [trackers, trackerRequests]);
 
     const brand = theme.primary?.val as string;
     const { road, straight } = useMemo(() => {
@@ -137,19 +182,22 @@ export function JobsMap({ manifest, waypoints, counts, units, isOnline, offDuty,
             return { road, straight };
         }
 
-        const hasTrackerRoute = trackerRoute.length > 1;
-        if (hasTrackerRoute && drivenOrderId) add(colorForId(drivenOrderId), 'live', trackerRoute);
+        // Each order's own road, in its own colour. Pushed one by one: two orders are never one line.
+        orderRoads.forEach((coordinates, orderId) => road.push({ color: colorForId(orderId), variant: 'live', coordinates }));
 
         // No road for the rest: straight lines, waypoint to waypoint, among what is still to do.
         placed.forEach((waypoint, index) => {
             if (isBehind(waypoint.state)) return;
-            // The tracker's route already runs from the driver through what is left of the driven order.
-            if (hasTrackerRoute && waypoint.orderId === drivenOrderId) return;
+            // The tracker's road already runs from the driver through what is left of that order.
+            if (waypoint.orderId && orderRoads.has(waypoint.orderId)) return;
             const from = waypoint.state === 'current' && position ? position : index > 0 ? placed[index - 1].point : undefined;
             if (from) straight.push([from, waypoint.point]);
         });
         return { road, straight };
-    }, [placed, waypoints, current, position, manifestRoute, trackerRoute, drivenOrderId, brand]);
+    }, [placed, waypoints, current, position, manifestRoute, orderRoads, brand]);
+
+    // More than one order on the map: every marker says which order it is for.
+    const severalOrders = useMemo(() => new Set(placed.map((w) => w.orderId).filter(Boolean)).size > 1, [placed]);
 
     /*
      * A fit asked for before the map has loaded is dropped without a word, so
@@ -223,27 +271,47 @@ export function JobsMap({ manifest, waypoints, counts, units, isOnline, offDuty,
                         <DriverPuck color={brand} heading={position.heading} muted={offDuty} />
                     </Marker>
                 ) : null}
-                {placed.map((waypoint) => {
+                {placed.map((waypoint, index) => {
                     const state = waypoint.state === 'skipped' ? 'skipped' : waypoint.state === 'done' ? 'done' : waypoint.state === 'current' ? 'current' : 'pending';
+                    const color = colorForId(waypoint.orderId ?? '');
+                    const label = severalOrders ? waypoint.trackingNumber : undefined;
+                    // Above and below by turns down the driving order, so two waypoints close together do not stack their labels.
+                    const side = !label ? '' : index % 2 ? 'below' : 'above';
+                    const badge = (
+                        <StopBadge
+                            kind={waypoint.isReturn ? 'return' : waypoint.role}
+                            // Its number within its order; the place in the day only when nothing says what it is to its order.
+                            number={waypoint.waypointNumber ?? waypoint.sequence}
+                            // Several orders share this map: each keeps the colour the console gives it.
+                            color={color}
+                            state={state}
+                        />
+                    );
                     return (
                         <Marker
-                            // Custom markers are drawn once (`tracksViewChanges`), so a change of state needs a new marker.
-                            key={`${waypoint.key}:${state}`}
+                            // Custom markers are drawn once (`tracksViewChanges`), so a change of state or of label needs a new marker.
+                            key={`${waypoint.key}:${state}:${side}`}
                             coordinate={waypoint.point}
-                            anchor={{ x: 0.5, y: 0.5 }}
+                            // The badge's centre stays on the place: the label only makes the view taller on one side.
+                            anchor={{ x: 0.5, y: side === 'above' ? (LABEL_HEIGHT + LABEL_GAP + BADGE / 2) / LABELLED : side === 'below' ? BADGE / 2 / LABELLED : 0.5 }}
                             tracksViewChanges={state === 'current'}
+                            // The one being headed to is drawn over its neighbours and their labels.
+                            zIndex={state === 'current' ? 4 : 3}
                             onPress={onOpenWaypoint ? () => onOpenWaypoint(waypoint) : undefined}
                             testID={`route-marker-${waypoint.stopId ?? waypoint.key}`}
-                            accessibilityLabel={`${waypoint.sequence} ${waypoint.name ?? ''}`.trim()}
+                            accessibilityLabel={[waypoint.sequence, placeTitle(waypoint), label].filter(Boolean).join(' ')}
                         >
-                            <StopBadge
-                                kind={waypoint.isReturn ? 'return' : waypoint.role}
-                                // Its number within its order; the place in the day only when nothing says what it is to its order.
-                                number={waypoint.waypointNumber ?? waypoint.sequence}
-                                // Several orders share this map: each keeps the colour the console gives it.
-                                color={colorForId(waypoint.orderId ?? '')}
-                                state={state}
-                            />
+                            {label ? (
+                                <YStack height={LABELLED} alignItems="center" justifyContent="space-between" testID={`route-marker-order-${waypoint.stopId ?? waypoint.key}`}>
+                                    {side === 'above' ? <OrderLabel text={label} color={color} /> : null}
+                                    <YStack width={BADGE} height={BADGE} alignItems="center" justifyContent="center">
+                                        {badge}
+                                    </YStack>
+                                    {side === 'below' ? <OrderLabel text={label} color={color} /> : null}
+                                </YStack>
+                            ) : (
+                                badge
+                            )}
                         </Marker>
                     );
                 })}

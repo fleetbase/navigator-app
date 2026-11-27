@@ -167,5 +167,45 @@ export function customerContactOf(order?: Partial<OrderRecord> | null): ContactP
         phone: str(c?.phone) ?? str(dropoff?.phone),
         email: str(c?.email),
     };
-    return contact.name || contact.phone ? contact : undefined;
+    // Any one of them is someone to show: a customer known only by an email can still be written to.
+    return contact.name || contact.phone || contact.email ? contact : undefined;
+}
+
+/* -- Notes. ----------------------------------------------------------------- */
+
+/**
+ * Everything written about one place on an order, each note once, in full.
+ *
+ * Where they come from on the driver API: a waypoint's own `notes`
+ * (Waypoint.php, set per waypoint by dispatch), and the place's `meta`
+ * (`instructions`, where the order-edit API writes delivery instructions, and
+ * `notes`). `instructions` / `remarks` straight on the place are read too, for
+ * servers that send them there.
+ */
+export function placeNotesOf(place?: unknown): string[] {
+    const p = recordOf(place);
+    if (!p) return [];
+    const meta = recordOf(p.meta);
+    const notes = [str(meta?.instructions), str(p.instructions), str(p.notes), str(meta?.notes), str(meta?.note), str(p.remarks)]
+        .filter((note): note is string => !!note)
+        .map((note) => note.trim());
+    return notes.filter((note, index) => notes.indexOf(note) === index);
+}
+
+/**
+ * The notes of every place on the order, in working order (pickup, the
+ * waypoints, drop-off): the same order the trip rail lists them in.
+ */
+export function orderPlaceNotesOf(order?: Partial<OrderRecord> | null): string[][] {
+    const payload = payloadOf(order) as Rec;
+    const places: unknown[] = [];
+    if (payload.pickup) places.push(payload.pickup);
+    for (const waypoint of Array.isArray(payload.waypoints) ? payload.waypoints : []) if (waypoint) places.push(waypoint);
+    if (payload.dropoff) places.push(payload.dropoff);
+    return places.map(placeNotesOf);
+}
+
+/** What is said about the whole order: its own `notes`. */
+export function orderNotesOf(order?: Partial<OrderRecord> | null): string | undefined {
+    return str((order as Rec | null | undefined)?.notes)?.trim();
 }

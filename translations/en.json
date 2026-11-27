@@ -436,7 +436,9 @@
             "messageDispatch": "Message dispatch",
             "callWho": "Call %{name}",
             "messageWho": "Message %{name}",
-            "message": "Message"
+            "message": "Message",
+            "email": "Email",
+            "emailWho": "Email %{name}"
         },
         "reassigned": "This order is no longer assigned to you.",
         "proofCaptured": "Proof captured",
@@ -519,14 +521,28 @@
             "documents": "Documents · %{count}",
             "commentAdd": "Add a comment",
             "notStarted": "Not started yet",
-            "reference": "Reference"
+            "reference": "Reference",
+            "documentsHeading": "Documents",
+            "documentsNone": "No documents yet",
+            "commentsNone": "No comments yet"
         },
         "eyebrow": "Order · %{type}",
         "eyebrowPlain": "Order",
-        "chat": "Order chat",
+        "eyebrowJob": "Job · %{type}",
+        "chat": "Chat with dispatch",
         "chatUnread": {
-            "one": "Order chat, %{count} unread message",
-            "other": "Order chat, %{count} unread messages"
+            "one": "Chat with dispatch, %{count} unread message",
+            "other": "Chat with dispatch, %{count} unread messages"
+        },
+        "activity": {
+            "heading": "Activity",
+            "seeAll": "See all activity",
+            "done": "Done",
+            "current": "Current",
+            "next": "To do",
+            "none": "No activity yet",
+            "statusOpen": "Status: %{status}. Show the order's activity",
+            "refreshFailed": "Could not refresh the activity. Showing what was last known."
         },
         "qrOpen": "QR code for order %{number}. Show it larger",
         "index": {
@@ -535,6 +551,7 @@
             "items": "Items",
             "people": "People",
             "files": "Files",
+            "activity": "Activity",
             "info": "Info"
         },
         "now": {

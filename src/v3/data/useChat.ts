@@ -473,6 +473,48 @@ export function useCreateChannel() {
     return { create, isCreating, error };
 }
 
+/**
+ * The order's chat with dispatch (`POST orders/{id}/chat-channel`, FleetOps
+ * 0.7.4 and later).
+ *
+ * The server returns the order's driver-and-dispatch channel, starting it when
+ * there is none yet, so asking twice gives the same one; it puts the driver and
+ * the organisation's dispatch side in it. `open` answers with the channel, or
+ * with null when it could not be had: an older server without the route (404
+ * or 405), an order that is not this driver's (403), no signal. The caller
+ * then does what it did before there was such a channel.
+ *
+ * The request is never queued (see NEVER_QUEUE in api/NavigatorAdapter): a chat
+ * that opens an hour later is no use to a driver who tapped the button now.
+ */
+export function useOrderDispatchChannel(orderId?: string | null) {
+    const { adapter } = useFleetbase();
+    const [isOpening, setIsOpening] = useState(false);
+    const inFlight = useRef(false);
+
+    const open = useCallback(async (): Promise<ChatChannelRecord | null> => {
+        if (!orderId || inFlight.current) return null;
+        inFlight.current = true;
+        setIsOpening(true);
+        try {
+            const raw = await adapter.post(`orders/${orderId}/chat-channel`, {});
+            if (isQueuedAck(raw)) return null;
+            const channel = ((raw as { data?: unknown })?.data ?? raw) as ChatChannelRecord | null;
+            if (!channel || typeof channel.id !== 'string' || !channel.id) return null;
+            // The inbox list and its unread counts now have one more channel in them.
+            bumpChatRefresh();
+            return channel;
+        } catch {
+            return null;
+        } finally {
+            inFlight.current = false;
+            setIsOpening(false);
+        }
+    }, [adapter, orderId]);
+
+    return { open, isOpening };
+}
+
 /* ── What a message is made of ─────────────────────────────────────────────── */
 
 export type AttachmentKind = 'image' | 'audio' | 'file';

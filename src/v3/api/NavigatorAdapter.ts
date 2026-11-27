@@ -95,6 +95,8 @@ const NEVER_QUEUE = [
      * later it lands as an orphan nothing references.
      */
     /files\/base64\b/,
+    // Opening an order's chat with dispatch answers with the channel to show now; later it is no use.
+    /orders\/[^/]+\/chat-channel\b/,
 ];
 
 function isQueueable(path: string): boolean {

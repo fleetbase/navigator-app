@@ -16,6 +16,13 @@
  *     there; it is fitted only once the map says it is ready (a fit asked for
  *     earlier is dropped without a word); and the driver is the app's own puck
  *     rather than the system's blue dot.
+ *
+ * What the full-screen map frames is the leg being driven, not the whole order:
+ * the driver, the road to the waypoint being headed to, and that waypoint. The
+ * tracker's road runs on through every waypoint still to do, so it is cut at
+ * the point nearest the one being headed to; that part is drawn strongly and
+ * the rest faintly. With no position for the driver there is no leg to frame,
+ * and the view is the order's waypoints.
  */
 import { mapLook } from './mapLook';
 import { DriverPuck } from './DriverPuck';
@@ -75,9 +82,30 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
         return position ? [position, ...pending] : pending;
     }, [stops, position]);
 
+    // The waypoint being headed to: the one named, else the first still to do.
+    const active = useMemo(() => stops.find((stop) => stop.id === activeStopId && !stop.done) ?? stops.find((stop) => !stop.done), [stops, activeStopId]);
+    /*
+     * The road splits where it reaches that waypoint: `leg` is the part being
+     * driven now, `beyond` the part that carries on to the waypoints after it.
+     */
+    const { leg, beyond } = useMemo(() => {
+        if (!active || route.length < 2) return { leg: route, beyond: [] as LatLng[] };
+        let nearest = 0;
+        let best = Infinity;
+        route.forEach((point, index) => {
+            const distance = (point.latitude - active.point.latitude) ** 2 + (point.longitude - active.point.longitude) ** 2;
+            if (distance < best) {
+                best = distance;
+                nearest = index;
+            }
+        });
+        // A road that ends at this waypoint (it is the last) has nothing beyond it.
+        return { leg: route.slice(0, nearest + 1), beyond: nearest < route.length - 1 ? route.slice(nearest) : [] };
+    }, [route, active]);
+
     // Fit once per set of stops and route, not on every position tick.
     const fitKey = `${stops.map((stop) => stop.id).join('|')}:${route.length}`;
-    const fillKey = `${fitKey}:${activeStopId}:${position ? 1 : 0}`;
+    const fillKey = `${stops.map((stop) => `${stop.id}${stop.done ? 'd' : ''}`).join('|')}:${route.length}:${active?.id}:${position ? 1 : 0}`;
     useEffect(() => {
         if (fill) return;
         const coordinates = [...stops.map((stop) => stop.point), ...route, ...(position ? [position] : [])];
@@ -86,19 +114,27 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fitKey, fill]);
 
-    // The full-screen map shows the whole order and the driver, in the part above the sheet.
+    // The full-screen map frames the leg being driven, in the part above the sheet.
     useEffect(() => {
         if (!fill || !ready) return;
-        const coordinates = [...stops.map((stop) => stop.point), ...route, ...(position ? [position] : [])];
+        // With the driver and somewhere to head to, the view is that leg; otherwise the order's waypoints.
+        const focus = position && active ? [{ latitude: position.latitude, longitude: position.longitude }, ...leg, active.point] : [];
+        const coordinates = focus.length > 1 ? focus : [...stops.map((stop) => stop.point), ...route];
         if (!coordinates.length) return;
-        // One point has no extent to fit; a street-level region around it instead.
-        if (coordinates.length === 1) {
-            ref.current?.animateToRegion({ latitude: coordinates[0].latitude, longitude: coordinates[0].longitude, ...STREET }, fitted.current ? 300 : 0);
+        const latitudes = coordinates.map((point) => point.latitude);
+        const longitudes = coordinates.map((point) => point.longitude);
+        const south = Math.min(...latitudes);
+        const north = Math.max(...latitudes);
+        const west = Math.min(...longitudes);
+        const east = Math.max(...longitudes);
+        // One point, or points a few doors apart (the driver has arrived), have no extent worth fitting: a few streets around them instead.
+        if (north - south < STREET.latitudeDelta / 2 && east - west < STREET.longitudeDelta / 2) {
+            ref.current?.animateToRegion({ latitude: (north + south) / 2, longitude: (east + west) / 2, ...STREET }, fitted.current ? 300 : 0);
             fitted.current = true;
             return;
         }
-        // The room for the buttons and the sheet is the map's own padding (below), so this is only breathing space.
-        ref.current?.fitToCoordinates(coordinates, { edgePadding: { top: 44, right: 48, bottom: 44, left: 48 }, animated: fitted.current });
+        // The room for the buttons and the sheet is the map's own padding (below), so this is only breathing space around the markers.
+        ref.current?.fitToCoordinates(coordinates, { edgePadding: { top: 40, right: 44, bottom: 40, left: 44 }, animated: fitted.current });
         fitted.current = true;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fill, ready, fillKey, padTop, padBottom]);
@@ -129,8 +165,17 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
                 rotateEnabled={false}
             >
                 {hasRoute ? (
-                    <CasedPolyline coordinates={route} color={theme.primary?.val as string} />
+                    fill && leg.length > 1 ? (
+                        <>
+                            {/* The road on to the waypoints after this one, behind the leg being driven. */}
+                            <CasedPolyline coordinates={beyond} color={theme.primary?.val as string} variant="faint" />
+                            <CasedPolyline coordinates={leg} color={theme.primary?.val as string} zIndex={2} />
+                        </>
+                    ) : (
+                        <CasedPolyline coordinates={route} color={theme.primary?.val as string} />
+                    )
                 ) : straight.length > 1 ? (
+                    // No road came back from the tracker: a dashed line that does not pretend to be one.
                     <Polyline coordinates={straight} strokeColor={theme.primary?.val as string} strokeWidth={4} lineDashPattern={[8, 6]} />
                 ) : null}
                 {fill && position ? (

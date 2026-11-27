@@ -6,13 +6,15 @@
  *   - the **map** is the whole background: the road route, the console's
  *     markers, the driver;
  *   - two round **buttons** float over its top: back on the left, and on the
- *     right a small stack of shortcuts for the order (the order's chat, with
- *     its unread count, is the first);
+ *     right a small stack of shortcuts for the order (the order's chat with
+ *     dispatch, with its unread count, is the first);
  *   - a **sheet** over the bottom carries everything else. It rests leaving the
  *     top of the map showing and pulls up to just under the buttons; it cannot
  *     be dismissed. Its header (QR code, tracking number, status) and the
- *     section index under it stay put; the sections scroll: now, trip, cash,
- *     items, people, proof, documents, comments, reference, report an issue.
+ *     section index under it stay put; the sections scroll: now (with the
+ *     order's notes), trip, cash, items, people, proof, documents, comments,
+ *     activity, reference, report an issue. The order's whole history opens in
+ *     a sheet over the screen, from the activity section or the status.
  *
  * The step that moves the order on is anchored at the foot of the screen, with
  * whatever stands between the driver and that step said right above it.
@@ -42,6 +44,8 @@ import {
     useTracker,
     useNextActivity,
     useChatChannels,
+    useOrderDispatchChannel,
+    useOrderTimeline,
     currentDestination,
     orderStops,
     stopLabel,
@@ -56,6 +60,9 @@ import {
     cashOnDeliveryOf,
     customerContactOf,
     deliveryInstructionsOf,
+    orderNotesOf,
+    orderPlaceNotesOf,
+    placeLines,
     scheduleWindowOf,
     isBookingOrder,
     orderThreadsOf,
@@ -79,15 +86,15 @@ import { formatClock, formatDuration, formatMeters } from '../format';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, changesDropoff } from '../realtime';
 import { BringChecklist, CashSection, ChangeBanner, ContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
-import { Comments, Facilitator, Files, OrderReference, hasFacilitator, orderCodesOf } from './orderDetail/OrderDetails';
+import { ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, hasFacilitator, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
 import { MapButton, NowCard, ProofSection, QrSheet, ReportIssueButton, SectionPills, SheetHeader, TripSection, type NowNote, type ProofRow, type TripExtra } from './orderDetail/OrderSheetParts';
 import { Card, GUTTER, Section } from './jobs/parts';
-import { HomeIcon } from './home/parts';
+import { HomeIcon, NoteCard } from './home/parts';
 import { isOrderStarted, orderPoints, orderTypeLabel } from './jobs/model';
 
 /** The sections the index can jump to, in the order they appear. */
-type SectionKey = 'now' | 'trip' | 'items' | 'people' | 'files' | 'info';
-const SECTION_ORDER: SectionKey[] = ['now', 'trip', 'items', 'people', 'files', 'info'];
+type SectionKey = 'now' | 'trip' | 'items' | 'people' | 'files' | 'activity' | 'info';
+const SECTION_ORDER: SectionKey[] = ['now', 'trip', 'items', 'people', 'files', 'activity', 'info'];
 
 /** The step action at the foot of the screen. */
 const ACTION_HEIGHT = 60;
@@ -108,7 +115,6 @@ export function OrderDetailScreen({
     reloadToken = 0,
     onBack,
     onOpenEntity,
-    onOpenTimeline,
     onNavigate,
     onCaptureProof,
     onChangeDestination,
@@ -125,7 +131,11 @@ export function OrderDetailScreen({
     onBack?: () => void;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
     onOpenEntity?: (entity: { id: string; name?: string; entity: Record<string, unknown> }) => void;
-    /** Opens the full activity history (R2 D5). */
+    /**
+     * No longer called: the activity history opens in a sheet over the order
+     * (see ActivitySheet) rather than on a screen of its own. Kept so a host
+     * that still passes it type-checks.
+     */
     onOpenTimeline?: () => void;
     /** Opens the navigation hand-off for the current destination (R2 D6). */
     onNavigate?: (destination: Destination) => void;
@@ -135,9 +145,9 @@ export function OrderDetailScreen({
     onCaptureProof?: (request: { orderId: string; activityCode: string; activityLabel: string; podMethod?: string | null; expected?: string[] }) => void;
     /** The order was taken off this driver; the host leaves the screen. */
     onRemoved?: (reason: RemovalReason) => void;
-    /** Opens an order-linked chat thread. */
+    /** Opens an order-linked chat thread: the order's chat with dispatch, or the customer's. */
     onOpenChannel?: (channel: ChatChannelRecord) => void;
-    /** Starts a conversation with dispatch when the order has no thread of its own. */
+    /** Starts a conversation with dispatch when the server cannot give the order a chat of its own (an older server). */
     onMessageDispatch?: () => void;
     /** Opens the issue form about this order; `label` is its tracking number. */
     onReportIssue?: (order: { id: string; label: string }) => void;
@@ -282,6 +292,11 @@ export function OrderDetailScreen({
 
     const { channels } = useChatChannels(0, { enabled: !!onOpenChannel });
     const threads = useMemo(() => orderThreadsOf(channels, order?.id), [channels, order?.id]);
+    // The order's chat with dispatch: asked for when the chat button is pressed (the server starts it if there is none).
+    const { open: openDispatchChannel, isOpening: chatOpening } = useOrderDispatchChannel(order?.id);
+    // What has happened to the order, oldest first: the times on the activity section's steps.
+    const { events: timeline, isLoading: timelineLoading, failed: timelineFailed, refresh: refreshTimeline } = useOrderTimeline(orderId);
+    const [activityOpen, setActivityOpen] = useState(false);
 
     /*
      * The sheet. Heights come from the screen as it was measured, as on Home:
@@ -380,9 +395,10 @@ export function OrderDetailScreen({
      * moved by the store sent the driver to the old address.
      * GeoJSON is [longitude, latitude]; fromGeoPoint owns that flip.
      */
+    // Named as every place is: its name, else its address, with the separators its empty parts leave behind trimmed (data/placeText).
     const headingPoint =
-        fromGeoPoint(heading?.location, stopLabel(heading)) ??
-        fromGeoPoint((payload.dropoff as { location?: { coordinates?: number[] } } | undefined)?.location, payload.dropoff?.name ?? payload.dropoff?.address);
+        fromGeoPoint(heading?.location, placeLines(heading as Record<string, unknown> | undefined).title ?? stopLabel(heading)) ??
+        fromGeoPoint((payload.dropoff as { location?: { coordinates?: number[] } } | undefined)?.location, placeLines(payload.dropoff as Record<string, unknown> | undefined).title);
     /*
      * `order.tracker_data` comes back null on this API, so the ETA and distance
      * it fed never rendered — a quiet dead path. The live tracker endpoint is
@@ -407,18 +423,37 @@ export function OrderDetailScreen({
         : contact?.phone
           ? () => void openUrl(`sms:${contact.phone}`).catch(() => undefined)
           : undefined;
-    const messageDispatch = threads.dispatch && onOpenChannel ? () => onOpenChannel(threads.dispatch as ChatChannelRecord) : onMessageDispatch;
-    /*
-     * The chat button over the map. It carries the unread count of the order's
-     * own threads and opens the one with something unread in it; with nothing
-     * unread it is the way to dispatch (the customer has their own Message
-     * button on the sheet).
-     */
     const unreadCustomer = Number(threads.customer?.unread_count) || 0;
     const unreadDispatch = Number(threads.dispatch?.unread_count) || 0;
     const openCustomerThread = threads.customer && onOpenChannel ? () => onOpenChannel(threads.customer as ChatChannelRecord) : undefined;
-    const openChat = unreadCustomer > 0 && unreadDispatch === 0 && openCustomerThread ? openCustomerThread : (messageDispatch ?? openCustomerThread);
-    const unreadChat = unreadCustomer + unreadDispatch;
+    /*
+     * What the chat button did before an order had a chat with dispatch of its
+     * own, and still does against a server without one: the order's thread
+     * with something unread in it, else a new conversation with dispatch.
+     */
+    const legacyDispatch = threads.dispatch && onOpenChannel ? () => onOpenChannel(threads.dispatch as ChatChannelRecord) : onMessageDispatch;
+    const legacyChat = unreadCustomer > 0 && unreadDispatch === 0 && openCustomerThread ? openCustomerThread : (legacyDispatch ?? openCustomerThread);
+    /*
+     * The chat button over the map opens the order's chat with dispatch. The
+     * thread already in the driver's list opens straight away; otherwise the
+     * server is asked for it (it starts one, with dispatch in it, when the
+     * order has none). When it cannot give one, the button falls back to what
+     * it did before. The customer has their own Message button on the sheet.
+     */
+    const openChat = onOpenChannel
+        ? () => {
+              if (threads.dispatch) {
+                  onOpenChannel(threads.dispatch);
+                  return;
+              }
+              void openDispatchChannel().then((channel) => {
+                  if (channel) onOpenChannel(channel);
+                  else legacyChat?.();
+              });
+          }
+        : legacyChat;
+    // The count on the button is that chat's own unread messages.
+    const unreadChat = unreadDispatch;
     const blockedOnCash = needsCash(next);
 
     const sequenced = sequenceFlow(flow);
@@ -470,21 +505,28 @@ export function OrderDetailScreen({
     }
 
     /*
-     * Notes, in full, where they belong: a place's own note is on its row
-     * (read by the model); the order's delivery instructions go on the
-     * drop-off's row when it has none of its own; what is said about the whole
-     * order sits under the rail.
+     * Notes, in full, where they belong. What is said about the whole order
+     * (`order.notes`) is its own card right under "now". What is said about a
+     * place is on that place's row of the trip: the waypoint's own notes and
+     * the place's instructions (see `placeNotesOf`). Delivery instructions
+     * kept on the payload or the order rather than on a place go on the
+     * drop-off's row, which is where they apply; an order with no drop-off
+     * carries them under the rail.
      */
-    const instructions = deliveryInstructionsOf(order);
+    const orderNotes = orderNotesOf(order);
+    const placeNotes = orderPlaceNotesOf(order);
     const dropoffIndex = points.findIndex((p) => p.role === 'dropoff');
-    const placedInstructions = instructions && dropoffIndex >= 0 && !points[dropoffIndex].note;
-    const tripNotes: Record<number, string | undefined> = placedInstructions ? { [dropoffIndex]: instructions } : {};
-    const orderNotes = typeof order.notes === 'string' && order.notes.trim() ? order.notes : undefined;
+    const tripNotes: Record<number, string[]> = {};
+    // The two lists are built in the same order (pickup, waypoints, drop-off); if they ever differ in length the rows keep the notes the model read.
+    if (placeNotes.length === points.length) placeNotes.forEach((notes, index) => (notes.length ? (tripNotes[index] = notes) : undefined));
+    const instructions = deliveryInstructionsOf(order)?.trim();
+    const saidOnAPlace = !!instructions && (placeNotes.some((notes) => notes.includes(instructions)) || points.some((p) => p.note?.trim() === instructions));
+    const looseInstructions = instructions && !saidOnAPlace && instructions !== orderNotes ? instructions : undefined;
+    if (looseInstructions && dropoffIndex >= 0) tripNotes[dropoffIndex] = [...(tripNotes[dropoffIndex] ?? []), looseInstructions];
     const tripExtras: TripExtra[] = [
         // A delivery's scheduled time is with its dates; only a job's slot is said here.
         isBooking && schedule?.start ? { key: 'slot', label: t('orderDetail.booking.slot'), text: scheduleLabel(schedule), testID: 'order-schedule' } : undefined,
-        instructions && !placedInstructions && !points.some((p) => p.note === instructions) ? { key: 'instructions', label: t('orderDetail.instructions'), text: instructions, testID: 'order-instructions' } : undefined,
-        orderNotes ? { key: 'notes', label: t('orderDetail.orderNotes'), text: orderNotes, testID: 'order-notes' } : undefined,
+        looseInstructions && dropoffIndex < 0 ? { key: 'instructions', label: t('orderDetail.instructions'), text: looseInstructions, testID: 'order-instructions' } : undefined,
     ].filter((extra): extra is TripExtra => !!extra);
 
     /*
@@ -500,9 +542,49 @@ export function OrderDetailScreen({
 
     const trackingNumber = displayIdOf(order);
     const codes = orderCodesOf(order);
-    const typeName = isBooking ? undefined : orderTypeLabel(order);
-    const eyebrow = isBooking ? t('orderDetail.booking.jobLabel') : typeName ? t('orderDetail.eyebrow', { type: typeName }) : t('orderDetail.eyebrowPlain');
+    // What kind of order this is: its order config's name ("Parcel delivery"), else its own `type`.
+    const typeName = config?.name ?? orderTypeLabel(order);
+    const eyebrow = isBooking
+        ? config?.name
+            ? t('orderDetail.eyebrowJob', { type: config.name })
+            : t('orderDetail.booking.jobLabel')
+        : typeName
+          ? t('orderDetail.eyebrow', { type: typeName })
+          : t('orderDetail.eyebrowPlain');
     const totalWeight = totalWeightLabel(entities);
+
+    /*
+     * The activity section. On a flow whose order is known, its steps: the
+     * ones behind the order are done, the one it stands at is current, the
+     * rest are to come; each done or current step carries the time of its
+     * latest tracking status. On a flow that branches, or a status that is not
+     * one of its steps, what has actually happened so far, in order.
+     */
+    const happenedAt = (code?: string | null) => {
+        const wanted = String(code ?? '').toLowerCase();
+        if (!wanted) return undefined;
+        const matches = (timeline ?? []).filter((event) => String(event.code ?? '').toLowerCase() === wanted);
+        return matches.length ? matches[matches.length - 1].created_at : undefined;
+    };
+    const activitySteps: ActivityStep[] =
+        sequenced.ordered && statusIndex >= 0
+            ? sequenced.steps.map((activity, index) => ({
+                  key: activity.code,
+                  label: labelFor(activity),
+                  state: index < statusIndex || (index === statusIndex && finished) ? 'done' : index === statusIndex ? 'current' : 'next',
+                  at: index <= statusIndex ? happenedAt(activity.code) : undefined,
+              }))
+            : (timeline ?? []).map((event, index, all) => ({
+                  key: `${event.id ?? index}`,
+                  label: labelFor({ code: event.code ?? '', status: event.status }),
+                  state: index === all.length - 1 && !finished ? 'current' : 'done',
+                  at: event.created_at,
+              }));
+    // Opened from the activity section and from the status in the header; asked for again so it is current.
+    const openActivity = () => {
+        setActivityOpen(true);
+        void refreshTimeline();
+    };
 
     // The index lists only the sections this order has.
     const present: Record<SectionKey, boolean> = {
@@ -512,6 +594,8 @@ export function OrderDetailScreen({
         people: !!contact || hasFacilitator(order) || proofRows.length > 0,
         // Comments are always somewhere to leave a note, so this one is always there.
         files: true,
+        // Where the order stands is always something to say.
+        activity: true,
         info: true,
     };
     const pills = SECTION_ORDER.filter((key) => present[key]).map((key) => ({ key, label: t(`orderDetail.index.${key}`) }));
@@ -639,7 +723,7 @@ export function OrderDetailScreen({
                 {/* The order's shortcuts: a column, so more can join the chat here. */}
                 <YStack gap={space[2]} alignItems="center" testID="order-shortcuts">
                     {openChat ? (
-                        <MapButton icon="chat" label={unreadChat ? t('orderDetail.chatUnread', { count: unreadChat }) : t('orderDetail.chat')} onPress={openChat} badge={unreadChat} testID="order-chat" />
+                        <MapButton icon="chat" label={unreadChat ? t('orderDetail.chatUnread', { count: unreadChat }) : t('orderDetail.chat')} onPress={openChat} badge={unreadChat} busy={chatOpening} testID="order-chat" />
                     ) : null}
                 </YStack>
             </XStack>
@@ -669,6 +753,9 @@ export function OrderDetailScreen({
                         qr={codes.qr}
                         qrLabel={t('orderDetail.qrOpen', { number: trackingNumber })}
                         onOpenQr={() => setQrOpen(true)}
+                        // The status opens what has happened to the order.
+                        onOpenStatus={openActivity}
+                        statusLabel={t('orderDetail.activity.statusOpen', { status: order.status ? labelFor({ code: order.status }) : '' })}
                         t={t}
                     />
                     <SectionPills items={pills} active={present[activeSection] ? activeSection : pills[0]?.key} onSelect={jumpToSection} label={t('orderDetail.tabsLabel')} />
@@ -706,6 +793,8 @@ export function OrderDetailScreen({
                                 {stepNotice}
                             </NowCard>
                         )}
+                        {/* What dispatch wrote about the whole order, in full, before anything else is read. */}
+                        {orderNotes ? <NoteCard label={t('orderDetail.orderNotes')} text={orderNotes} testID="order-notes" /> : null}
                     </View>
 
                     {present.trip ? (
@@ -773,8 +862,9 @@ export function OrderDetailScreen({
                             <ContactSection
                                 contact={contact}
                                 t={t}
-                                onCall={contact?.phone ? () => void openUrl(`tel:${contact.phone}`).catch(() => undefined) : undefined}
+                                onCall={contact?.phone ? () => void openUrl(`tel:${contact.phone.replace(/\s+/g, '')}`).catch(() => undefined) : undefined}
                                 onMessageCustomer={messageCustomer}
+                                onEmail={contact?.email ? () => void openUrl(`mailto:${contact.email}`).catch(() => undefined) : undefined}
                                 unread={threads.customer && onOpenChannel ? unreadCustomer : undefined}
                             />
                             <Facilitator order={order} t={t} openUrl={openUrl} />
@@ -787,8 +877,12 @@ export function OrderDetailScreen({
                         <Comments orderId={order.id} reloadToken={reloadToken + revision} t={t} />
                     </View>
 
+                    <View onLayout={placeSection('activity')} style={{ gap: SHEET_GAP }}>
+                        <ActivitySection steps={activitySteps} onSeeAll={openActivity} t={t} />
+                    </View>
+
                     <View onLayout={placeSection('info')} style={{ gap: SHEET_GAP }}>
-                        <OrderReference order={order} config={config} onOpenTimeline={onOpenTimeline} t={t} />
+                        <OrderReference order={order} config={config} t={t} />
                         {onReportIssue ? <ReportIssueButton label={t('orderDetail.reportIssue')} onPress={() => onReportIssue({ id: order.id, label: trackingNumber })} /> : null}
                     </View>
                 </BottomSheetScrollView>
@@ -824,6 +918,7 @@ export function OrderDetailScreen({
                 </YStack>
             ) : null}
 
+            <ActivitySheet visible={activityOpen} onClose={() => setActivityOpen(false)} events={timeline} isLoading={timelineLoading} failed={timelineFailed} number={trackingNumber} t={t} bottomInset={insets.bottom} />
             <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} qr={codes.qr} number={codes.number ?? trackingNumber} title={t('orderDetail.details.codesTitle')} closeLabel={t('common.close')} bottomInset={insets.bottom} />
         </YStack>
     );
@@ -848,7 +943,7 @@ function OrderRouteMap({ orderId, payload, tracker, activeStopId, padding }: { o
             const role = numbered(stop.type);
             const point = coordsOfPoint(stop.location);
             return point
-                ? [{ id: stop.public_id ?? stop.uuid ?? String(index), point, sequence: stop.sequence ?? index + 1, kind: markerKindOf(stop.type), ...role, name: stop.name ?? stop.address, done: !!stop.completed }]
+                ? [{ id: stop.public_id ?? stop.uuid ?? String(index), point, sequence: stop.sequence ?? index + 1, kind: markerKindOf(stop.type), ...role, name: placeLines({ name: stop.name, address: stop.address }).title, done: !!stop.completed }]
                 : [];
         });
         if (tracked.length) return tracked;
@@ -856,7 +951,7 @@ function OrderRouteMap({ orderId, payload, tracker, activeStopId, padding }: { o
         return orderStops(payload).flatMap((stop, index) => {
             const role = numbered(stop.type);
             const point = coordsOfPoint(stop.location);
-            return point ? [{ id: stop.id ?? String(index), point, sequence: index + 1, kind: markerKindOf(stop.type), ...role, name: stop.name ?? stop.address }] : [];
+            return point ? [{ id: stop.id ?? String(index), point, sequence: index + 1, kind: markerKindOf(stop.type), ...role, name: placeLines({ name: stop.name, address: stop.address }).title }] : [];
         });
     }, [tracker?.stops, payload]);
 

@@ -10,7 +10,9 @@
  *
  * None of them fetch anything: the screen works out what to say and these draw it.
  */
+import { useEffect, useRef } from 'react';
 import { Image } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import Svg, { Path } from 'react-native-svg';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Secondary } from '../../ui/Text';
@@ -18,6 +20,7 @@ import { StatusPill } from '../../ui/StatusPill';
 import { SheetModal } from '../../ui/SheetModal';
 import { StopBadge } from '../../ui/RouteMap';
 import { formatClock, formatDuration, formatMeters } from '../../format';
+import { placeLines } from '../../data/placeText';
 import { Card, Section, SectionLabel } from '../jobs/parts';
 import type { OrderPoint } from '../jobs/model';
 import { DottedRail, HomeIcon, type HomeIconName } from '../home/parts';
@@ -34,8 +37,13 @@ const MAP_BUTTON_PATHS = {
 
 export type MapButtonIcon = keyof typeof MAP_BUTTON_PATHS;
 
-/** A 44dp round button on the map: back on the left, the order's shortcuts on the right. */
-export function MapButton({ icon, label, onPress, badge, testID }: { icon: MapButtonIcon; label: string; onPress?: () => void; badge?: number; testID?: string }) {
+/**
+ * A 44dp round button on the map: back on the left, the order's shortcuts on
+ * the right. Flat: its border is what sets it off the map, not a shadow.
+ * `busy` is for a button whose press is still being answered (the chat being
+ * opened): it dims and takes no second press.
+ */
+export function MapButton({ icon, label, onPress, badge, busy, testID }: { icon: MapButtonIcon; label: string; onPress?: () => void; badge?: number; busy?: boolean; testID?: string }) {
     const theme = useTheme();
     return (
         <YStack
@@ -47,16 +55,13 @@ export function MapButton({ icon, label, onPress, badge, testID }: { icon: MapBu
             backgroundColor="$background"
             borderWidth={1}
             borderColor="$border"
-            shadowColor="#000000"
-            shadowOpacity={0.4}
-            shadowRadius={9}
-            shadowOffset={{ width: 0, height: 6 }}
-            elevation={6}
-            onPress={onPress}
+            opacity={busy ? 0.6 : 1}
+            onPress={busy ? undefined : onPress}
             pressStyle={{ opacity: 0.7 }}
             hitSlop={6}
             accessibilityRole="button"
             accessibilityLabel={label}
+            accessibilityState={{ busy: !!busy }}
             testID={testID}
         >
             <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={theme.textPrimary?.val as string} strokeWidth={icon === 'back' ? 2.4 : 2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -74,6 +79,10 @@ export function MapButton({ icon, label, onPress, badge, testID }: { icon: MapBu
  * it larger), then what the order is, its tracking number in full, and its
  * status. With no QR image on the order there is no tile: a drawn one would be
  * a code that scans to nothing.
+ *
+ * All three start on the same line: the top of the QR tile, the top of the
+ * eyebrow and the top of the status. The status is a button when the screen
+ * gives it somewhere to go (the order's activity).
  */
 export function SheetHeader({
     eyebrow,
@@ -92,11 +101,15 @@ export function SheetHeader({
     qr?: { uri: string };
     qrLabel: string;
     onOpenQr?: () => void;
+    /** Opens the order's activity; makes the status a button. */
+    onOpenStatus?: () => void;
+    /** Spoken for the status when it is a button. */
+    statusLabel?: string;
     t: T;
 }) {
     const theme = useTheme();
     return (
-        <XStack alignItems="center" gap={12} paddingHorizontal={16} paddingBottom={10} testID="order-identity">
+        <XStack alignItems="flex-start" gap={12} paddingHorizontal={16} paddingBottom={10} testID="order-identity">
             {qr ? (
                 <YStack
                     width={52}
@@ -122,25 +135,49 @@ export function SheetHeader({
                     </YStack>
                 </YStack>
             ) : null}
-            <YStack flex={1} minWidth={0}>
+            {/* No padding above: the eyebrow's capitals start level with the top of the QR tile (the line box leaves a little air above them, taken back here). */}
+            <YStack flex={1} minWidth={0} marginTop={-2}>
                 <SectionLabel testID={kindTestID}>{eyebrow}</SectionLabel>
                 {/* In full, on as many lines as it needs: an identifier is never cut short. */}
                 <Body fontFamily="$mono" fontSize={17} lineHeight={22} fontWeight="600" selectable testID="order-tracking-number">
                     {trackingNumber}
                 </Body>
             </YStack>
-            <YStack flexShrink={0}>
-                <StatusPill status={status} t={(k, fb) => t(k, { defaultValue: fb })} />
+            <YStack flexShrink={0} alignSelf="flex-start">
+                <StatusPill status={status} t={(k, fb) => t(k, { defaultValue: fb })} onPress={onOpenStatus} accessibilityLabel={onOpenStatus ? statusLabel : undefined} testID="order-status" />
             </YStack>
         </XStack>
     );
 }
 
-/** The section index under the header: one pill per section the order has. */
+/**
+ * The section index under the header: one pill per section the order has. A
+ * row that runs wider than the sheet scrolls sideways (with no scroll bar), and
+ * keeps the active pill in view as the sections scroll under it.
+ */
 export function SectionPills<K extends string>({ items, active, onSelect, label }: { items: { key: K; label: string }[]; active?: K; onSelect: (key: K) => void; label: string }) {
+    const scroll = useRef<ScrollView>(null);
+    const lefts = useRef<Record<string, number>>({});
+    useEffect(() => {
+        if (!active) return;
+        const x = lefts.current[active];
+        if (typeof x === 'number') scroll.current?.scrollTo({ x: Math.max(0, x - 48), animated: true });
+    }, [active]);
     if (items.length < 2) return null;
     return (
-        <XStack alignItems="center" justifyContent={items.length >= 5 ? 'space-between' : 'flex-start'} gap={items.length >= 5 ? 2 : 6} paddingHorizontal={16} paddingBottom={10} accessibilityRole="tablist" accessibilityLabel={label} testID="order-index">
+        <ScrollView
+            ref={scroll}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
+            keyboardShouldPersistTaps="handled"
+            style={{ flexGrow: 0 }}
+            contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: items.length >= 5 ? 'space-between' : 'flex-start', gap: items.length >= 5 ? 2 : 6, paddingHorizontal: 16, paddingBottom: 10 }}
+            accessibilityRole="tablist"
+            accessibilityLabel={label}
+            testID="order-index"
+        >
             {items.map((item) => {
                 const on = item.key === active;
                 return (
@@ -152,6 +189,9 @@ export function SectionPills<K extends string>({ items, active, onSelect, label 
                         alignItems="center"
                         justifyContent="center"
                         backgroundColor={on ? '$textPrimary' : 'transparent'}
+                        onLayout={(event) => {
+                            lefts.current[item.key] = event.nativeEvent.layout.x;
+                        }}
                         onPress={() => onSelect(item.key)}
                         pressStyle={{ opacity: 0.7 }}
                         hitSlop={6}
@@ -165,7 +205,7 @@ export function SectionPills<K extends string>({ items, active, onSelect, label 
                     </YStack>
                 );
             })}
-        </XStack>
+        </ScrollView>
     );
 }
 
@@ -264,13 +304,17 @@ export interface TripExtra {
     testID?: string;
 }
 
-/** A note about a place or the order, in full: it is there to be read before arriving. */
+/**
+ * A note about a place, in full, under its waypoint: it is there to be read
+ * before arriving, so it is set off from the address in the note's own tint and
+ * marked with the note icon (the same look as the order's own notes).
+ */
 function NoteLine({ text, testID }: { text: string; testID?: string }) {
     const theme = useTheme();
     return (
-        <XStack alignItems="flex-start" gap={7} paddingTop={8} testID={testID}>
+        <XStack alignItems="flex-start" gap={7} marginTop={8} paddingVertical={8} paddingHorizontal={10} borderRadius={12} borderWidth={1} borderColor="$warningBorder" backgroundColor="$warningFill" testID={testID}>
             <YStack marginTop={2} flexShrink={0}>
-                <HomeIcon name="note" color={theme.textSecondary?.val as string} size={15} />
+                <HomeIcon name="note" color={theme.warningText?.val as string} size={15} />
             </YStack>
             <Body flex={1} fontSize={14} lineHeight={20} selectable>
                 {text}
@@ -302,8 +346,8 @@ export function TripSection({
     /** The tracker's legs: one per waypoint still to do, the first ending at the one being headed to. */
     legs?: { distance_m?: number | null; duration_s?: number | null }[];
     units: 'metric' | 'imperial';
-    /** A note per point index, when the point carries none of its own. */
-    notes?: Record<number, string | undefined>;
+    /** The notes of each point, by index: every one the order carries for that place. Shown with the point's own, each once. */
+    notes?: Record<number, string[] | undefined>;
     /** Things said about the whole order: the booked slot, the order's notes. */
     extras?: TripExtra[];
     /** Present when the order has more than one place to choose between. */
@@ -346,14 +390,19 @@ export function TripSection({
                             : point.windowStart
                               ? t('orderDetail.trip.window', { window: `${formatClock(point.windowStart)}–${formatClock(point.windowEnd)}` })
                               : t('home.trip.dueBy', { time: formatClock(point.windowEnd) });
-                    const note = point.note ?? notes[index];
+                    // Every note for this place, each once and in full.
+                    const pointNotes = [point.note, ...(notes[index] ?? [])]
+                        .map((note) => (typeof note === 'string' ? note.trim() : ''))
+                        .filter((note, at, all) => !!note && all.indexOf(note) === at);
                     // Legs run from the driver through the waypoints still to do, so the leg out of this one sits one past its place among those.
                     const leg = firstPending >= 0 && index >= firstPending && !last ? legs[index - firstPending + 1] : undefined;
                     const legText =
                         leg && Number.isFinite(Number(leg.distance_m)) && Number(leg.distance_m) > 0
                             ? [formatMeters(Number(leg.distance_m), units), leg.duration_s != null && Number.isFinite(Number(leg.duration_s)) ? formatDuration(Number(leg.duration_s)) : undefined].filter(Boolean).join(' · ')
                             : undefined;
-                    const name = point.name ?? point.address ?? t('jobs.unnamed', { sequence: index + 1 });
+                    // A place saved without a name or a street still reads as a place: stray separators are trimmed (data/placeText).
+                    const lines = placeLines({ name: point.name, address: point.address });
+                    const name = lines.title ?? t('jobs.unnamed', { sequence: index + 1 });
                     return (
                         <XStack key={point.id ?? index} gap={8} testID={`order-waypoint-${index}`}>
                             <YStack width={44} alignItems="center">
@@ -376,9 +425,9 @@ export function TripSection({
                                         </Secondary>
                                     </XStack>
                                 )}
-                                {point.name && point.address ? (
+                                {lines.address ? (
                                     <Secondary fontSize={13} lineHeight={17}>
-                                        {point.address}
+                                        {lines.address}
                                     </Secondary>
                                 ) : null}
                                 {isFocus && window ? (
@@ -386,7 +435,9 @@ export function TripSection({
                                         {window}
                                     </Body>
                                 ) : null}
-                                {note ? <NoteLine text={note} testID={`order-waypoint-${index}-note`} /> : null}
+                                {pointNotes.map((note, at) => (
+                                    <NoteLine key={at} text={note} testID={at ? `order-waypoint-${index}-note-${at}` : `order-waypoint-${index}-note`} />
+                                ))}
                                 {legText ? (
                                     <Secondary fontSize={12} lineHeight={16} fontWeight="700" tabular paddingTop={8}>
                                         {t('orderDetail.trip.then', { leg: legText })}

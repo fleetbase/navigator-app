@@ -64,10 +64,12 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             // order's *current* destination, so an edit made after this tap
             // still lands the driver at the right door.
             onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination, orderId })}
-            onOpenTimeline={() => navigation.navigate('OrderTimeline', { orderId })}
             onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
             onChangeDestination={() => navigation.navigate('Destination', { orderId })}
+            // The order's activity history opens in a sheet over the order now, so there is no timeline to navigate to from here.
+            // The order's chat with dispatch (asked for from the server, which starts it when needed) and the customer's thread open here.
             onOpenChannel={(channel) => navigation.navigate('Inbox', { screen: 'Conversation', params: { channel, channelId: channel.id }, initial: false })}
+            // Only against a server that cannot give the order a chat of its own: a new conversation, as before.
             onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation', initial: false })}
         />
     );

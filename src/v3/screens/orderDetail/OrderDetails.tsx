@@ -20,14 +20,16 @@
  *     service quote (see data/useServiceQuote);
  *   - files — `order.files`;
  *   - comments — their own endpoint (see data/useOrderComments);
- *   - timeline — `order.tracking_statuses`, refreshed by data/useOrderTimeline.
+ *   - activity — the order's steps from its config, timed from
+ *     `order.tracking_statuses` (refreshed by data/useOrderTimeline); the whole
+ *     history opens in a sheet over the order.
  *
  * There is no clipboard module in the app, so "copy" is the system share
  * sheet, which offers Copy among its actions.
  */
 import { useNavigatorSettings } from '../../data/useNavigatorSettings';
 import { useEffect, useState } from 'react';
-import { Image, Keyboard, Modal, Platform, Share } from 'react-native';
+import { Image, Keyboard, Modal, Platform, ScrollView, Share, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Secondary } from '../../ui/Text';
@@ -46,9 +48,11 @@ import {
     type OrderComment,
     type OrderConfig,
     type OrderRecord,
+    type TrackingStatusEvent,
 } from '../../data';
 import { humanizeStatus } from '../../theme/status';
 import { Card, Glyph, IconButton, Initials, Section, SectionLabel } from '../jobs/parts';
+import { HomeIcon, type HomeIconName } from '../home/parts';
 import { EventRows, SectionLink } from './OrderSections';
 
 type T = (key: string, options?: Record<string, unknown>) => string;
@@ -85,12 +89,59 @@ function Rule() {
     return <YStack height={1} backgroundColor="$border" />;
 }
 
+/**
+ * A section with nothing in it yet: an icon and one plain line, and under them
+ * the action that would put something there, when there is one. Said rather
+ * than left blank, so the driver knows the order has none and not that the
+ * screen failed to show them.
+ */
+function EmptyCard({ icon, text, action, testID }: { icon: HomeIconName; text: string; action?: { label: string; onPress: () => void; testID?: string }; testID?: string }) {
+    const theme = useTheme();
+    return (
+        <Card testID={testID}>
+            <YStack gap={12}>
+                <XStack alignItems="center" gap={10}>
+                    <YStack width={36} height={36} borderRadius={12} flexShrink={0} alignItems="center" justifyContent="center" backgroundColor="$surfaceRaised">
+                        <HomeIcon name={icon} color={theme.textSecondary?.val as string} size={18} />
+                    </YStack>
+                    <Secondary flex={1} fontSize={15} lineHeight={20}>
+                        {text}
+                    </Secondary>
+                </XStack>
+                {action ? (
+                    <XStack
+                        height={48}
+                        gap={8}
+                        alignItems="center"
+                        justifyContent="center"
+                        borderRadius={14}
+                        backgroundColor="$surfaceRaised"
+                        borderWidth={1}
+                        borderColor="$border"
+                        onPress={action.onPress}
+                        pressStyle={{ opacity: 0.7 }}
+                        accessibilityRole="button"
+                        testID={action.testID}
+                    >
+                        <Body fontSize={15} lineHeight={20} fontWeight="700" numberOfLines={1}>
+                            {action.label}
+                        </Body>
+                    </XStack>
+                ) : null}
+            </YStack>
+        </Card>
+    );
+}
+
 /* -- Identifiers and type. ---------------------------------------------------- */
 
 /** The ids a driver may be asked for, each in full, and what type of order it is. Tap an id to copy or share it. */
 export function Identifiers({ order, config, t }: { order: OrderRecord; config?: OrderConfig | null; t: T }) {
     const type = text((order as Rec).type);
     const typeName = config?.name ?? (type ? humanizeStatus(type) : undefined);
+    // The config's key ("parcel-delivery"), when it says more than the name already does.
+    const typeKey = text(config?.key) ?? (config?.name ? type : undefined);
+    const typeKeyShown = typeKey && typeName && typeKey.toLowerCase() !== typeName.toLowerCase() ? typeKey : undefined;
     const rows = [
         { key: 'tracking', label: t('orderDetail.details.trackingNumber'), value: trackingNumberOf(order), id: true },
         { key: 'internal', label: t('orderDetail.details.internalId'), value: text(order.internal_id), id: true },
@@ -122,9 +173,16 @@ export function Identifiers({ order, config, t }: { order: OrderRecord; config?:
                                 {row.value}
                             </Body>
                         ) : (
-                            <Body flexShrink={1} fontSize={14} fontWeight="700" textAlign="right">
-                                {row.value}
-                            </Body>
+                            <YStack flexShrink={1} alignItems="flex-end">
+                                <Body fontSize={14} fontWeight="700" textAlign="right" testID="order-type-name">
+                                    {row.value}
+                                </Body>
+                                {typeKeyShown ? (
+                                    <Body fontFamily="$mono" fontSize={12} lineHeight={16} fontWeight="500" tone="secondary" textAlign="right" testID="order-type-key">
+                                        {typeKeyShown}
+                                    </Body>
+                                ) : null}
+                            </YStack>
                         )}
                     </XStack>
                 </YStack>
@@ -334,7 +392,13 @@ export function orderFilesOf(order?: Partial<OrderRecord> | null): OrderFile[] {
 export function Files({ order, t, openUrl }: { order: OrderRecord; t: T; openUrl: (url: string) => Promise<unknown> }) {
     const theme = useTheme();
     const files = orderFilesOf(order);
-    if (!files.length) return null;
+    if (!files.length) {
+        return (
+            <Section label={t('orderDetail.details.documentsHeading')}>
+                <EmptyCard icon="note" text={t('orderDetail.details.documentsNone')} testID="order-files-empty" />
+            </Section>
+        );
+    }
     return (
         <Section label={t('orderDetail.details.documents', { count: files.length })}>
             <Card padded={false} testID="order-files">
@@ -453,6 +517,14 @@ export function Comments({ orderId, reloadToken, t }: { orderId: string; reloadT
         >
             <YStack gap={8} testID="order-comments">
                 {isLoading && !comments ? <Skeleton height={48} /> : null}
+                {comments && !count && !queued ? (
+                    <EmptyCard
+                        icon="chat"
+                        text={t('orderDetail.details.commentsNone')}
+                        action={{ label: t('orderDetail.details.commentAdd'), onPress: () => setWriting(true), testID: 'order-comment-add-empty' }}
+                        testID="order-comments-empty"
+                    />
+                ) : null}
                 {(comments ?? []).map((comment) => (
                     <Card key={comment.id} padded={false}>
                         <YStack paddingVertical={12} paddingHorizontal={14}>
@@ -600,10 +672,10 @@ export function Timeline({ orderId, onOpenTimeline, t }: { orderId: string; onOp
 
 /* -- The reference block. ------------------------------------------------------ */
 
-/** Ids and type, dates, the rate, the codes, custom fields and metadata, under one label, with the way to the full timeline. */
-export function OrderReference({ order, config, onOpenTimeline, t }: { order: OrderRecord; config?: OrderConfig | null; onOpenTimeline?: () => void; t: T }) {
+/** Ids and type, dates, the rate, the codes, custom fields and metadata, under one label. What has happened to the order is its own section (Activity). */
+export function OrderReference({ order, config, t }: { order: OrderRecord; config?: OrderConfig | null; t: T }) {
     return (
-        <Section label={t('orderDetail.details.reference')} aside={onOpenTimeline ? <SectionLink label={t('orderDetail.fullTimeline')} onPress={onOpenTimeline} testID="open-timeline" /> : undefined} testID="order-reference">
+        <Section label={t('orderDetail.details.reference')} testID="order-reference">
             <YStack gap={8}>
                 <Identifiers order={order} config={config} t={t} />
                 <Dates order={order} t={t} />
@@ -613,5 +685,172 @@ export function OrderReference({ order, config, onOpenTimeline, t }: { order: Or
                 <Metadata order={order} t={t} />
             </YStack>
         </Section>
+    );
+}
+
+/* -- Activity. ----------------------------------------------------------------- */
+
+export interface ActivityStep {
+    key: string;
+    /** The step in the driver's words. */
+    label: string;
+    state: 'done' | 'current' | 'next';
+    /** When it happened, for a step that has. */
+    at?: string | null;
+}
+
+/**
+ * The order's steps: the ones done, with when; the one it stands at, marked;
+ * and the ones still to come. Each says its state in a word beside its mark,
+ * never by the mark's colour alone. "See all activity" opens the whole history
+ * in a sheet over the order.
+ */
+export function ActivitySection({ steps, onSeeAll, t }: { steps: ActivityStep[]; onSeeAll?: () => void; t: T }) {
+    const theme = useTheme();
+    return (
+        <Section label={t('orderDetail.activity.heading')} testID="order-activity">
+            <Card padded={false}>
+                {steps.length ? (
+                    <YStack paddingHorizontal={14} paddingVertical={6}>
+                        {steps.map((step, index) => {
+                            const last = index === steps.length - 1;
+                            const done = step.state === 'done';
+                            const current = step.state === 'current';
+                            return (
+                                <XStack key={step.key} alignItems="stretch" gap={12} testID={`order-activity-${step.key}`}>
+                                    {/* The rail: this step's mark, and the line on to the next. */}
+                                    <YStack width={22} alignItems="center">
+                                        <YStack
+                                            width={22}
+                                            height={22}
+                                            borderRadius={11}
+                                            marginTop={7}
+                                            alignItems="center"
+                                            justifyContent="center"
+                                            backgroundColor={done ? '$successFill' : current ? '$primary' : 'transparent'}
+                                            borderWidth={done ? 1 : current ? 0 : 1.5}
+                                            borderColor={done ? '$successBorder' : '$border'}
+                                        >
+                                            {done ? (
+                                                <HomeIcon name="tick" color={theme.successText?.val as string} size={12} />
+                                            ) : current ? (
+                                                <YStack width={8} height={8} borderRadius={4} backgroundColor="$onPrimary" />
+                                            ) : null}
+                                        </YStack>
+                                        {last ? null : <YStack flex={1} width={2} minHeight={6} marginTop={2} backgroundColor="$border" />}
+                                    </YStack>
+                                    <XStack flex={1} minWidth={0} alignItems="center" justifyContent="space-between" gap={10} minHeight={36} paddingVertical={6}>
+                                        <Body flex={1} fontSize={15} lineHeight={20} fontWeight={current ? '800' : '700'} tone={done || current ? 'primary' : 'secondary'}>
+                                            {step.label}
+                                        </Body>
+                                        <YStack flexShrink={0} alignItems="flex-end">
+                                            <Secondary fontSize={12} lineHeight={16} fontWeight="800" tone={current ? 'brand' : done ? 'success' : 'secondary'} numberOfLines={1}>
+                                                {t(current ? 'orderDetail.activity.current' : done ? 'orderDetail.activity.done' : 'orderDetail.activity.next')}
+                                            </Secondary>
+                                            {step.at ? (
+                                                <Secondary fontSize={12} lineHeight={16} tabular numberOfLines={1} testID={`order-activity-${step.key}-at`}>
+                                                    {stamp(step.at)}
+                                                </Secondary>
+                                            ) : null}
+                                        </YStack>
+                                    </XStack>
+                                </XStack>
+                            );
+                        })}
+                    </YStack>
+                ) : (
+                    <YStack paddingHorizontal={14} paddingVertical={12}>
+                        <Secondary fontSize={15} lineHeight={20} testID="order-activity-none">
+                            {t('orderDetail.activity.none')}
+                        </Secondary>
+                    </YStack>
+                )}
+                {onSeeAll ? (
+                    <XStack
+                        alignItems="center"
+                        justifyContent="space-between"
+                        gap={10}
+                        minHeight={48}
+                        paddingHorizontal={14}
+                        borderTopWidth={1}
+                        borderColor="$border"
+                        onPress={onSeeAll}
+                        pressStyle={{ opacity: 0.7 }}
+                        accessibilityRole="button"
+                        testID="open-timeline"
+                    >
+                        <Body fontSize={15} lineHeight={20} fontWeight="700" tone="brand" numberOfLines={1}>
+                            {t('orderDetail.activity.seeAll')}
+                        </Body>
+                        <Glyph name="chevron" size={16} strokeWidth={2.4} color={theme.textSecondary?.val as string} />
+                    </XStack>
+                ) : null}
+            </Card>
+        </Section>
+    );
+}
+
+/**
+ * Everything that has happened to the order, newest first, in a sheet over the
+ * order screen: the driver reads it and closes it without leaving the order.
+ * The rows are the timeline's own (`EventRows`), from the order's tracking
+ * statuses; the screen reads them once (`useOrderTimeline`) and hands them to
+ * this sheet and to the activity section alike.
+ */
+export function ActivitySheet({
+    visible,
+    onClose,
+    events,
+    isLoading,
+    failed,
+    number,
+    t,
+    bottomInset = 0,
+}: {
+    visible: boolean;
+    onClose: () => void;
+    /** The order's tracking statuses, oldest first. */
+    events?: TrackingStatusEvent[];
+    isLoading?: boolean;
+    /** The last refresh failed: what is shown is what was last known. */
+    failed?: boolean;
+    number?: string;
+    t: T;
+    bottomInset?: number;
+}) {
+    const windowHeight = useWindowDimensions().height;
+    // The hook sorts oldest first for the timeline screen; here the latest leads.
+    const newestFirst = [...(events ?? [])].reverse();
+    return (
+        <SheetModal visible={visible} onClose={onClose} dismissLabel={t('common.close')} testID="order-activity-sheet">
+            <YStack maxHeight={Math.round(windowHeight * 0.8)} padding={16} paddingBottom={Math.max(bottomInset, 16)} gap={12} backgroundColor="$background" borderTopLeftRadius={26} borderTopRightRadius={26} borderWidth={1} borderColor="$border">
+                <YStack gap={2}>
+                    <SectionLabel>{t('orderDetail.activity.heading')}</SectionLabel>
+                    {number ? (
+                        // In full: an identifier is never cut short.
+                        <Body fontFamily="$mono" fontSize={16} lineHeight={21} fontWeight="600" selectable>
+                            {number}
+                        </Body>
+                    ) : null}
+                </YStack>
+                {failed && newestFirst.length ? <Banner tone="warning" message={t('orderDetail.activity.refreshFailed')} testID="order-activity-stale" /> : null}
+                {isLoading && !newestFirst.length ? (
+                    <Skeleton height={120} />
+                ) : newestFirst.length ? (
+                    <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never" contentContainerStyle={{ paddingVertical: 4 }} testID="order-activity-list">
+                        <EventRows events={newestFirst} t={t} dated />
+                    </ScrollView>
+                ) : (
+                    <Secondary fontSize={15} lineHeight={20} testID="order-activity-sheet-none">
+                        {t('orderDetail.activity.none')}
+                    </Secondary>
+                )}
+                <YStack height={48} borderRadius={14} alignItems="center" justifyContent="center" backgroundColor="$surfaceRaised" borderWidth={1} borderColor="$border" onPress={onClose} pressStyle={{ opacity: 0.7 }} accessibilityRole="button" testID="order-activity-close">
+                    <Body fontSize={15} fontWeight="700" numberOfLines={1}>
+                        {t('common.close')}
+                    </Body>
+                </YStack>
+            </YStack>
+        </SheetModal>
     );
 }
