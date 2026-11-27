@@ -177,6 +177,11 @@ export const LocationProvider = ({ children }) => {
                 startOnBoot: true,
                 stopTimeout: 1,
                 debug: false,
+                // A parked driver does not move, and without movement nothing is recorded. The
+                // heartbeat asks for a position once a minute anyway (see onHeartbeat), so
+                // dispatch and the order's ETA are never working from a position minutes old.
+                heartbeatInterval: 60,
+                preventSuspend: true,
                 ...getHttpConfig(),
             },
             (state) => {
@@ -193,12 +198,53 @@ export const LocationProvider = ({ children }) => {
         // Subscribe to motion and activity events.
         subscriptions.push(BackgroundGeolocation.onMotionChange(onMotionChange));
 
+        // While standing still: take a position on each heartbeat. `persist` records it, and a
+        // recorded position is uploaded to the server like any other.
+        subscriptions.push(
+            BackgroundGeolocation.onHeartbeat(() => {
+                BackgroundGeolocation.getCurrentPosition({ samples: 1, persist: true, extras: { event: 'heartbeat' } })
+                    .then((position) => {
+                        if (isActive) setLocation(position);
+                    })
+                    .catch(() => {});
+            })
+        );
+
+        /*
+         * `ready` only takes its settings the first time it is called in a launch. Signing in
+         * as someone else, switching organisation or linking another server changes where
+         * positions must be sent and with whose token, so that part is applied again here;
+         * otherwise positions keep going to the old address with the old token.
+         */
+        const http = getHttpConfig();
+        if (http.url) {
+            BackgroundGeolocation.setConfig(http).catch(() => {});
+        }
+
         // Clean up the listener when unmounting.
         return () => {
             isActive = false;
             subscriptions.forEach((subscription) => subscription?.remove?.());
         };
     }, [canTrackLocation, onLocation, onLocationError, onMotionChange, getHttpConfig, startTracking, stopTracking]);
+
+    /*
+     * With the app open and the driver online, report the position every minute. The
+     * operating system decides when background fetch runs (every fifteen minutes at best), and
+     * movement-based recording says nothing while the vehicle is parked, so on their own they
+     * leave the server's copy of a waiting driver's position many minutes old.
+     */
+    useEffect(() => {
+        if (!canTrackLocation || Platform.OS === 'web') return;
+
+        const timer = setInterval(() => {
+            if (AppState.currentState === 'active') {
+                trackLocation();
+            }
+        }, 60000);
+
+        return () => clearInterval(timer);
+    }, [canTrackLocation, trackLocation]);
 
     // Configure BackgroundFetch for periodic tasks.
     useEffect(() => {
