@@ -21,8 +21,15 @@
  * the driver, the road to the waypoint being headed to, and that waypoint. The
  * tracker's road runs on through every waypoint still to do, so it is cut at
  * the point nearest the one being headed to; that part is drawn strongly and
- * the rest faintly. With no position for the driver there is no leg to frame,
- * and the view is the order's waypoints.
+ * the rest faintly. Without a position for the driver the view is still that
+ * road and that waypoint; with neither a position nor a road it is the waypoint
+ * itself, a few streets around it. Only a finished order (`overview`), or one
+ * with nothing left to head to, is shown whole.
+ *
+ * The part of the map that can be seen above the sheet is small, so the view
+ * spends none of it on margins it does not need: the map's padding is the
+ * sheet and the status bar, and the fit's own padding is just enough to keep a
+ * marker whole and clear of the round buttons in the top corners.
  */
 import { mapLook } from './mapLook';
 import { DriverPuck } from './DriverPuck';
@@ -37,6 +44,14 @@ import type { LatLng } from '../data/routeGeo';
 
 /** With one point to show, a few streets around it. */
 const STREET = { latitudeDelta: 0.0025, longitudeDelta: 0.0025 };
+/**
+ * Around what the full-screen map fits. Kept small above and below, where the
+ * visible strip of map is short (every point of padding there zooms the view
+ * out); wider at the sides, where the round buttons sit in the top corners.
+ */
+const FIT_PADDING = { top: 26, right: 64, bottom: 22, left: 64 };
+/** How long after the map reports ready a fit is repeated, in case it was measured before the map had its padding. */
+const SETTLE_MS = 400;
 
 export interface OrderMapStop {
     id: string;
@@ -63,17 +78,20 @@ export interface OrderMapProps {
     height?: number;
     /** Fill the parent instead of drawing a card: the order screen's background. */
     fill?: boolean;
-    /** `fill` only: the part of the map covered at the top (floating buttons) and at the bottom (the sheet). */
+    /** `fill` only: the part of the map covered at the top (the status bar) and at the bottom (the sheet). */
     padding?: { top?: number; bottom?: number };
+    /** `fill` only: show the whole order rather than the leg being driven (a finished order). */
+    overview?: boolean;
     testID?: string;
 }
 
-export function OrderMap({ stops, activeStopId, route = [], routeColor, position, dark, height = 220, fill, padding, testID = 'order-map' }: OrderMapProps) {
+export function OrderMap({ stops, activeStopId, route = [], routeColor, position, dark, height = 220, fill, padding, overview, testID = 'order-map' }: OrderMapProps) {
     const theme = useTheme();
     const ref = useRef<MapView>(null);
     const hasRoute = route.length > 1;
     const [ready, setReady] = useState(false);
     const fitted = useRef(false);
+    const readyAt = useRef(0);
     const padTop = padding?.top ?? 0;
     const padBottom = padding?.bottom ?? 0;
 
@@ -105,7 +123,8 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
 
     // Fit once per set of stops and route, not on every position tick.
     const fitKey = `${stops.map((stop) => stop.id).join('|')}:${route.length}`;
-    const fillKey = `${stops.map((stop) => `${stop.id}${stop.done ? 'd' : ''}`).join('|')}:${route.length}:${active?.id}:${position ? 1 : 0}`;
+    // Everything that arrives late and changes what is framed: the stops (the tracker's replace the order's own), the road, the waypoint headed to, whether there is a position, whether the order is finished.
+    const fillKey = `${stops.map((stop) => `${stop.id}${stop.done ? 'd' : ''}`).join('|')}:${route.length}:${leg.length}:${active?.id}:${position ? 1 : 0}:${overview ? 1 : 0}`;
     useEffect(() => {
         if (fill) return;
         const coordinates = [...stops.map((stop) => stop.point), ...route, ...(position ? [position] : [])];
@@ -117,9 +136,16 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
     // The full-screen map frames the leg being driven, in the part above the sheet.
     useEffect(() => {
         if (!fill || !ready) return;
-        // With the driver and somewhere to head to, the view is that leg; otherwise the order's waypoints.
-        const focus = position && active ? [{ latitude: position.latitude, longitude: position.longitude }, ...leg, active.point] : [];
-        const coordinates = focus.length > 1 ? focus : [...stops.map((stop) => stop.point), ...route];
+        const here = position ? [{ latitude: position.latitude, longitude: position.longitude }] : [];
+        /*
+         * With somewhere to head to, the view is the way there: the driver
+         * (when the phone knows where they are), the road up to that waypoint
+         * (when the server gave one), and the waypoint. With neither a driver
+         * nor a road that is the waypoint alone, which is shown at street
+         * level below. The whole order is the view only when it is finished or
+         * has nothing left to head to.
+         */
+        const coordinates = active && !overview ? [...here, ...(leg.length > 1 ? leg : []), active.point] : [...stops.map((stop) => stop.point), ...route];
         if (!coordinates.length) return;
         const latitudes = coordinates.map((point) => point.latitude);
         const longitudes = coordinates.map((point) => point.longitude);
@@ -127,15 +153,27 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
         const north = Math.max(...latitudes);
         const west = Math.min(...longitudes);
         const east = Math.max(...longitudes);
-        // One point, or points a few doors apart (the driver has arrived), have no extent worth fitting: a few streets around them instead.
-        if (north - south < STREET.latitudeDelta / 2 && east - west < STREET.longitudeDelta / 2) {
-            ref.current?.animateToRegion({ latitude: (north + south) / 2, longitude: (east + west) / 2, ...STREET }, fitted.current ? 300 : 0);
-            fitted.current = true;
-            return;
-        }
-        // The room for the buttons and the sheet is the map's own padding (below), so this is only breathing space around the markers.
-        ref.current?.fitToCoordinates(coordinates, { edgePadding: { top: 40, right: 44, bottom: 40, left: 44 }, animated: fitted.current });
+        const fit = (animated: boolean) => {
+            // One point, or points a few doors apart (the driver has arrived), have no extent worth fitting: a few streets around them instead.
+            if (north - south < STREET.latitudeDelta / 2 && east - west < STREET.longitudeDelta / 2) {
+                ref.current?.animateToRegion({ latitude: (north + south) / 2, longitude: (east + west) / 2, ...STREET }, animated ? 300 : 0);
+                return;
+            }
+            // The room for the status bar and the sheet is the map's own padding (below). This keeps a marker whole at the edges and clear of the round buttons in the top corners.
+            ref.current?.fitToCoordinates(coordinates, { edgePadding: FIT_PADDING, animated });
+        };
+        fit(fitted.current);
         fitted.current = true;
+        /*
+         * A fit asked for as the map reports ready can come before the map has
+         * taken its padding and its size in; a fit made then is measured
+         * against the whole screen and lands zoomed out, or under the sheet.
+         * So a fit made in the map's first moments is asked for once more
+         * shortly after, when both are in.
+         */
+        if (Date.now() - readyAt.current > SETTLE_MS) return;
+        const again = setTimeout(() => fit(false), SETTLE_MS);
+        return () => clearTimeout(again);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fill, ready, fillKey, padTop, padBottom]);
 
@@ -153,7 +191,10 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
             <MapView
                 ref={ref}
                 style={{ flex: 1 }}
-                onMapReady={() => setReady(true)}
+                onMapReady={() => {
+                    readyAt.current = Date.now();
+                    setReady(true);
+                }}
                 mapPadding={fill ? { top: padTop, right: 0, bottom: padBottom, left: 0 } : undefined}
                 initialRegion={{ ...stops[0].point, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
                 {...mapLook(dark)}
@@ -185,7 +226,8 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
                     </Marker>
                 ) : null}
                 {stops.map((stop) => {
-                    const state = stop.done ? 'done' : stop.id === activeStopId ? 'current' : 'pending';
+                    // The waypoint the view is framed on is the one marked as headed to (the named one, else the first still to do).
+                    const state = stop.done ? 'done' : stop.id === (fill ? active?.id : activeStopId) ? 'current' : 'pending';
                     return (
                         <Marker
                             // The badge is drawn once (`tracksViewChanges` off), so a change of state needs a new marker.

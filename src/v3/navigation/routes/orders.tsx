@@ -11,6 +11,7 @@ import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useShell } from '../DriverShell';
 import { useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
+import { useNavigationHandoffSheet } from '../../navigate/useNavigationHandoffSheet';
 
 export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { params?: { mode?: 'orders' | 'route' | 'map' | 'schedule' } } }) {
     const driverId = useDriverId();
@@ -52,7 +53,10 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             return () => setBleedTop(false);
         }, [setBleedTop])
     );
+    // Navigate opens the choice of app as a sheet over the order.
+    const handoff = useNavigationHandoffSheet();
     return (
+        <>
         <OrderDetailScreen
             orderId={String(orderId ?? '')}
             reloadToken={reloadToken}
@@ -63,7 +67,10 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             // The order id travels, not just the point: the hand-off reads the
             // order's *current* destination, so an edit made after this tap
             // still lands the driver at the right door.
-            onNavigate={(destination) => navigation.navigate('NavigationHandoff', { destination, orderId })}
+            onNavigate={(destination) => handoff.open(destination, orderId)}
+            // While the footer shows its slide to confirm, the system's swipe back (which starts at
+            // the same edge of the screen as the slide) is off, so the slide is not taken for it.
+            onConfirmingChange={(confirming) => (navigation as { setOptions?: (options: object) => void }).setOptions?.({ gestureEnabled: !confirming })}
             onCaptureProof={(request) => navigation.navigate('ProofCapture', request)}
             onChangeDestination={() => navigation.navigate('Destination', { orderId })}
             // The order's activity history opens in a sheet over the order now, so there is no timeline to navigate to from here.
@@ -72,6 +79,8 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             // Only against a server that cannot give the order a chat of its own: a new conversation, as before.
             onMessageDispatch={() => navigation.navigate('Inbox', { screen: 'NewConversation', initial: false })}
         />
+        {handoff.sheet}
+        </>
     );
 }
 

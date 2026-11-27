@@ -27,11 +27,12 @@ import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import { useScreenStyle } from '../ui/useScreenStyle';
-import { useSync } from '../shell';
+import { useDeviceLocation, useSync } from '../shell';
 import { useSettings } from '../settings';
 import { useOffers, useAcceptOffer, useDeclineOffer, secondsLeft } from '../data/useOffers';
 import { trackingNumberOf, payloadOf } from '../data/accessors';
-import { currentDestination, stopLabel } from '../data/orderStops';
+import { currentDestination, orderStops, stopLabel } from '../data/orderStops';
+import { coordsOfPoint, haversineM } from '../data/routeGeo';
 import { formatMeters } from '../format';
 import type { OrderRecord } from '../data/orderStore';
 
@@ -40,6 +41,7 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
     const screen = useScreenStyle();
     const { isOnline } = useSync();
     const { units } = useSettings();
+    const position = useDeviceLocation();
     const { offers, isLoading, error, reload } = useOffers(driverId);
     const { accept, isAccepting } = useAcceptOffer(driverId);
     const { decline, isDeclining } = useDeclineOffer();
@@ -104,7 +106,13 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
                 visible(offers, declined, now).map((order) => {
                     const payload = payloadOf(order);
                     const destination = stopLabel(currentDestination(payload));
-                    const distance = (order as { adhoc_distance?: number }).adhoc_distance;
+                    /*
+                     * From the phone to where the job starts, in a straight line. `adhoc_distance`
+                     * is not that: it is the radius the order is offered within, the same for every
+                     * driver, and it was being shown here as if it were how far away the job is.
+                     */
+                    const start = coordsOfPoint(orderStops(payload)[0]?.location as never);
+                    const distance = position && start ? haversineM(position, start) : undefined;
                     const left = secondsLeft(order, now);
 
                     return (

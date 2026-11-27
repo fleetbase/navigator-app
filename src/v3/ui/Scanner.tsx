@@ -27,6 +27,7 @@ export function ScannerOverlay({
     expected,
     feedback = 'idle',
     lastCode,
+    note,
     hint = 'Point at any label — multi-scan stays open',
     onManualEntry,
     testID,
@@ -36,6 +37,8 @@ export function ScannerOverlay({
     feedback?: ScanFeedback;
     /** The code that produced `feedback`, rendered in full. */
     lastCode?: string;
+    /** What came of that read, in words: the mark and the colour never say it alone. */
+    note?: string;
     hint?: string;
     onManualEntry?: () => void;
     testID?: string;
@@ -65,7 +68,7 @@ export function ScannerOverlay({
             </YStack>
 
             <YStack gap={space[3]} padding={space[4]}>
-                {fb && lastCode ? (
+                {fb && (lastCode || note) ? (
                     <XStack
                         alignItems="center"
                         gap={space[2]}
@@ -78,16 +81,26 @@ export function ScannerOverlay({
                         <Body tone={fb.tone} fontWeight="700">
                             {fb.prefix}
                         </Body>
-                        {/* Codes render in full — a driver matches this against a label. */}
-                        <Body flex={1} fontFamily="$mono" fontSize={13} tone={fb.tone}>
-                            {lastCode}
-                        </Body>
+                        <YStack flex={1} gap={2}>
+                            {/* Codes render in full — a driver matches this against a label. */}
+                            {lastCode ? (
+                                <Body fontFamily="$mono" fontSize={13} tone={fb.tone}>
+                                    {lastCode}
+                                </Body>
+                            ) : null}
+                            {note ? (
+                                <Body fontSize={13} fontWeight="600" tone={fb.tone}>
+                                    {note}
+                                </Body>
+                            ) : null}
+                        </YStack>
                     </XStack>
                 ) : null}
 
                 <XStack alignItems="center" justifyContent="space-between">
                     <Body fontWeight="800" tabular color="$white">
-                        {scanned} / {expected}
+                        {/* With nothing to count against, the count alone: "1 / 0" reads as a fault. */}
+                        {expected > 0 ? `${scanned} / ${expected}` : `${scanned}`}
                     </Body>
                     {onManualEntry ? (
                         <Button variant="ghost" height={38} onPress={onManualEntry}>
@@ -105,15 +118,21 @@ export function ScanChecklistRow({
     name,
     code,
     scannedAt,
+    problem,
+    note,
     testID,
 }: {
     name: string;
     code: string;
     /** Clock time when scanned; absent means still awaiting. */
     scannedAt?: string;
+    /** The scan was refused or is still to be sent: said in words, in place of the time. */
+    problem?: string;
+    /** Extra state of a scan that stands, after its time ("waiting to send"). */
+    note?: string;
     testID?: string;
 }) {
-    const done = !!scannedAt;
+    const done = !!scannedAt && !problem;
     return (
         <XStack
             testID={testID}
@@ -122,7 +141,7 @@ export function ScanChecklistRow({
             padding={space[3]}
             borderRadius={radius.compact}
             borderWidth={1}
-            borderColor={done ? '$successBorder' : '$border'}
+            borderColor={problem ? '$dangerBorder' : done ? '$successBorder' : '$border'}
             backgroundColor={done ? '$successFill' : '$surface'}
         >
             <YStack flex={1} gap={2}>
@@ -133,8 +152,8 @@ export function ScanChecklistRow({
                     {code}
                 </Body>
             </YStack>
-            <Micro tone={done ? 'success' : 'muted'} tabular>
-                {done ? `SCANNED ${scannedAt}` : 'AWAITING'}
+            <Micro tone={problem ? 'danger' : done ? 'success' : 'muted'} tabular flexShrink={1}>
+                {problem ? `✕ ${problem}` : done ? `SCANNED ${scannedAt}${note ? ` · ${note}` : ''}` : 'AWAITING'}
             </Micro>
         </XStack>
     );

@@ -15,6 +15,7 @@
  *   order_changed         { type, id, changes } — body is the summary
  *   order_unassigned      { type, id }
  *   order_dispatched, order_canceled, … { type, id }
+ *   order_ping            { type, id, expires_at? } — an ad-hoc offer
  *   chat_message_received { type, id: message, channel: chat_channel_xxx }
  *
  * FCM delivers data values as strings, so `changes` may arrive JSON-encoded.
@@ -89,6 +90,9 @@ function kindOf(push: ParsedPush): RealtimeEventKind | undefined {
             return 'order.unassigned';
         case 'order_assigned':
             return 'order.assigned';
+        // An ad-hoc offer: the same thing `order.ping` says on the socket.
+        case 'order_ping':
+            return 'order.offered';
         case 'chat_message_received':
             return 'chat.message';
         default:
@@ -118,5 +122,11 @@ export function destinationOf(push: ParsedPush): PushDestination | undefined {
     if (push.type === 'chat_message_received') return push.channelId ? { kind: 'conversation', channelId: push.channelId } : undefined;
     // The order is no longer theirs to open; the list says why.
     if (push.type === 'order_unassigned') return { kind: 'orders' };
+    /*
+     * An offer is not the driver's order yet, so there is no order screen to
+     * open. The incoming-offer overlay rises instead, over wherever they are,
+     * with accept and decline on it.
+     */
+    if (push.type === 'order_ping') return undefined;
     return push.orderId ? { kind: 'order', orderId: push.orderId } : undefined;
 }

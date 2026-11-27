@@ -5,7 +5,7 @@
  * driver must capture something before the activity can fire, and `pod_method`
  * says what — `scan`, `photo` or `signature`. All three have public endpoints:
  *
- *   POST orders/{id}/capture-qr/{subjectId?}         { code, data, raw_data }
+ *   POST orders/{id}/capture-qr/{subjectId?}         { code }
  *   POST orders/{id}/capture-photo/{subjectId?}      { photos: [base64…] }
  *   POST orders/{id}/capture-signature/{subjectId?}  { signature, remarks }
  *
@@ -33,6 +33,43 @@ export type ProofPayload =
     | { method: 'signature'; signature: string; remarks?: string };
 
 export type ProofOutcome = 'sent' | 'queued' | 'failed';
+
+/**
+ * Why the server would not take a scan, in the app's words:
+ *
+ *   - `mismatch`: it read the code and the code does not name what the scan was
+ *     sent for (the item, or any item of the order)
+ *   - `notOnOrder`: the item the scan was sent for is not on this order
+ *   - `unreadable`: nothing usable was read
+ *   - `orderMissing`: the order is no longer there
+ *   - `noSignal`: it never reached the server, and could not be kept to send later
+ *   - `other`: anything else; `message` carries what the server said
+ */
+export type ScanFailure = 'mismatch' | 'notOnOrder' | 'unreadable' | 'orderMissing' | 'noSignal' | 'other';
+
+/** What came of sending one scanned code. */
+export interface ScanSendResult {
+    outcome: ProofOutcome;
+    /** The proof record's id, when the scan reached the server. */
+    proofId?: string;
+    /** The record the server filed the proof under (`entity_…`, or the order). */
+    subjectId?: string;
+    failure?: ScanFailure;
+    /** The server's own words, for a failure the app has none for. */
+    message?: string;
+}
+
+/** Reads the server's refusal of a scan. Its messages are fleetops `captureQrScan`'s. */
+export function scanFailureOf(err: unknown): { failure: ScanFailure; message?: string } {
+    const error = err as { message?: unknown; status?: unknown; isTransport?: unknown } | null | undefined;
+    const message = typeof error?.message === 'string' ? error.message : undefined;
+    if (error?.isTransport) return { failure: 'noSignal', message };
+    if (message && /validate QR code/i.test(message)) return { failure: 'mismatch', message };
+    if (message && /capture QR code/i.test(message)) return { failure: 'notOnOrder', message };
+    if (message && /No QR code data/i.test(message)) return { failure: 'unreadable', message };
+    if (error?.status === 404) return { failure: 'orderMissing', message };
+    return { failure: 'other', message };
+}
 
 /** Which capture method a config's activity is asking for. */
 export function proofMethodOf(podMethod?: string | null): ProofMethod {
@@ -70,9 +107,10 @@ function bodyFor(proof: ProofPayload): Record<string, unknown> {
         return { signature: toBareBase64(proof.signature), remarks: proof.remarks ?? 'Captured in Navigator' };
     }
     /*
-     * capture-qr takes a single `code`. A multi-parcel scan is therefore
-     * several requests, not one — each is independently idempotent, so a
-     * partial failure re-sends only what did not land.
+     * capture-qr takes a single `code`: the text the camera read, as it read it
+     * (a tracking number from the barcode, the tracking address from the QR
+     * code, or an older label's id). The server reads every one of those. A
+     * multi-item scan is therefore several requests, each naming its own item.
      */
     return { code: proof.codes[0] };
 }
@@ -88,26 +126,59 @@ export function useProofCapture(orderId?: string) {
      */
     const lastProofId = useRef<string | undefined>(undefined);
 
+    /**
+     * Sends one scanned code as proof.
+     *
+     * With a `subjectId` (`entity_…`) the proof is that item's, and the server
+     * checks the code against it. Without one it is sent for the order, and the
+     * server files it under the order when the code is the order's own, or
+     * under the item of this order the code names. Either way a code that names
+     * nothing on the order is refused.
+     */
+    const sendScan = useCallback(
+        async (code: string, subjectId?: string): Promise<ScanSendResult> => {
+            if (!orderId) return { outcome: 'failed', failure: 'orderMissing' };
+            try {
+                const result = await adapter.post(pathFor(orderId, 'scan', subjectId), bodyFor({ method: 'scan', codes: [code] }));
+                if (isQueuedAck(result)) return { outcome: 'queued', subjectId };
+                const record = ((result as { data?: unknown })?.data ?? result) as { id?: unknown; subject_id?: unknown } | null;
+                return {
+                    outcome: 'sent',
+                    proofId: record && typeof record.id === 'string' ? record.id : undefined,
+                    subjectId: record && typeof record.subject_id === 'string' ? record.subject_id : subjectId,
+                };
+            } catch (err) {
+                return { outcome: 'failed', ...scanFailureOf(err) };
+            }
+        },
+        [adapter, orderId]
+    );
+
     const capture = useCallback(
         async (proof: ProofPayload, subjectId?: string): Promise<ProofOutcome> => {
             if (!orderId) return 'failed';
             setIsCapturing(true);
             setError(null);
             try {
-                const codes = proof.method === 'scan' ? proof.codes : [null];
                 let queued = false;
                 lastProofId.current = undefined;
-                for (const code of codes) {
-                    const one: ProofPayload = proof.method === 'scan' ? { method: 'scan', codes: [code as string] } : proof;
-                    const result = await adapter.post(pathFor(orderId, proof.method, subjectId), bodyFor(one));
-                    if (isQueuedAck(result)) {
-                        queued = true;
-                        continue;
+                if (proof.method === 'scan') {
+                    for (const code of proof.codes) {
+                        const result = await sendScan(code, subjectId);
+                        if (result.outcome === 'failed') {
+                            setError(result.message ?? result.failure ?? 'failed');
+                            return 'failed';
+                        }
+                        if (result.outcome === 'queued') queued = true;
+                        else if (result.proofId) lastProofId.current = result.proofId;
                     }
-                    const record = ((result as { data?: unknown })?.data ?? result) as { id?: unknown } | null;
-                    if (record && typeof record.id === 'string') lastProofId.current = record.id;
+                    return queued ? 'queued' : 'sent';
                 }
-                return queued ? 'queued' : 'sent';
+                const result = await adapter.post(pathFor(orderId, proof.method, subjectId), bodyFor(proof));
+                if (isQueuedAck(result)) return 'queued';
+                const record = ((result as { data?: unknown })?.data ?? result) as { id?: unknown } | null;
+                if (record && typeof record.id === 'string') lastProofId.current = record.id;
+                return 'sent';
             } catch (err) {
                 setError((err as Error).message);
                 return 'failed';
@@ -115,8 +186,8 @@ export function useProofCapture(orderId?: string) {
                 setIsCapturing(false);
             }
         },
-        [adapter, orderId]
+        [adapter, orderId, sendScan]
     );
 
-    return { capture, isCapturing, error, lastProofId: useCallback(() => lastProofId.current, []) };
+    return { capture, sendScan, isCapturing, error, lastProofId: useCallback(() => lastProofId.current, []) };
 }

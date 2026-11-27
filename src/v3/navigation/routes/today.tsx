@@ -1,7 +1,13 @@
-/** Home tab (route `Today`), and the navigation hand-off shared by every tab that starts a drive. */
+/**
+ * Home tab (route `Today`), and the navigation hand-off shared by every tab
+ * that starts a drive: as a sheet over the screen (`useNavigationHandoffSheet`
+ * in navigate/, used by Home and the order), and as the `NavigationHandoff` route for the
+ * callers that still push a screen.
+ */
 import NavigationHandoffScreen from '../../screens/NavigationHandoffScreen';
 import TodayScreen from '../../screens/TodayScreen';
 import type { Destination } from '../../navigate/handoff';
+import { useNavigationHandoffSheet } from '../../navigate/useNavigationHandoffSheet';
 import { useDriverId, useFocusCount, useHandoffDestination, useLeaveWhenRemoved, type Nav } from '../session';
 
 /*
@@ -12,13 +18,16 @@ import { useDriverId, useFocusCount, useHandoffDestination, useLeaveWhenRemoved,
 export function TodayHome({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
     const reloadToken = useFocusCount();
+    // Navigate opens the choice of app over Home, not on a screen of its own.
+    const handoff = useNavigationHandoffSheet();
     return (
+        <>
         <TodayScreen
             driverId={driverId}
             reloadToken={reloadToken}
             onOpenOrder={(orderId) => navigation.navigate('Orders', { screen: 'OrderDetail', params: { orderId }, initial: false })}
             onOpenWaypoint={(manifestId, stopId) => navigation.navigate('Orders', { screen: 'StopDetail', params: { manifestId, stopId }, initial: false })}
-            onNavigate={(destination, orderId) => navigation.navigate('NavigationHandoff', { destination, orderId })}
+            onNavigate={(destination, orderId) => handoff.open(destination, orderId)}
             onOpenOffers={() => navigation.navigate('Orders', { screen: 'Offers', initial: false })}
             onOpenSyncQueue={() => navigation.navigate('Account', { screen: 'SyncQueue', initial: false })}
             onOpenInspection={(vehicleId, vehicleName) => navigation.navigate('Account', { screen: 'Inspection', params: { vehicleId, vehicleName }, initial: false })}
@@ -27,6 +36,8 @@ export function TodayHome({ navigation }: { navigation: Nav }) {
             onReportIssue={() => navigation.navigate('Account', { screen: 'IssueCreate', params: {}, initial: false })}
             onLogFuel={() => navigation.navigate('Account', { screen: 'FuelReportCreate', params: {}, initial: false })}
         />
+        {handoff.sheet}
+        </>
     );
 }
 

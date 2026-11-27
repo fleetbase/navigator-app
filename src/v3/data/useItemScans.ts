@@ -3,7 +3,7 @@
  *
  * A scan of one item is a proof whose subject is that item:
  *
- *   POST orders/{id}/capture-qr/{entityId}   { code }
+ *   POST orders/{id}/capture-qr/{entityId}   { code }   the text the camera read
  *   GET  orders/{id}/proofs                  every proof on the order, each
  *                                            naming its subject (`subject_id`)
  *
@@ -26,7 +26,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase } from '../api';
 import { readJSON, writeJSON } from '../api/storage';
-import { useProofCapture, type ProofOutcome } from './useProofCapture';
+import { useProofCapture, type ProofOutcome, type ScanFailure } from './useProofCapture';
 
 export interface ItemScan {
     /** When it was scanned (ISO): the server's time for a proof, this phone's for its own record. */
@@ -76,6 +76,18 @@ export function recordItemScan(orderId: string | undefined, subjectId: string | 
     listeners.forEach((listener) => listener());
 }
 
+/*
+ * Why the last scan of an item was refused. The scanner asks for it after a
+ * failed scan so it can say why; the hosts between the two only pass the
+ * outcome along.
+ */
+const failures: Record<string, { failure: ScanFailure; message?: string }> = {};
+
+/** Why the item's last scan failed, if it did. */
+export function itemScanFailureOf(subjectId?: string): { failure: ScanFailure; message?: string } | undefined {
+    return subjectId ? failures[subjectId] : undefined;
+}
+
 /** Resets between tests; not used by the app. */
 export function resetItemScans(): void {
     ledger = {};
@@ -109,7 +121,9 @@ export function useItemScans(orderId?: string) {
     const [localVersion, setLocalVersion] = useState(0);
     const inFlight = useRef(false);
     const alive = useRef(true);
-    const { capture, isCapturing, error, lastProofId } = useProofCapture(orderId);
+    const { sendScan } = useProofCapture(orderId);
+    const [isSending, setIsSending] = useState(false);
+    const [sendFailure, setSendFailure] = useState<string | null>(null);
 
     useEffect(() => {
         alive.current = true;
@@ -165,23 +179,35 @@ export function useItemScans(orderId?: string) {
         [orderId, proofs, localVersion]
     );
 
-    /** Sends one scanned code as proof for one item, the way an order's scan proof is sent. */
+    /**
+     * Sends one scanned code as proof for one item, the way an order's scan
+     * proof is sent: the text the camera read, under the item's id. Either code
+     * on the item's label is accepted (see data/scanCode).
+     */
     const scan = useCallback(
         async (subjectId: string, code: string): Promise<ProofOutcome> => {
-            const outcome = await capture({ method: 'scan', codes: [code] }, subjectId);
-            if (outcome === 'failed') return outcome;
-            recordItemScan(orderId, subjectId, { queued: outcome === 'queued', proofId: lastProofId() });
-            if (outcome === 'sent') void load();
-            return outcome;
+            delete failures[subjectId];
+            setIsSending(true);
+            setSendFailure(null);
+            const result = await sendScan(code, subjectId);
+            if (alive.current) setIsSending(false);
+            if (result.outcome === 'failed') {
+                failures[subjectId] = { failure: result.failure ?? 'other', message: result.message };
+                if (alive.current) setSendFailure(result.message ?? result.failure ?? 'failed');
+                return result.outcome;
+            }
+            recordItemScan(orderId, subjectId, { queued: result.outcome === 'queued', proofId: result.proofId });
+            if (result.outcome === 'sent') void load();
+            return result.outcome;
         },
-        [capture, lastProofId, load, orderId]
+        [sendScan, load, orderId]
     );
 
     return {
         scanOf,
         scan,
-        isScanning: isCapturing,
-        scanError: error,
+        isScanning: isSending,
+        scanError: sendFailure,
         /** The server's list has not answered yet. */
         isLoading: state === 'idle' || state === 'loading',
         /** The server's list could not be read: only this phone's scans are known. */

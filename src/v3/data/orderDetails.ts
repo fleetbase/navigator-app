@@ -158,17 +158,36 @@ export interface ContactPerson {
     email?: string;
 }
 
-/** The customer, with the drop-off's phone standing in when theirs is absent. */
+/**
+ * The order's customer, and only the customer. An order with none has none:
+ * the drop-off is a place, and its name (often a street) is not a person's.
+ * Who can be reached at the drop-off is `dropoffContactOf`, shown as that.
+ */
 export function customerContactOf(order?: Partial<OrderRecord> | null): ContactPerson | undefined {
     const c = recordOf(order?.customer);
-    const dropoff = recordOf((payloadOf(order) as Rec).dropoff);
     const contact: ContactPerson = {
-        name: str(c?.name) ?? str(dropoff?.name),
-        phone: str(c?.phone) ?? str(dropoff?.phone),
+        name: str(c?.name),
+        phone: str(c?.phone),
         email: str(c?.email),
     };
     // Any one of them is someone to show: a customer known only by an email can still be written to.
     return contact.name || contact.phone || contact.email ? contact : undefined;
+}
+
+/**
+ * Who can be reached at the drop-off: the place's phone number, with the name
+ * of its contact person when the place carries one. There is someone to offer
+ * only when there is a number to call. The place's own name is never used as a
+ * person's name.
+ */
+export function dropoffContactOf(order?: Partial<OrderRecord> | null): ContactPerson | undefined {
+    const dropoff = recordOf((payloadOf(order) as Rec).dropoff);
+    if (!dropoff) return undefined;
+    const person = recordOf(dropoff.contact) ?? recordOf(dropoff.owner);
+    const meta = recordOf(dropoff.meta);
+    const phone = str(person?.phone) ?? str(dropoff.phone) ?? str(meta?.contact_phone);
+    if (!phone) return undefined;
+    return { name: str(person?.name) ?? str(dropoff.contact_name) ?? str(meta?.contact_name), phone, email: str(person?.email) };
 }
 
 /* -- Notes. ----------------------------------------------------------------- */

@@ -33,6 +33,7 @@ import { navigationRef, flushPendingNavigation } from './navigation/navigationRe
 import { linking } from './navigation/linking';
 import { useActiveOrderCount } from './data';
 import { preloadInitialScreens } from './extensions/app-screen-registry';
+import { IncomingOfferHost } from './offers/IncomingOffer';
 
 
 /**
@@ -357,6 +358,8 @@ export function V3App({
                                             {children}
                                             <PortalHost name="MainPortal" />
                                             <PortalHost name="BottomSheetPanelPortal" />
+                                            {/* A job offered to this driver rises over whatever screen is in front. Last, so it is above the tabs, the toasts and the portals. */}
+                                            {isAuthenticated && !linkWaiting && onboardingComplete ? <IncomingOfferHost driverId={driverId} /> : null}
                                             </LocationProvider>
                                         </DutyProvider>
                                     </QueueBoundSync>

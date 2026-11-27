@@ -51,7 +51,7 @@ import {
     type TrackingStatusEvent,
 } from '../../data';
 import { humanizeStatus } from '../../theme/status';
-import { Card, Glyph, IconButton, Initials, Section, SectionLabel } from '../jobs/parts';
+import { Card, Glyph, IconButton, Initials, Section, SectionLabel, SmallRail } from '../jobs/parts';
 import { HomeIcon, type HomeIconName } from '../home/parts';
 import { EventRows, SectionLink } from './OrderSections';
 
@@ -690,6 +690,12 @@ export function OrderReference({ order, config, t }: { order: OrderRecord; confi
 
 /* -- Activity. ----------------------------------------------------------------- */
 
+/** The activity rows: the step's name starts this far down its row, on lines this high; the mark is placed to share the first line's middle. */
+const ACTIVITY_TEXT_TOP = 4;
+const ACTIVITY_LINE = 20;
+const ACTIVITY_MARK = 22;
+const ACTIVITY_MARK_TOP = ACTIVITY_TEXT_TOP + ACTIVITY_LINE / 2 - ACTIVITY_MARK / 2;
+
 export interface ActivityStep {
     key: string;
     /** The step in the driver's words. */
@@ -718,13 +724,20 @@ export function ActivitySection({ steps, onSeeAll, t }: { steps: ActivityStep[];
                             const current = step.state === 'current';
                             return (
                                 <XStack key={step.key} alignItems="stretch" gap={12} testID={`order-activity-${step.key}`}>
-                                    {/* The rail: this step's mark, and the line on to the next. */}
+                                    {/*
+                                      * The rail: this step's mark, and the dotted line on to the next. The mark is
+                                      * centred on the first line of the step's name on every row: both are placed
+                                      * from the top of the row (the name's first line is 20 high under 4 of padding,
+                                      * so its middle is at 14, and so is the middle of a 22 mark under 3), whatever
+                                      * else the row carries. Centring the two against each other moved the name down
+                                      * on a row that also shows a time, and left the mark above it.
+                                      */}
                                     <YStack width={22} alignItems="center">
                                         <YStack
                                             width={22}
                                             height={22}
                                             borderRadius={11}
-                                            marginTop={7}
+                                            marginTop={ACTIVITY_MARK_TOP}
                                             alignItems="center"
                                             justifyContent="center"
                                             backgroundColor={done ? '$successFill' : current ? '$primary' : 'transparent'}
@@ -737,13 +750,15 @@ export function ActivitySection({ steps, onSeeAll, t }: { steps: ActivityStep[];
                                                 <YStack width={8} height={8} borderRadius={4} backgroundColor="$onPrimary" />
                                             ) : null}
                                         </YStack>
-                                        {last ? null : <YStack flex={1} width={2} minHeight={6} marginTop={2} backgroundColor="$border" />}
+                                        {/* Dots laid over the slot, so they take the row's height and never add to it (a dotted border on one side does not draw on iOS). */}
+                                        {last ? null : <SmallRail minHeight={6} inset={3} dot={3} />}
                                     </YStack>
-                                    <XStack flex={1} minWidth={0} alignItems="center" justifyContent="space-between" gap={10} minHeight={36} paddingVertical={6}>
-                                        <Body flex={1} fontSize={15} lineHeight={20} fontWeight={current ? '800' : '700'} tone={done || current ? 'primary' : 'secondary'}>
+                                    <XStack flex={1} minWidth={0} alignItems="flex-start" justifyContent="space-between" gap={10} minHeight={36} paddingTop={ACTIVITY_TEXT_TOP} paddingBottom={8}>
+                                        <Body flex={1} fontSize={15} lineHeight={ACTIVITY_LINE} fontWeight={current ? '800' : '700'} tone={done || current ? 'primary' : 'secondary'}>
                                             {step.label}
                                         </Body>
-                                        <YStack flexShrink={0} alignItems="flex-end">
+                                        {/* Its first line (16 high) sits on the same middle as the name's (20 high). */}
+                                        <YStack flexShrink={0} alignItems="flex-end" marginTop={(ACTIVITY_LINE - 16) / 2}>
                                             <Secondary fontSize={12} lineHeight={16} fontWeight="800" tone={current ? 'brand' : done ? 'success' : 'secondary'} numberOfLines={1}>
                                                 {t(current ? 'orderDetail.activity.current' : done ? 'orderDetail.activity.done' : 'orderDetail.activity.next')}
                                             </Secondary>

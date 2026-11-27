@@ -17,7 +17,14 @@
  *     a sheet over the screen, from the activity section or the status.
  *
  * The step that moves the order on is anchored at the foot of the screen, with
- * whatever stands between the driver and that step said right above it.
+ * whatever stands between the driver and that step said right above it. The
+ * button names the step ("Next step / Driver en route"); pressing it turns the
+ * foot of the screen into a question with a slide to confirm, and only a slide
+ * carried to the end moves the order on.
+ *
+ * Dispatch is not a driver's step unless the organisation says so (FleetOps →
+ * Settings → Navigator App). An order that has not been dispatched reads
+ * "Waiting for dispatch" and offers no step.
  *
  * The steps come from `order-configs` and vary per organisation, so nothing
  * here assumes a fixed flow. The advance is a mutation, so it goes through the
@@ -58,6 +65,7 @@ import {
     isFinishedStatus,
     cashOnDeliveryOf,
     customerContactOf,
+    dropoffContactOf,
     deliveryInstructionsOf,
     orderNotesOf,
     orderPlaceNotesOf,
@@ -75,6 +83,7 @@ import {
     coordsOfPoint,
 } from '../data';
 import { proofMethodOf } from '../data/useProofCapture';
+import { useNavigatorSettings } from '../data/useNavigatorSettings';
 import { useFleetbase, isQueuedAck } from '../api';
 import { useSettings, useResolvedScheme } from '../settings';
 import { useDeviceLocation } from '../shell';
@@ -84,8 +93,9 @@ import { colorForId } from '../ui/routeColors';
 import { formatClock, formatDuration, formatMeters } from '../format';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, changesDropoff } from '../realtime';
-import { BringChecklist, CashSection, ChangeBanner, ContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
-import { ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, hasFacilitator, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
+import { BringChecklist, CashSection, ChangeBanner, ContactSection, DropoffContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
+import { SlideToConfirm } from './orderDetail/SlideToConfirm';
+import { ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
 import { MapButton, NowCard, ProofSection, QrSheet, ReportIssueButton, SectionPills, SheetHeader, TripSection, type NowNote, type ProofRow, type TripExtra } from './orderDetail/OrderSheetParts';
 import { ItemPagerModal } from './item/ItemPagerModal';
 import { Card, GUTTER, Section } from './jobs/parts';
@@ -121,6 +131,7 @@ export function OrderDetailScreen({
     onOpenChannel,
     onMessageDispatch,
     onReportIssue,
+    onConfirmingChange,
     openUrl = (url: string) => Linking.openURL(url),
 }: {
     orderId: string;
@@ -154,6 +165,8 @@ export function OrderDetailScreen({
     onMessageDispatch?: () => void;
     /** Opens the issue form about this order; `label` is its tracking number. */
     onReportIssue?: (order: { id: string; label: string }) => void;
+    /** Told when the foot of the screen starts and stops asking for a slide to confirm, so the host can keep a swipe back from taking the slide. */
+    onConfirmingChange?: (confirming: boolean) => void;
     /** Injected in tests; defaults to Linking. */
     openUrl?: (url: string) => Promise<unknown>;
 }) {
@@ -190,6 +203,26 @@ export function OrderDetailScreen({
     const [queued, setQueued] = useState(false);
     const [advanceError, setAdvanceError] = useState<string | null>(null);
     const [cashCollected, setCashCollected] = useState(false);
+    // Whether the organisation lets a driver dispatch an order themselves. Off unless it said so.
+    const { allowDriverDispatch } = useNavigatorSettings();
+    /*
+     * The step the foot of the screen is asking about. Pressing a step does
+     * not move the order: it sets this, the footer becomes "Update this order
+     * to …?" with a slide to confirm, and the completed slide is what advances.
+     */
+    const [confirming, setConfirming] = useState<Advanceable | null>(null);
+    // The question was about the order as it stood: once the order moves on, it is withdrawn.
+    useEffect(() => {
+        setConfirming(null);
+    }, [orderId, order?.status]);
+    const isConfirming = !!confirming;
+    useEffect(() => {
+        onConfirmingChange?.(isConfirming);
+        return () => {
+            if (isConfirming) onConfirmingChange?.(false);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isConfirming]);
 
     // Leave once — the host pops back to the list, which says why.
     const leftFor = useRef<RemovalReason | null>(null);
@@ -214,14 +247,32 @@ export function OrderDetailScreen({
      * app cannot, so a branch is a choice of buttons rather than "ask
      * dispatch". Otherwise the client-side sequencer, as before.
      */
-    const candidates = useMemo<Advanceable[]>(() => {
+    const offered = useMemo<Advanceable[]>(() => {
         if (source === 'server' && serverNext) return serverNext;
         const local = nextActivity(flow, order?.status);
         return local ? [local] : [];
     }, [source, serverNext, flow, order?.status]);
-    const next = candidates[0];
     // The config's `complete` flag, not a list of names: a booking flow may end anywhere.
     const finished = useMemo(() => isFinishedStatus(order?.status, flow), [flow, order?.status]);
+    /*
+     * Dispatch. An order that has not been dispatched has "dispatched" as the
+     * next step of its flow, and that step is the console's to take, not the
+     * driver's, unless the organisation turned on "drivers can dispatch". So:
+     *
+     *   - the order counts as waiting for dispatch when nothing says it was
+     *     dispatched or started, and its next step (the server's offer, or the
+     *     flow's own) is the dispatch step;
+     *   - the driver may take that step only when the setting is on *and* the
+     *     server offered it (a server that withholds it has the last word).
+     *
+     * While it waits there is no step to offer: no button, no choices.
+     */
+    const flowNext = useMemo(() => nextActivity(flow, order?.status), [flow, order?.status]);
+    const dispatchOffered = offered.some((activity) => activity.code === 'dispatched');
+    const notDispatched = !!order && !order.dispatched_at && !(order as { dispatched?: unknown }).dispatched && !isOrderStarted(order);
+    const waitingForDispatch = notDispatched && !finished && (dispatchOffered || flowNext?.code === 'dispatched') && (!allowDriverDispatch || (source === 'server' && !dispatchOffered));
+    const candidates = useMemo<Advanceable[]>(() => (waitingForDispatch ? [] : offered), [waitingForDispatch, offered]);
+    const next = candidates[0];
     const ambiguous = useMemo(() => source !== 'server' && unresolvedLogic(flow, order?.status), [source, flow, order?.status]);
 
     const payload = payloadOf(order);
@@ -292,6 +343,18 @@ export function OrderDetailScreen({
         if (takeAutoAdvance(order.id, next.code)) void advance(next);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [order?.id, next?.code, reloadToken]);
+
+    /** Pressing a step asks first: the foot of the screen becomes the question, with its slide to confirm. */
+    const askToAdvance = (activity?: Advanceable) => {
+        if (!activity || isAdvancing || needsCash(activity)) return;
+        setConfirming(activity);
+    };
+    /** The slide was carried to the end: now the step is taken, exactly as a press used to take it. */
+    const confirmAdvance = () => {
+        const activity = confirming;
+        setConfirming(null);
+        if (activity) void advance(activity);
+    };
 
     const { channels } = useChatChannels(0, { enabled: !!onOpenChannel });
     const threads = useMemo(() => orderThreadsOf(channels, order?.id), [channels, order?.id]);
@@ -416,6 +479,9 @@ export function OrderDetailScreen({
 
     const isBooking = isBookingOrder(order);
     const contact = customerContactOf(order);
+    // Someone to reach at the drop-off, when the place has a number of its own: shown as that, never as the customer.
+    const dropoffPerson = dropoffContactOf(order);
+    const dropoffContact = dropoffPerson && dropoffPerson.phone !== contact?.phone ? dropoffPerson : undefined;
     const reopenNavigation =
         change && changesDropoff(change.changes) && onNavigate && headingPoint
             ? () => {
@@ -463,7 +529,7 @@ export function OrderDetailScreen({
 
     const sequenced = sequenceFlow(flow);
     const primary = !ambiguous ? next : undefined;
-    const stepIndex = sequenced.ordered ? sequenced.steps.findIndex((a) => a.code === (primary?.code ?? order.status)) : -1;
+    // Where the order stands among its steps: its own status, not the step that comes next.
     const statusIndex = sequenced.ordered ? sequenced.steps.findIndex((a) => a.code === order.status) : -1;
     const canNavigate = Boolean(onNavigate && headingPoint && !finished);
 
@@ -596,7 +662,8 @@ export function OrderDetailScreen({
         now: true,
         trip: points.length > 0 || !!cod,
         items: entities.length > 0,
-        people: !!contact || hasFacilitator(order) || proofRows.length > 0,
+        // Always there: an order with no customer says so.
+        people: true,
         // Comments are always somewhere to leave a note, so this one is always there.
         files: true,
         // Where the order stands is always something to say.
@@ -628,29 +695,66 @@ export function OrderDetailScreen({
                 primary.complete ? (
                     <HomeIcon name="tick" color={onPrimaryInk} size={18} />
                 ) : (
-                    <Svg width={16} height={16} viewBox="0 0 24 24" fill={onPrimaryInk}>
-                        <Path d="M6 3l15 9-15 9z" />
+                    // An arrow onward: the button moves the order on, whatever the step is called.
+                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={onPrimaryInk} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M5 12h14M13 6l6 6-6 6" />
                     </Svg>
                 )
             }
-            onPress={() => void advance(primary)}
+            // Asks first: the footer becomes the question, and its slide is what moves the order.
+            onPress={() => askToAdvance(primary)}
+            accessibilityLabel={t('orderDetail.step.nextSpoken', { activity: labelFor(primary) })}
             testID="advance-activity"
         >
-            <Body tone="onPrimary" fontSize={18} lineHeight={24} fontWeight="800" numberOfLines={1}>
-                {/* A step that ends the order is marked; any other is started. */}
-                {t(primary.complete ? 'orderDetail.advanceTo' : 'orderDetail.startStep', { activity: labelFor(primary) })}
-            </Body>
+            {/*
+              * What the button is for, then the step it moves the order to. It
+              * used to read "Start: <step>", which for a step called "Started"
+              * was "Start: Started"; a step's name is the organisation's own
+              * and can be anything, so it is never built into a sentence.
+              */}
+            <YStack flexShrink={1} minWidth={0}>
+                <Body tone="onPrimary" fontSize={12} lineHeight={15} fontWeight="700" letterSpacing={0.3} numberOfLines={1} testID="advance-activity-label">
+                    {t(primary.complete ? 'orderDetail.step.final' : 'orderDetail.step.next')}
+                </Body>
+                <Body tone="onPrimary" fontSize={18} lineHeight={23} fontWeight="800" numberOfLines={1} testID="advance-activity-step">
+                    {/* A step that ends the order keeps its own wording ("Mark Completed"). */}
+                    {primary.complete ? t('orderDetail.advanceTo', { activity: labelFor(primary) }) : labelFor(primary)}
+                </Body>
+            </YStack>
         </Button>
-    ) : navigate ? (
+    ) : navigate && !waitingForDispatch ? (
         <Button fullWidth height={ACTION_HEIGHT} borderRadius={ACTION_RADIUS} variant="primary" elevated icon={<HomeIcon name="navigate" color={onPrimaryInk} size={16} />} onPress={navigate.onPress} testID="navigate-to-dropoff">
             <Body tone="onPrimary" fontSize={18} lineHeight={24} fontWeight="800" numberOfLines={1}>
                 {navigate.label}
             </Body>
         </Button>
     ) : null;
+    /*
+     * The question the footer turns into: the step by name, a slide to confirm
+     * and a way out. Whatever a press used to do (proof first, the cash rule,
+     * the update itself, queued without signal) happens after the slide.
+     */
+    const confirmFooter = confirming ? (
+        <YStack gap={10} testID="advance-confirm">
+            <Body fontSize={17} lineHeight={23} fontWeight="800" accessibilityRole="header" testID="advance-confirm-prompt">
+                {t('orderDetail.step.confirmPrompt', { activity: labelFor(confirming) })}
+            </Body>
+            <SlideToConfirm
+                label={t('orderDetail.step.slide')}
+                accessibilityLabel={t('orderDetail.step.slideSpoken', { activity: labelFor(confirming) })}
+                confirmLabel={t('orderDetail.step.confirm')}
+                onConfirm={confirmAdvance}
+                disabled={isAdvancing}
+                testID="advance-slide"
+            />
+            <Button fullWidth height={48} borderRadius={14} variant="ghost" onPress={() => setConfirming(null)} testID="advance-cancel">
+                {t('common.cancel')}
+            </Button>
+        </YStack>
+    ) : null;
     const proofWanted = Boolean(primary?.require_pod);
     const proofTaken = proofWanted && !!primary && !!proofFor(order.id, primary.code);
-    const hasFooter = Boolean(advanceButton || queued || advanceError || proofWanted || blockedOnCash);
+    const hasFooter = Boolean(advanceButton || confirmFooter || queued || advanceError || proofWanted || blockedOnCash);
     const footerSpace = hasFooter ? footerHeight : Math.max(insets.bottom, space[3]);
 
     // What the order's flow has to say when there is no plain next step.
@@ -671,7 +775,8 @@ export function OrderDetailScreen({
     ) : null;
     const stepNotice = ambiguous ? (
         <Banner tone="neutral" message={t('orderDetail.chooseWithDispatch')} testID="next-ambiguous" />
-    ) : next ? null : finished ? (
+    ) : next || waitingForDispatch ? null : finished ? (
+        // (An order waiting for dispatch says so itself, on the card.)
         <Banner tone="success" message={t('orderDetail.terminalReached')} testID="order-terminal" />
     ) : source === 'server' ? (
         // The server was asked and has no step to offer.
@@ -697,17 +802,25 @@ export function OrderDetailScreen({
                         borderRadius={14}
                         variant="secondary"
                         disabled={isAdvancing || needsCash(activity)}
-                        onPress={() => void advance(activity)}
+                        // The same question as the step at the foot of the screen, there.
+                        onPress={() => askToAdvance(activity)}
                         testID={`advance-activity-${activity.code}`}
                     >
-                        {t('orderDetail.advanceTo', { activity: labelFor(activity) })}
+                        {t('orderDetail.step.updateTo', { activity: labelFor(activity) })}
                     </Button>
                 ))}
             </YStack>
         ) : null;
-    const nowEyebrow = stepIndex >= 0 ? t('orderDetail.now.stepOf', { step: stepIndex + 1, total: sequenced.steps.length }) : t('orderDetail.now.label');
-    // With a step to do, the card names it; without one it names where the order stands.
-    const nowTitle = primary ? labelFor(primary) : order.status ? labelFor({ code: order.status }) : undefined;
+    /*
+     * The card says where the order stands: its own status, and that status's
+     * place among the steps. What comes next is said separately, under it.
+     * (Both used to be the *next* step's, so an order that was only created
+     * read "Now · step 2 of 5 / Dispatched".)
+     */
+    const nowEyebrow = statusIndex >= 0 ? t('orderDetail.now.stepOf', { step: statusIndex + 1, total: sequenced.steps.length }) : t('orderDetail.now.label');
+    const nowTitle = order.status ? labelFor({ code: order.status }) : undefined;
+    const nowNext = primary ? { label: t(primary.complete ? 'orderDetail.step.final' : 'orderDetail.step.next'), text: labelFor(primary) } : undefined;
+    const nowWaiting = waitingForDispatch ? { title: t('orderDetail.waitingDispatch.title'), body: t('orderDetail.waitingDispatch.body') } : undefined;
 
     return (
         <YStack flex={1} backgroundColor="$mapBackground" onLayout={(event) => setLayoutHeight(Math.round(event.nativeEvent.layout.height))} testID="order-detail">
@@ -717,8 +830,14 @@ export function OrderDetailScreen({
                     payload={payload}
                     tracker={live}
                     activeStopId={heading?.id}
-                    // The part of the map that can be seen: under the buttons, above the sheet at rest.
-                    padding={{ top: buttonsTop + MAP_BUTTON + space[2], bottom: restHeight }}
+                    finished={finished}
+                    /*
+                     * The part of the map that can be seen: under the status bar, above the sheet at
+                     * rest. The round buttons only take the top corners, and the map keeps what it
+                     * frames clear of them itself; counting their whole row as covered left a strip
+                     * too short to show a road in, and the view zoomed far out to fit it.
+                     */
+                    padding={{ top: buttonsTop, bottom: restHeight }}
                 />
             </YStack>
 
@@ -788,10 +907,12 @@ export function OrderDetailScreen({
                             <NowCard
                                 eyebrow={nowEyebrow}
                                 title={nowTitle}
+                                next={nowNext}
+                                waiting={nowWaiting}
                                 line={nowLine || undefined}
                                 note={nowNote}
-                                // Already at the foot of the screen when there is no step to offer.
-                                navigate={primary ? navigate : undefined}
+                                // Already at the foot of the screen when there is no step to offer; an order waiting for dispatch has no action there, so the way is offered here.
+                                navigate={primary || waitingForDispatch ? navigate : undefined}
                             >
                                 {otherChoices}
                                 {flowNotice}
@@ -871,6 +992,12 @@ export function OrderDetailScreen({
                                 onEmail={contact?.email ? () => void openUrl(`mailto:${contact.email}`).catch(() => undefined) : undefined}
                                 unread={threads.customer && onOpenChannel ? unreadCustomer : undefined}
                             />
+                            <DropoffContactSection
+                                contact={dropoffContact}
+                                t={t}
+                                onCall={dropoffContact?.phone ? () => void openUrl(`tel:${dropoffContact.phone?.replace(/\s+/g, '')}`).catch(() => undefined) : undefined}
+                                onMessage={dropoffContact?.phone ? () => void openUrl(`sms:${dropoffContact.phone}`).catch(() => undefined) : undefined}
+                            />
                             <Facilitator order={order} t={t} openUrl={openUrl} />
                             <ProofSection rows={proofRows} t={t} />
                         </View>
@@ -918,7 +1045,7 @@ export function OrderDetailScreen({
                     {blockedOnCash ? <Banner tone="warning" message={t('orderDetail.cod.confirmFirst')} testID="cod-confirm-first" /> : null}
                     {queued ? <Banner tone="neutral" message={t('orderDetail.queuedOffline')} testID="advance-queued" /> : null}
                     {advanceError ? <ErrorState title={t('orderDetail.updateFailed')} body={advanceError} testID="advance-error" /> : null}
-                    {advanceButton}
+                    {confirmFooter ?? advanceButton}
                 </YStack>
             ) : null}
 
@@ -945,7 +1072,22 @@ export default OrderDetailScreen;
  * The order on a map, as the screen's background. Stops come from the tracker when it has loaded (it knows
  * which are done), otherwise from the order itself, so the map does not wait on it.
  */
-function OrderRouteMap({ orderId, payload, tracker, activeStopId, padding }: { orderId?: string; payload: ReturnType<typeof payloadOf>; tracker?: TrackerRecord | null; activeStopId?: string; padding?: { top?: number; bottom?: number } }) {
+function OrderRouteMap({
+    orderId,
+    payload,
+    tracker,
+    activeStopId,
+    finished,
+    padding,
+}: {
+    orderId?: string;
+    payload: ReturnType<typeof payloadOf>;
+    tracker?: TrackerRecord | null;
+    /** The place being headed to, as the order names it (`payload.current_waypoint`): a place id. */
+    activeStopId?: string;
+    finished?: boolean;
+    padding?: { top?: number; bottom?: number };
+}) {
     const scheme = useResolvedScheme();
     const position = useDeviceLocation();
     const route = useMemo(() => decodePolyline(tracker?.route?.polyline), [tracker?.route?.polyline]);
@@ -980,6 +1122,7 @@ function OrderRouteMap({ orderId, payload, tracker, activeStopId, padding }: { o
             dark={scheme !== 'light' && scheme !== 'sunlight'}
             fill
             padding={padding}
+            overview={finished}
         />
     );
 }

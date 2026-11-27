@@ -30,6 +30,24 @@ import { orderStore, type OrderRecord } from './orderStore';
 
 export type AcceptOutcome = 'accepted' | 'taken' | 'failed';
 
+/**
+ * The server's own count of the seconds left (`adhoc_offer.expires_in`), turned
+ * into an expiry on this phone's clock when the list arrives.
+ *
+ * `expires_at` is the server's wall clock. A phone whose clock runs a minute
+ * fast would count a ninety-second offer down from thirty, and one running
+ * further ahead than the offer lasts would read every offer as already over and
+ * never show it. Counting from "seconds left when the answer arrived" needs no
+ * agreement between the two clocks. A server that does not send `expires_in`
+ * leaves `expires_at` as it came.
+ */
+function onThisClock(order: OrderRecord, receivedAt: number): OrderRecord {
+    const offer = (order as { adhoc_offer?: { expires_in?: unknown } | null }).adhoc_offer;
+    const left = offer && typeof offer === 'object' ? offer.expires_in : undefined;
+    if (typeof left !== 'number' || !Number.isFinite(left)) return order;
+    return { ...order, adhoc_offer: { ...offer, expires_at: new Date(receivedAt + left * 1000).toISOString() } } as OrderRecord;
+}
+
 /** This driver's open offer for the order, if the server sent one. */
 export function offerOf(order: OrderRecord): { status: string; expires_at: string | null } | null {
     const offer = (order as { adhoc_offer?: unknown }).adhoc_offer;
@@ -65,7 +83,8 @@ export function useOffers(driverId?: string) {
              */
             const raw = await adapter.get('orders', { nearby: driverId, adhoc: 1, unassigned: 1, dispatched: 1, limit: -1 });
             const rows = (raw as { data?: unknown })?.data ?? raw;
-            setOffers(Array.isArray(rows) ? (rows as OrderRecord[]) : []);
+            const receivedAt = Date.now();
+            setOffers(Array.isArray(rows) ? (rows as OrderRecord[]).map((order) => onThisClock(order, receivedAt)) : []);
         } catch (err) {
             setError(err);
         } finally {

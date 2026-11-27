@@ -16,6 +16,7 @@ import type { RealtimeEvent } from './events';
 import { affectsOrders } from './events';
 import { bumpChatRefresh, bumpLiveRefresh } from './liveRefresh';
 import { recordOrderChange } from './orderChanges';
+import { noteOfferClosed, noteOfferPing } from './offerSignals';
 
 export function applyRealtimeEvent(event: RealtimeEvent): void {
     if (event.kind === 'chat.message') {
@@ -38,6 +39,17 @@ export function applyRealtimeEvent(event: RealtimeEvent): void {
             changes: event.changes,
             changedBy: typeof data.changed_by === 'string' ? data.changed_by : undefined,
         });
+    }
+
+    /*
+     * Offers. The list is still asked for again below; these only remember which
+     * order the server just rang about and how an offer ended, which the list
+     * cannot say. The incoming-offer overlay reads both.
+     */
+    if (event.kind === 'order.offered') noteOfferPing(event.orderId);
+    if (event.kind === 'order.offer_closed') {
+        const data = (event.raw.data ?? {}) as { status?: unknown };
+        noteOfferClosed(event.orderId, data.status);
     }
 
     if (affectsOrders(event.kind)) bumpLiveRefresh();

@@ -17,6 +17,8 @@ import { Body } from '../../ui/Text';
 import { ScannerOverlay, type ScanFeedback } from '../../ui/Scanner';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProofOutcome } from '../../data/useProofCapture';
+import { itemScanFailureOf } from '../../data/useItemScans';
+import { parseScanCode, scanLabelOf, scanTextOf } from '../../data/scanCode';
 import { Glyph } from '../jobs/parts';
 
 /*
@@ -25,7 +27,7 @@ import { Glyph } from '../jobs/parts';
  * not pay for a camera (see ProofCaptureScreen).
  */
 const lazyScanner = () =>
-    require('../../../components/QrCodeScanner').QrCodeScanner as React.ComponentType<{ onScan: (code: { value?: string } | string) => void; scanCooldown?: number; overlayStyle?: object }>;
+    require('../../../components/QrCodeScanner').QrCodeScanner as React.ComponentType<{ onScan: (code: { value?: string } | string) => void; scanCooldown?: number; frame?: boolean }>;
 
 /** White on the camera feed or the photo, whatever the theme: it sits on a picture, not on a surface. */
 const ON_PICTURE = '#FFFFFF';
@@ -67,6 +69,7 @@ export function ItemScanner({
     const [lastCode, setLastCode] = useState<string | undefined>(undefined);
     const [sending, setSending] = useState(false);
     const [queued, setQueued] = useState(false);
+    const [rejection, setRejection] = useState<string | undefined>(undefined);
     const busy = useRef(false);
     const alive = useRef(true);
     const closing = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,16 +85,43 @@ export function ItemScanner({
     const onScan = useCallback(
         async (scanned: { value?: string } | string) => {
             // The scanner hands back its result object; the text is in `value`.
-            const value = typeof scanned === 'string' ? scanned : scanned?.value;
+            const value = scanTextOf(scanned);
             if (!value || busy.current) return;
+            /*
+             * The label carries the item twice: a barcode (its tracking number)
+             * and a QR code (the tracking page's address, naming the number and
+             * the item's id). Either is this item's code. What is shown is the
+             * tracking number, never the address; what is sent is what was read.
+             */
+            const code = parseScanCode(value);
+            const shown = scanLabelOf(code);
+            setLastCode(shown);
+            if (code.publicId && code.publicId.startsWith('entity_') && code.publicId !== item.subjectId) {
+                // A QR code names its item, and this one names another: not sent.
+                setRejection(t('itemDetail.scanWrongItem'));
+                setFeedback('unexpected');
+                return;
+            }
             busy.current = true;
-            setLastCode(value);
+            setRejection(undefined);
             setSending(true);
             const outcome = await onCode(value);
             if (!alive.current) return;
             setSending(false);
             if (outcome === 'failed') {
-                // Not this item's code, or it could not be sent: say so and keep the camera open.
+                // Say why, in the server's terms where it gave them, and keep the camera open.
+                const why = itemScanFailureOf(item.subjectId);
+                setRejection(
+                    why?.failure === 'notOnOrder'
+                        ? t('itemDetail.scanNotOnOrder')
+                        : why?.failure === 'noSignal'
+                          ? t('itemDetail.scanNotSent')
+                          : why?.failure === 'orderMissing'
+                            ? t('proof.scan.failure.orderMissing')
+                            : why?.failure === 'other' && why.message
+                              ? t('itemDetail.scanServerSaid', { reason: why.message })
+                              : t('itemDetail.scanRejected')
+                );
                 setFeedback('unexpected');
                 busy.current = false;
                 return;
@@ -101,13 +131,13 @@ export function ItemScanner({
             // Long enough to see the tick, then back to the item.
             closing.current = setTimeout(onClose, 700);
         },
-        [onCode, onClose]
+        [onCode, onClose, item.subjectId, t]
     );
 
     const message = sending
         ? t('itemDetail.scanSending')
         : feedback === 'unexpected'
-          ? t('itemDetail.scanRejected')
+          ? (rejection ?? t('itemDetail.scanRejected'))
           : feedback === 'accepted'
             ? queued
                 ? t('proof.queued')
@@ -117,7 +147,7 @@ export function ItemScanner({
     return (
         <View style={[StyleSheet.absoluteFill, styles.picture]} testID="item-scanner">
             <View style={StyleSheet.absoluteFill}>
-                <Scanner onScan={onScan} overlayStyle={styles.noBox} />
+                <Scanner onScan={onScan} frame={false} />
             </View>
             <YStack flex={1} paddingTop={Math.max(topInset, 16)} paddingBottom={Math.max(bottomInset, 16)} pointerEvents="box-none">
                 <XStack alignItems="center" gap={12} paddingHorizontal={16} pointerEvents="box-none">
@@ -167,5 +197,4 @@ export function PhotoViewer({ uri, name, onClose, topInset = 0 }: { uri: string;
 const styles = StyleSheet.create({
     picture: { backgroundColor: '#000000' },
     photo: { flex: 1, width: '100%' },
-    noBox: { borderWidth: 0 },
 });

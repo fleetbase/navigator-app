@@ -220,19 +220,33 @@ export interface NowNote {
 }
 
 /**
- * The step to do and how far the next waypoint is. The one card on the sheet
- * with the brand's ring around it, because it is the one about this moment.
+ * Where the order stands, what comes next, and how far the next waypoint is.
+ * The one card on the sheet with the brand's ring around it, because it is the
+ * one about this moment.
+ *
+ * Two different things are said, and kept apart: the title is the order's
+ * status *now*; under it, labelled as such, is the step that comes *next*.
+ * (The card used to put the next step in the title, so an order that was only
+ * created read "Dispatched".) When the next step is not the driver's to take —
+ * the order has not been dispatched — `waiting` says so instead.
  */
 export function NowCard({
     eyebrow,
     title,
+    next,
+    waiting,
     line,
     note,
     navigate,
     children,
 }: {
     eyebrow: string;
+    /** The order's status now, in the driver's words. */
     title?: string;
+    /** The step that comes next: its label ("Next step") and its name ("Driver en route"). */
+    next?: { label: string; text: string };
+    /** The order is waiting on someone else: what for, and what happens then. */
+    waiting?: { title: string; body: string };
     /** "1.1 km · 3 min · arrive 14:17" — only the figures the server gave. */
     line?: string;
     note?: NowNote;
@@ -253,6 +267,34 @@ export function NowCard({
                         </Body>
                     ) : null}
                 </YStack>
+                {next ? (
+                    <XStack alignItems="center" gap={10} paddingVertical={8} paddingHorizontal={10} borderRadius={12} backgroundColor="$surfaceRaised" borderWidth={1} borderColor="$border" accessible accessibilityLabel={`${next.label}: ${next.text}`} testID="order-now-next">
+                        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={theme.textSecondary?.val as string} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M5 12h14M13 6l6 6-6 6" />
+                        </Svg>
+                        <YStack flex={1} minWidth={0}>
+                            <SectionLabel>{next.label}</SectionLabel>
+                            <Body fontSize={16} lineHeight={21} fontWeight="700">
+                                {next.text}
+                            </Body>
+                        </YStack>
+                    </XStack>
+                ) : null}
+                {waiting ? (
+                    <XStack alignItems="flex-start" gap={10} paddingVertical={10} paddingHorizontal={10} borderRadius={12} backgroundColor="$surfaceRaised" borderWidth={1} borderColor="$border" testID="order-waiting-dispatch">
+                        <YStack marginTop={2} flexShrink={0}>
+                            <HomeIcon name="clock" color={theme.textSecondary?.val as string} size={18} />
+                        </YStack>
+                        <YStack flex={1} minWidth={0} gap={2}>
+                            <Body fontSize={16} lineHeight={21} fontWeight="800">
+                                {waiting.title}
+                            </Body>
+                            <Secondary fontSize={14} lineHeight={20}>
+                                {waiting.body}
+                            </Secondary>
+                        </YStack>
+                    </XStack>
+                ) : null}
                 {line || note ? (
                     <YStack gap={2} testID="order-eta-strip">
                         {line ? (

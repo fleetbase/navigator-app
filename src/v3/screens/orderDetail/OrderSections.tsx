@@ -376,7 +376,10 @@ function ContactAction({ icon, text, label, onPress, badge, testID }: { icon: Ho
  * The customer and the ways to reach them: who they are, their phone number
  * and email address in full, then Call, Message and Email. Each is there only
  * when the order gives what it needs: no phone, no Call; no address, no Email.
- * Absent when the order names nobody.
+ *
+ * An order with no customer says so, quietly ("No customer assigned"): a place
+ * is never shown in the customer's slot. Who can be reached at the drop-off is
+ * `DropoffContactSection`, labelled as that.
  */
 export function ContactSection({
     contact,
@@ -395,7 +398,17 @@ export function ContactSection({
     /** Unread messages in the thread `onMessageCustomer` opens. */
     unread?: number;
 }) {
-    if (!contact) return null;
+    if (!contact) {
+        return (
+            <Section label={t('orderDetail.customerHeading')}>
+                <Card testID="order-no-customer">
+                    <Secondary fontSize={15} lineHeight={20}>
+                        {t('orderDetail.noCustomer')}
+                    </Secondary>
+                </Card>
+            </Section>
+        );
+    }
     const who = contact.name ?? contact.phone ?? contact.email ?? '';
     const hasActions = Boolean(onCall || onMessageCustomer || onEmail);
     return (
@@ -430,6 +443,40 @@ export function ContactSection({
                                 <ContactAction icon="chat" text={t('orderDetail.contact.message')} label={t('orderDetail.contact.messageWho', { name: who })} onPress={onMessageCustomer} badge={unread} testID="message-customer" />
                             ) : null}
                             {onEmail ? <ContactAction icon="mail" text={t('orderDetail.contact.email')} label={t('orderDetail.contact.emailWho', { name: who })} onPress={onEmail} testID="email-customer" /> : null}
+                        </XStack>
+                    ) : null}
+                </YStack>
+            </Card>
+        </Section>
+    );
+}
+
+/**
+ * Who can be reached at the drop-off, when the place carries a phone number:
+ * the contact person's name if the place names one, the number in full, and
+ * Call and Message. It is not the customer and is never labelled as one.
+ */
+export function DropoffContactSection({ contact, t, onCall, onMessage }: { contact?: ContactPerson; t: T; onCall?: () => void; onMessage?: () => void }) {
+    if (!contact?.phone) return null;
+    const who = contact.name ?? contact.phone;
+    return (
+        <Section label={t('orderDetail.dropoffContact')}>
+            <Card testID="order-dropoff-contact">
+                <YStack gap={12}>
+                    <YStack>
+                        {contact.name ? (
+                            <Body fontSize={16} lineHeight={21} fontWeight="800">
+                                {contact.name}
+                            </Body>
+                        ) : null}
+                        <Body fontFamily="$mono" fontSize={14} lineHeight={19} fontWeight="500" tone="secondary" selectable testID="dropoff-contact-phone">
+                            {contact.phone}
+                        </Body>
+                    </YStack>
+                    {onCall || onMessage ? (
+                        <XStack gap={8} testID="order-dropoff-contact-actions">
+                            {onCall ? <ContactAction icon="phone" text={t('orderDetail.contact.call')} label={t('orderDetail.contact.callWho', { name: who })} onPress={onCall} testID="call-dropoff" /> : null}
+                            {onMessage ? <ContactAction icon="chat" text={t('orderDetail.contact.message')} label={t('orderDetail.contact.messageWho', { name: who })} onPress={onMessage} testID="message-dropoff" /> : null}
                         </XStack>
                     ) : null}
                 </YStack>

@@ -564,6 +564,22 @@
             "lateBy": "Late, due by %{time}"
         },
         "startStep": "Start: %{activity}",
+        "step": {
+            "next": "Next step",
+            "final": "Final step",
+            "nextSpoken": "Next step: %{activity}",
+            "updateTo": "Update to: %{activity}",
+            "confirmPrompt": "Update this order to %{activity}?",
+            "slide": "Slide to confirm",
+            "slideSpoken": "Confirm: update this order to %{activity}",
+            "confirm": "Confirm"
+        },
+        "waitingDispatch": {
+            "title": "Waiting for dispatch",
+            "body": "This order has not been dispatched yet. Dispatch will send it to you, and you can start it once they have."
+        },
+        "noCustomer": "No customer assigned",
+        "dropoffContact": "Contact at drop-off",
         "trip": {
             "heading": {
                 "one": "Trip · %{count} waypoint",
@@ -687,6 +703,10 @@
         "scanSending": "Checking the code…",
         "scanAccepted": "Scanned",
         "scanRejected": "That scan was not accepted. Check it is this item's label and try again.",
+        "scanWrongItem": "That is another item's label. Scan the label on this item.",
+        "scanNotOnOrder": "This item is not on this order, so it cannot be scanned for it.",
+        "scanNotSent": "That scan could not be sent. Try again.",
+        "scanServerSaid": "That scan was not accepted: %{reason}",
         "scanClose": "Close the scanner",
         "damagedTurnOn": "Turn on if the item is damaged",
         "yes": "Yes",
@@ -1643,8 +1663,30 @@
         "signHere": "Sign above",
         "clear": "Clear",
         "confirm": "Done",
-        "failed": "Could not send that proof. It stays on this phone until it does.",
-        "queued": "Saved on this device. It will send when you have signal again."
+        "failed": "That proof was not sent. Try again.",
+        "queued": "Saved on this device. It will send when you have signal again.",
+        "scan": {
+            "hint": "Point at the QR code or the barcode on each label",
+            "accepted": "Scanned",
+            "duplicate": "Already scanned",
+            "notAnItem": "Not one of this order's items",
+            "orderLabel": "That is the order's label. Scan the label on each item.",
+            "unreadable": "That code could not be read. Try the other code on the label.",
+            "waiting": "waiting to send",
+            "notAccepted": "NOT ACCEPTED",
+            "notSent": "NOT SENT",
+            "continue": "Continue",
+            "kept": "The scans stay on this screen. You do not need to scan them again.",
+            "failure": {
+                "mismatch": "The server did not accept %{code}: it is not the label of an item on this order.",
+                "notOnOrder": "%{code} is not an item of this order, so its scan was not accepted.",
+                "unreadable": "The server could not read %{code}. Scan it again.",
+                "orderMissing": "This order could not be found on the server, so the scans were not sent.",
+                "noSignal": "No signal, and %{code} could not be saved to send later. Try again.",
+                "other": "The server did not take %{code}: %{reason}",
+                "otherUnknown": "The server did not take %{code}. Try again."
+            }
+        }
     },
     "vehicle": {
         "unnamed": "Vehicle",
@@ -1700,7 +1742,21 @@
         "emptyBody": "Jobs near you that need a driver will appear here.",
         "note": "The first to accept gets the job. A job with a timer is offered to you alone until it runs out.",
         "decline": "Decline",
-        "timeLeft": "%{time} left"
+        "timeLeft": "%{time} left",
+        "overlay": {
+            "title": "New job offer",
+            "fromYou": "About %{distance} from you",
+            "notNow": "Not now",
+            "others": {
+                "one": "%{count} other offer open",
+                "other": "%{count} other offers open"
+            },
+            "seeAll": "See all offers",
+            "expired": "This offer ran out.",
+            "withdrawn": "This offer is no longer available.",
+            "acceptFailed": "Could not accept this offer. Check your connection and try again.",
+            "declineFailed": "Could not decline this offer. Check your connection and try again."
+        }
     },
     "route": {
         "title": "Route",

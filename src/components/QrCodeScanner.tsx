@@ -8,10 +8,13 @@ type QrCodeScannerProps = {
     width?: number | string;
     height?: number | string;
     overlayStyle?: object;
+    // The scanner's own dashed aiming box. The v3 screens draw their own scan frame over
+    // the camera and pass `frame={false}`, so only one frame is ever on screen.
+    frame?: boolean;
     scanCooldown?: number; // ms before allowing next scan
 };
 
-export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '100%', height = '100%', overlayStyle = {}, scanCooldown = 3000 }) => {
+export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '100%', height = '100%', overlayStyle = {}, frame = true, scanCooldown = 3000 }) => {
     const device = useCameraDevice('back');
     const [isScanning, setIsScanning] = useState(true);
     const cooldownRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,9 +66,11 @@ export const QrCodeScanner: React.FC<QrCodeScannerProps> = ({ onScan, width = '1
     return (
         <View style={{ width, height }}>
             <Camera style={StyleSheet.absoluteFill} device={device} isActive={true} codeScanner={codeScanner} />
-            <View pointerEvents='none' style={styles.overlayContainer}>
-                <View style={[styles.overlayBox, overlayStyle]} />
-            </View>
+            {frame ? (
+                <View pointerEvents='none' style={styles.overlayContainer}>
+                    <View style={[styles.overlayBox, overlayStyle]} />
+                </View>
+            ) : null}
         </View>
     );
 };
