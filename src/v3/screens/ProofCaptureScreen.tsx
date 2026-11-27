@@ -40,7 +40,7 @@ import { formatClock } from '../format';
  * depend on three native binaries. A driver whose flow needs no proof should
  * not pay for a camera, and a test of the tab bar should not need one either.
  */
-const lazyScanner = () => require('../../components/QrCodeScanner').QrCodeScanner as React.ComponentType<{ onScan: (code: string) => void }>;
+const lazyScanner = () => require('../../components/QrCodeScanner').QrCodeScanner as React.ComponentType<{ onScan: (code: string | { value?: string }) => void }>;
 const lazyCamera = () => require('../../components/CameraCapture').default as React.ComponentType<{ onDone?: (photos: CapturedPhoto[]) => void }>;
 const lazySignaturePad = () => require('react-native-signature-canvas').default as React.ComponentType<Record<string, unknown>>;
 
@@ -94,7 +94,16 @@ export function ProofCaptureScreen({
     );
 
     const onScan = useCallback(
-        (code: string) => {
+        (result: string | { value?: string } | null | undefined) => {
+            /*
+             * The camera hands over what it read as an object (`{ value, type }`),
+             * not as text. Kept as the object, every scan was a different entry
+             * (so one parcel counted again on each read), the last-read line showed
+             * "[object Object]", and the server was sent an object where it expects
+             * the code, and refused it. The text is what is kept, compared and sent.
+             */
+            const code = (typeof result === 'string' ? result : result?.value)?.trim();
+            if (!code) return;
             setScanned((prev) => {
                 // A driver scanning a dozen parcels will re-scan one; counting
                 // it twice would tell them they are further along than they are.
