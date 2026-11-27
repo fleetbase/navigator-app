@@ -15,6 +15,7 @@
  * has no routing engine, the two points are joined by a dashed straight line,
  * which is how every map in the app says "not by road".
  */
+import { mapLook } from '../../ui/mapLook';
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -64,7 +65,7 @@ function OrderCardMapBase({ orderId, target, route, testID }: { orderId: string;
                     ref={ref}
                     style={{ flex: 1 }}
                     initialRegion={{ ...destination, latitudeDelta: 0.04, longitudeDelta: 0.04 }}
-                    userInterfaceStyle={dark ? 'dark' : 'light'}
+                    {...mapLook(dark)}
                     scrollEnabled={false}
                     zoomEnabled={false}
                     pitchEnabled={false}

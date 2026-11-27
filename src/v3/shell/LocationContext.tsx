@@ -17,6 +17,8 @@ import { createContext, useContext, useMemo } from 'react';
 export interface Coordinates {
     latitude: number;
     longitude: number;
+    /** Degrees clockwise from north, when the phone knows which way it is moving. */
+    heading?: number;
 }
 
 /** GeoJSON, the shape the API stores. */
@@ -31,7 +33,7 @@ const LocationContext = createContext<Coordinates | null>(null);
 export function normalizeCoordinates(value: unknown): Coordinates | null {
     if (!value || typeof value !== 'object') return null;
     const raw = value as { coords?: unknown; latitude?: unknown; longitude?: unknown };
-    const source = (raw.coords ?? raw) as { latitude?: unknown; longitude?: unknown };
+    const source = (raw.coords ?? raw) as { latitude?: unknown; longitude?: unknown; heading?: unknown };
 
     const latitude = typeof source.latitude === 'number' ? source.latitude : Number(source.latitude);
     const longitude = typeof source.longitude === 'number' ? source.longitude : Number(source.longitude);
@@ -41,7 +43,9 @@ export function normalizeCoordinates(value: unknown): Coordinates | null {
     // it as a real fix would file every issue off the coast of Ghana.
     if (latitude === 0 && longitude === 0) return null;
 
-    return { latitude, longitude };
+    // The location library reports -1 when it does not know the heading.
+    const heading = Number(source.heading);
+    return Number.isFinite(heading) && heading >= 0 ? { latitude, longitude, heading } : { latitude, longitude };
 }
 
 export function LocationProvider({ location, children }: { location?: unknown; children: React.ReactNode }) {

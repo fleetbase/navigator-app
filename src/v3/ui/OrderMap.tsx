@@ -7,6 +7,7 @@
  * are joined by a dashed straight line, which reads as "roughly this way" rather
  * than pretending to be the road.
  */
+import { mapLook } from './mapLook';
 import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
@@ -69,7 +70,7 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
                 ref={ref}
                 style={{ flex: 1 }}
                 initialRegion={{ ...stops[0].point, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
-                userInterfaceStyle={dark ? 'dark' : 'light'}
+                {...mapLook(dark)}
                 showsUserLocation
                 showsMyLocationButton={false}
                 showsCompass={false}

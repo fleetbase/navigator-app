@@ -1,5 +1,5 @@
 /**
- * The driver's last seven days, one day summary each (`GET drivers/{id}/day-summary`).
+ * The driver's week (Monday to Sunday), one day summary each (`GET drivers/{id}/day-summary`).
  *
  * The home screen draws a week of work from it when there is nothing to drive
  * to. A finished day does not change, so its answer is kept for the life of the
@@ -15,14 +15,19 @@ export interface WeekDay {
     /** YYYY-MM-DD. */
     date: string;
     isToday: boolean;
+    /** A day that has not come yet. */
+    isFuture: boolean;
     summary?: DaySummary;
 }
 
 const kept = new Map<string, DaySummary>();
 
-function lastSevenDays(today: string): string[] {
+/** Monday to Sunday of the week `today` is in, then the day before that Monday (for "yesterday" on a Monday). */
+function weekOf(today: string): { week: string[]; before: string } {
     const [y, m, d] = today.split('-').map(Number);
-    return Array.from({ length: 7 }, (_, index) => dayKey(new Date(y, m - 1, d - (6 - index), 12)));
+    const sinceMonday = (new Date(y, m - 1, d, 12).getDay() + 6) % 7;
+    const at = (offset: number) => dayKey(new Date(y, m - 1, d - sinceMonday + offset, 12));
+    return { week: Array.from({ length: 7 }, (_, index) => at(index)), before: at(-1) };
 }
 
 function deviceTimezone(): string | undefined {
@@ -37,14 +42,15 @@ function deviceTimezone(): string | undefined {
 export function useWeekSummary(driverId?: string, reloadKey: string | number = 0, enabled = true) {
     const { adapter } = useFleetbase();
     const today = dayKey();
-    const dates = useMemo(() => lastSevenDays(today), [today]);
+    const { week: dates, before } = useMemo(() => weekOf(today), [today]);
     const [, setRevision] = useState(0);
 
     useEffect(() => {
         if (!driverId || !enabled) return;
         let alive = true;
         const timezone = deviceTimezone();
-        const wanted = dates.filter((date) => date === today || !kept.has(`${driverId}:${date}`));
+        // Days still to come have nothing to ask about.
+        const wanted = [before, ...dates].filter((date) => date <= today && (date === today || !kept.has(`${driverId}:${date}`)));
         void Promise.all(
             wanted.map(async (date) => {
                 try {
@@ -61,9 +67,12 @@ export function useWeekSummary(driverId?: string, reloadKey: string | number = 0
         return () => {
             alive = false;
         };
-    }, [adapter, driverId, enabled, dates, today, reloadKey]);
+    }, [adapter, driverId, enabled, dates, before, today, reloadKey]);
 
-    const days: WeekDay[] = dates.map((date) => ({ date, isToday: date === today, summary: driverId ? kept.get(`${driverId}:${date}`) : undefined }));
+    const days: WeekDay[] = dates.map((date) => ({ date, isToday: date === today, isFuture: date > today, summary: driverId ? kept.get(`${driverId}:${date}`) : undefined }));
+    // The day before today, which on a Monday is last week's Sunday.
+    const [ty, tm, td] = today.split('-').map(Number);
+    const yesterday = driverId ? kept.get(`${driverId}:${dayKey(new Date(ty, tm - 1, td - 1, 12))}`) : undefined;
     const known = days.some((day) => !!day.summary);
     const totals = days.reduce(
         (sum, day) => ({
@@ -75,7 +84,7 @@ export function useWeekSummary(driverId?: string, reloadKey: string | number = 0
         { waypoints: 0, orders: 0, distanceM: 0, seconds: 0 }
     );
 
-    return { days, totals, known };
+    return { days, totals, known, yesterday, from: dates[0], to: dates[6] };
 }
 
 export default useWeekSummary;

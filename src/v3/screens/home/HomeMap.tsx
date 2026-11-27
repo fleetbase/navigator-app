@@ -22,6 +22,8 @@
  * height: with no waypoint to show it centres on the driver, and before there
  * is anything at all to centre on it is a plain block in the map's own colour.
  */
+import { DriverPuck } from '../../ui/DriverPuck';
+import { mapLook } from '../../ui/mapLook';
 import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
@@ -31,13 +33,18 @@ import { colorForId } from '../../ui/routeColors';
 import { routeRuns, useManifestRecord, useManifestRoute, type LatLng } from '../../data';
 import type { HomeWaypoint } from './homeModel';
 
+/** With only the driver to show, a few streets around them: close enough to recognise where they are. */
+const STREET = { latitudeDelta: 0.008, longitudeDelta: 0.008 };
+
 export interface HomeMapProps {
     waypoints: HomeWaypoint[];
     /** The waypoint being headed to. */
     activeKey?: string;
     /** The road route to it, decoded. Empty draws the straight-line fallback. */
     route?: LatLng[];
-    position?: LatLng | null;
+    position?: (LatLng & { heading?: number }) | null;
+    /** The driver is offline: their mark is grey and still. */
+    offline?: boolean;
     dark?: boolean;
     height: number;
     /** The part of the map covered at the top (floating chips) and at the bottom (the sheet). */
@@ -49,7 +56,7 @@ export interface HomeMapProps {
     testID?: string;
 }
 
-export function HomeMap({ waypoints, activeKey, route = [], position, dark, height, padding, refitToken = 0, onMoved, testID = 'home-map' }: HomeMapProps) {
+export function HomeMap({ waypoints, activeKey, route = [], position, offline, dark, height, padding, refitToken = 0, onMoved, testID = 'home-map' }: HomeMapProps) {
     const theme = useTheme();
     const ref = useRef<MapView>(null);
     const placed = useMemo(() => waypoints.filter((w) => !!w.point) as (HomeWaypoint & { point: LatLng })[], [waypoints]);
@@ -116,7 +123,7 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
         if (!coordinates.length) return;
         // One point has no extent to fit; a street-level region around it instead.
         if (coordinates.length === 1) {
-            ref.current?.animateToRegion({ ...coordinates[0], latitudeDelta: 0.02, longitudeDelta: 0.02 }, fitted.current ? 300 : 0);
+            ref.current?.animateToRegion({ latitude: coordinates[0].latitude, longitude: coordinates[0].longitude, ...STREET }, fitted.current ? 300 : 0);
             fitted.current = true;
             return;
         }
@@ -136,9 +143,8 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
                 ref={ref}
                 style={{ flex: 1 }}
                 mapPadding={{ top: padTop, right: 0, bottom: padBottom, left: 0 }}
-                initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.length ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : { latitudeDelta: 0.02, longitudeDelta: 0.02 }) }}
-                userInterfaceStyle={dark ? 'dark' : 'light'}
-                showsUserLocation
+                initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.length ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : STREET) }}
+                {...mapLook(dark)}
                 showsMyLocationButton={false}
                 showsCompass={false}
                 toolbarEnabled={false}
@@ -163,6 +169,12 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
                     ))
                 ) : straight.length > 1 ? (
                     <Polyline coordinates={straight} strokeColor={theme.primary?.val as string} strokeWidth={4} lineDashPattern={[8, 6]} />
+                ) : null}
+                {position ? (
+                    // The driver, drawn by the app: pulsing, and pointing the way they are heading.
+                    <Marker coordinate={{ latitude: position.latitude, longitude: position.longitude }} anchor={{ x: 0.5, y: 0.5 }} flat zIndex={5} tracksViewChanges testID="home-driver">
+                        <DriverPuck color={theme.primary?.val as string} heading={position.heading} muted={offline} />
+                    </Marker>
                 ) : null}
                 {placed.map((w) => {
                     const state = w.skipped ? 'skipped' : w.done ? 'done' : w.key === activeKey ? 'current' : 'pending';

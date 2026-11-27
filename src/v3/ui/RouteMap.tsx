@@ -10,6 +10,7 @@
  * to. The line joining them here is the straight-line plan, dashed so it reads
  * as "not the road"; the Jobs map and the dashboard draw the road itself.
  */
+import { mapLook } from './mapLook';
 import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
@@ -163,7 +164,7 @@ export function RouteMap({ stops, currentStopId, position, dark, onPressStop, fi
             testID={testID ?? 'route-map'}
             style={{ flex: 1 }}
             initialRegion={{ ...first, latitudeDelta: 0.2, longitudeDelta: 0.2 }}
-            userInterfaceStyle={dark ? 'dark' : 'light'}
+            {...mapLook(dark)}
             showsUserLocation
             showsMyLocationButton={false}
             showsCompass={false}

@@ -22,6 +22,7 @@
  * build's Leaflet stand-in implements (web/maps.jsx): MapView with
  * `fitToCoordinates` / `animateToRegion`, Marker and Polyline.
  */
+import { mapLook } from '../../ui/mapLook';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { XStack, YStack, useTheme } from 'tamagui';
@@ -187,7 +188,7 @@ export function JobsMap({ waypoints, units, onOpenWaypoint, bottomSpace }: JobsM
                 testID="route-map"
                 style={{ flex: 1 }}
                 initialRegion={{ ...first, latitudeDelta: 0.2, longitudeDelta: 0.2 }}
-                userInterfaceStyle={scheme !== 'light' && scheme !== 'sunlight' ? 'dark' : 'light'}
+                {...mapLook(scheme !== 'light' && scheme !== 'sunlight')}
                 showsUserLocation
                 showsMyLocationButton={false}
                 showsCompass={false}

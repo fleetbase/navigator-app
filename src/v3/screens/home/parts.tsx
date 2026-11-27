@@ -515,6 +515,8 @@ export interface WeekBar {
     label: string;
     value: number;
     today?: boolean;
+    /** A day still to come: drawn as an empty slot. */
+    future?: boolean;
 }
 
 /**
@@ -522,28 +524,37 @@ export interface WeekBar {
  * of the figures under them, which say the same in numbers, so the bars are
  * hidden from screen readers.
  */
-export function WeekCard({ title, bars, stats, testID }: { title: string; bars: WeekBar[]; stats: Stat[]; testID?: string }) {
+export function WeekCard({ title, range, bars, stats, testID }: { title: string; /** The dates the week covers, at the title's right. */ range?: string; bars: WeekBar[]; stats: Stat[]; testID?: string }) {
     const peak = Math.max(1, ...bars.map((bar) => bar.value));
     const HEIGHT = 64;
     return (
         <Card testID={testID}>
             <YStack gap={14}>
-                <SectionLabel>{title}</SectionLabel>
+                <XStack alignItems="baseline" justifyContent="space-between" gap={space[3]}>
+                    <YStack flexShrink={1}>
+                        <SectionLabel>{title}</SectionLabel>
+                    </YStack>
+                    {range ? (
+                        <Secondary fontSize={12} lineHeight={16} fontWeight="600" tabular numberOfLines={1}>
+                            {range}
+                        </Secondary>
+                    ) : null}
+                </XStack>
                 <XStack alignItems="flex-end" gap={8} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                     {bars.map((bar) => (
                         <YStack key={bar.key} flex={1} alignItems="center" gap={6}>
-                            <Secondary fontSize={11} lineHeight={14} tabular fontWeight="700">
+                            <Body fontSize={12} lineHeight={16} tabular fontWeight={bar.today ? '800' : '700'} tone={bar.today ? 'primary' : 'muted'}>
                                 {bar.value > 0 ? String(bar.value) : ' '}
-                            </Secondary>
+                            </Body>
                             <YStack width="100%" height={HEIGHT} justifyContent="flex-end">
                                 <YStack
                                     height={bar.value > 0 ? Math.max(6, Math.round((bar.value / peak) * HEIGHT)) : 4}
                                     borderRadius={6}
-                                    backgroundColor={bar.today ? '$primary' : bar.value > 0 ? '$textMuted' : '$border'}
+                                    backgroundColor={bar.today && bar.value > 0 ? '$primary' : bar.value > 0 ? '$textMuted' : '$border'}
                                     opacity={bar.today || bar.value === 0 ? 1 : 0.55}
                                 />
                             </YStack>
-                            <Body fontSize={12} lineHeight={16} fontWeight={bar.today ? '800' : '600'} tone={bar.today ? 'brand' : 'muted'}>
+                            <Body fontSize={12} lineHeight={16} fontWeight={bar.today ? '800' : '600'} tone={bar.today ? 'brand' : 'muted'} opacity={bar.future ? 0.6 : 1} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                                 {bar.label}
                             </Body>
                         </YStack>

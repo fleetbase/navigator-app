@@ -117,6 +117,15 @@ const PEEK_BODY = 128;
 /** The gap between the sheet's blocks. */
 const SHEET_GAP = 14;
 
+/** "23–29 Nov", or "30 Nov – 6 Dec" when the week crosses a month. */
+function weekRange(from: string, to: string): string {
+    const day = (key: string, withMonth: boolean) => {
+        const [y, m, d] = key.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString(undefined, withMonth ? { day: 'numeric', month: 'short' } : { day: 'numeric' });
+    };
+    return from.slice(0, 7) === to.slice(0, 7) ? `${day(from, false)}–${day(to, true)}` : `${day(from, true)} – ${day(to, true)}`;
+}
+
 /** Time online in hours and minutes, without seconds: "2 h 14 min", "14 min". */
 function formatOnline(seconds: number): string {
     const minutes = Math.floor(Math.max(0, seconds) / 60);
@@ -781,22 +790,23 @@ export function TodayScreen({
                 const [y, m, d] = weekDay.date.split('-').map(Number);
                 return {
                     key: weekDay.date,
-                    label: new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'narrow' }),
+                    label: weekDay.isToday ? t('home.week.today') : new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short' }),
                     value: weekDay.summary?.waypoints?.completed ?? 0,
                     today: weekDay.isToday,
+                    future: weekDay.isFuture,
                 };
             });
             // Today's time online keeps counting past what the server last said.
-            const liveExtra = week.days[week.days.length - 1]?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0;
+            const liveExtra = week.days.find((weekDay) => weekDay.isToday)?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0;
             const weekStats: Stat[] = [
                 { key: 'week-waypoints', value: String(week.totals.waypoints), label: t('home.week.waypoints', { count: week.totals.waypoints }) },
                 { key: 'week-driven', value: week.totals.distanceM > 0 ? formatMeters(week.totals.distanceM, units) : units === 'imperial' ? '0 mi' : '0 km', label: t('home.week.driven') },
-                { key: 'week-online', value: formatDuration(week.totals.seconds + (week.days[week.days.length - 1]?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0)), label: t('home.week.online') },
+                { key: 'week-online', value: formatDuration(week.totals.seconds + liveExtra), label: t('home.week.online') },
             ].map((stat) => (stat.key === 'week-online' ? { ...stat, value: formatOnline(week.totals.seconds + liveExtra) } : stat));
             const lastStamp = lastJob ? String((lastJob as Record<string, unknown>).updated_at ?? '') : '';
             extras = (
                 <>
-                    {week.known ? <WeekCard title={t('home.week.title')} bars={bars} stats={weekStats} testID="home-week" /> : null}
+                    {week.known ? <WeekCard title={t('home.week.title')} range={weekRange(week.from, week.to)} bars={bars} stats={weekStats} testID="home-week" /> : null}
                     {comingUpCard}
                     {lastJob ? (
                         <JobCard
@@ -827,13 +837,13 @@ export function TodayScreen({
             );
         } else {
             // Offline with nothing assigned: what is coming, and how yesterday went.
-            const yesterday = week.days[week.days.length - 2]?.summary;
+            const yesterday = week.yesterday;
             const yesterdayStats: Stat[] = yesterday
                 ? [
                       { key: 'y-waypoints', value: String(yesterday.waypoints?.completed ?? 0), label: t('home.week.waypoints', { count: yesterday.waypoints?.completed ?? 0 }) },
                       { key: 'y-orders', value: String(yesterday.orders_completed ?? 0), label: t('home.end.ordersCompleted', { count: yesterday.orders_completed ?? 0 }) },
                       ...(yesterday.distance_driven_m ? [{ key: 'y-driven', value: formatMeters(yesterday.distance_driven_m, units), label: t('home.week.driven') }] : []),
-                      ...(yesterday.seconds_on_duty ? [{ key: 'y-online', value: formatDuration(yesterday.seconds_on_duty), label: t('home.week.online') }] : []),
+                      ...(yesterday.seconds_on_duty ? [{ key: 'y-online', value: formatOnline(yesterday.seconds_on_duty), label: t('home.week.onlineDay') }] : []),
                   ]
                 : [];
             const workedYesterday = !!yesterday && ((yesterday.waypoints?.completed ?? 0) > 0 || (yesterday.orders_completed ?? 0) > 0 || !!yesterday.seconds_on_duty);
@@ -889,6 +899,7 @@ export function TodayScreen({
                     activeKey={state === 'next' ? next?.key : undefined}
                     route={state === 'next' ? route : undefined}
                     position={position}
+                    offline={!onDuty}
                     dark={dark}
                     height={height}
                     // The part of the map that can be seen: under the chips, above the sheet.

@@ -987,13 +987,15 @@
             "recentre": "Put the map back"
         },
         "week": {
-            "title": "Last 7 days",
+            "title": "Your week · Waypoints completed",
+            "today": "Today",
             "waypoints": {
-                "one": "waypoint completed",
-                "other": "waypoints completed"
+                "one": "waypoint",
+                "other": "waypoints"
             },
             "driven": "driven",
-            "online": "online"
+            "online": "online this week",
+            "onlineDay": "online"
         },
         "idle": {
             "comingUp": "Coming up",
