@@ -48,7 +48,7 @@ export function Rise({ delay = 0, children }: { delay?: number; children: React.
 
 /* -- Icons ----------------------------------------------------------------- */
 
-export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick';
+export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick' | 'issue' | 'box' | 'cash' | 'pen' | 'note' | 'calendar' | 'camera' | 'scan';
 
 const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     power: ['M12 3v9', 'M6.3 7.5a8 8 0 1 0 11.4 0'],
@@ -60,6 +60,14 @@ const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     vehicle: ['M3 16V8l4-3h7l5 5v6', 'M5.5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0', 'M14.5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0'],
     chevron: ['M9 5l7 7-7 7'],
     tick: ['M5 12l5 5 9-10'],
+    issue: ['M12 4l9 16H3z', 'M12 10v5', 'M12 17.5v.5'],
+    box: ['M12 3l8 4.5v9L12 21l-8-4.5v-9z', 'M4 7.5l8 4.5 8-4.5', 'M12 12v9'],
+    cash: ['M3 7h18v10H3z', 'M12 14.500a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5z', 'M6 10v4', 'M18 10v4'],
+    pen: ['M4 20l4-1L19 8l-3-3L5 16z', 'M14 7l3 3'],
+    note: ['M6 3h9l4 4v14H6z', 'M9 11h7', 'M9 15h5'],
+    calendar: ['M4 6h16v14H4z', 'M4 10h16', 'M8 3v4', 'M16 3v4'],
+    camera: ['M4 8h3l2-3h6l2 3h3v11H4z', 'M12 16.500a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7z'],
+    scan: ['M4 8V5h3', 'M17 5h3v3', 'M20 16v3h-3', 'M7 19H4v-3', 'M8 9v6', 'M12 9v6', 'M16 9v6'],
     fuel: ['M5 20V5h9v15', 'M4 20h11', 'M7 9h5', 'M14 11h3v6a1.5 1.5 0 0 0 3 0V9l-3-3'],
 };
 
@@ -494,6 +502,185 @@ export function SummaryRow({ kind, title, body, value, first, testID }: { kind: 
                     {value}
                 </Body>
             ) : null}
+        </XStack>
+    );
+}
+
+/* -- The week ---------------------------------------------------------------- */
+
+export interface WeekBar {
+    key: string;
+    /** One or two letters for the day. */
+    label: string;
+    value: number;
+    today?: boolean;
+}
+
+/**
+ * Seven bars, one per day, today's in the brand colour. The bars are a picture
+ * of the figures under them, which say the same in numbers, so the bars are
+ * hidden from screen readers.
+ */
+export function WeekCard({ title, bars, stats, testID }: { title: string; bars: WeekBar[]; stats: Stat[]; testID?: string }) {
+    const peak = Math.max(1, ...bars.map((bar) => bar.value));
+    const HEIGHT = 64;
+    return (
+        <Card testID={testID}>
+            <YStack gap={14}>
+                <SectionLabel>{title}</SectionLabel>
+                <XStack alignItems="flex-end" gap={8} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                    {bars.map((bar) => (
+                        <YStack key={bar.key} flex={1} alignItems="center" gap={6}>
+                            <Secondary fontSize={11} lineHeight={14} tabular fontWeight="700">
+                                {bar.value > 0 ? String(bar.value) : ' '}
+                            </Secondary>
+                            <YStack width="100%" height={HEIGHT} justifyContent="flex-end">
+                                <YStack
+                                    height={bar.value > 0 ? Math.max(6, Math.round((bar.value / peak) * HEIGHT)) : 4}
+                                    borderRadius={6}
+                                    backgroundColor={bar.today ? '$primary' : bar.value > 0 ? '$textMuted' : '$border'}
+                                    opacity={bar.today || bar.value === 0 ? 1 : 0.55}
+                                />
+                            </YStack>
+                            <Body fontSize={12} lineHeight={16} fontWeight={bar.today ? '800' : '600'} tone={bar.today ? 'brand' : 'muted'}>
+                                {bar.label}
+                            </Body>
+                        </YStack>
+                    ))}
+                </XStack>
+                {stats.length ? (
+                    <XStack gap={space[2]} paddingTop={12} borderTopWidth={1} borderTopColor="$border">
+                        {stats.map((stat) => (
+                            <StatTile key={stat.key} stat={stat} size={20} />
+                        ))}
+                    </XStack>
+                ) : null}
+            </YStack>
+        </Card>
+    );
+}
+
+/* -- Shortcuts --------------------------------------------------------------- */
+
+export interface Shortcut {
+    key: string;
+    icon: HomeIconName;
+    label: string;
+    onPress?: () => void;
+    tone?: 'warning';
+}
+
+/** The things a driver does between jobs, one tap each. */
+export function Shortcuts({ items, testID }: { items: Shortcut[]; testID?: string }) {
+    const theme = useTheme();
+    const shown = items.filter((item) => !!item.onPress);
+    if (!shown.length) return null;
+    return (
+        <XStack gap={10} testID={testID}>
+            {shown.map((item) => (
+                <YStack
+                    key={item.key}
+                    flex={1}
+                    flexBasis={0}
+                    minHeight={86}
+                    paddingVertical={12}
+                    paddingHorizontal={8}
+                    alignItems="center"
+                    justifyContent="center"
+                    gap={8}
+                    borderRadius={CARD_RADIUS}
+                    borderWidth={1}
+                    borderColor={item.tone === 'warning' ? '$warningBorder' : '$border'}
+                    backgroundColor={item.tone === 'warning' ? '$warningFill' : '$surface'}
+                    onPress={item.onPress}
+                    pressStyle={{ opacity: 0.7 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    testID={`home-shortcut-${item.key}`}
+                >
+                    <HomeIcon name={item.icon} color={(item.tone === 'warning' ? theme.warningText?.val : theme.primary?.val) as string} size={22} />
+                    <Body fontSize={13} lineHeight={17} fontWeight="700" textAlign="center" numberOfLines={2}>
+                        {item.label}
+                    </Body>
+                </YStack>
+            ))}
+        </XStack>
+    );
+}
+
+/* -- A job, in one card -------------------------------------------------------- */
+
+/** An order named in a line or two: the next one scheduled, or the last one finished. */
+export function JobCard({ eyebrow, icon, title, lines = [], mono, value, onPress, testID }: { eyebrow: string; icon: HomeIconName; title: string; lines?: (string | undefined)[]; mono?: string; value?: string; onPress?: () => void; testID?: string }) {
+    const theme = useTheme();
+    return (
+        <Card onPress={onPress} testID={testID} label={[eyebrow, title].join('. ')}>
+            <XStack alignItems="flex-start" gap={space[3]}>
+                <YStack width={36} height={36} borderRadius={10} flexShrink={0} backgroundColor="$surfaceRaised" alignItems="center" justifyContent="center">
+                    <HomeIcon name={icon} color={theme.textSecondary?.val as string} size={18} />
+                </YStack>
+                <YStack flex={1} gap={2} minWidth={0}>
+                    <SectionLabel>{eyebrow}</SectionLabel>
+                    <Body fontSize={16} lineHeight={21} fontWeight="700" numberOfLines={2}>
+                        {title}
+                    </Body>
+                    {lines.filter(Boolean).map((line) => (
+                        <Secondary key={line} fontSize={13} lineHeight={18} numberOfLines={2}>
+                            {line}
+                        </Secondary>
+                    ))}
+                    {mono ? (
+                        <Secondary fontFamily="$mono" fontSize={12} lineHeight={16}>
+                            {mono}
+                        </Secondary>
+                    ) : null}
+                </YStack>
+                {value ? (
+                    <Body fontSize={15} lineHeight={20} fontWeight="700" tabular flexShrink={0}>
+                        {value}
+                    </Body>
+                ) : onPress ? (
+                    <HomeIcon name="chevron" color={theme.textSecondary?.val as string} size={18} />
+                ) : null}
+            </XStack>
+        </Card>
+    );
+}
+
+/* -- Facts about a waypoint, as chips ----------------------------------------- */
+
+export interface FactChip {
+    key: string;
+    icon: HomeIconName;
+    label: string;
+    tone?: 'warning';
+}
+
+/** What this waypoint asks of the driver, at a glance: items, cash, proof, a note. */
+export function FactChips({ chips, testID }: { chips: FactChip[]; testID?: string }) {
+    const theme = useTheme();
+    if (!chips.length) return null;
+    return (
+        <XStack flexWrap="wrap" gap={8} testID={testID}>
+            {chips.map((chip) => (
+                <XStack
+                    key={chip.key}
+                    alignItems="center"
+                    gap={6}
+                    height={32}
+                    paddingHorizontal={10}
+                    borderRadius={16}
+                    borderWidth={1}
+                    borderColor={chip.tone === 'warning' ? '$warningBorder' : '$border'}
+                    backgroundColor={chip.tone === 'warning' ? '$warningFill' : '$surface'}
+                    testID={`home-fact-${chip.key}`}
+                >
+                    <HomeIcon name={chip.icon} color={(chip.tone === 'warning' ? theme.warningText?.val : theme.textSecondary?.val) as string} size={15} />
+                    <Body fontSize={13} lineHeight={17} fontWeight="700" tabular tone={chip.tone === 'warning' ? 'warning' : 'primary'}>
+                        {chip.label}
+                    </Body>
+                </XStack>
+            ))}
         </XStack>
     );
 }

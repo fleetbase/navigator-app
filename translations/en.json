@@ -984,6 +984,41 @@
         "map": {
             "recentre": "Put the map back"
         },
+        "week": {
+            "title": "Last 7 days",
+            "waypoints": {
+                "one": "waypoint completed",
+                "other": "waypoints completed"
+            },
+            "driven": "driven",
+            "online": "online"
+        },
+        "idle": {
+            "comingUp": "Coming up",
+            "lastJob": "Last job",
+            "completedOn": "Completed %{when}",
+            "yesterday": "Yesterday"
+        },
+        "shortcuts": {
+            "issue": "Report an issue",
+            "fuel": "Log a fill-up",
+            "inspection": "Check the vehicle"
+        },
+        "facts": {
+            "items": {
+                "one": "%{count} item",
+                "other": "%{count} items"
+            },
+            "collect": "Collect %{amount}",
+            "signature": "Signature needed",
+            "photo": "Photo needed",
+            "scan": "Scan needed",
+            "proof": "Proof needed",
+            "note": "Has a note"
+        },
+        "peek": {
+            "arrive": "Arrive %{time}"
+        },
         "greeting": {
             "morning": "Morning, %{name}",
             "afternoon": "Afternoon, %{name}",

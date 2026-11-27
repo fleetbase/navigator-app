@@ -23,8 +23,8 @@ export function TodayHome({ navigation }: { navigation: Nav }) {
             onOpenSyncQueue={() => navigation.navigate('Account', { screen: 'SyncQueue', initial: false })}
             onOpenInspection={(vehicleId, vehicleName) => navigation.navigate('Account', { screen: 'Inspection', params: { vehicleId, vehicleName }, initial: false })}
             onOpenVehicle={() => navigation.navigate('Account', { screen: 'MyVehicle', initial: false })}
-            onOpenOrganizations={() => navigation.navigate('Account', { screen: 'OrgSwitcher', initial: false })}
             onOpenChat={() => navigation.navigate('Inbox')}
+            onReportIssue={() => navigation.navigate('Account', { screen: 'IssueCreate', params: {}, initial: false })}
             onLogFuel={() => navigation.navigate('Account', { screen: 'FuelReportCreate', params: {}, initial: false })}
         />
     );

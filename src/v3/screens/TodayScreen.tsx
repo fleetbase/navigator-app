@@ -49,6 +49,13 @@ import { useTabBarSpace } from '../navigation/TabBar';
 import { BigButton, CARD_RADIUS } from '../onboarding/AuthScaffold';
 import {
     useActiveOrders,
+    useAllOrders,
+    useWeekSummary,
+    cashOnDeliveryOf,
+    deliveryInstructionsOf,
+    isOrderFinished,
+    isOrderAbandoned,
+    trackingNumberOf,
     useOrdersOnDay,
     useOrderQuery,
     useOrderNotices,
@@ -73,11 +80,11 @@ import { dayKey } from '../data/orderStore';
 import { useOffers as useOpenOffers } from '../data/useOffers';
 import { secondsOnDuty, useDaySummary } from '../data/useDaySummary';
 import { useLiveRefresh } from '../realtime/liveRefresh';
-import { formatClock, formatDuration, formatMeters, formatMoney } from '../format';
+import { formatClock, formatDay, formatDuration, formatMeters, formatMoney } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { HomeMap } from './home/HomeMap';
 import { buildDay, firstNameOf, pickTodayManifest, secondsBetween, trackerIsFor, type HomeDay, type HomeWaypoint } from './home/homeModel';
-import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, type Stat } from './home/parts';
+import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, WeekCard, Shortcuts, JobCard, FactChips, type FactChip, type Stat, type WeekBar } from './home/parts';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 type Destination = { latitude: number; longitude: number; label?: string };
@@ -98,6 +105,7 @@ export interface TodayScreenProps {
     onOpenOrganizations?: () => void;
     onOpenChat?: () => void;
     onLogFuel?: () => void;
+    onReportIssue?: () => void;
 }
 
 /** How much of the map shows between the status bar and the sheet where the sheet rests. */
@@ -147,6 +155,7 @@ export function TodayScreen({
     onOpenOrganizations,
     onOpenChat,
     onLogFuel,
+    onReportIssue,
 }: TodayScreenProps) {
     const { t } = useTranslation();
     const theme = useTheme();
@@ -256,6 +265,24 @@ export function TodayScreen({
         const hasForm = known(forms.state) && forms.forms.some((form) => isPreTrip(form.type));
         return { inspectionDue: hasForm && !filedToday, checkedToday: filedToday ? { at: whenOf(filedToday) as string, record: filedToday } : undefined };
     }, [vehicle?.id, forms.state, forms.forms, history.state, history.submissions, pendingInspections]);
+
+    /* -- The week, the next job and the last one: what Home shows with nothing to drive to -- */
+
+    const allOrders = useAllOrders();
+    const ordersById = useMemo(() => new Map(allOrders.map((order) => [order.id, order])), [allOrders]);
+    const week = useWeekSummary(driverId, `${reloadToken}:${summaryPulls}`, day.total === 0);
+    const { comingUp, lastJob } = useMemo(() => {
+        const today = dayKey();
+        const mine = allOrders.filter((order) => !order.adhoc || !!order.driver_assigned);
+        const stamp = (order: (typeof allOrders)[number], field: string) => String((order as Record<string, unknown>)[field] ?? '');
+        const upcoming = mine
+            .filter((order) => !isOrderFinished(order) && !isOrderAbandoned(order) && !!order.scheduled_at && dayKey(order.scheduled_at) > today)
+            .sort((a, b) => String(a.scheduled_at).localeCompare(String(b.scheduled_at)))[0];
+        const finished = mine
+            .filter((order) => isOrderFinished(order) && !isOrderAbandoned(order))
+            .sort((a, b) => (stamp(b, 'updated_at') || stamp(b, 'created_at')).localeCompare(stamp(a, 'updated_at') || stamp(a, 'created_at')))[0];
+        return { comingUp: upcoming, lastJob: finished };
+    }, [allOrders]);
 
     /* -- Refresh ------------------------------------------------------------ */
 
@@ -376,6 +403,9 @@ export function TodayScreen({
     let notes: ReactNode = null;
     let actions: ReactNode = null;
     let summaryList: ReactNode = null;
+    let extras: ReactNode = null;
+    let facts: FactChip[] = [];
+    let peek: ReactNode = null;
     let state: 'loading' | 'error' | 'end' | 'next' | 'before' | 'empty' = 'empty';
 
     const goOnline = (
@@ -398,6 +428,14 @@ export function TodayScreen({
                 </BigButton>
             </YStack>
         ) : null;
+
+    const placeLine = (order: (typeof allOrders)[number]) => {
+        const payload = payloadOf(order);
+        const from = payload.pickup?.name ?? payload.pickup?.address;
+        const to = payload.dropoff?.name ?? payload.dropoff?.address;
+        return [from, to].filter(Boolean).join(' → ') || undefined;
+    };
+    const itemCount = (order?: (typeof allOrders)[number]) => (order ? (payloadOf(order).entities?.length ?? 0) : 0);
 
     if (cold) {
         state = 'loading';
@@ -538,8 +576,68 @@ export function TodayScreen({
                 ) : null}
             </>
         );
+        // What this waypoint asks for, read from its order and, on a route, from the waypoint itself.
+        const nextOrder = next.orderId ? ordersById.get(next.orderId) : undefined;
+        const nextStop = manifest?.stops?.find((stop) => stop.id === next.stopId);
+        const items = itemCount(nextOrder);
+        const cash = cashOnDeliveryOf(nextOrder);
+        const proof = String(nextStop?.pod_method ?? '').toLowerCase();
+        const proofNeeded = nextStop ? !!nextStop.pod_required : !!nextOrder?.pod_required;
+        const note = nextStop?.notes || deliveryInstructionsOf(nextOrder);
+        facts = [
+            ...(items > 0 ? [{ key: 'items', icon: 'box' as const, label: t('home.facts.items', { count: items }) }] : []),
+            ...(cash?.toCollect && next.kind !== 'pickup' ? [{ key: 'cash', icon: 'cash' as const, tone: 'warning' as const, label: t('home.facts.collect', { amount: formatMoney(cash.amount, cash.currency) }) }] : []),
+            ...(proofNeeded
+                ? [
+                      proof === 'signature'
+                          ? { key: 'proof', icon: 'pen' as const, label: t('home.facts.signature') }
+                          : proof === 'photo'
+                            ? { key: 'proof', icon: 'camera' as const, label: t('home.facts.photo') }
+                            : proof === 'scan' || proof === 'qr_scan'
+                              ? { key: 'proof', icon: 'scan' as const, label: t('home.facts.scan') }
+                              : { key: 'proof', icon: 'check' as const, label: t('home.facts.proof') },
+                  ]
+                : []),
+            ...(note ? [{ key: 'note', icon: 'note' as const, label: t('home.facts.note') }] : []),
+        ];
+
         const destination: Destination | undefined = next.point ? { ...next.point, label: next.name ?? next.address } : undefined;
         const canNavigate = !!onNavigate && !!destination;
+        // The sheet pulled down: one row that still says where next and gets the driver going.
+        const distanceStat = stats.find((stat) => stat.key === 'distance');
+        const peekLine = [etaAt && eta.kind === 'live' ? t('home.peek.arrive', { time: formatClock(etaAt) }) : undefined, distanceStat?.value].filter(Boolean).join(' · ');
+        peek = (
+            <XStack alignItems="center" gap={space[3]} testID="home-peek">
+                <HeroBadge number={next.number} />
+                <YStack flex={1} gap={2} minWidth={0}>
+                    <Body fontSize={17} lineHeight={22} fontWeight="800" numberOfLines={1}>
+                        {next.name ?? next.address ?? t('today.noStopRecorded')}
+                    </Body>
+                    {peekLine ? (
+                        <Secondary fontSize={14} lineHeight={19} tabular numberOfLines={1}>
+                            {peekLine}
+                        </Secondary>
+                    ) : null}
+                </YStack>
+                {canNavigate ? (
+                    <YStack
+                        width={52}
+                        height={52}
+                        borderRadius={26}
+                        backgroundColor="$primary"
+                        alignItems="center"
+                        justifyContent="center"
+                        onPress={() => onNavigate?.(destination as Destination, next.source === 'order' ? next.orderId : undefined)}
+                        pressStyle={{ opacity: 0.8 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('today.navigate')}
+                        testID="home-peek-navigate"
+                    >
+                        <HomeIcon name="navigate" color={theme.onPrimary?.val as string} size={22} />
+                    </YStack>
+                ) : null}
+            </XStack>
+        );
         const open = openNext(next);
         actions =
             canNavigate || open ? (
@@ -589,6 +687,17 @@ export function TodayScreen({
             ...(day.firstAt && !started ? [{ key: 'first', value: formatClock(day.firstAt), label: t('home.stat.firstWaypoint') }] : next.plannedAt ? [{ key: 'planned', value: formatClock(next.plannedAt), label: t('home.hero.planned') }] : []),
             ...(day.plannedDistanceM ? [{ key: 'distance', value: formatMeters(day.plannedDistanceM, units), label: t('home.stat.toDrive') }] : []),
         ];
+        // What the day's orders carry between them, and the cash they ask for.
+        const dayOrderIds = [...new Set(day.waypoints.flatMap((w) => (w.orderId && !w.done ? [w.orderId] : [])))];
+        const carried = dayOrderIds.reduce((sum, id) => sum + itemCount(ordersById.get(id)), 0);
+        const toCollect = dayOrderIds.reduce<{ amount: number; currency?: string }>((sum, id) => {
+            const cash = cashOnDeliveryOf(ordersById.get(id));
+            return cash?.toCollect ? { amount: sum.amount + cash.amount, currency: sum.currency ?? cash.currency } : sum;
+        }, { amount: 0 });
+        facts = [
+            ...(carried > 0 ? [{ key: 'items', icon: 'box' as const, label: t('home.facts.items', { count: carried }) }] : []),
+            ...(toCollect.amount > 0 ? [{ key: 'cash', icon: 'cash' as const, tone: 'warning' as const, label: t('home.facts.collect', { amount: formatMoney(toCollect.amount, toCollect.currency) }) }] : []),
+        ];
         const open = openNext(next);
         actions = (
             <YStack gap={space[2]}>
@@ -620,6 +729,92 @@ export function TodayScreen({
                 {locationNote}
             </YStack>
         );
+
+        const comingUpCard = comingUp ? (
+            <JobCard
+                key="coming-up"
+                eyebrow={t('home.idle.comingUp')}
+                icon="calendar"
+                title={[formatDay(dayKey(comingUp.scheduled_at as string), { weekday: true }), formatClock(comingUp.scheduled_at)].join(' · ')}
+                lines={[placeLine(comingUp)]}
+                mono={trackingNumberOf(comingUp)}
+                onPress={onOpenOrder ? () => onOpenOrder(comingUp.id) : undefined}
+                testID="home-coming-up"
+            />
+        ) : null;
+
+        if (onDuty) {
+            // Online with nothing to drive to: the week so far, the last job, and what a driver does between jobs.
+            const bars: WeekBar[] = week.days.map((weekDay) => {
+                const [y, m, d] = weekDay.date.split('-').map(Number);
+                return {
+                    key: weekDay.date,
+                    label: new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'narrow' }),
+                    value: weekDay.summary?.waypoints?.completed ?? 0,
+                    today: weekDay.isToday,
+                };
+            });
+            const weekStats: Stat[] = [
+                { key: 'week-waypoints', value: String(week.totals.waypoints), label: t('home.week.waypoints', { count: week.totals.waypoints }) },
+                ...(week.totals.distanceM > 0 ? [{ key: 'week-driven', value: formatMeters(week.totals.distanceM, units), label: t('home.week.driven') }] : []),
+                ...(week.totals.seconds > 0 ? [{ key: 'week-online', value: formatDuration(week.totals.seconds), label: t('home.week.online') }] : []),
+            ];
+            const lastStamp = lastJob ? String((lastJob as Record<string, unknown>).updated_at ?? '') : '';
+            extras = (
+                <>
+                    {week.known ? <WeekCard title={t('home.week.title')} bars={bars} stats={weekStats} testID="home-week" /> : null}
+                    {comingUpCard}
+                    {lastJob ? (
+                        <JobCard
+                            eyebrow={t('home.idle.lastJob')}
+                            icon="tick"
+                            title={placeLine(lastJob) ?? trackingNumberOf(lastJob) ?? lastJob.id}
+                            lines={[lastStamp ? t('home.idle.completedOn', { when: [formatDay(dayKey(lastStamp), { weekday: true }), formatClock(lastStamp)].join(' · ') }) : undefined]}
+                            mono={trackingNumberOf(lastJob)}
+                            onPress={onOpenOrder ? () => onOpenOrder(lastJob.id) : undefined}
+                            testID="home-last-job"
+                        />
+                    ) : null}
+                    <Shortcuts
+                        testID="home-shortcuts"
+                        items={[
+                            { key: 'issue', icon: 'issue', label: t('home.shortcuts.issue'), onPress: onReportIssue },
+                            { key: 'fuel', icon: 'fuel', label: t('home.shortcuts.fuel'), onPress: onLogFuel },
+                            {
+                                key: 'inspection',
+                                icon: 'check',
+                                label: t('home.shortcuts.inspection'),
+                                tone: inspectionDue ? 'warning' : undefined,
+                                onPress: onOpenInspection && hasVehicle ? () => onOpenInspection(vehicle?.id, vehicleName) : undefined,
+                            },
+                        ]}
+                    />
+                </>
+            );
+        } else {
+            // Offline with nothing assigned: what is coming, and how yesterday went.
+            const yesterday = week.days[week.days.length - 2]?.summary;
+            const yesterdayStats: Stat[] = yesterday
+                ? [
+                      { key: 'y-waypoints', value: String(yesterday.waypoints?.completed ?? 0), label: t('home.week.waypoints', { count: yesterday.waypoints?.completed ?? 0 }) },
+                      { key: 'y-orders', value: String(yesterday.orders_completed ?? 0), label: t('home.end.ordersCompleted', { count: yesterday.orders_completed ?? 0 }) },
+                      ...(yesterday.distance_driven_m ? [{ key: 'y-driven', value: formatMeters(yesterday.distance_driven_m, units), label: t('home.week.driven') }] : []),
+                      ...(yesterday.seconds_on_duty ? [{ key: 'y-online', value: formatDuration(yesterday.seconds_on_duty), label: t('home.week.online') }] : []),
+                  ]
+                : [];
+            const workedYesterday = !!yesterday && ((yesterday.waypoints?.completed ?? 0) > 0 || (yesterday.orders_completed ?? 0) > 0 || !!yesterday.seconds_on_duty);
+            extras = (
+                <>
+                    {comingUpCard}
+                    {workedYesterday ? (
+                        <YStack gap={10} testID="home-yesterday">
+                            <SectionLabel>{t('home.idle.yesterday')}</SectionLabel>
+                            <StatCard stats={yesterdayStats} testID="home-yesterday-stats" />
+                        </YStack>
+                    ) : null}
+                </>
+            );
+        }
     }
 
     const finishAt =
@@ -706,6 +901,8 @@ export function TodayScreen({
                 enablePanDownToClose={false}
                 enableOverDrag={false}
                 animateOnMount={false}
+                // Told as the sheet starts to move, so what it shows changes with it rather than after.
+                onAnimate={(_from: number, to: number) => setSheetIndex(to < 0 ? 0 : to)}
                 onChange={(index: number) => setSheetIndex(index < 0 ? 0 : index)}
                 backgroundStyle={{ backgroundColor: theme.background?.val as string, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: theme.border?.val as string }}
                 handleIndicatorStyle={{ backgroundColor: theme.border?.val as string, width: 40, height: 5 }}
@@ -738,8 +935,9 @@ export function TodayScreen({
                             <Rise>
                                 <YStack gap={SHEET_GAP} testID={state === 'next' ? 'today-next-stop' : `home-hero-${state}`}>
                                     {/* Room under the header before the figures and rows. */}
-                                    <YStack paddingBottom={space[3]}>{hero}</YStack>
+                                    <YStack paddingBottom={space[3]}>{sheetIndex === 0 && peek ? peek : hero}</YStack>
                                     <StatCard stats={stats} testID={statsTestID} />
+                                    <FactChips chips={facts} testID="home-facts" />
                                     {notes}
                                     {actions}
                                 </YStack>
@@ -770,20 +968,12 @@ export function TodayScreen({
 
                             {summaryList ? <Rise delay={70}>{summaryList}</Rise> : null}
 
-                            {rows.length ? (
-                                <Rise delay={140}>
-                                    <YStack gap={10} testID="home-attention">
-                                        {rows}
-                                    </YStack>
-                                </Rise>
-                            ) : null}
-
                             {showProgress && day.upcoming.length ? (
                                 <Rise delay={200}>
                                     <YStack gap={10} testID="home-upcoming">
                                         <SectionLabel>{t('home.upcoming.section')}</SectionLabel>
                                         <Card padded={false}>
-                                            {day.upcoming.map((waypoint, index) => (
+                                            {(state === 'next' ? day.upcoming.slice(0, 2) : day.upcoming).map((waypoint, index) => (
                                                 <WaypointRow
                                                     key={waypoint.key}
                                                     waypoint={waypoint}
@@ -796,7 +986,21 @@ export function TodayScreen({
                                     </YStack>
                                 </Rise>
                             ) : null}
-                        </>
+                        {extras ? (
+                            <Rise delay={100}>
+                                <YStack gap={SHEET_GAP}>{extras}</YStack>
+                            </Rise>
+                        ) : null}
+
+                        {rows.length ? (
+                                <Rise delay={140}>
+                                    <YStack gap={10} testID="home-attention">
+                                        {rows}
+                                    </YStack>
+                                </Rise>
+                            ) : null}
+
+                            </>
                     )}
                 </BottomSheetScrollView>
             </BottomSheet>
