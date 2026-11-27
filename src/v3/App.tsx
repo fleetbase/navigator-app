@@ -27,6 +27,7 @@ import { DutyProvider, SyncProvider, LocationProvider } from './shell';
 import type { TabBadges } from './navigation/TabBar';
 import type { Features } from './navigation/DriverTabs';
 import { FleetbaseProvider, mutationQueue, useQueue, useReachable, type MutationQueue } from './api';
+import { PushRegistration } from './push/PushRegistration';
 import { SocketProvider, PushContext, type SocketConfig, type PushSubscribe } from './realtime';
 import { navigationRef, flushPendingNavigation } from './navigation/navigationRef';
 import { linking } from './navigation/linking';
@@ -137,6 +138,8 @@ export interface V3AppProps {
      * conversation); the host owns the native registration.
      */
     subscribeToPush?: PushSubscribe;
+    /** This phone's push token, from the host's native registration. */
+    deviceToken?: string | null;
     platformToken?: string;
     /** Driver Sanctum token. Changing it re-authorises without rebuilding. */
     userToken?: string;
@@ -239,6 +242,7 @@ export function V3App({
     socket,
     socketSession,
     subscribeToPush,
+    deviceToken,
     scheme,
     organizationName,
     subtitle,
@@ -308,6 +312,7 @@ export function V3App({
                                     >
                                     <PushContext.Provider value={subscribeToPush}>
                                     <QueueBoundSync isConnected={isConnected} queue={queue}>
+                                        <PushRegistration driverId={isAuthenticated ? driverId : undefined} deviceToken={deviceToken} />
                                         <DutyProvider isOnline={isOnline} onToggleOnline={onToggleOnline} breakSupported={breakSupported}>
                                             <LocationProvider location={location}>
                                             <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation} documentTitle={{ enabled: false }} linking={linking}>

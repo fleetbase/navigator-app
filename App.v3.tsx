@@ -31,7 +31,7 @@ function DriverBridge(): React.JSX.Element {
     const { driver, isOnline, toggleOnline, organizations, isAuthenticated, authToken, sessionEpoch, logout, createDriverSession } = useAuth();
     const { fleetbase } = useFleetbaseV2();
     const { resolveConnectionConfig, setInstanceLinkConfig, clearInstanceLinkConfig, instanceLinkConfig } = useConfig();
-    const { addNotificationListener, removeNotificationListener } = useNotification();
+    const { addNotificationListener, removeNotificationListener, deviceToken } = useNotification();
     // v2 already runs background geolocation for the whole app; v3 reads its
     // last fix rather than starting a second consumer of the same hardware.
     const { location } = useLocation();
@@ -159,6 +159,7 @@ function DriverBridge(): React.JSX.Element {
             // re-handshakes it on every sign-in, sign-out and org switch.
             socketSession={sessionEpoch}
             subscribeToPush={subscribeToPush}
+            deviceToken={deviceToken as string | null | undefined}
             // What the app presents until a driver signs in: the instance's
             // platform token, which only opens the sign-in routes. A build tied
             // to one organisation may still use that organisation's API key.

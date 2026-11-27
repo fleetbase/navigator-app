@@ -25,6 +25,8 @@
  * closing over a prop.
  */
 import { useEffect, useMemo } from 'react';
+import { useFleetbase } from '../api';
+import { unregisterThisDevice } from '../push/PushRegistration';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useChatChannels, useChatUnreadTotal, setChatUnreadTotal } from '../data';
@@ -394,6 +396,17 @@ export function DriverTabs({
     onOrganizationSwitched?: (driver: unknown) => void;
     features?: Features;
 }) {
+    // Signing out first tells the server this phone is no longer the driver's, while their token still works.
+    const { adapter } = useFleetbase();
+    const signOut = useMemo(
+        () =>
+            onSignOut
+                ? () => {
+                      void unregisterThisDevice(adapter).finally(onSignOut);
+                  }
+                : undefined,
+        [adapter, onSignOut]
+    );
     const featuresValue = useMemo<Features>(() => ({ ...features, earnings: Boolean(BRAND_FEATURES.earnings || features?.earnings) }), [features]);
     // `tabBar` is a render prop, not `component`, so re-creating it re-renders
     // the bar rather than remounting it — which is why the badges may close
@@ -424,7 +437,7 @@ export function DriverTabs({
             <PushRouter />
             <ChatWatcher enabled={!!driverUserId} />
             <DriverUserIdContext.Provider value={driverUserId}>
-                <SignOutContext.Provider value={onSignOut}>
+                <SignOutContext.Provider value={signOut}>
                     <OrganizationContext.Provider value={organizationValue}>
             <Tab.Navigator
                 screenOptions={screenOptions}
