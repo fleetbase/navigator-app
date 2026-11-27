@@ -20,6 +20,7 @@
  *    errors into `new Error(message)`, which makes "should I retry this?"
  *    unanswerable. `ApiError` carries the status.
  */
+import { AppState } from 'react-native';
 import { BrowserAdapter } from '@fleetbase/sdk';
 import { mutationQueue, type MutationQueue, type QueuedMutation } from './queue';
 import { describeMutation } from './describeMutation';
@@ -118,6 +119,9 @@ export interface NavigatorAdapterConfig {
  * standing at a door is not staring at a spinner.
  */
 export const REQUEST_TIMEOUT_MS = 20_000;
+/** How long the direct check waits, and how often it is repeated while there is no answer. */
+const PROBE_TIMEOUT_MS = 8_000;
+const PROBE_EVERY_MS = 6_000;
 
 export class NavigatorAdapter extends BrowserAdapter {
     private platformToken?: string;
@@ -239,6 +243,7 @@ export class NavigatorAdapter extends BrowserAdapter {
 
     private async dispatch(req: { url: string; method: string; body?: string; headers: Record<string, string>; mode?: RequestInit['mode'] }): Promise<unknown> {
         let response: Response;
+        const startedAt = Date.now();
         const abort = new AbortController();
         /*
          * A server that accepts the connection and then says nothing is not a
@@ -262,7 +267,7 @@ export class NavigatorAdapter extends BrowserAdapter {
             // fetch only rejects on transport failure — DNS, no route, TLS,
             // aborted. This is the branch that means "queue it", and the only
             // honest evidence that the API cannot currently be reached.
-            this.setReachable(false);
+            this.noteTransportFailure(startedAt);
             const timedOut = abort.signal.aborted;
             throw new ApiError(timedOut ? 'The server did not respond' : ((err as Error)?.message ?? 'Network request failed'), undefined, true);
         } finally {
@@ -271,7 +276,7 @@ export class NavigatorAdapter extends BrowserAdapter {
 
         // The server answered. Even a 500 proves the round trip works, so
         // reachability is about the transport, not the status.
-        this.setReachable(true);
+        this.noteAnswer();
 
         const json = await response.json().catch(() => ({}));
 
@@ -317,6 +322,75 @@ export class NavigatorAdapter extends BrowserAdapter {
         if (this.reachable === next) return;
         this.reachable = next;
         for (const fn of this.reachabilityListeners) fn(next);
+    }
+
+    private lastAnswerAt = 0;
+    private failures = 0;
+    private probeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** The server answered something. Whatever it said, the way to it works. */
+    private noteAnswer(): void {
+        this.lastAnswerAt = Date.now();
+        this.failures = 0;
+        if (this.probeTimer) {
+            clearTimeout(this.probeTimer);
+            this.probeTimer = null;
+        }
+        this.setReachable(true);
+    }
+
+    /**
+     * One request failing is not "no signal". Requests run side by side, and
+     * one slow call timing out while its neighbours are answered says the
+     * call was slow, not that the server is gone; iOS also cuts requests off
+     * when the app leaves the foreground. So a failure is set aside when
+     * something has been answered since that request began or while the app
+     * is not in front, and a single failure only starts a check: the server
+     * is asked directly, and "no signal" is said when that fails as well.
+     */
+    private noteTransportFailure(startedAt: number): void {
+        if (this.lastAnswerAt >= startedAt) return;
+        if (AppState.currentState !== 'active') return;
+        this.failures += 1;
+        if (this.failures >= 2) this.setReachable(false);
+        this.scheduleProbe(this.failures >= 2 ? PROBE_EVERY_MS : 0);
+    }
+
+    private scheduleProbe(delay: number): void {
+        if (this.probeTimer) return;
+        this.probeTimer = setTimeout(() => {
+            this.probeTimer = null;
+            void this.probe();
+        }, delay);
+    }
+
+    /** Asks the server for anything at all. Any answer means it can be reached. */
+    private async probe(): Promise<void> {
+        if (AppState.currentState !== 'active') return;
+        const abort = new AbortController();
+        const timer = setTimeout(() => abort.abort(), PROBE_TIMEOUT_MS);
+        try {
+            await fetch(`${this.host}/${this.namespace}/`, { method: 'GET', signal: abort.signal, headers: new Headers({ Accept: 'application/json' }) });
+            this.noteAnswer();
+        } catch {
+            this.failures += 1;
+            this.setReachable(false);
+            // Keep asking, so the notice clears by itself when the way back opens rather than at the driver's next tap.
+            this.scheduleProbe(PROBE_EVERY_MS);
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    /** Called when the app comes back to the front: whatever was believed while away is checked again. */
+    recheckReachability(): void {
+        if (!this.reachable || this.failures > 0) {
+            if (this.probeTimer) {
+                clearTimeout(this.probeTimer);
+                this.probeTimer = null;
+            }
+            void this.probe();
+        }
     }
 
     private counter = 0;

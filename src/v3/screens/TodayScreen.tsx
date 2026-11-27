@@ -175,8 +175,7 @@ export function TodayScreen({
      * go, and it matters more than the bleed.
      */
     const insets = useSafeAreaInsets();
-    const shellStripShown = syncState === 'failed' || !isOnline || (syncState === 'syncing' && queuedCount > 0) || lastSyncedCount > 0;
-    const bleed = shellStripShown ? 0 : insets.top;
+    const bleed = insets.top;
     // Ask the shell to give up its status-bar padding while this screen is in front.
     const { setBleedTop } = useShell();
     useFocusEffect(

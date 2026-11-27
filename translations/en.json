@@ -1000,9 +1000,9 @@
             "yesterday": "Yesterday"
         },
         "shortcuts": {
-            "issue": "Report an issue",
-            "fuel": "Log a fill-up",
-            "inspection": "Check the vehicle"
+            "issue": "Report issue",
+            "fuel": "Log fuel",
+            "inspection": "Inspect vehicle"
         },
         "facts": {
             "items": {

@@ -599,7 +599,7 @@ export function Shortcuts({ items, testID }: { items: Shortcut[]; testID?: strin
                     testID={`home-shortcut-${item.key}`}
                 >
                     <HomeIcon name={item.icon} color={(item.tone === 'warning' ? theme.warningText?.val : theme.primary?.val) as string} size={22} />
-                    <Body fontSize={13} lineHeight={17} fontWeight="700" textAlign="center" numberOfLines={2}>
+                    <Body fontSize={13} lineHeight={17} fontWeight="700" textAlign="center" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                         {item.label}
                     </Body>
                 </YStack>

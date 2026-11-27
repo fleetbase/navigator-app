@@ -82,21 +82,35 @@ export function DriverShell({
     const [bleedTop, setBleedTop] = useState(false);
     const [orgSheetOpen, setOrgSheetOpen] = useState(false);
     const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), openOrgSheet: () => setOrgSheetOpen(true), setBleedTop }), [organizationName, subtitle]);
-    // The strip about signal and syncing keeps clear of the status bar even when the screen below does not.
-    const sync = useSync();
-    const stripShown = sync.syncState === 'failed' || !sync.isOnline || (sync.syncState === 'syncing' && sync.queuedCount > 0) || sync.lastSyncedCount > 0;
-    const padTop = bleedTop && !stripShown ? 0 : insets.top;
+    /*
+     * The strip about signal and syncing. Under a screen with a header it sits
+     * in the flow, above the screen. Over a screen that draws to the top edge
+     * (Home's map) it floats under the chips instead, so it covers nothing but
+     * its own width of map.
+     */
+    const padTop = bleedTop ? 0 : insets.top;
 
     return (
         <ShellContext.Provider value={shell}>
         <YStack flex={1} backgroundColor="$background" paddingTop={padTop}>
-            <YStack paddingHorizontal={space[4]}>
-                <OfflineBar />
-            </YStack>
+            {bleedTop ? null : (
+                <YStack paddingHorizontal={space[4]}>
+                    <OfflineBar />
+                </YStack>
+            )}
 
             <YStack flex={1}>
                 <DriverTabs badges={badges} driverId={driverId} driverUserId={driverUserId} onSignOut={onSignOut} organizationId={organizationId} onOrganizationSwitched={onOrganizationSwitched} features={features} />
             </YStack>
+
+            {bleedTop ? (
+                <YStack position="absolute" top={insets.top + 54} left={space[3]} right={space[3]} pointerEvents="box-none" testID="shell-floating-strip">
+                    {/* A solid backing: the strip's own tint is see-through, and a map shows through it. */}
+                    <YStack backgroundColor="$background" borderRadius={14} overflow="hidden">
+                        <OfflineBar />
+                    </YStack>
+                </YStack>
+            ) : null}
 
             {/* SheetModal fades the dimming and slides only the sheet. */}
             <SheetModal visible={sheetOpen} onClose={() => setSheetOpen(false)} testID="duty-modal">

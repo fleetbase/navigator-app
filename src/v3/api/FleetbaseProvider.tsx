@@ -15,6 +15,7 @@
  * identity is stable, so a token change re-authorises the next request without
  * invalidating anything.
  */
+import { AppState } from 'react-native';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import Fleetbase from '@fleetbase/sdk';
 import { NavigatorAdapter } from './NavigatorAdapter';
@@ -113,6 +114,14 @@ export function FleetbaseProvider({
             if (reachable) void queue.flush();
         });
     }, [isConnected, queue, value]);
+
+    // Back in front: what was believed about the signal while away is checked again.
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (state) => {
+            if (state === 'active') value.adapter.recheckReachability();
+        });
+        return () => subscription.remove();
+    }, [value]);
 
     return <FleetbaseContext.Provider value={value}>{children}</FleetbaseContext.Provider>;
 }
