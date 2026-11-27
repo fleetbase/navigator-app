@@ -52,7 +52,6 @@ import {
     orderStore,
     displayIdOf,
     entityIdOf,
-    entityNameOf,
     entityTrackingNumberOf,
     orderConfigIdOf,
     payloadOf,
@@ -88,6 +87,7 @@ import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, ch
 import { BringChecklist, CashSection, ChangeBanner, ContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
 import { ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, hasFacilitator, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
 import { MapButton, NowCard, ProofSection, QrSheet, ReportIssueButton, SectionPills, SheetHeader, TripSection, type NowNote, type ProofRow, type TripExtra } from './orderDetail/OrderSheetParts';
+import { ItemPagerModal } from './item/ItemPagerModal';
 import { Card, GUTTER, Section } from './jobs/parts';
 import { HomeIcon, NoteCard } from './home/parts';
 import { isOrderStarted, orderPoints, orderTypeLabel } from './jobs/model';
@@ -114,7 +114,6 @@ export function OrderDetailScreen({
     orderId,
     reloadToken = 0,
     onBack,
-    onOpenEntity,
     onNavigate,
     onCaptureProof,
     onChangeDestination,
@@ -129,7 +128,11 @@ export function OrderDetailScreen({
     reloadToken?: number;
     /** Leaves the screen: the round button over the map's top left. */
     onBack?: () => void;
-    /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
+    /**
+     * No longer called: an item opens in the item pager over the order (see
+     * item/ItemPagerModal) rather than on a screen of its own. Kept so a host
+     * that still passes it type-checks.
+     */
     onOpenEntity?: (entity: { id: string; name?: string; entity: Record<string, unknown> }) => void;
     /**
      * No longer called: the activity history opens in a sheet over the order
@@ -314,6 +317,8 @@ export function OrderDetailScreen({
     const sheetIndex = useRef(0);
     const [footerHeight, setFooterHeight] = useState(0);
     const [qrOpen, setQrOpen] = useState(false);
+    // The item the pager over the order is open at; null while it is closed.
+    const [itemIndex, setItemIndex] = useState<number | null>(null);
 
     /*
      * The section index. Each section reports where it sits in the scroll; the
@@ -824,11 +829,9 @@ export function OrderDetailScreen({
                                 <Section
                                     label={[t('orderDetail.itemsHeading'), String(entities.length), totalWeight].filter(Boolean).join(' · ')}
                                     aside={
-                                        onOpenEntity ? (
-                                            <Secondary fontSize={13} lineHeight={16} fontWeight="700" numberOfLines={1}>
-                                                {t('orderDetail.items.hint')}
-                                            </Secondary>
-                                        ) : undefined
+                                        <Secondary fontSize={13} lineHeight={16} fontWeight="700" numberOfLines={1}>
+                                            {t('orderDetail.items.hint')}
+                                        </Secondary>
                                     }
                                 >
                                     <Card padded={false} testID="order-payload">
@@ -846,7 +849,8 @@ export function OrderDetailScreen({
                                                         entities={entities}
                                                         t={t}
                                                         testID={`entity-${rowId ?? i}`}
-                                                        onPress={onOpenEntity && rowId ? () => onOpenEntity({ id: rowId, name: entityNameOf(e), entity: e }) : undefined}
+                                                        // Opens the item pager over the order, at this item.
+                                                        onPress={rowId ? () => setItemIndex(i) : undefined}
                                                     />
                                                 </YStack>
                                             );
@@ -919,6 +923,17 @@ export function OrderDetailScreen({
             ) : null}
 
             <ActivitySheet visible={activityOpen} onClose={() => setActivityOpen(false)} events={timeline} isLoading={timelineLoading} failed={timelineFailed} number={trackingNumber} t={t} bottomInset={insets.bottom} />
+            <ItemPagerModal
+                visible={itemIndex !== null}
+                onClose={() => setItemIndex(null)}
+                orderId={order.id}
+                entities={entities}
+                stops={orderStops(payload)}
+                initialIndex={itemIndex ?? 0}
+                // Said under "Not scanned" only when the order's next step asks for a scan.
+                scanNeed={primary?.require_pod && proofMethodOf(primary.pod_method) === 'scan' ? labelFor(primary) : undefined}
+                openUrl={openUrl}
+            />
             <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} qr={codes.qr} number={codes.number ?? trackingNumber} title={t('orderDetail.details.codesTitle')} closeLabel={t('common.close')} bottomInset={insets.bottom} />
         </YStack>
     );

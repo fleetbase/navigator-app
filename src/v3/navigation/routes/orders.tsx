@@ -59,7 +59,7 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             onBack={() => navigation.goBack()}
             // The issue form opens already about this order: its id, and its tracking number to show.
             onReportIssue={({ label }) => navigation.navigate('Account', { screen: 'IssueCreate', params: { order: orderId, orderLabel: label }, initial: false })}
-            onOpenEntity={({ id, entity }) => navigation.navigate('EntityDetail', { orderId, entityId: id, entity })}
+            // An item opens in the item pager over the order now (screens/item/ItemPagerModal), so there is no item screen to navigate to from here.
             // The order id travels, not just the point: the hand-off reads the
             // order's *current* destination, so an edit made after this tap
             // still lands the driver at the right door.
@@ -83,10 +83,17 @@ export function EntityDetail({
     navigation: Nav;
 }) {
     useLeaveWhenRemoved(route.params?.orderId, navigation);
+    /*
+     * The order screen opens its items in a pager over itself and no longer
+     * comes here. The route stays for whatever else navigates to it (a build's
+     * own routes, a replaced order screen) and shows the same item card, on a
+     * screen: with the order id it edits in place and scans, as the pager does.
+     */
     return (
         <ItemDetailScreen
             entityId={route.params?.entityId}
             entity={route.params?.entity}
+            orderId={route.params?.orderId}
             onBack={navigation.goBack}
             onEdit={(entity) => navigation.navigate('EditPayloadItem', { orderId: route.params?.orderId, entity })}
         />
