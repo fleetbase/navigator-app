@@ -81,14 +81,22 @@ export function DriverShell({
         [setDuty]
     );
 
-    const [bleedTop, setBleedTop] = useState(false);
+    /*
+     * Counted, not a flag: more than one screen draws to the top edge (Home, the
+     * order), and when the driver moves from one to the other the new screen's
+     * "on" can arrive before the old screen's "off". A count comes out right in
+     * either order; every caller pairs one `true` with one `false`.
+     */
+    const [bleedCount, setBleedCount] = useState(0);
+    const setBleedTop = useCallback((bleed: boolean) => setBleedCount((n) => n + (bleed ? 1 : -1)), []);
+    const bleedTop = bleedCount > 0;
     // Kilometres or miles is the organisation's choice (FleetOps → Settings → Routing), so the app shows distances as the console does.
     const { distanceUnit } = useNavigatorSettings(organizationId);
     useEffect(() => {
         if (distanceUnit && settingsStore.getState().units !== distanceUnit) settingsStore.set('units', distanceUnit);
     }, [distanceUnit]);
     const [orgSheetOpen, setOrgSheetOpen] = useState(false);
-    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), openOrgSheet: () => setOrgSheetOpen(true), setBleedTop }), [organizationName, subtitle]);
+    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), openOrgSheet: () => setOrgSheetOpen(true), setBleedTop }), [organizationName, subtitle, setBleedTop]);
     /*
      * The strip about signal and syncing. Under a screen with a header it sits
      * in the flow, above the screen. Over a screen that draws to the top edge

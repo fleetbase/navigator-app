@@ -310,7 +310,8 @@
             "quantityName": "%{count} × %{name}",
             "unavailable": "Unavailable — not in this order",
             "substituteFor": "Substitute for %{name}",
-            "note": "Note: %{note}"
+            "note": "Note: %{note}",
+            "hint": "Tap for details"
         },
         "booking": {
             "jobLabel": "JOB",
@@ -327,7 +328,10 @@
             "settled": "Paid",
             "confirm": "I collected %{amount}",
             "collected": "Collected %{amount}",
-            "confirmFirst": "Confirm the cash is collected before completing this order."
+            "confirmFirst": "Confirm the cash is collected before completing this order.",
+            "atDropoff": "At the drop-off",
+            "notYet": "Not collected yet",
+            "collectedShort": "Collected"
         },
         "scheduled": "Scheduled",
         "instructions": "Delivery instructions",
@@ -337,7 +341,8 @@
             "messageCustomer": "Message customer",
             "messageDispatch": "Message dispatch",
             "callWho": "Call %{name}",
-            "messageWho": "Message %{name}"
+            "messageWho": "Message %{name}",
+            "message": "Message"
         },
         "reassigned": "This order is no longer assigned to you.",
         "proofCaptured": "Proof captured",
@@ -415,8 +420,61 @@
                 "other": "[ %{count} items ]"
             },
             "timeline": "Timeline",
-            "timelineOpen": "Open timeline"
-        }
+            "timelineOpen": "Open timeline",
+            "typeShort": "Type",
+            "documents": "Documents · %{count}",
+            "commentAdd": "Add a comment",
+            "notStarted": "Not started yet",
+            "reference": "Reference"
+        },
+        "eyebrow": "Order · %{type}",
+        "eyebrowPlain": "Order",
+        "chat": "Order chat",
+        "chatUnread": {
+            "one": "Order chat, %{count} unread message",
+            "other": "Order chat, %{count} unread messages"
+        },
+        "qrOpen": "QR code for order %{number}. Show it larger",
+        "index": {
+            "now": "Now",
+            "trip": "Trip",
+            "items": "Items",
+            "people": "People",
+            "files": "Files",
+            "info": "Info"
+        },
+        "now": {
+            "label": "Now",
+            "stepOf": "Now · step %{step} of %{total}",
+            "arrive": "arrive %{time}",
+            "inWindow": "In the window %{window}",
+            "lateWindow": "Late for the window %{window}",
+            "onTimeBy": "On time, due by %{time}",
+            "lateBy": "Late, due by %{time}"
+        },
+        "startStep": "Start: %{activity}",
+        "trip": {
+            "heading": {
+                "one": "Trip · %{count} waypoint",
+                "other": "Trip · %{count} waypoints"
+            },
+            "change": "Change destination",
+            "window": "Window %{window}",
+            "then": "then %{leg}"
+        },
+        "itemsHeading": "Items",
+        "proof": {
+            "heading": "Proof needed",
+            "onStep": "On the %{step} step",
+            "notYet": "Not yet",
+            "captured": "Captured",
+            "method": {
+                "scan": "Scan",
+                "photo": "Photo",
+                "signature": "Signature"
+            }
+        },
+        "reportIssue": "Report an issue"
     },
     "editPayloadItem": {
         "title": "Editing",

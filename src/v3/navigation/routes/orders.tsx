@@ -7,6 +7,9 @@ import OrderTimelineScreen from '../../screens/OrderTimelineScreen';
 import ProofCaptureScreen from '../../screens/ProofCaptureScreen';
 import DestinationScreen from '../../screens/DestinationScreen';
 import OffersScreen from '../../screens/OffersScreen';
+import { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useShell } from '../DriverShell';
 import { useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
 
 export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { params?: { mode?: 'route' | 'orders' | 'map' } } }) {
@@ -35,10 +38,26 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
     // being backgrounded — the order may have changed meanwhile.
     const reloadToken = useFocusCount();
     useLeaveWhenRemoved(orderId, navigation);
+    /*
+     * The order's map runs to the very top of the screen, under the status bar,
+     * as Home's does: the shell gives up its status-bar padding while this
+     * screen is in front (see `setBleedTop`). Asked for here, not in the screen,
+     * so the screen itself needs no navigator around it.
+     */
+    const { setBleedTop } = useShell();
+    useFocusEffect(
+        useCallback(() => {
+            setBleedTop(true);
+            return () => setBleedTop(false);
+        }, [setBleedTop])
+    );
     return (
         <OrderDetailScreen
             orderId={String(orderId ?? '')}
             reloadToken={reloadToken}
+            onBack={() => navigation.goBack()}
+            // The issue form opens already about this order: its id, and its tracking number to show.
+            onReportIssue={({ label }) => navigation.navigate('Account', { screen: 'IssueCreate', params: { order: orderId, orderLabel: label }, initial: false })}
             onOpenEntity={({ id, entity }) => navigation.navigate('EntityDetail', { orderId, entityId: id, entity })}
             // The order id travels, not just the point: the hand-off reads the
             // order's *current* destination, so an edit made after this tap

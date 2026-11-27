@@ -1,32 +1,37 @@
 /**
- * Order — design round 3 (Order.dc.html, OrderDetails.dc.html).
+ * Order — design round 3 (OrderCombined.dc.html, OrderCombinedScroll.dc.html).
  *
- * Two tabs over one order. **Overview** is the working surface: the map, the
- * tracking number, how far and how long, the waypoints, cash to collect, the
- * payload, the customer, the notes and the order's steps. **Details** is the
- * reference: identifiers, codes, dates, type, facilitator, rate, files,
- * comments, metadata and the full timeline (see orderDetail/OrderDetails).
+ * One screen, three layers:
  *
- * The bar at the bottom is the same on both tabs and holds the two things a
- * driver does with an order: navigate to where it is going, and move it on to
- * its next step. Whichever fits the moment leads — the step before the order
- * has started, the navigation once it is under way.
+ *   - the **map** is the whole background: the road route, the console's
+ *     markers, the driver;
+ *   - two round **buttons** float over its top: back on the left, and on the
+ *     right a small stack of shortcuts for the order (the order's chat, with
+ *     its unread count, is the first);
+ *   - a **sheet** over the bottom carries everything else. It rests leaving the
+ *     top of the map showing and pulls up to just under the buttons; it cannot
+ *     be dismissed. Its header (QR code, tracking number, status) and the
+ *     section index under it stay put; the sections scroll: now, trip, cash,
+ *     items, people, proof, documents, comments, reference, report an issue.
+ *
+ * The step that moves the order on is anchored at the foot of the screen, with
+ * whatever stands between the driver and that step said right above it.
  *
  * The steps come from `order-configs` and vary per organisation, so nothing
- * here assumes a fixed flow (see ui/ActivityStepper). The advance is a
- * mutation, so it goes through the adapter and queues when offline — a driver
- * marking "arrived" in a basement keeps the progress and the app says so
- * rather than failing.
+ * here assumes a fixed flow. The advance is a mutation, so it goes through the
+ * adapter and queues when offline — a driver marking "arrived" in a basement
+ * keeps the progress and the app says so rather than failing.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Linking, Platform, View } from 'react-native';
-import { ScrollView } from '../ui/Scroll';
-import { XStack, YStack, useTheme } from 'tamagui';
+import { Linking, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import Svg, { Path } from 'react-native-svg';
+import { YStack, XStack, useTheme } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Body, Secondary } from '../ui/Text';
 import { Button } from '../ui/Button';
 import { Banner, ErrorState, Skeleton } from '../ui/Banner';
-import { ActivityStepper, ProofRequiredHint, nextActivity, sequenceFlow, unresolvedLogic, type FlowActivity } from '../ui/ActivityStepper';
+import { ProofRequiredHint, nextActivity, sequenceFlow, unresolvedLogic, type FlowActivity } from '../ui/ActivityStepper';
 import { space } from '../theme/tokens';
 import { describeStatus } from '../theme/status';
 import { useTranslation } from '../i18n/useTranslation';
@@ -60,43 +65,40 @@ import {
     type ChatChannelRecord,
     type RemovalReason,
     type TrackerRecord,
-    type TrackingStatusEvent,
     decodePolyline,
     coordsOfPoint,
 } from '../data';
+import { proofMethodOf } from '../data/useProofCapture';
 import { useFleetbase, isQueuedAck } from '../api';
 import { useSettings, useResolvedScheme } from '../settings';
 import { useDeviceLocation } from '../shell';
 import { OrderMap, type OrderMapStop } from '../ui/OrderMap';
 import { markerKindOf } from '../ui/RouteMap';
 import { colorForId } from '../ui/routeColors';
-import { formatClock, formatDateTime } from '../format';
-import { dayKey } from '../data/orderStore';
+import { formatClock, formatDuration, formatMeters } from '../format';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
-import { useScreenStyle } from '../ui/useScreenStyle';
 import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, changesDropoff } from '../realtime';
-import {
-    BringChecklist,
-    CashSection,
-    ChangeBanner,
-    ContactSection,
-    EtaStrip,
-    EventRows,
-    HandoverSection,
-    ItemRow,
-    OrderIdentity,
-    SectionLink,
-    WaypointsSection,
-} from './orderDetail/OrderSections';
-import { OrderDetails } from './orderDetail/OrderDetails';
-import { Card, Glyph, GUTTER, ModeSwitch, Section } from './jobs/parts';
+import { BringChecklist, CashSection, ChangeBanner, ContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
+import { Comments, Facilitator, Files, OrderReference, hasFacilitator, orderCodesOf } from './orderDetail/OrderDetails';
+import { MapButton, NowCard, ProofSection, QrSheet, ReportIssueButton, SectionPills, SheetHeader, TripSection, type NowNote, type ProofRow, type TripExtra } from './orderDetail/OrderSheetParts';
+import { Card, GUTTER, Section } from './jobs/parts';
+import { HomeIcon } from './home/parts';
 import { isOrderStarted, orderPoints, orderTypeLabel } from './jobs/model';
 
-type OrderTab = 'overview' | 'details';
+/** The sections the index can jump to, in the order they appear. */
+type SectionKey = 'now' | 'trip' | 'items' | 'people' | 'files' | 'info';
+const SECTION_ORDER: SectionKey[] = ['now', 'trip', 'items', 'people', 'files', 'info'];
 
-/** The two actions at the foot of the screen share one footprint. */
+/** The step action at the foot of the screen. */
 const ACTION_HEIGHT = 60;
 const ACTION_RADIUS = 16;
+/** The round buttons over the map, and the room kept between them and the sheet at its highest. */
+const MAP_BUTTON = 44;
+const MAP_BUTTON_GAP = 16;
+/** How much of the screen the map keeps when the sheet is at rest. */
+const MAP_SHARE = 0.3;
+/** Space between the sheet's cards. */
+const SHEET_GAP = 14;
 
 /** What the advance posts: the server's activity object when it gave one, else the code. */
 type Advanceable = FlowActivity & { _resolved_status?: string | null };
@@ -104,6 +106,7 @@ type Advanceable = FlowActivity & { _resolved_status?: string | null };
 export function OrderDetailScreen({
     orderId,
     reloadToken = 0,
+    onBack,
     onOpenEntity,
     onOpenTimeline,
     onNavigate,
@@ -112,11 +115,14 @@ export function OrderDetailScreen({
     onRemoved,
     onOpenChannel,
     onMessageDispatch,
+    onReportIssue,
     openUrl = (url: string) => Linking.openURL(url),
 }: {
     orderId: string;
     /** Bumped on screen focus: the order, tracker and next step are asked again. */
     reloadToken?: number;
+    /** Leaves the screen: the round button over the map's top left. */
+    onBack?: () => void;
     /** Opens item detail (R2 D4); the row's copy is passed so it paints instantly. */
     onOpenEntity?: (entity: { id: string; name?: string; entity: Record<string, unknown> }) => void;
     /** Opens the full activity history (R2 D5). */
@@ -133,29 +139,16 @@ export function OrderDetailScreen({
     onOpenChannel?: (channel: ChatChannelRecord) => void;
     /** Starts a conversation with dispatch when the order has no thread of its own. */
     onMessageDispatch?: () => void;
+    /** Opens the issue form about this order; `label` is its tracking number. */
+    onReportIssue?: (order: { id: string; label: string }) => void;
     /** Injected in tests; defaults to Linking. */
     openUrl?: (url: string) => Promise<unknown>;
 }) {
     const { t } = useTranslation();
-    const screen = useScreenStyle();
     const { units } = useSettings();
     const { adapter } = useFleetbase();
     const insets = useSafeAreaInsets();
     const theme = useTheme();
-    const [tab, setTab] = useState<OrderTab>('overview');
-    /*
-     * The comment field on Details sits low on the page. KeyboardAvoidingView
-     * pads by how far the keyboard overlaps its own frame, but reads that frame
-     * relative to its parent, and this screen starts below the status bar and
-     * the title bar — the offset is that distance (as in ConversationScreen).
-     */
-    const frameRef = useRef<View>(null);
-    const [keyboardOffset, setKeyboardOffset] = useState(0);
-    const measureFrame = useCallback(() => {
-        frameRef.current?.measureInWindow((_x, y) => {
-            if (Number.isFinite(y)) setKeyboardOffset(y);
-        });
-    }, []);
 
     /*
      * Fetched, not just read from the store: an order edited while the driver
@@ -290,16 +283,80 @@ export function OrderDetailScreen({
     const { channels } = useChatChannels(0, { enabled: !!onOpenChannel });
     const threads = useMemo(() => orderThreadsOf(channels, order?.id), [channels, order?.id]);
 
+    /*
+     * The sheet. Heights come from the screen as it was measured, as on Home:
+     * at rest the sheet leaves the top of the map showing, and at its highest
+     * it stops under the floating buttons.
+     */
+    const windowHeight = useWindowDimensions().height;
+    const [layoutHeight, setLayoutHeight] = useState(0);
+    const height = layoutHeight || windowHeight;
+    const buttonsTop = Math.max(insets.top, space[4]);
+    const restHeight = Math.round(height * (1 - MAP_SHARE));
+    const fullHeight = Math.max(restHeight + 1, Math.round(height - (buttonsTop + MAP_BUTTON + MAP_BUTTON_GAP)));
+    const snapPoints = useMemo(() => [restHeight, fullHeight], [restHeight, fullHeight]);
+    const sheetRef = useRef<BottomSheet>(null);
+    const sheetIndex = useRef(0);
+    const [footerHeight, setFooterHeight] = useState(0);
+    const [qrOpen, setQrOpen] = useState(false);
+
+    /*
+     * The section index. Each section reports where it sits in the scroll; the
+     * pill for the one at the top of the view is the active one, and tapping a
+     * pill scrolls to its section. While a tap's own scroll is running the
+     * scroll does not move the pill, so it does not flicker through the
+     * sections in between.
+     */
+    const scrollRef = useRef<any>(null);
+    const sectionTops = useRef<Partial<Record<SectionKey, number>>>({});
+    const sectionKeys = useRef<SectionKey[]>([]);
+    const jumpingUntil = useRef(0);
+    const [activeSection, setActiveSection] = useState<SectionKey>('now');
+    const placeSection = (key: SectionKey) => (event: LayoutChangeEvent) => {
+        sectionTops.current[key] = event.nativeEvent.layout.y;
+    };
+    const onSheetScroll = useCallback((event: { nativeEvent: { contentOffset?: { y?: number }; contentSize?: { height?: number }; layoutMeasurement?: { height?: number } } }) => {
+        if (Date.now() < jumpingUntil.current) return;
+        const y = event.nativeEvent.contentOffset?.y ?? 0;
+        const keys = sectionKeys.current;
+        if (!keys.length) return;
+        const viewport = event.nativeEvent.layoutMeasurement?.height ?? 0;
+        const content = event.nativeEvent.contentSize?.height ?? 0;
+        let current = keys[0];
+        // At the very end the last section is the one in view, however short it is.
+        if (viewport > 0 && y > 0 && y + viewport >= content - 2) current = keys[keys.length - 1];
+        else for (const key of keys) if ((sectionTops.current[key] ?? Infinity) <= y + 24) current = key;
+        setActiveSection((previous) => (previous === current ? previous : current));
+    }, []);
+    const jumpToSection = useCallback((key: SectionKey) => {
+        setActiveSection(key);
+        jumpingUntil.current = Date.now() + 800;
+        // The first section is the top of the sheet; the others stop just under the index.
+        const y = key === sectionKeys.current[0] ? 0 : Math.max(0, (sectionTops.current[key] ?? 0) - 4);
+        const scroll = () => scrollRef.current?.scrollTo?.({ y, animated: true });
+        // At rest the sheet holds its content still, so it is pulled up first and scrolled once it is there.
+        if (sheetIndex.current === 0 && y > 0) {
+            sheetRef.current?.snapToIndex(1);
+            setTimeout(scroll, 350);
+        } else {
+            scroll();
+        }
+    }, []);
+
     if (!order) {
+        // No title bar on this screen: the way back is drawn here too.
+        const back = onBack ? <MapButton icon="back" label={t('common.back')} onPress={onBack} testID="order-back" /> : null;
         if (removal) {
             return (
-                <YStack flex={1} backgroundColor="$background" padding={space[4]} testID="order-detail-removed">
+                <YStack flex={1} backgroundColor="$background" paddingTop={buttonsTop} paddingHorizontal={GUTTER} gap={space[3]} testID="order-detail-removed">
+                    {back}
                     <Banner tone="warning" message={t('orderDetail.reassigned')} />
                 </YStack>
             );
         }
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="order-detail-loading">
+            <YStack flex={1} backgroundColor="$background" paddingTop={buttonsTop} paddingHorizontal={GUTTER} gap={space[3]} testID="order-detail-loading">
+                {back}
                 <Skeleton height={96} />
                 <Skeleton height={180} />
             </YStack>
@@ -332,10 +389,9 @@ export function OrderDetailScreen({
      * where those numbers actually are, and it is already loaded above.
      */
     const liveEta = live?.eta?.active_stop_seconds;
-    // Time to the place being headed to, not to the whole order finishing.
-    const etaSeconds = liveEta ?? live?.eta?.start_seconds;
+    const startEta = live?.eta?.start_seconds;
+    const legs = live?.route?.legs ?? [];
     const schedule = scheduleWindowOf(order);
-    const headingWindowEnd = points.find((p) => !!p.id && p.id === heading?.id)?.windowEnd;
 
     const isBooking = isBookingOrder(order);
     const contact = customerContactOf(order);
@@ -352,277 +408,434 @@ export function OrderDetailScreen({
           ? () => void openUrl(`sms:${contact.phone}`).catch(() => undefined)
           : undefined;
     const messageDispatch = threads.dispatch && onOpenChannel ? () => onOpenChannel(threads.dispatch as ChatChannelRecord) : onMessageDispatch;
+    /*
+     * The chat button over the map. It carries the unread count of the order's
+     * own threads and opens the one with something unread in it; with nothing
+     * unread it is the way to dispatch (the customer has their own Message
+     * button on the sheet).
+     */
+    const unreadCustomer = Number(threads.customer?.unread_count) || 0;
+    const unreadDispatch = Number(threads.dispatch?.unread_count) || 0;
+    const openCustomerThread = threads.customer && onOpenChannel ? () => onOpenChannel(threads.customer as ChatChannelRecord) : undefined;
+    const openChat = unreadCustomer > 0 && unreadDispatch === 0 && openCustomerThread ? openCustomerThread : (messageDispatch ?? openCustomerThread);
+    const unreadChat = unreadCustomer + unreadDispatch;
     const blockedOnCash = needsCash(next);
 
-    // "Pharmacy cold-chain · scheduled 14:00" — what it is, and when it is due.
-    const scheduledAt = typeof order.scheduled_at === 'string' ? order.scheduled_at : undefined;
-    const typeLine = [
-        isBooking ? undefined : orderTypeLabel(order),
-        scheduledAt && !isBooking ? t('orderDetail.scheduledFor', { time: dayKey(scheduledAt) === dayKey() ? formatClock(scheduledAt) : formatDateTime(scheduledAt) }) : undefined,
-    ]
-        .filter(Boolean)
-        .join(' · ');
-
-    // Newest first, and only the last few: the whole history is on Details.
-    const history = [...((order.tracking_statuses as TrackingStatusEvent[] | undefined) ?? [])].sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')));
-
     const sequenced = sequenceFlow(flow);
-    const stepIndex = sequenced.ordered ? sequenced.steps.findIndex((a) => a.code === order.status) : -1;
-
     const primary = !ambiguous ? next : undefined;
+    const stepIndex = sequenced.ordered ? sequenced.steps.findIndex((a) => a.code === (primary?.code ?? order.status)) : -1;
+    const statusIndex = sequenced.ordered ? sequenced.steps.findIndex((a) => a.code === order.status) : -1;
     const canNavigate = Boolean(onNavigate && headingPoint && !finished);
-    // Under way, the road comes first; before that, the step that starts the order does.
-    const navigateLeads = canNavigate && (!primary || (started && points.some((p) => p.state === 'current')));
-    const tabs = [
-        { value: 'overview' as const, label: t('orderDetail.tabOverview') },
-        { value: 'details' as const, label: t('orderDetail.tabDetails') },
-    ];
 
-    const navigateButton = canNavigate ? (
-        <Button
-            key="navigate"
-            flex={navigateLeads ? 1.4 : 1}
-            height={ACTION_HEIGHT}
-            borderRadius={ACTION_RADIUS}
-            variant={navigateLeads ? 'primary' : 'secondary'}
-            icon={<Glyph name="navigate" size={18} color={(navigateLeads ? theme.onPrimary?.val : theme.textPrimary?.val) as string} />}
-            onPress={() => headingPoint && onNavigate?.(headingPoint)}
-            testID="navigate-to-dropoff"
-        >
-            {t('orderDetail.navigate')}
-        </Button>
-    ) : null;
+    // The waypoint this moment is about: the one being headed to, or, before the order starts, the one it starts at.
+    const focusPoint = points.find((p) => p.state === 'current') ?? (started ? undefined : points.find((p) => p.state === 'later'));
+
+    /*
+     * "1.1 km · 3 min · arrive 14:17" — the road to the next waypoint, from the
+     * tracker's first leg, and when the driver gets there. Only the figures
+     * the server gave: before the order starts there is no arrival, and what
+     * the tracker has instead is when it is expected to start.
+     */
+    const legMeters = Number(legs[0]?.distance_m ?? live?.progress?.remaining_distance_m);
+    const travelSeconds = Number(liveEta ?? legs[0]?.duration_s);
+    const stale = Boolean(live?.insights?.is_location_stale);
+    const arriveAt = liveEta != null && Number.isFinite(Number(liveEta)) ? new Date(Date.now() + Number(liveEta) * 1000).toISOString() : undefined;
+    const nowLine = finished
+        ? ''
+        : [
+              Number.isFinite(legMeters) && legMeters > 0 ? formatMeters(legMeters, units) : undefined,
+              Number.isFinite(travelSeconds) && travelSeconds > 0 ? formatDuration(travelSeconds) : undefined,
+              arriveAt
+                  ? `${stale ? '~' : ''}${t('orderDetail.now.arrive', { time: formatClock(arriveAt) })}`
+                  : startEta
+                    ? `${t('orderDetail.strip.start')} ${formatClock(new Date(Date.now() + Number(startEta) * 1000).toISOString())}`
+                    : undefined,
+          ]
+              .filter(Boolean)
+              .join(' · ');
+    // Against the waypoint's own window when it has one, else the order's.
+    const windowEnd = focusPoint?.windowEnd ?? schedule?.end;
+    const windowText = focusPoint?.windowStart && focusPoint.windowEnd ? `${formatClock(focusPoint.windowStart)}–${formatClock(focusPoint.windowEnd)}` : undefined;
+    let nowNote: NowNote | undefined;
+    if (!finished && windowEnd) {
+        const by = formatClock(windowEnd);
+        if (arriveAt) {
+            const late = Date.parse(arriveAt) > Date.parse(windowEnd);
+            nowNote = late
+                ? { tone: 'danger', text: windowText ? t('orderDetail.now.lateWindow', { window: windowText }) : t('orderDetail.now.lateBy', { time: by }) }
+                : { tone: 'success', text: windowText ? t('orderDetail.now.inWindow', { window: windowText }) : t('orderDetail.now.onTimeBy', { time: by }) };
+        } else {
+            nowNote = { tone: 'neutral', text: windowText ? t('orderDetail.trip.window', { window: windowText }) : t('home.trip.dueBy', { time: by }) };
+        }
+    }
+
+    /*
+     * Notes, in full, where they belong: a place's own note is on its row
+     * (read by the model); the order's delivery instructions go on the
+     * drop-off's row when it has none of its own; what is said about the whole
+     * order sits under the rail.
+     */
+    const instructions = deliveryInstructionsOf(order);
+    const dropoffIndex = points.findIndex((p) => p.role === 'dropoff');
+    const placedInstructions = instructions && dropoffIndex >= 0 && !points[dropoffIndex].note;
+    const tripNotes: Record<number, string | undefined> = placedInstructions ? { [dropoffIndex]: instructions } : {};
+    const orderNotes = typeof order.notes === 'string' && order.notes.trim() ? order.notes : undefined;
+    const tripExtras: TripExtra[] = [
+        // A delivery's scheduled time is with its dates; only a job's slot is said here.
+        isBooking && schedule?.start ? { key: 'slot', label: t('orderDetail.booking.slot'), text: scheduleLabel(schedule), testID: 'order-schedule' } : undefined,
+        instructions && !placedInstructions && !points.some((p) => p.note === instructions) ? { key: 'instructions', label: t('orderDetail.instructions'), text: instructions, testID: 'order-instructions' } : undefined,
+        orderNotes ? { key: 'notes', label: t('orderDetail.orderNotes'), text: orderNotes, testID: 'order-notes' } : undefined,
+    ].filter((extra): extra is TripExtra => !!extra);
+
+    /*
+     * What the order will still ask for, from its own steps. On a flow whose
+     * order is known, the steps already behind the driver are left out; on one
+     * that branches, every step that asks is listed.
+     */
+    const proofRows: ProofRow[] = finished
+        ? []
+        : (sequenced.ordered ? sequenced.steps : flow)
+              .filter((activity, index) => !!activity.require_pod && (!sequenced.ordered || index > statusIndex))
+              .map((activity) => ({ key: activity.code, method: proofMethodOf(activity.pod_method), step: labelFor(activity), captured: !!proofFor(order.id, activity.code) }));
+
+    const trackingNumber = displayIdOf(order);
+    const codes = orderCodesOf(order);
+    const typeName = isBooking ? undefined : orderTypeLabel(order);
+    const eyebrow = isBooking ? t('orderDetail.booking.jobLabel') : typeName ? t('orderDetail.eyebrow', { type: typeName }) : t('orderDetail.eyebrowPlain');
+    const totalWeight = totalWeightLabel(entities);
+
+    // The index lists only the sections this order has.
+    const present: Record<SectionKey, boolean> = {
+        now: true,
+        trip: points.length > 0 || !!cod,
+        items: entities.length > 0,
+        people: !!contact || hasFacilitator(order) || proofRows.length > 0,
+        // Comments are always somewhere to leave a note, so this one is always there.
+        files: true,
+        info: true,
+    };
+    const pills = SECTION_ORDER.filter((key) => present[key]).map((key) => ({ key, label: t(`orderDetail.index.${key}`) }));
+    sectionKeys.current = pills.map((pill) => pill.key);
+
+    /*
+     * The action at the foot of the screen is the step that moves the order
+     * on. The way to the next waypoint is on the "now" card; when there is no
+     * step to offer it takes the foot of the screen instead, so there is
+     * always one thing to press down there.
+     */
+    const navigateLabel = focusPoint ? t(`home.trip.navigateTo.${focusPoint.role}`) : t('orderDetail.navigate');
+    const navigate = canNavigate && headingPoint ? { label: navigateLabel, onPress: () => onNavigate?.(headingPoint) } : undefined;
+    const onPrimaryInk = theme.onPrimary?.val as string;
     const advanceButton = primary ? (
         <Button
-            key="advance"
-            flex={navigateLeads ? 1 : 1.4}
+            fullWidth
             height={ACTION_HEIGHT}
             borderRadius={ACTION_RADIUS}
-            variant={navigateLeads ? 'secondary' : 'primary'}
-            elevated={!navigateLeads}
+            variant="primary"
+            elevated
             loading={isAdvancing}
             disabled={isAdvancing || needsCash(primary)}
+            icon={
+                primary.complete ? (
+                    <HomeIcon name="tick" color={onPrimaryInk} size={18} />
+                ) : (
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill={onPrimaryInk}>
+                        <Path d="M6 3l15 9-15 9z" />
+                    </Svg>
+                )
+            }
             onPress={() => void advance(primary)}
             testID="advance-activity"
         >
-            {t('orderDetail.advanceTo', { activity: labelFor(primary) })}
+            <Body tone="onPrimary" fontSize={18} lineHeight={24} fontWeight="800" numberOfLines={1}>
+                {/* A step that ends the order is marked; any other is started. */}
+                {t(primary.complete ? 'orderDetail.advanceTo' : 'orderDetail.startStep', { activity: labelFor(primary) })}
+            </Body>
+        </Button>
+    ) : navigate ? (
+        <Button fullWidth height={ACTION_HEIGHT} borderRadius={ACTION_RADIUS} variant="primary" elevated icon={<HomeIcon name="navigate" color={onPrimaryInk} size={16} />} onPress={navigate.onPress} testID="navigate-to-dropoff">
+            <Body tone="onPrimary" fontSize={18} lineHeight={24} fontWeight="800" numberOfLines={1}>
+                {navigate.label}
+            </Body>
         </Button>
     ) : null;
+    const proofWanted = Boolean(primary?.require_pod);
+    const proofTaken = proofWanted && !!primary && !!proofFor(order.id, primary.code);
+    const hasFooter = Boolean(advanceButton || queued || advanceError || proofWanted || blockedOnCash);
+    const footerSpace = hasFooter ? footerHeight : Math.max(insets.bottom, space[3]);
+
+    // What the order's flow has to say when there is no plain next step.
+    const flowNotice = !flow.length ? (
+        configLoading ? (
+            <Skeleton height={56} testID="flow-loading" />
+        ) : configFailed ? (
+            <Banner tone="neutral" message={t('orderDetail.flowUnavailable')} testID="flow-unavailable" />
+        ) : (
+            /*
+             * Config loaded, but declares no activity flow. Previously
+             * this rendered nothing at all: no steps, no explanation,
+             * and no advance button — the screen's whole purpose
+             * vanished silently and looked like a blank area.
+             */
+            <Banner tone="warning" message={t('orderDetail.flowNotConfigured')} testID="flow-not-configured" />
+        )
+    ) : null;
+    const stepNotice = ambiguous ? (
+        <Banner tone="neutral" message={t('orderDetail.chooseWithDispatch')} testID="next-ambiguous" />
+    ) : next ? null : finished ? (
+        <Banner tone="success" message={t('orderDetail.terminalReached')} testID="order-terminal" />
+    ) : source === 'server' ? (
+        // The server was asked and has no step to offer.
+        <Banner tone="neutral" message={t('orderDetail.noNextActivity')} testID="no-next-activity" />
+    ) : flow.length ? (
+        /*
+         * There is no next step and the current activity is not a
+         * terminal one — which means the order's status is not in
+         * its own config's flow. Saying "complete" here was how a
+         * dispatched order came to be reported as finished.
+         */
+        <Banner tone="neutral" message={t('orderDetail.statusOffFlow', { status: labelFor({ code: order.status ?? '' }) })} testID="order-off-flow" />
+    ) : null;
+    // A branch the server resolved: the first choice is at the foot of the screen, the others are here.
+    const otherChoices =
+        !ambiguous && candidates.length > 1 ? (
+            <YStack gap={8}>
+                {candidates.slice(1).map((activity) => (
+                    <Button
+                        key={activity.code}
+                        fullWidth
+                        height={48}
+                        borderRadius={14}
+                        variant="secondary"
+                        disabled={isAdvancing || needsCash(activity)}
+                        onPress={() => void advance(activity)}
+                        testID={`advance-activity-${activity.code}`}
+                    >
+                        {t('orderDetail.advanceTo', { activity: labelFor(activity) })}
+                    </Button>
+                ))}
+            </YStack>
+        ) : null;
+    const nowEyebrow = stepIndex >= 0 ? t('orderDetail.now.stepOf', { step: stepIndex + 1, total: sequenced.steps.length }) : t('orderDetail.now.label');
+    // With a step to do, the card names it; without one it names where the order stands.
+    const nowTitle = primary ? labelFor(primary) : order.status ? labelFor({ code: order.status }) : undefined;
 
     return (
-        <View ref={frameRef} onLayout={measureFrame} style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={keyboardOffset}>
-        <YStack flex={1} backgroundColor="$background">
-            <YStack paddingHorizontal={GUTTER} paddingTop={4} paddingBottom={12}>
-                <ModeSwitch options={tabs} value={tab} onChange={setTab} stretch label={t('orderDetail.tabsLabel')} testID="order-tabs" />
+        <YStack flex={1} backgroundColor="$mapBackground" onLayout={(event) => setLayoutHeight(Math.round(event.nativeEvent.layout.height))} testID="order-detail">
+            <YStack position="absolute" top={0} left={0} right={0} bottom={0}>
+                <OrderRouteMap
+                    orderId={order.id}
+                    payload={payload}
+                    tracker={live}
+                    activeStopId={heading?.id}
+                    // The part of the map that can be seen: under the buttons, above the sheet at rest.
+                    padding={{ top: buttonsTop + MAP_BUTTON + space[2], bottom: restHeight }}
+                />
             </YStack>
 
-            <ScrollView style={screen} contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: 24, gap: tab === 'overview' ? 18 : 20 }} keyboardShouldPersistTaps="handled" testID="order-detail">
-                {change ? (
-                    <ChangeBanner change={change} t={t} onDismiss={() => dismissOrderChange(order.id)} onReopenNavigation={reopenNavigation} />
-                ) : null}
+            {/* Fixed over the map; the sheet never reaches them. */}
+            <XStack position="absolute" top={buttonsTop} left={GUTTER} right={GUTTER} alignItems="flex-start" justifyContent="space-between" pointerEvents="box-none" testID="order-map-buttons">
+                {onBack ? <MapButton icon="back" label={t('common.back')} onPress={onBack} testID="order-back" /> : <YStack />}
+                {/* The order's shortcuts: a column, so more can join the chat here. */}
+                <YStack gap={space[2]} alignItems="center" testID="order-shortcuts">
+                    {openChat ? (
+                        <MapButton icon="chat" label={unreadChat ? t('orderDetail.chatUnread', { count: unreadChat }) : t('orderDetail.chat')} onPress={openChat} badge={unreadChat} testID="order-chat" />
+                    ) : null}
+                </YStack>
+            </XStack>
 
-                {tab === 'details' ? (
-                    <OrderDetails order={order} config={config} reloadToken={reloadToken + revision} onOpenTimeline={onOpenTimeline} openUrl={openUrl} />
-                ) : (
-                    <>
-                        <OrderRouteMap orderId={order.id} payload={payload} tracker={live} activeStopId={heading?.id} />
+            <BottomSheet
+                ref={sheetRef}
+                index={0}
+                snapPoints={snapPoints}
+                enableDynamicSizing={false}
+                enablePanDownToClose={false}
+                enableOverDrag={false}
+                animateOnMount={false}
+                onChange={(index: number) => {
+                    sheetIndex.current = index < 0 ? 0 : index;
+                }}
+                backgroundStyle={{ backgroundColor: theme.background?.val as string, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: theme.border?.val as string }}
+                handleIndicatorStyle={{ backgroundColor: theme.border?.val as string, width: 40, height: 5 }}
+                handleStyle={{ paddingTop: 8, paddingBottom: 8 }}
+            >
+                {/* Stays put while the sections scroll under it. */}
+                <YStack borderBottomWidth={1} borderColor="$border" testID="order-sheet-header">
+                    <SheetHeader
+                        eyebrow={eyebrow}
+                        kindTestID={isBooking ? 'order-kind-job' : 'order-kind-delivery'}
+                        trackingNumber={trackingNumber}
+                        status={order.status}
+                        qr={codes.qr}
+                        qrLabel={t('orderDetail.qrOpen', { number: trackingNumber })}
+                        onOpenQr={() => setQrOpen(true)}
+                        t={t}
+                    />
+                    <SectionPills items={pills} active={present[activeSection] ? activeSection : pills[0]?.key} onSelect={jumpToSection} label={t('orderDetail.tabsLabel')} />
+                </YStack>
 
-                        {/* The identifier leads, in full, on its own line. */}
-                        <OrderIdentity
-                            label={isBooking ? t('orderDetail.booking.jobLabel') : t('orderDetail.trackingNumberLabel')}
-                            kindTestID={isBooking ? 'order-kind-job' : 'order-kind-delivery'}
-                            trackingNumber={displayIdOf(order)}
-                            internalId={typeof order.internal_id === 'string' ? order.internal_id : undefined}
-                            publicId={order.id}
-                            status={order.status}
-                            typeLine={typeLine || undefined}
-                            t={t}
-                        />
+                <BottomSheetScrollView
+                    ref={scrollRef}
+                    style={{ flex: 1 }}
+                    showsVerticalScrollIndicator={false}
+                    // Content that fits stays still; only content taller than the sheet scrolls, and it does not bounce.
+                    bounces={false}
+                    alwaysBounceVertical={false}
+                    overScrollMode="never"
+                    keyboardShouldPersistTaps="handled"
+                    onScroll={onSheetScroll}
+                    scrollEventThrottle={16}
+                    contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 12, paddingBottom: footerSpace + space[4], gap: SHEET_GAP }}
+                    testID="order-sheet"
+                >
+                    <View onLayout={placeSection('now')} style={{ gap: SHEET_GAP }}>
+                        {change ? <ChangeBanner change={change} t={t} onDismiss={() => dismissOrderChange(order.id)} onReopenNavigation={reopenNavigation} /> : null}
+                        {finished && !primary ? (
+                            stepNotice
+                        ) : (
+                            <NowCard
+                                eyebrow={nowEyebrow}
+                                title={nowTitle}
+                                line={nowLine || undefined}
+                                note={nowNote}
+                                // Already at the foot of the screen when there is no step to offer.
+                                navigate={primary ? navigate : undefined}
+                            >
+                                {otherChoices}
+                                {flowNotice}
+                                {stepNotice}
+                            </NowCard>
+                        )}
+                    </View>
 
-                        {finished ? null : (
-                            <EtaStrip
-                                etaSeconds={etaSeconds}
-                                etaKind={liveEta == null ? 'start' : 'live'}
-                                distanceM={live?.progress?.remaining_distance_m}
-                                deliverBy={schedule?.end ?? headingWindowEnd}
-                                stale={Boolean(live?.insights?.is_location_stale)}
+                    {present.trip ? (
+                        <View onLayout={placeSection('trip')} style={{ gap: SHEET_GAP }}>
+                            <TripSection
+                                points={points}
+                                started={started}
+                                color={colorForId(order.id)}
+                                legs={legs}
                                 units={units}
+                                notes={tripNotes}
+                                extras={tripExtras}
+                                onChange={onChangeDestination && hasChoiceOfStops && !finished ? onChangeDestination : undefined}
                                 t={t}
                             />
-                        )}
+                            {cod ? (
+                                <CashSection cod={cod} t={t} confirmed={cashCollected} onConfirm={finished ? undefined : confirmCash} where={dropoffIndex >= 0 ? t('orderDetail.cod.atDropoff') : undefined} />
+                            ) : null}
+                        </View>
+                    ) : null}
 
-                        <WaypointsSection points={points} started={started} onChange={onChangeDestination && hasChoiceOfStops && !finished ? onChangeDestination : undefined} t={t} />
+                    {present.items ? (
+                        <View onLayout={placeSection('items')} style={{ gap: SHEET_GAP }}>
+                            {isBooking ? (
+                                <BringChecklist entities={entities} t={t} />
+                            ) : (
+                                <Section
+                                    label={[t('orderDetail.itemsHeading'), String(entities.length), totalWeight].filter(Boolean).join(' · ')}
+                                    aside={
+                                        onOpenEntity ? (
+                                            <Secondary fontSize={13} lineHeight={16} fontWeight="700" numberOfLines={1}>
+                                                {t('orderDetail.items.hint')}
+                                            </Secondary>
+                                        ) : undefined
+                                    }
+                                >
+                                    <Card padded={false} testID="order-payload">
+                                        {entities.map((raw, i) => {
+                                            const e = raw as Record<string, unknown>;
+                                            // `id` is null on every entity a live instance
+                                            // returns; identity is in `internal_id`. Gating the
+                                            // row on `e.id` made the item screens unreachable.
+                                            const rowId = entityIdOf(e);
+                                            return (
+                                                <YStack key={rowId ?? i}>
+                                                    {i > 0 ? <YStack height={1} backgroundColor="$border" /> : null}
+                                                    <ItemRow
+                                                        entity={e}
+                                                        entities={entities}
+                                                        t={t}
+                                                        testID={`entity-${rowId ?? i}`}
+                                                        onPress={onOpenEntity && rowId ? () => onOpenEntity({ id: rowId, name: entityNameOf(e), entity: e }) : undefined}
+                                                    />
+                                                </YStack>
+                                            );
+                                        })}
+                                    </Card>
+                                </Section>
+                            )}
+                        </View>
+                    ) : null}
 
-                        {cod ? <CashSection cod={cod} t={t} confirmed={cashCollected} onConfirm={finished ? undefined : confirmCash} /> : null}
+                    {present.people ? (
+                        <View onLayout={placeSection('people')} style={{ gap: SHEET_GAP }}>
+                            <ContactSection
+                                contact={contact}
+                                t={t}
+                                onCall={contact?.phone ? () => void openUrl(`tel:${contact.phone}`).catch(() => undefined) : undefined}
+                                onMessageCustomer={messageCustomer}
+                                unread={threads.customer && onOpenChannel ? unreadCustomer : undefined}
+                            />
+                            <Facilitator order={order} t={t} openUrl={openUrl} />
+                            <ProofSection rows={proofRows} t={t} />
+                        </View>
+                    ) : null}
 
-                        {isBooking ? (
-                            <BringChecklist entities={entities} t={t} />
-                        ) : entities.length ? (
-                            <Section
-                                label={`${t('orderDetail.payloadHeading')} · ${t('orderDetail.payloadCount', { count: entities.length })}`}
-                                aside={
-                                    onOpenEntity ? (
-                                        <Secondary fontSize={13} fontWeight="700" numberOfLines={1}>
-                                            {t('orderDetail.payloadHint')}
-                                        </Secondary>
-                                    ) : undefined
-                                }
-                            >
-                                <Card padded={false} testID="order-payload">
-                                    {entities.map((raw, i) => {
-                                        const e = raw as Record<string, unknown>;
-                                        // `id` is null on every entity a live instance
-                                        // returns; identity is in `internal_id`. Gating the
-                                        // row on `e.id` made the item screens unreachable.
-                                        const rowId = entityIdOf(e);
-                                        return (
-                                            <YStack key={rowId ?? i}>
-                                                {i > 0 ? <YStack height={1} backgroundColor="$border" /> : null}
-                                                <ItemRow
-                                                    entity={e}
-                                                    entities={entities}
-                                                    t={t}
-                                                    testID={`entity-${rowId ?? i}`}
-                                                    onPress={onOpenEntity && rowId ? () => onOpenEntity({ id: rowId, name: entityNameOf(e), entity: e }) : undefined}
-                                                />
-                                            </YStack>
-                                        );
-                                    })}
-                                </Card>
-                            </Section>
-                        ) : null}
+                    <View onLayout={placeSection('files')} style={{ gap: SHEET_GAP }}>
+                        <Files order={order} t={t} openUrl={openUrl} />
+                        <Comments orderId={order.id} reloadToken={reloadToken + revision} t={t} />
+                    </View>
 
-                        <ContactSection
-                            contact={contact}
-                            t={t}
-                            onCall={contact?.phone ? () => void openUrl(`tel:${contact.phone}`).catch(() => undefined) : undefined}
-                            onMessageCustomer={messageCustomer}
-                            onMessageDispatch={messageDispatch}
-                        />
-
-                        <HandoverSection
-                            window={schedule}
-                            isBooking={isBooking}
-                            instructions={deliveryInstructionsOf(order)}
-                            notes={typeof order.notes === 'string' && order.notes.trim() ? order.notes : undefined}
-                            t={t}
-                        />
-
-                        {history.length ? (
-                            <Section
-                                label={t('orderDetail.historyHeading')}
-                                aside={onOpenTimeline ? <SectionLink label={t('orderDetail.fullTimeline')} onPress={onOpenTimeline} testID="open-timeline" /> : undefined}
-                            >
-                                <Card testID="order-history">
-                                    <EventRows events={history.slice(0, 3)} t={t} />
-                                </Card>
-                            </Section>
-                        ) : null}
-
-                        {/* Progress through the order's own steps. Config-driven, any length. */}
-                        <Section
-                            label={
-                                stepIndex >= 0
-                                    ? t('orderDetail.stepsHeadingOf', { step: stepIndex + 1, total: sequenced.steps.length })
-                                    : t('orderDetail.stepsHeading')
-                            }
-                        >
-                            <YStack gap={12}>
-                                {flow.length ? (
-                                    <ActivityStepper flow={flow} currentCode={order.status} labelFor={labelFor} testID="order-stepper" />
-                                ) : configLoading ? (
-                                    <Skeleton height={56} testID="flow-loading" />
-                                ) : configFailed ? (
-                                    <Banner tone="neutral" message={t('orderDetail.flowUnavailable')} testID="flow-unavailable" />
-                                ) : (
-                                    /*
-                                     * Config loaded, but declares no activity flow. Previously
-                                     * this rendered nothing at all: no stepper, no explanation,
-                                     * and no advance button — the screen's whole purpose
-                                     * vanished silently and looked like a blank area.
-                                     */
-                                    <Banner tone="warning" message={t('orderDetail.flowNotConfigured')} testID="flow-not-configured" />
-                                )}
-
-                                {primary ? (
-                                    <Secondary fontSize={14}>
-                                        {t('orderDetail.nextStep')}{' '}
-                                        <Body fontSize={14} fontWeight="700">
-                                            {labelFor(primary)}
-                                        </Body>
-                                    </Secondary>
-                                ) : null}
-
-                                {/* A branch the server resolved: the first choice is in the bar below, the others are here. */}
-                                {!ambiguous && candidates.length > 1 ? (
-                                    <YStack gap={8}>
-                                        {candidates.slice(1).map((activity) => (
-                                            <Button
-                                                key={activity.code}
-                                                fullWidth
-                                                height={48}
-                                                borderRadius={14}
-                                                variant="secondary"
-                                                disabled={isAdvancing || needsCash(activity)}
-                                                onPress={() => void advance(activity)}
-                                                testID={`advance-activity-${activity.code}`}
-                                            >
-                                                {t('orderDetail.advanceTo', { activity: labelFor(activity) })}
-                                            </Button>
-                                        ))}
-                                    </YStack>
-                                ) : null}
-
-                                {ambiguous ? (
-                                    <Banner tone="neutral" message={t('orderDetail.chooseWithDispatch')} testID="next-ambiguous" />
-                                ) : next ? null : finished ? (
-                                    <Banner tone="success" message={t('orderDetail.terminalReached')} testID="order-terminal" />
-                                ) : source === 'server' ? (
-                                    // The server was asked and has no step to offer.
-                                    <Banner tone="neutral" message={t('orderDetail.noNextActivity')} testID="no-next-activity" />
-                                ) : flow.length ? (
-                                    /*
-                                     * There is no next step and the current activity is not a
-                                     * terminal one — which means the order's status is not in
-                                     * its own config's flow. Saying "complete" here was how a
-                                     * dispatched order came to be reported as finished.
-                                     */
-                                    <Banner tone="neutral" message={t('orderDetail.statusOffFlow', { status: labelFor({ code: order.status ?? '' }) })} testID="order-off-flow" />
-                                ) : null}
-                            </YStack>
-                        </Section>
-                    </>
-                )}
-            </ScrollView>
+                    <View onLayout={placeSection('info')} style={{ gap: SHEET_GAP }}>
+                        <OrderReference order={order} config={config} onOpenTimeline={onOpenTimeline} t={t} />
+                        {onReportIssue ? <ReportIssueButton label={t('orderDetail.reportIssue')} onPress={() => onReportIssue({ id: order.id, label: trackingNumber })} /> : null}
+                    </View>
+                </BottomSheetScrollView>
+            </BottomSheet>
 
             {/*
+              * Anchored at the foot of the screen, over the sheet's last rows.
               * What stands between the driver and the next step is said right
-              * above the button it concerns, on either tab.
+              * above the button it concerns.
               */}
-            {navigateButton || advanceButton || queued || advanceError ? (
-                <YStack paddingHorizontal={GUTTER} paddingTop={12} paddingBottom={Math.max(insets.bottom, 12)} gap={8} borderTopWidth={1} borderColor="$border" backgroundColor="$background" testID="order-actions">
-                    {primary?.require_pod && !proofFor(order.id, primary.code) ? <ProofRequiredHint label={t('orderDetail.proofRequired')} testID="proof-required" /> : null}
-                    {primary?.require_pod && proofFor(order.id, primary.code) ? <Banner tone="success" message={t('orderDetail.proofCaptured')} testID="proof-captured" /> : null}
+            {hasFooter ? (
+                <YStack
+                    position="absolute"
+                    left={0}
+                    right={0}
+                    bottom={0}
+                    paddingHorizontal={GUTTER}
+                    paddingTop={12}
+                    paddingBottom={Math.max(insets.bottom, 12)}
+                    gap={8}
+                    borderTopWidth={1}
+                    borderColor="$border"
+                    backgroundColor="$background"
+                    onLayout={(event) => setFooterHeight(Math.round(event.nativeEvent.layout.height))}
+                    testID="order-actions"
+                >
+                    {proofWanted && !proofTaken ? <ProofRequiredHint label={t('orderDetail.proofRequired')} testID="proof-required" /> : null}
+                    {proofTaken ? <Banner tone="success" message={t('orderDetail.proofCaptured')} testID="proof-captured" /> : null}
                     {blockedOnCash ? <Banner tone="warning" message={t('orderDetail.cod.confirmFirst')} testID="cod-confirm-first" /> : null}
                     {queued ? <Banner tone="neutral" message={t('orderDetail.queuedOffline')} testID="advance-queued" /> : null}
                     {advanceError ? <ErrorState title={t('orderDetail.updateFailed')} body={advanceError} testID="advance-error" /> : null}
-                    {navigateButton || advanceButton ? <XStack gap={8}>{navigateLeads ? [navigateButton, advanceButton] : [advanceButton, navigateButton]}</XStack> : null}
+                    {advanceButton}
                 </YStack>
             ) : null}
+
+            <QrSheet visible={qrOpen} onClose={() => setQrOpen(false)} qr={codes.qr} number={codes.number ?? trackingNumber} title={t('orderDetail.details.codesTitle')} closeLabel={t('common.close')} bottomInset={insets.bottom} />
         </YStack>
-        </KeyboardAvoidingView>
-        </View>
     );
 }
 
 export default OrderDetailScreen;
 
 /**
- * The order on a map. Stops come from the tracker when it has loaded (it knows
+ * The order on a map, as the screen's background. Stops come from the tracker when it has loaded (it knows
  * which are done), otherwise from the order itself, so the map does not wait on it.
  */
-function OrderRouteMap({ orderId, payload, tracker, activeStopId }: { orderId?: string; payload: ReturnType<typeof payloadOf>; tracker?: TrackerRecord | null; activeStopId?: string }) {
+function OrderRouteMap({ orderId, payload, tracker, activeStopId, padding }: { orderId?: string; payload: ReturnType<typeof payloadOf>; tracker?: TrackerRecord | null; activeStopId?: string; padding?: { top?: number; bottom?: number } }) {
     const scheme = useResolvedScheme();
     const position = useDeviceLocation();
     const route = useMemo(() => decodePolyline(tracker?.route?.polyline), [tracker?.route?.polyline]);
@@ -655,6 +868,8 @@ function OrderRouteMap({ orderId, payload, tracker, activeStopId }: { orderId?: 
             activeStopId={tracker?.active_stop?.public_id ?? activeStopId}
             position={position}
             dark={scheme !== 'light' && scheme !== 'sunlight'}
+            fill
+            padding={padding}
         />
     );
 }

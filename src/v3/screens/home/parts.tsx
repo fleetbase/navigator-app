@@ -704,7 +704,7 @@ export function FactChips({ chips, testID }: { chips: FactChip[]; testID?: strin
  * the height of the row. Drawn as dots because a dotted border on one side of a
  * view is not drawn on iOS.
  */
-function DottedRail() {
+export function DottedRail() {
     const color = useTheme().textSecondary?.val as string;
     // The dots are laid over the slot, not in its flow, so they take the row's height and never add to it.
     return (

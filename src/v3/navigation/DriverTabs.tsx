@@ -86,7 +86,8 @@ const NavigationHandoffH = withHeader('nav.navigationHandoff', screenSlot('navig
 const StopDetailH = withHeader('nav.stopDetail', screenSlot('route.stopDetail'));
 const StopExecutionH = withHeader('nav.stopExecution', screenSlot('route.stopExecution'));
 const OptimisePreviewH = withHeader('nav.optimisePreview', screenSlot('route.optimise'));
-const OrderDetailH = withHeader('nav.orderDetail', screenSlot('order.detail'));
+// The order draws its own back button over its map, so it takes no title bar.
+const OrderDetailH = screenSlot('order.detail');
 const EntityDetailH = withHeader('nav.itemDetail', screenSlot('order.entityDetail'));
 const OrderTimelineH = withHeader('nav.orderTimeline', screenSlot('order.timeline'));
 // The conversation draws its own header (who the chat is with), so it is not wrapped in a title bar.

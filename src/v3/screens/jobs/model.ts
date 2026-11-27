@@ -50,6 +50,9 @@ interface RawPlace {
     complete?: boolean | null;
     time_window_start?: string | null;
     time_window_end?: string | null;
+    /** What dispatch or the customer said about this place. */
+    instructions?: string | null;
+    meta?: { instructions?: unknown } | null;
 }
 
 export interface OrderPoint {
@@ -63,8 +66,12 @@ export interface OrderPoint {
     /** 1-based position among the order's waypoints, for "Waypoint 1 of 2". */
     waypointNumber?: number;
     waypointTotal?: number;
+    /** Start of the waypoint's time window, when dispatch set one. */
+    windowStart?: string;
     /** End of the waypoint's time window, when dispatch set one. */
     windowEnd?: string;
+    /** The note left for this place, in full. */
+    note?: string;
     /** Items handled here: everything at a pickup, otherwise the entities bound for this place. */
     itemCount?: number;
 }
@@ -133,7 +140,9 @@ export function orderPoints(order?: Partial<OrderRecord> | null): OrderPoint[] {
             address: text(place.address),
             point: coordsOfPoint(place.location),
             ...(role === 'waypoint' ? { waypointNumber, waypointTotal } : {}),
+            windowStart: text(place.time_window_start),
             windowEnd: text(place.time_window_end),
+            note: text(place.meta?.instructions) ?? text(place.instructions),
             itemCount: itemsAt(place, role),
         };
     });
