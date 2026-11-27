@@ -89,6 +89,16 @@ type Rec = Record<string, unknown>;
 
 const str = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
 
+/**
+ * A place's name or address with stray separators trimmed off its ends. An
+ * address built from parts of which some are empty arrives as " - Ulaanbaatar,
+ * Mongolia" or "12 Main St, , "; the leftovers are not part of the address.
+ */
+const tidy = (value: unknown): string | undefined => {
+    const text = str(value)?.replace(/^[\s,\-–—·]+|[\s,\-–—·]+$/g, '').replace(/\s*,(\s*,)+/g, ',').trim();
+    return text ? text : undefined;
+};
+
 /** Which of today's manifests is the one being worked: running, then released, then the rest. */
 const MANIFEST_ORDER = ['in_progress', 'active', 'draft', 'completed'];
 
@@ -117,8 +127,8 @@ function manifestWaypoints(manifest: ManifestRecord): HomeWaypoint[] {
               : ['pickup', 'dropoff'].includes(String(stop.place?.type))
                 ? stop.place?.type
                 : undefined) as WaypointKind | undefined,
-        name: str(stop.place?.name),
-        address: str(stop.place?.address) ?? str(stop.place?.street1),
+        name: tidy(stop.place?.name),
+        address: tidy(stop.place?.address) ?? tidy(stop.place?.street1),
         point: coordsOfPoint(stop.place?.location),
         done: isStopDone(stop),
         skipped: stop.status === 'skipped',
@@ -155,8 +165,8 @@ function orderWaypoints(order: OrderRecord): HomeWaypoint[] {
         orderId: order.id,
         placeId: str(place.id),
         kind,
-        name: str(place.name),
-        address: str(place.address) ?? str(place.street1),
+        name: tidy(place.name),
+        address: tidy(place.address) ?? tidy(place.street1),
         point: coordsOfPoint(place.location as { coordinates?: number[] } | null),
         done: finished || index < currentIndex || place.complete === true,
         trackingNumber,

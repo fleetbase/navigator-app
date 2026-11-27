@@ -34,7 +34,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderNotices } from './jobs/OrderNotices';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { Linking, useWindowDimensions } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Micro, Secondary } from '../ui/Text';
@@ -52,6 +52,7 @@ import {
     useAllOrders,
     useWeekSummary,
     cashOnDeliveryOf,
+    customerContactOf,
     deliveryInstructionsOf,
     isOrderFinished,
     isOrderAbandoned,
@@ -83,8 +84,9 @@ import { useLiveRefresh } from '../realtime/liveRefresh';
 import { formatClock, formatDay, formatDuration, formatMeters, formatMoney } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 import { HomeMap } from './home/HomeMap';
+import { colorForId } from '../ui/routeColors';
 import { buildDay, firstNameOf, pickTodayManifest, secondsBetween, trackerIsFor, type HomeDay, type HomeWaypoint } from './home/homeModel';
-import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, WeekCard, Shortcuts, JobCard, FactChips, type FactChip, type Stat, type WeekBar } from './home/parts';
+import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, WeekCard, Shortcuts, JobCard, FactChips, TripCard, CustomerCard, NoteCard, type TripPoint, type FactChip, type Stat, type WeekBar } from './home/parts';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 type Destination = { latitude: number; longitude: number; label?: string };
@@ -440,6 +442,7 @@ export function TodayScreen({
     let extras: ReactNode = null;
     let facts: FactChip[] = [];
     let peek: ReactNode = null;
+    let trip: ReactNode = null;
     let state: 'loading' | 'error' | 'end' | 'next' | 'before' | 'empty' = 'empty';
 
     const goOnline = (
@@ -473,6 +476,74 @@ export function TodayScreen({
 
     // How long the driver has been online today, as the server recorded it.
     const onlineSecondsNow = onDuty ? secondsOnDuty(todaySummary, summaryAt, clock) : undefined;
+
+    /*
+     * The order being worked, drawn as its journey, with who it is for and any
+     * note. Added under the screen's own blocks, not in place of them.
+     */
+    const buildTrip = (waypoint: HomeWaypoint, online: boolean): ReactNode => {
+        const order = waypoint.orderId ? ordersById.get(waypoint.orderId) : undefined;
+        const own = day.waypoints.filter((w) => !!waypoint.orderId && w.orderId === waypoint.orderId);
+        const list = own.length ? own : [waypoint];
+        const legs = online ? (tracker?.route?.legs ?? []) : [];
+        const firstPending = list.findIndex((w) => !w.done);
+        let numbered = 0;
+        const points: TripPoint[] = list.map((w, index) => {
+            const current = online && w.key === waypoint.key;
+            if (w.kind === 'waypoint' || !w.kind) numbered += 1;
+            // Legs run from the driver through the waypoints still to do, so the leg into this one sits at its place among those.
+            const pendingIndex = firstPending < 0 ? -1 : index - firstPending;
+            const legAfterM = pendingIndex >= 0 ? legs[pendingIndex + 1]?.distance_m : undefined;
+            const arriveAt = current && etaAt ? etaAt : undefined;
+            const late = arriveAt && w.windowEnd ? Date.parse(arriveAt) > Date.parse(w.windowEnd) : undefined;
+            return {
+                key: w.key,
+                kind: w.kind,
+                number: numbered || undefined,
+                color: colorForId(w.orderId ?? ''),
+                state: w.skipped ? 'skipped' : w.done ? 'done' : current ? 'current' : 'pending',
+                label: (w.kind === 'waypoint' || !w.kind ? `${t('home.kind.waypoint')} ${numbered}` : t(`home.kind.${w.kind}`)).toUpperCase(),
+                title: w.name ?? w.address ?? t('today.noStopRecorded'),
+                address: w.name ? w.address : undefined,
+                time: arriveAt ? t('home.trip.arrive', { time: formatClock(arriveAt) }) : w.windowEnd ? t('home.trip.dueBy', { time: formatClock(w.windowEnd) }) : w.plannedAt ? t('home.trip.planned', { time: formatClock(w.plannedAt) }) : undefined,
+                timeNote: late == null ? undefined : late ? { text: t('home.hero.late'), tone: 'danger' as const } : { text: t('home.hero.onTime'), tone: 'success' as const },
+                legAfter: legAfterM != null && Number.isFinite(Number(legAfterM)) && index < list.length - 1 ? t('home.trip.then', { distance: formatMeters(Number(legAfterM), units) }) : undefined,
+                onPress: canOpen(w) ? () => openWaypoint(w) : undefined,
+            };
+        });
+        const firstLegM = legs[0]?.distance_m;
+        const firstLegS = eta.kind === 'live' ? eta.seconds : undefined;
+        const youLeg = [firstLegM != null && Number.isFinite(Number(firstLegM)) ? formatMeters(Number(firstLegM), units) : undefined, firstLegS != null ? formatDuration(firstLegS) : undefined].filter(Boolean).join(' · ');
+        const contact = customerContactOf(order);
+        const stop = manifest?.stops?.find((candidate) => candidate.id === waypoint.stopId);
+        const note = stop?.notes || deliveryInstructionsOf(order);
+        const phone = contact?.phone;
+        return (
+            <>
+                <TripCard
+                    testID="home-trip"
+                    eyebrow={t('home.trip.eyebrow', { count: list.length })}
+                    tracking={waypoint.trackingNumber}
+                    status={online && waypoint.kind ? t(`home.trip.heading.${waypoint.kind}`) : undefined}
+                    you={online ? { title: vehicleName ? t('home.trip.youIn', { vehicle: vehicleName }) : t('home.trip.you'), plate: vehiclePlate, leg: youLeg || undefined } : undefined}
+                    points={points}
+                />
+                {contact?.name ? (
+                    <CustomerCard
+                        testID="home-customer"
+                        label={t('home.trip.customer')}
+                        name={contact.name}
+                        messageLabel={t('home.trip.message')}
+                        callLabel={t('home.trip.call')}
+                        unread={unreadChat || undefined}
+                        onMessage={onOpenChat}
+                        onCall={phone ? () => void Linking.openURL(`tel:${phone.replace(/[^\d+]/g, '')}`).catch(() => undefined) : undefined}
+                    />
+                ) : null}
+                {note ? <NoteCard testID="home-note" label={t(`home.trip.noteAt.${waypoint.kind ?? 'waypoint'}`)} text={String(note)} /> : null}
+            </>
+        );
+    };
 
     if (cold) {
         state = 'loading';
@@ -640,6 +711,8 @@ export function TodayScreen({
 
         const destination: Destination | undefined = next.point ? { ...next.point, label: next.name ?? next.address } : undefined;
         const canNavigate = !!onNavigate && !!destination;
+        trip = buildTrip(next, true);
+
         // The sheet pulled down: one row that still says where next and gets the driver going.
         const distanceStat = stats.find((stat) => stat.key === 'distance');
         const peekLine = [etaAt && eta.kind === 'live' ? t('home.peek.arrive', { time: formatClock(etaAt) }) : undefined, distanceStat?.value].filter(Boolean).join(' · ');
@@ -724,6 +797,8 @@ export function TodayScreen({
             ...(day.firstAt && !started ? [{ key: 'first', value: formatClock(day.firstAt), label: t('home.stat.firstWaypoint') }] : next.plannedAt ? [{ key: 'planned', value: formatClock(next.plannedAt), label: t('home.hero.planned') }] : []),
             ...(day.plannedDistanceM ? [{ key: 'distance', value: formatMeters(day.plannedDistanceM, units), label: t('home.stat.toDrive') }] : []),
         ];
+        trip = buildTrip(next, false);
+
         // What the day's orders carry between them, and the cash they ask for.
         const dayOrderIds = [...new Set(day.waypoints.flatMap((w) => (w.orderId && !w.done ? [w.orderId] : [])))];
         const carried = dayOrderIds.reduce((sum, id) => sum + itemCount(ordersById.get(id)), 0);
@@ -997,6 +1072,12 @@ export function TodayScreen({
                                     {actions}
                                 </YStack>
                             </Rise>
+
+                            {trip ? (
+                                <Rise delay={50}>
+                                    <YStack gap={SHEET_GAP}>{trip}</YStack>
+                                </Rise>
+                            ) : null}
 
                             {showProgress ? (
                                 <Rise delay={70}>

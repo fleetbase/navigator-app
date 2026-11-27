@@ -5,6 +5,7 @@
  * them yet; a second screen that wants a section label or a stat tile can lift
  * it from here.
  */
+import { StopBadge } from '../../ui/RouteMap';
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -48,7 +49,7 @@ export function Rise({ delay = 0, children }: { delay?: number; children: React.
 
 /* -- Icons ----------------------------------------------------------------- */
 
-export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick' | 'issue' | 'box' | 'cash' | 'pen' | 'note' | 'calendar' | 'camera' | 'scan' | 'clock';
+export type HomeIconName = 'navigate' | 'power' | 'chat' | 'check' | 'bolt' | 'upload' | 'vehicle' | 'chevron' | 'fuel' | 'tick' | 'issue' | 'box' | 'cash' | 'pen' | 'note' | 'calendar' | 'camera' | 'scan' | 'clock' | 'phone';
 
 const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     power: ['M12 3v9', 'M6.3 7.5a8 8 0 1 0 11.4 0'],
@@ -69,6 +70,7 @@ const ICON_PATHS: Record<Exclude<HomeIconName, 'navigate'>, string[]> = {
     camera: ['M4 8h3l2-3h6l2 3h3v11H4z', 'M12 16.500a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7z'],
     scan: ['M4 8V5h3', 'M17 5h3v3', 'M20 16v3h-3', 'M7 19H4v-3', 'M8 9v6', 'M12 9v6', 'M16 9v6'],
     clock: ['M12 20.500a8.500 8.500 0 1 0 0-17 8.500 8.500 0 0 0 0 17z', 'M12 7.500V12l3 2'],
+    phone: ['M6 3h4l2 5-2.500 1.500a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z'],
     fuel: ['M5 20V5h9v15', 'M4 20h11', 'M7 9h5', 'M14 11h3v6a1.5 1.5 0 0 0 3 0V9l-3-3'],
 };
 
@@ -694,5 +696,237 @@ export function FactChips({ chips, testID }: { chips: FactChip[]; testID?: strin
                 </XStack>
             ))}
         </XStack>
+    );
+}
+
+/* -- The trip: an order as one journey ----------------------------------------- */
+
+export interface TripPoint {
+    key: string;
+    kind?: 'pickup' | 'dropoff' | 'waypoint';
+    /** The number inside a waypoint's marker. */
+    number?: number;
+    /** The order's colour, as the console draws it. */
+    color?: string;
+    state: 'done' | 'current' | 'pending' | 'skipped';
+    /** "PICKUP", "DROP-OFF", "WAYPOINT 2". */
+    label: string;
+    title: string;
+    address?: string;
+    /** "Arrive 14:27", "Due by 15:30". */
+    time?: string;
+    /** A word on the time, with its tone: "In window", "Late". */
+    timeNote?: { text: string; tone: 'success' | 'danger' };
+    /** The road to the next point: "then 2.6 km". */
+    legAfter?: string;
+    onPress?: () => void;
+}
+
+/**
+ * The order drawn as the drive it is: the driver, then each waypoint in order,
+ * joined by a rail. The leg being driven is solid and in the brand colour; the
+ * legs after it are dotted. Markers are the console's.
+ */
+export function TripCard({
+    eyebrow,
+    tracking,
+    status,
+    you,
+    points,
+    testID,
+}: {
+    eyebrow: string;
+    tracking?: string;
+    /** A short tag at the top right: "Heading to pickup". */
+    status?: string;
+    /** The driver's own row; left out when offline. */
+    you?: { title: string; plate?: string; leg?: string };
+    points: TripPoint[];
+    testID?: string;
+}) {
+    const theme = useTheme();
+    const RAIL = 44;
+    return (
+        <YStack gap={12} testID={testID}>
+            <XStack alignItems="center" justifyContent="space-between" gap={space[3]}>
+                <YStack flex={1} gap={1} minWidth={0}>
+                    <SectionLabel tone="brand" weight="700">
+                        {eyebrow}
+                    </SectionLabel>
+                    {tracking ? (
+                        <Body fontFamily="$mono" fontSize={17} lineHeight={22} fontWeight="600" selectable testID="home-trip-tracking">
+                            {tracking}
+                        </Body>
+                    ) : null}
+                </YStack>
+                {status ? (
+                    <XStack flexShrink={0} alignItems="center" gap={6} height={28} paddingHorizontal={10} borderRadius={14} borderWidth={1} borderColor="$primary" backgroundColor="$primaryFill">
+                        <HomeIcon name="navigate" color={theme.primary?.val as string} size={11} />
+                        <Body fontSize={12} lineHeight={16} fontWeight="800" tone="brand" numberOfLines={1}>
+                            {status}
+                        </Body>
+                    </XStack>
+                ) : null}
+            </XStack>
+
+            <Card>
+                {you ? (
+                    <XStack gap={12}>
+                        <YStack width={RAIL} alignItems="center">
+                            <YStack width={22} height={22} borderRadius={11} backgroundColor="$primary" borderWidth={3} borderColor="$white" />
+                            <YStack flexGrow={1} width={4} borderRadius={2} backgroundColor="$primary" marginVertical={3} minHeight={18} />
+                        </YStack>
+                        <YStack flex={1} gap={6} minWidth={0} paddingBottom={10}>
+                            <XStack alignItems="baseline" justifyContent="space-between" gap={10}>
+                                <Body flexShrink={1} fontSize={14} lineHeight={22} fontWeight="700" tone="secondary" numberOfLines={1}>
+                                    {you.title}
+                                </Body>
+                                {you.plate ? (
+                                    <Secondary fontFamily="$mono" fontSize={13} flexShrink={0}>
+                                        {you.plate}
+                                    </Secondary>
+                                ) : null}
+                            </XStack>
+                            {you.leg ? (
+                                <XStack alignSelf="flex-start" alignItems="center" gap={7} height={28} paddingHorizontal={11} borderRadius={14} borderWidth={1} borderColor="$primary" backgroundColor="$primaryFill">
+                                    <HomeIcon name="navigate" color={theme.primary?.val as string} size={12} />
+                                    <Body fontSize={14} lineHeight={18} fontWeight="800" tabular numberOfLines={1}>
+                                        {you.leg}
+                                    </Body>
+                                </XStack>
+                            ) : null}
+                        </YStack>
+                    </XStack>
+                ) : null}
+
+                {points.map((point, index) => {
+                    const last = index === points.length - 1;
+                    const quiet = point.state === 'done' || point.state === 'skipped';
+                    return (
+                        <XStack key={point.key} gap={12} onPress={point.onPress} pressStyle={point.onPress ? { opacity: 0.7 } : undefined} accessibilityRole={point.onPress ? 'button' : undefined} testID={`home-trip-${point.key}`}>
+                            <YStack width={RAIL} alignItems="center">
+                                <StopBadge kind={point.kind} number={point.number} color={point.color} state={point.state} />
+                                {last ? null : <YStack flexGrow={1} width={0} borderLeftWidth={3} borderStyle="dotted" borderColor="$border" marginTop={4} marginBottom={3} minHeight={16} />}
+                            </YStack>
+                            <YStack flex={1} minWidth={0} paddingTop={point.state === 'current' ? 6 : 2} paddingBottom={last ? 0 : 10} opacity={quiet ? 0.6 : 1}>
+                                <SectionLabel tone={point.state === 'current' ? 'success' : 'muted'}>{point.label}</SectionLabel>
+                                <Body fontSize={17} lineHeight={22} fontWeight="800" numberOfLines={2}>
+                                    {point.title}
+                                </Body>
+                                {point.address ? (
+                                    <Secondary fontSize={13} lineHeight={17} numberOfLines={2}>
+                                        {point.address}
+                                    </Secondary>
+                                ) : null}
+                                {point.time || point.timeNote ? (
+                                    <XStack alignItems="center" flexWrap="wrap" columnGap={10} rowGap={4} paddingTop={5}>
+                                        {point.time ? (
+                                            <Body fontSize={15} lineHeight={20} fontWeight="800" tabular>
+                                                {point.time}
+                                            </Body>
+                                        ) : null}
+                                        {point.timeNote ? (
+                                            <XStack alignItems="center" gap={5}>
+                                                <HomeIcon name={point.timeNote.tone === 'success' ? 'tick' : 'issue'} color={(point.timeNote.tone === 'success' ? theme.successText?.val : theme.dangerText?.val) as string} size={13} />
+                                                <Body fontSize={13} lineHeight={17} fontWeight="700" tabular tone={point.timeNote.tone}>
+                                                    {point.timeNote.text}
+                                                </Body>
+                                            </XStack>
+                                        ) : null}
+                                    </XStack>
+                                ) : null}
+                                {point.legAfter ? (
+                                    <Secondary fontSize={12} lineHeight={16} fontWeight="700" tabular paddingTop={10}>
+                                        {point.legAfter}
+                                    </Secondary>
+                                ) : null}
+                            </YStack>
+                        </XStack>
+                    );
+                })}
+            </Card>
+        </YStack>
+    );
+}
+
+/* -- Who the order is for, and what they said ---------------------------------- */
+
+/** The customer, with the two ways to reach them. */
+export function CustomerCard({ label, name, messageLabel, callLabel, unread, onMessage, onCall, testID }: { label: string; name: string; messageLabel: string; callLabel: string; unread?: number; onMessage?: () => void; onCall?: () => void; testID?: string }) {
+    const theme = useTheme();
+    const initials = name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('');
+    const action = (key: string, icon: HomeIconName, text: string, onPress: () => void, badge?: number) => (
+        <XStack
+            key={key}
+            alignItems="center"
+            gap={6}
+            height={40}
+            paddingHorizontal={12}
+            borderRadius={12}
+            borderWidth={1}
+            borderColor="$border"
+            backgroundColor="$surfaceRaised"
+            onPress={onPress}
+            pressStyle={{ opacity: 0.7 }}
+            accessibilityRole="button"
+            accessibilityLabel={text}
+            testID={`home-customer-${key}`}
+        >
+            <HomeIcon name={icon} color={theme.primary?.val as string} size={16} />
+            <Body fontSize={14} lineHeight={18} fontWeight="700" numberOfLines={1}>
+                {text}
+            </Body>
+            {badge ? (
+                <YStack minWidth={18} height={18} paddingHorizontal={5} borderRadius={9} backgroundColor="$primary" alignItems="center" justifyContent="center">
+                    <Body fontSize={11} lineHeight={14} fontWeight="800" tone="onPrimary" tabular>
+                        {badge > 99 ? '99+' : String(badge)}
+                    </Body>
+                </YStack>
+            ) : null}
+        </XStack>
+    );
+    return (
+        <Card testID={testID}>
+            <XStack alignItems="center" gap={space[3]}>
+                <YStack width={40} height={40} borderRadius={20} flexShrink={0} backgroundColor="$surfaceRaised" borderWidth={1} borderColor="$border" alignItems="center" justifyContent="center">
+                    <Body fontSize={14} lineHeight={18} fontWeight="800" tone="secondary">
+                        {initials || '?'}
+                    </Body>
+                </YStack>
+                <YStack flex={1} gap={1} minWidth={0}>
+                    <SectionLabel>{label}</SectionLabel>
+                    <Body fontSize={16} lineHeight={21} fontWeight="700" numberOfLines={1}>
+                        {name}
+                    </Body>
+                </YStack>
+                <XStack gap={8} flexShrink={0}>
+                    {onMessage ? action('message', 'chat', messageLabel, onMessage, unread) : null}
+                    {onCall ? action('call', 'phone', callLabel, onCall) : null}
+                </XStack>
+            </XStack>
+        </Card>
+    );
+}
+
+/** A note from dispatch or the customer, in full: it is there to be read before arriving. */
+export function NoteCard({ label, text, testID }: { label: string; text: string; testID?: string }) {
+    const theme = useTheme();
+    return (
+        <YStack padding={14} gap={6} borderRadius={CARD_RADIUS} borderWidth={1} borderColor="$warningBorder" backgroundColor="$warningFill" testID={testID}>
+            <XStack alignItems="center" gap={6}>
+                <HomeIcon name="note" color={theme.warningText?.val as string} size={14} />
+                <Caption fontSize={12} lineHeight={16} fontWeight="800" letterSpacing={0.7} tone="warning" numberOfLines={1}>
+                    {label.toUpperCase()}
+                </Caption>
+            </XStack>
+            <Body fontSize={15} lineHeight={21} selectable>
+                {text}
+            </Body>
+        </YStack>
     );
 }

@@ -986,6 +986,31 @@
         "map": {
             "recentre": "Put the map back"
         },
+        "trip": {
+            "eyebrow": {
+                "one": "This order · %{count} waypoint",
+                "other": "This order · %{count} waypoints"
+            },
+            "heading": {
+                "pickup": "Heading to pickup",
+                "dropoff": "Heading to drop-off",
+                "waypoint": "Heading to waypoint"
+            },
+            "you": "You",
+            "youIn": "You · %{vehicle}",
+            "arrive": "Arrive %{time}",
+            "dueBy": "Due by %{time}",
+            "planned": "Planned %{time}",
+            "then": "then %{distance}",
+            "customer": "Customer",
+            "message": "Message",
+            "call": "Call",
+            "noteAt": {
+                "pickup": "Note for the pickup",
+                "dropoff": "Note for the drop-off",
+                "waypoint": "Note for this waypoint"
+            }
+        },
         "week": {
             "title": "Your week · Waypoints completed",
             "today": "Today",
