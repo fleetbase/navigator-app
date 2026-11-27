@@ -299,7 +299,7 @@ export function TodayScreen({
 
     const allOrders = useAllOrders();
     const ordersById = useMemo(() => new Map(allOrders.map((order) => [order.id, order])), [allOrders]);
-    const week = useWeekSummary(driverId, `${reloadToken}:${summaryPulls}`, day.total === 0);
+    const week = useWeekSummary(driverId, `${reloadToken}:${summaryPulls}`, !!driverId);
     const { comingUp, lastJob } = useMemo(() => {
         const today = dayKey();
         const mine = allOrders.filter((order) => !order.adhoc || !!order.driver_assigned);
@@ -442,7 +442,7 @@ export function TodayScreen({
     let extras: ReactNode = null;
     let facts: FactChip[] = [];
     let peek: ReactNode = null;
-    let trip: ReactNode = null;
+    let trip: { card: ReactNode; people: ReactNode } | null = null;
     let state: 'loading' | 'error' | 'end' | 'next' | 'before' | 'empty' = 'empty';
 
     const goOnline = (
@@ -477,11 +477,48 @@ export function TodayScreen({
     // How long the driver has been online today, as the server recorded it.
     const onlineSecondsNow = onDuty ? secondsOnDuty(todaySummary, summaryAt, clock) : undefined;
 
+    /* -- Kept on Home in every working state: the week, and what a driver does between jobs -- */
+
+    const bars: WeekBar[] = week.days.map((weekDay) => {
+        const [y, m, d] = weekDay.date.split('-').map(Number);
+        return {
+            key: weekDay.date,
+            label: weekDay.isToday ? t('home.week.today') : new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short' }),
+            value: weekDay.summary?.waypoints?.completed ?? 0,
+            today: weekDay.isToday,
+            future: weekDay.isFuture,
+        };
+    });
+    // Today's time online keeps counting past what the server last said.
+    const liveExtra = week.days.find((weekDay) => weekDay.isToday)?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0;
+    const weekStats: Stat[] = [
+        { key: 'week-waypoints', value: String(week.totals.waypoints), label: t('home.week.waypoints', { count: week.totals.waypoints }) },
+        { key: 'week-driven', value: week.totals.distanceM > 0 ? formatMeters(week.totals.distanceM, units) : units === 'imperial' ? '0 mi' : '0 km', label: t('home.week.driven') },
+        { key: 'week-online', value: formatDuration(week.totals.seconds + liveExtra), label: t('home.week.online') },
+    ].map((stat) => (stat.key === 'week-online' ? { ...stat, value: formatOnline(week.totals.seconds + liveExtra) } : stat));
+    const weekCard = week.known ? <WeekCard title={t('home.week.title')} range={weekRange(week.from, week.to)} bars={bars} stats={weekStats} testID="home-week" /> : null;
+    const shortcuts = (
+        <Shortcuts
+            testID="home-shortcuts"
+            items={[
+                { key: 'issue', icon: 'issue', label: t('home.shortcuts.issue'), onPress: onReportIssue },
+                { key: 'fuel', icon: 'fuel', label: t('home.shortcuts.fuel'), onPress: onLogFuel },
+                {
+                    key: 'inspection',
+                    icon: 'check',
+                    label: t('home.shortcuts.inspection'),
+                    tone: inspectionDue ? 'warning' : undefined,
+                    onPress: onOpenInspection && hasVehicle ? () => onOpenInspection(vehicle?.id, vehicleName) : undefined,
+                },
+            ]}
+        />
+    );
+
     /*
      * The order being worked, drawn as its journey, with who it is for and any
      * note. Added under the screen's own blocks, not in place of them.
      */
-    const buildTrip = (waypoint: HomeWaypoint, online: boolean): ReactNode => {
+    const buildTrip = (waypoint: HomeWaypoint, online: boolean): { card: ReactNode; people: ReactNode } => {
         const order = waypoint.orderId ? ordersById.get(waypoint.orderId) : undefined;
         const own = day.waypoints.filter((w) => !!waypoint.orderId && w.orderId === waypoint.orderId);
         const list = own.length ? own : [waypoint];
@@ -518,8 +555,8 @@ export function TodayScreen({
         const stop = manifest?.stops?.find((candidate) => candidate.id === waypoint.stopId);
         const note = stop?.notes || deliveryInstructionsOf(order);
         const phone = contact?.phone;
-        return (
-            <>
+        return {
+            card: (
                 <TripCard
                     testID="home-trip"
                     eyebrow={t('home.trip.eyebrow', { count: list.length })}
@@ -528,21 +565,25 @@ export function TodayScreen({
                     you={online ? { title: vehicleName ? t('home.trip.youIn', { vehicle: vehicleName }) : t('home.trip.you'), plate: vehiclePlate, leg: youLeg || undefined } : undefined}
                     points={points}
                 />
-                {contact?.name ? (
-                    <CustomerCard
-                        testID="home-customer"
-                        label={t('home.trip.customer')}
-                        name={contact.name}
-                        messageLabel={t('home.trip.message')}
-                        callLabel={t('home.trip.call')}
-                        unread={unreadChat || undefined}
-                        onMessage={onOpenChat}
-                        onCall={phone ? () => void Linking.openURL(`tel:${phone.replace(/[^\d+]/g, '')}`).catch(() => undefined) : undefined}
-                    />
-                ) : null}
-                {note ? <NoteCard testID="home-note" label={t(`home.trip.noteAt.${waypoint.kind ?? 'waypoint'}`)} text={String(note)} /> : null}
-            </>
-        );
+            ),
+            people: (
+                <>
+                    {contact?.name ? (
+                        <CustomerCard
+                            testID="home-customer"
+                            label={t('home.trip.customer')}
+                            name={contact.name}
+                            messageLabel={t('home.trip.message')}
+                            callLabel={t('home.trip.call')}
+                            unread={unreadChat || undefined}
+                            onMessage={onOpenChat}
+                            onCall={phone ? () => void Linking.openURL(`tel:${phone.replace(/[^\d+]/g, '')}`).catch(() => undefined) : undefined}
+                        />
+                    ) : null}
+                    {note ? <NoteCard testID="home-note" label={t(`home.trip.noteAt.${waypoint.kind ?? 'waypoint'}`)} text={String(note)} /> : null}
+                </>
+            ),
+        };
     };
 
     if (cold) {
@@ -760,7 +801,7 @@ export function TodayScreen({
                                 gap={10}
                                 testID="today-navigate"
                             >
-                                {t('today.navigate')}
+                                {next.kind ? t(`home.trip.navigateTo.${next.kind}`) : t('today.navigate')}
                             </BigButton>
                         </YStack>
                     ) : null}
@@ -871,27 +912,10 @@ export function TodayScreen({
 
         if (onDuty) {
             // Online with nothing to drive to: the week so far, the last job, and what a driver does between jobs.
-            const bars: WeekBar[] = week.days.map((weekDay) => {
-                const [y, m, d] = weekDay.date.split('-').map(Number);
-                return {
-                    key: weekDay.date,
-                    label: weekDay.isToday ? t('home.week.today') : new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short' }),
-                    value: weekDay.summary?.waypoints?.completed ?? 0,
-                    today: weekDay.isToday,
-                    future: weekDay.isFuture,
-                };
-            });
-            // Today's time online keeps counting past what the server last said.
-            const liveExtra = week.days.find((weekDay) => weekDay.isToday)?.summary?.online ? Math.max(0, (onlineSecondsNow ?? 0) - (todaySummary?.seconds_on_duty ?? 0)) : 0;
-            const weekStats: Stat[] = [
-                { key: 'week-waypoints', value: String(week.totals.waypoints), label: t('home.week.waypoints', { count: week.totals.waypoints }) },
-                { key: 'week-driven', value: week.totals.distanceM > 0 ? formatMeters(week.totals.distanceM, units) : units === 'imperial' ? '0 mi' : '0 km', label: t('home.week.driven') },
-                { key: 'week-online', value: formatDuration(week.totals.seconds + liveExtra), label: t('home.week.online') },
-            ].map((stat) => (stat.key === 'week-online' ? { ...stat, value: formatOnline(week.totals.seconds + liveExtra) } : stat));
             const lastStamp = lastJob ? String((lastJob as Record<string, unknown>).updated_at ?? '') : '';
             extras = (
                 <>
-                    {week.known ? <WeekCard title={t('home.week.title')} range={weekRange(week.from, week.to)} bars={bars} stats={weekStats} testID="home-week" /> : null}
+                    {weekCard}
                     {comingUpCard}
                     {lastJob ? (
                         <JobCard
@@ -904,20 +928,7 @@ export function TodayScreen({
                             testID="home-last-job"
                         />
                     ) : null}
-                    <Shortcuts
-                        testID="home-shortcuts"
-                        items={[
-                            { key: 'issue', icon: 'issue', label: t('home.shortcuts.issue'), onPress: onReportIssue },
-                            { key: 'fuel', icon: 'fuel', label: t('home.shortcuts.fuel'), onPress: onLogFuel },
-                            {
-                                key: 'inspection',
-                                icon: 'check',
-                                label: t('home.shortcuts.inspection'),
-                                tone: inspectionDue ? 'warning' : undefined,
-                                onPress: onOpenInspection && hasVehicle ? () => onOpenInspection(vehicle?.id, vehicleName) : undefined,
-                            },
-                        ]}
-                    />
+                    {shortcuts}
                 </>
             );
         } else {
@@ -951,6 +962,17 @@ export function TodayScreen({
             ? (day.finishAt ?? (eta.kind === 'live' && day.total - day.done === (tracker?.progress?.remaining_stops ?? -1) ? (tracker?.eta?.completion_at ?? undefined) : undefined))
             : undefined;
     const showProgress = (state === 'next' || state === 'before') && day.total > 0;
+    // The trip card already lists this order's waypoints; what follows it here is other orders' work.
+    const afterThat = (trip && next?.orderId ? day.upcoming.filter((waypoint) => waypoint.orderId !== next.orderId) : day.upcoming).slice(0, state === 'next' ? 2 : 3);
+    // With work in hand the week and the shortcuts stay on Home, under the order.
+    if ((state === 'next' || state === 'before') && !extras) {
+        extras = (
+            <>
+                {weekCard}
+                {shortcuts}
+            </>
+        );
+    }
 
     /*
      * The layout: the map is the whole background; the organisation and the
@@ -1065,8 +1087,17 @@ export function TodayScreen({
                             <Rise>
                                 <YStack gap={SHEET_GAP} testID={state === 'next' ? 'today-next-stop' : `home-hero-${state}`}>
                                     {/* Room under the header before the figures and rows. */}
-                                    <YStack paddingBottom={space[3]}>{sheetIndex === 0 && peek ? peek : hero}</YStack>
-                                    <StatCard stats={stats} testID={statsTestID} />
+                                    {sheetIndex === 0 && peek ? (
+                                        <YStack paddingBottom={space[3]}>{peek}</YStack>
+                                    ) : trip ? (
+                                        // An order in hand is drawn as its journey; its figures are on the rail.
+                                        trip.card
+                                    ) : (
+                                        <>
+                                            <YStack paddingBottom={space[3]}>{hero}</YStack>
+                                            <StatCard stats={stats} testID={statsTestID} />
+                                        </>
+                                    )}
                                     <FactChips chips={facts} testID="home-facts" />
                                     {notes}
                                     {actions}
@@ -1075,7 +1106,7 @@ export function TodayScreen({
 
                             {trip ? (
                                 <Rise delay={50}>
-                                    <YStack gap={SHEET_GAP}>{trip}</YStack>
+                                    <YStack gap={SHEET_GAP}>{trip.people}</YStack>
                                 </Rise>
                             ) : null}
 
@@ -1104,12 +1135,12 @@ export function TodayScreen({
 
                             {summaryList ? <Rise delay={70}>{summaryList}</Rise> : null}
 
-                            {showProgress && day.upcoming.length ? (
+                            {showProgress && afterThat.length ? (
                                 <Rise delay={200}>
                                     <YStack gap={10} testID="home-upcoming">
                                         <SectionLabel>{t('home.upcoming.section')}</SectionLabel>
                                         <Card padded={false}>
-                                            {(state === 'next' ? day.upcoming.slice(0, 2) : day.upcoming).map((waypoint, index) => (
+                                            {afterThat.map((waypoint, index) => (
                                                 <WaypointRow
                                                     key={waypoint.key}
                                                     waypoint={waypoint}

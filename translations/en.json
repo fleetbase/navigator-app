@@ -636,6 +636,11 @@
         "attachment": "Attachment",
         "uploading": "Uploading…",
         "role": {
+            "navigateTo": {
+                "pickup": "Navigate to pickup",
+                "dropoff": "Navigate to drop-off",
+                "waypoint": "Navigate to waypoint"
+            },
             "you": "You",
             "store": "Store",
             "customer": "Customer",
@@ -988,8 +993,8 @@
         },
         "trip": {
             "eyebrow": {
-                "one": "This order · %{count} waypoint",
-                "other": "This order · %{count} waypoints"
+                "one": "Your order · %{count} waypoint",
+                "other": "Your order · %{count} waypoints"
             },
             "heading": {
                 "pickup": "Heading to pickup",
