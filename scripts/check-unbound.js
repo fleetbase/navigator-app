@@ -15,6 +15,8 @@ for (const file of walk(process.argv[2], [])) {
     Identifier(p) { if (!p.isReferencedIdentifier()) return; const par = p.parent; if (par.type === 'TSAsExpression' && par.typeAnnotation === p.node) return; check(p, p.node.name); },
     JSXIdentifier(p) { if (p.parent.type !== 'JSXOpeningElement' && p.parent.type !== 'JSXClosingElement' && !(p.parent.type === 'JSXMemberExpression' && p.parent.object === p.node)) return; const n = p.node.name; if (/^[a-z]/.test(n)) return; check(p, n); },
   });
+  // `StyleSheet.absoluteFillObject` was removed from React Native: spreading it gives a view no position, and it collapses.
+  if (/StyleSheet\.absoluteFillObject/.test(fs.readFileSync(file, 'utf8'))) seen.add('StyleSheet.absoluteFillObject (removed from React Native; write the position out)');
   if (seen.size) { bad++; console.log(file + '  ->  ' + [...seen].join(', ')); }
 }
 console.log(bad ? `${bad} file(s) with unbound names` : 'no unbound names');

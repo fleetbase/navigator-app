@@ -127,7 +127,8 @@ function ProofCaptureH(props: { route?: { params?: { podMethod?: string | null }
 }
 const DestinationH = withHeader('nav.destination', screenSlot('order.destination'));
 const ChangeVehicleH = withHeader('nav.changeVehicle', screenSlot('vehicle.change'));
-const OffersH = withHeader('nav.offers', screenSlot('offers.list'));
+// No title bar: the Offers screen is a map to its top edge, with the way back floating on it.
+const OffersH = screenSlot('offers.list');
 const SyncQueueH = withHeader('nav.syncQueue', screenSlot('account.syncQueue'));
 const EditPayloadItemH = withHeader('nav.editItem', screenSlot('order.editPayloadItem'));
 const FuelReportCreateH = withHeader('nav.fuelReportCreate', screenSlot('fuel.create'));

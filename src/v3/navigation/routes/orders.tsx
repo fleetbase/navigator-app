@@ -177,5 +177,13 @@ export function Destination({ route, navigation }: { route: { params?: { orderId
 
 export function Offers({ navigation }: { navigation: Nav }) {
     const driverId = useDriverId();
-    return <OffersScreen driverId={driverId} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
+    // The map runs to the top edge, under the status bar, as the order screen's does.
+    const { setBleedTop } = useShell();
+    useFocusEffect(
+        useCallback(() => {
+            setBleedTop(true);
+            return () => setBleedTop(false);
+        }, [setBleedTop])
+    );
+    return <OffersScreen driverId={driverId} onBack={navigation.goBack} onOpenOrder={(orderId) => navigation.navigate('OrderDetail', { orderId })} />;
 }

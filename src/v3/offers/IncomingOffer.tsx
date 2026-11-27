@@ -279,7 +279,9 @@ function RisingLayer({ visible, children }: { visible: boolean; children: React.
 
 const styles = StyleSheet.create({
     // Above the tabs, the toasts and the portals; `elevation` is what puts it in front on Android.
-    root: { ...StyleSheet.absoluteFillObject, zIndex: 1000, elevation: 1000 },
+    // Written out: the style sheet's "absolute fill object" no longer exists in this React Native, and spreading it
+    // gave the layer no position at all, so it had no height and only the deck's bottom-anchored card showed.
+    root: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 1000, elevation: 1000 },
 });
 
 export default IncomingOfferHost;

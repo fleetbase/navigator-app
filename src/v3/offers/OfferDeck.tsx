@@ -25,6 +25,7 @@
  * (run out, taken by someone else, taken back), or when the driver taps another
  * offer's pin. An offer that ends while on top says why before the next comes up.
  */
+import { MapButton } from '../screens/orderDetail/OrderSheetParts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, BackHandler, Easing, PanResponder, StyleSheet, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -93,6 +94,10 @@ export interface OfferDeckProps {
     /** The offer to start with on top (the one that raised the overlay). */
     leadId?: string;
     organizationName?: string;
+    /** `screen` mode: the way back, drawn as a round button over the map beside the title. */
+    onBack?: () => void;
+    /** `screen` mode: the screen's name, over the map (there is no title bar). */
+    title?: string;
     /** Puts the deck away without answering. Its presence draws the close button and takes Android's back. */
     onPutAway?: () => void;
     /** The last card has gone. */
@@ -187,7 +192,7 @@ function roleLabel(point: OrderPoint | undefined, t: T): string {
 
 /* -- The deck. --------------------------------------------------------------- */
 
-export function OfferDeck({ mode, driverId, offers, reload, leadId, organizationName, onPutAway, onEmpty, onAccepted, emptyState }: OfferDeckProps) {
+export function OfferDeck({ mode, driverId, offers, reload, leadId, organizationName, onBack, title, onPutAway, onEmpty, onAccepted, emptyState }: OfferDeckProps) {
     const { t } = useTranslation();
     const theme = useTheme();
     const insets = useSafeAreaInsets();
@@ -469,7 +474,8 @@ export function OfferDeck({ mode, driverId, offers, reload, leadId, organization
     const danger = theme.dangerText?.val as string;
     const ground = theme.background?.val as string;
     const bottomInset = Math.max(insets.bottom, space[4]) + 10;
-    const topRoom = overlay ? insets.top + 44 + 6 + 26 + space[2] : space[3] + 26 + space[2];
+    // Both modes draw up to the top edge now: the chips (or the back button and title) sit under the status bar.
+    const topRoom = insets.top + 44 + (overlay ? 6 + 26 : 0) + space[2];
 
     if (!shownTop) {
         // Nothing to show. The overlay is closed by `onEmpty`; the Offers screen draws its empty state.
@@ -513,13 +519,13 @@ export function OfferDeck({ mode, driverId, offers, reload, leadId, organization
             {/* Home's chips over the map, with the count of open offers under the status. */}
             <XStack
                 position="absolute"
-                top={overlay ? insets.top : space[3]}
+                top={insets.top}
                 left={space[3] - 2}
                 right={space[3] - 2}
                 alignItems="flex-start"
                 justifyContent="space-between"
                 gap={space[2]}
-                pointerEvents="none"
+                pointerEvents="box-none"
             >
                 {overlay ? (
                     // Shown as on Home so the screen is recognisably the same place; they open nothing from here.
@@ -527,9 +533,19 @@ export function OfferDeck({ mode, driverId, offers, reload, leadId, organization
                         <OrgChip name={organizationName ?? ''} dark={dark} />
                     </View>
                 ) : (
-                    <YStack />
+                    // No title bar on the Offers screen: the way back and the name float over the map.
+                    <XStack alignItems="center" gap={10} flexShrink={1}>
+                        {onBack ? <MapButton icon="back" label={t('common.back', { defaultValue: 'Back' })} onPress={onBack} testID="offers-back" /> : null}
+                        {title ? (
+                            <XStack height={44} alignItems="center" paddingHorizontal={14} borderRadius={22} borderWidth={1} borderColor="$border" {...floatSkin}>
+                                <Body fontSize={17} lineHeight={22} fontWeight="800" numberOfLines={1} accessibilityRole="header">
+                                    {title}
+                                </Body>
+                            </XStack>
+                        ) : null}
+                    </XStack>
                 )}
-                <YStack alignItems="flex-end" gap={6} flexShrink={0}>
+                <YStack alignItems="flex-end" gap={6} flexShrink={0} paddingTop={overlay ? 0 : 9}>
                     {overlay ? (
                         <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                             <DutyChip duty={duty} t={t as never} dark={dark} />

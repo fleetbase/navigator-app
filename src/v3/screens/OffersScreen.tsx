@@ -19,10 +19,12 @@
  * **Offers arrive without asking.** `order.ping` on the driver's channel bumps
  * the live-refresh signal, so a new offer appears while this screen is open.
  */
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MapButton } from './orderDetail/OrderSheetParts';
 import { useContext, useEffect, useState } from 'react';
 import { NavigationContext } from '@react-navigation/native';
-import { YStack } from 'tamagui';
-import { Secondary } from '../ui/Text';
+import { XStack, YStack } from 'tamagui';
+import { Body, Secondary } from '../ui/Text';
 import { EmptyState, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
 import { space } from '../theme/tokens';
@@ -32,8 +34,19 @@ import { useOffers } from '../data/useOffers';
 import { OfferDeck } from '../offers/OfferDeck';
 import { noteOffersScreenOpen } from '../offers/offerModel';
 
-export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onOpenOrder?: (orderId: string) => void }) {
+export function OffersScreen({ driverId, onOpenOrder, onBack }: { driverId?: string; onOpenOrder?: (orderId: string) => void; /** The way back; the screen has no title bar of its own. */ onBack?: () => void }) {
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
+    const title = t('nav.offers');
+    // With no deck to show (loading, failed, none open) the same back button and name sit at the top of a plain page.
+    const plainHeader = (
+        <XStack alignItems="center" gap={10} paddingTop={insets.top} paddingBottom={space[3]}>
+            {onBack ? <MapButton icon="back" label={t('common.back', { defaultValue: 'Back' })} onPress={onBack} testID="offers-back" /> : null}
+            <Body fontSize={20} lineHeight={26} fontWeight="800" accessibilityRole="header">
+                {title}
+            </Body>
+        </XStack>
+    );
     const { isOnline } = useSync();
     const { offers, isLoading, error, reload } = useOffers(driverId);
 
@@ -58,7 +71,8 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
 
     if (isLoading && !offers) {
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[3]} testID="offers-loading">
+            <YStack flex={1} backgroundColor="$background" paddingHorizontal={space[4]} gap={space[3]} testID="offers-loading">
+                {plainHeader}
                 <Skeleton height={120} />
                 <Skeleton height={120} />
             </YStack>
@@ -67,8 +81,11 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
 
     if (!offers) {
         return (
-            <YStack flex={1} backgroundColor="$background" padding={space[4]} justifyContent="center" testID="offers-error">
+            <YStack flex={1} backgroundColor="$background" paddingHorizontal={space[4]} testID="offers-error">
+                {plainHeader}
+                <YStack flex={1} justifyContent="center">
                 <FailureState error={error as never} isOnline={isOnline} onRetry={reload} t={t} testID="offers-error" />
+                </YStack>
             </YStack>
         );
     }
@@ -77,12 +94,15 @@ export function OffersScreen({ driverId, onOpenOrder }: { driverId?: string; onO
         <YStack flex={1} backgroundColor="$mapBackground">
             <OfferDeck
                 mode="screen"
+                onBack={onBack}
+                title={title}
                 driverId={driverId}
                 offers={offers}
                 reload={reload}
                 onAccepted={(orderId) => onOpenOrder?.(orderId)}
                 emptyState={
-                    <YStack flex={1} backgroundColor="$background" padding={space[4]} gap={space[4]} testID="offers-screen">
+                    <YStack flex={1} backgroundColor="$background" paddingHorizontal={space[4]} gap={space[4]} testID="offers-screen">
+                        {plainHeader}
                         <EmptyState testID="offers-empty" title={t('offers.emptyTitle')} body={t('offers.emptyBody')} />
                         <Secondary fontSize={13}>{t('offers.note')}</Secondary>
                     </YStack>
