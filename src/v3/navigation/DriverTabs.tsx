@@ -43,6 +43,7 @@ import { openConversation, openOrder, openOrdersList } from './navigationRef';
 import { TabBar, type TabBadges } from './TabBar';
 import { tabIcons, type TabIconName } from '../ui/Icon';
 import { withHeader } from './withHeader';
+import { proofMethodOf } from '../data/useProofCapture';
 import { PermissionsPrimer } from './routes/fixed';
 import {
     DriverIdContext,
@@ -113,7 +114,17 @@ const PermissionsPrimerH = withHeader('nav.permissions', PermissionsPrimer);
 const OrgSwitcherH = withHeader('nav.orgSwitcher', screenSlot('account.orgSwitcher'));
 const SettingsScreenH = withHeader('nav.settings', screenSlot('account.settings'));
 const HelpH = withHeader('nav.help', screenSlot('account.help'));
-const ProofCaptureH = withHeader('nav.proofCapture', screenSlot('order.proof'));
+/*
+ * Proof by scanning fills the screen with the camera and draws its own close
+ * button over it, so it takes no title bar (as the order does not). A photo or
+ * a signature keeps the title bar and its back control.
+ */
+const ProofCaptureSlot = screenSlot('order.proof');
+const ProofCaptureTitled = withHeader('nav.proofCapture', ProofCaptureSlot);
+function ProofCaptureH(props: { route?: { params?: { podMethod?: string | null } } }) {
+    const Screen: React.ComponentType<any> = proofMethodOf(props.route?.params?.podMethod) === 'scan' ? ProofCaptureSlot : ProofCaptureTitled;
+    return <Screen {...props} />;
+}
 const DestinationH = withHeader('nav.destination', screenSlot('order.destination'));
 const ChangeVehicleH = withHeader('nav.changeVehicle', screenSlot('vehicle.change'));
 const OffersH = withHeader('nav.offers', screenSlot('offers.list'));

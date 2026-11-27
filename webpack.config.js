@@ -111,6 +111,7 @@ module.exports = (env = {}, argv = {}) => {
                 'react-native-background-geolocation': shim('background-geolocation.js'),
                 'react-native-config': shim('config.js'),
                 'react-native-device-info': shim('device-info.js'),
+                'react-native-haptic-feedback': shim('haptic-feedback.js'),
                 'react-native-i18n': shim('i18n.js'),
                 'react-native-maps': shim('maps.jsx'),
                 'react-native-nitro-sound': shim('nitro-sound.js'),

@@ -1677,6 +1677,101 @@
             "notSent": "NOT SENT",
             "continue": "Continue",
             "kept": "The scans stay on this screen. You do not need to scan them again.",
+            "proofFor": "Proof for: %{step}",
+            "close": "Close and go back to the order. Your scans are kept.",
+            "torchOn": "Turn the torch on",
+            "torchOff": "Turn the torch off",
+            "read": "Read",
+            "progress": "%{scanned} of %{total} scanned",
+            "progressLabel": "%{scanned} of %{total} items scanned",
+            "progressCount": {
+                "zero": "Nothing scanned yet",
+                "one": "%{count} scanned",
+                "other": "%{count} scanned"
+            },
+            "left": {
+                "one": "%{count} item left. Point at its barcode or QR code.",
+                "other": "%{count} items left. Point at a barcode or QR code."
+            },
+            "pointAny": "Point at the barcode or QR code on each label.",
+            "allDone": "Every item is scanned.",
+            "sending": "Sending the scans…",
+            "typeCode": "Label damaged? Type the code",
+            "complete": "Complete step",
+            "tryAgain": "Try again",
+            "scanAgain": "Scan again",
+            "sendSome": "Send %{scanned} of %{total} scans",
+            "card": {
+                "scannedAt": "Scanned · %{time}",
+                "notAnItemTitle": "Not an item on this order",
+                "readCode": "Read: %{code}",
+                "notCounted": "Not counted. Check the label, then scan again.",
+                "orderLabelTitle": "That is the order's label",
+                "orderLabelBody": "Not counted. Scan the label on each item.",
+                "unreadableTitle": "That code could not be read",
+                "unreadableBody": "Not counted. Try the other code on the label, or type the code.",
+                "duplicateTitle": "Already scanned",
+                "duplicateBody": "%{name}, scanned at %{time}. Scan the next item.",
+                "duplicateBodyNoName": "Scanned at %{time}. Scan the next item.",
+                "allScanned": {
+                    "one": "The item is scanned",
+                    "other": "All %{count} items scanned"
+                },
+                "last": "Last: %{name}",
+                "savedTitle": "Saved on this phone",
+                "savedBody": {
+                    "one": "It will send when you have signal.",
+                    "other": "They will send when you have signal."
+                },
+                "savedNext": "You can carry on. The step completes once they are sent.",
+                "notSentTitle": "The scans were not sent",
+                "notAcceptedTitle": "A scan was not accepted",
+                "serverSaid": "The server said:",
+                "serverQuote": "\"%{reason}\"",
+                "kept": {
+                    "one": "Your %{count} scan is still saved on this phone.",
+                    "other": "Your %{count} scans are still saved on this phone."
+                }
+            },
+            "drawer": {
+                "open": "Pull up for the list",
+                "close": "Pull down to hide the list",
+                "left": {
+                    "one": "%{count} left",
+                    "other": "%{count} left"
+                },
+                "oneLeft": "1 left: %{name}",
+                "still": "Still %{scanned} of %{total} scanned",
+                "allScanned": "All scanned",
+                "waiting": {
+                    "one": "%{count} scan waiting to send",
+                    "other": "%{count} scans waiting to send"
+                },
+                "codes": {
+                    "zero": "No codes scanned yet",
+                    "one": "%{count} code scanned",
+                    "other": "%{count} codes scanned"
+                },
+                "empty": "The codes you scan are listed here."
+            },
+            "row": {
+                "scanned": "Scanned %{time}",
+                "toScan": "To scan"
+            },
+            "manual": {
+                "title": "Type the code",
+                "hint": "Type the tracking number printed under the barcode.",
+                "placeholder": "Tracking number",
+                "submit": "Check the code"
+            },
+            "camera": {
+                "deniedTitle": "The camera is turned off for this app",
+                "deniedBody": "Allow the camera in your phone's Settings to scan labels. Until then you can type the code on each label.",
+                "openSettings": "Open Settings",
+                "unavailableTitle": "The camera could not be started",
+                "unavailableBody": "You can type the code printed on each label instead.",
+                "typeCode": "Type the code"
+            },
             "failure": {
                 "mismatch": "The server did not accept %{code}: it is not the label of an item on this order.",
                 "notOnOrder": "%{code} is not an item of this order, so its scan was not accepted.",

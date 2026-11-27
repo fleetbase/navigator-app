@@ -10,6 +10,8 @@ import OffersScreen from '../../screens/OffersScreen';
 import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useShell } from '../DriverShell';
+import { useSync } from '../../shell/SyncContext';
+import { proofMethodOf } from '../../data/useProofCapture';
 import { useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
 import { useNavigationHandoffSheet } from '../../navigate/useNavigationHandoffSheet';
 
@@ -133,8 +135,27 @@ export function EditPayloadItem({
 export function ProofCapture({ route, navigation }: { route: { params?: { orderId?: string; activityCode?: string; activityLabel?: string; podMethod?: string | null; expected?: string[] } }; navigation: Nav }) {
     const p = route.params ?? {};
     useLeaveWhenRemoved(p.orderId, navigation);
+    /*
+     * Proof by scanning is the camera, edge to edge and under the status bar, so
+     * the shell gives up its status-bar padding while it is in front, as it does
+     * for the order's map. A photo or a signature keeps the title bar and the
+     * padding.
+     */
+    const scanning = proofMethodOf(p.podMethod) === 'scan';
+    const { setBleedTop } = useShell();
+    useFocusEffect(
+        useCallback(() => {
+            if (!scanning) return undefined;
+            setBleedTop(true);
+            return () => setBleedTop(false);
+        }, [scanning, setBleedTop])
+    );
+    // While the shell's strip about signal and syncing floats under the top buttons, the screen leaves that line to it.
+    const { isOnline, queuedCount, syncState, lastSyncedCount } = useSync();
+    const stripShowing = !isOnline || syncState === 'failed' || (syncState === 'syncing' && queuedCount > 0) || lastSyncedCount > 0;
     return (
         <ProofCaptureScreen
+            stripShowing={stripShowing}
             orderId={p.orderId ?? ''}
             activityCode={p.activityCode ?? ''}
             activityLabel={p.activityLabel ?? ''}
