@@ -34,3 +34,4 @@ export * from './useDaySummary';
 export * from './useDriverDocuments';
 export * from './useWeekSummary';
 export * from './useNotificationPreferences';
+export * from './placeText';

@@ -19,6 +19,7 @@ import {
     isOrderFinished,
     isStopDone,
     payloadOf,
+    tidyPlaceText,
     scheduledDayOf,
     trackingNumberOf,
     bucketOf,
@@ -89,15 +90,8 @@ type Rec = Record<string, unknown>;
 
 const str = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
 
-/**
- * A place's name or address with stray separators trimmed off its ends. An
- * address built from parts of which some are empty arrives as " - Ulaanbaatar,
- * Mongolia" or "12 Main St, , "; the leftovers are not part of the address.
- */
-const tidy = (value: unknown): string | undefined => {
-    const text = str(value)?.replace(/^[\s,\-–—·]+|[\s,\-–—·]+$/g, '').replace(/\s*,(\s*,)+/g, ',').trim();
-    return text ? text : undefined;
-};
+/** Shared with every screen that names a place: see `data/placeText`. */
+const tidy = tidyPlaceText;
 
 /** Which of today's manifests is the one being worked: running, then released, then the rest. */
 const MANIFEST_ORDER = ['in_progress', 'active', 'draft', 'completed'];
