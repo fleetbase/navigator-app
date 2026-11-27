@@ -225,7 +225,7 @@ export function JobsMap({ waypoints, units, onOpenWaypoint, bottomSpace }: JobsM
                             key={`${waypoint.key}:${state}`}
                             coordinate={waypoint.point}
                             anchor={{ x: 0.5, y: 0.5 }}
-                            tracksViewChanges={false}
+                            tracksViewChanges={state === 'current'}
                             onPress={() => setPickedKey(waypoint.key)}
                             testID={`route-marker-${waypoint.stopId ?? waypoint.key}`}
                             accessibilityLabel={`${waypoint.sequence} ${waypoint.name ?? ''}`.trim()}

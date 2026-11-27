@@ -636,11 +636,6 @@
         "attachment": "Attachment",
         "uploading": "Uploading…",
         "role": {
-            "navigateTo": {
-                "pickup": "Navigate to pickup",
-                "dropoff": "Navigate to drop-off",
-                "waypoint": "Navigate to waypoint"
-            },
             "you": "You",
             "store": "Store",
             "customer": "Customer",
@@ -1001,6 +996,13 @@
                 "dropoff": "Heading to drop-off",
                 "waypoint": "Heading to waypoint"
             },
+            "navigateTo": {
+                "pickup": "Navigate to pickup",
+                "dropoff": "Navigate to drop-off",
+                "waypoint": "Navigate to waypoint"
+            },
+            "away": "%{duration} away",
+            "straightLine": "%{distance} in a straight line",
             "you": "You",
             "youIn": "You · %{vehicle}",
             "arrive": "Arrive %{time}",

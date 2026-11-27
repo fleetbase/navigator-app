@@ -91,7 +91,7 @@ export function OrderMap({ stops, activeStopId, route = [], routeColor, position
                             key={`${stop.id}:${state}`}
                             coordinate={stop.point}
                             anchor={{ x: 0.5, y: 0.5 }}
-                            tracksViewChanges={false}
+                            tracksViewChanges={state === 'current'}
                             testID={`order-marker-${stop.id}`}
                             accessibilityLabel={`${stop.sequence ?? ''} ${stop.name ?? ''}`.trim()}
                         >

@@ -185,7 +185,7 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
                             key={`${w.key}:${state}`}
                             coordinate={w.point}
                             anchor={{ x: 0.5, y: 0.5 }}
-                            tracksViewChanges={false}
+                            tracksViewChanges={state === 'current'}
                             testID={`home-marker-${w.key}`}
                             accessibilityLabel={`${w.number} ${w.name ?? w.address ?? ''}`.trim()}
                         >

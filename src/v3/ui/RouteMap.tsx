@@ -10,6 +10,7 @@
  * to. The line joining them here is the straight-line plan, dashed so it reads
  * as "not the road"; the Jobs map and the dashboard draw the road itself.
  */
+import { AccessibilityInfo, Animated, Easing } from 'react-native';
 import { mapLook } from './mapLook';
 import { useEffect, useMemo, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -65,6 +66,40 @@ export function markerKindOf(type: unknown): WaypointMarkerKind | undefined {
     return type === 'pickup' || type === 'dropoff' || type === 'return' || type === 'waypoint' ? type : undefined;
 }
 
+/** A ring that grows out of the marker and fades, on a loop. Still when the phone asks for reduced motion. */
+function PulseRing({ size, color }: { size: number; color: string }) {
+    const pulse = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+        let loop: Animated.CompositeAnimation | null = null;
+        let cancelled = false;
+        AccessibilityInfo.isReduceMotionEnabled()
+            .catch(() => false)
+            .then((reduced) => {
+                if (cancelled || reduced) return;
+                loop = Animated.loop(Animated.timing(pulse, { toValue: 1, duration: 1800, easing: Easing.out(Easing.quad), useNativeDriver: true }));
+                loop.start();
+            });
+        return () => {
+            cancelled = true;
+            loop?.stop();
+        };
+    }, [pulse]);
+    return (
+        <Animated.View
+            pointerEvents="none"
+            style={{
+                position: 'absolute',
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                backgroundColor: color,
+                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
+                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }],
+            }}
+        />
+    );
+}
+
 /**
  * A waypoint's marker on a map.
  *
@@ -92,6 +127,8 @@ export function StopBadge({ kind, number, color, state }: StopBadgeProps) {
     return (
         <YStack width={frame} height={frame} alignItems="center" justifyContent="center">
             {current ? <YStack position="absolute" width={frame} height={frame} borderRadius={frame / 2} borderWidth={3} borderColor={fill as never} /> : null}
+            {/* The waypoint being headed to breathes, so it is found at a glance on a map of many. */}
+            {current ? <PulseRing size={frame} color={fill} /> : null}
             <YStack
                 width={size}
                 height={size}
@@ -181,7 +218,7 @@ export function RouteMap({ stops, currentStopId, position, dark, onPressStop, fi
                         key={`${stop.id}:${state}`}
                         coordinate={point}
                         anchor={{ x: 0.5, y: 0.5 }}
-                        tracksViewChanges={false}
+                        tracksViewChanges={state === 'current'}
                         onPress={onPressStop ? () => onPressStop(stop) : undefined}
                         testID={`route-marker-${stop.id}`}
                         accessibilityLabel={`${stop.sequence ?? ''} ${stop.place?.name ?? ''}`.trim()}

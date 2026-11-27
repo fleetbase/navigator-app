@@ -542,15 +542,22 @@ export function TodayScreen({
                 label: (w.kind === 'waypoint' || !w.kind ? `${t('home.kind.waypoint')} ${numbered}` : t(`home.kind.${w.kind}`)).toUpperCase(),
                 title: w.name ?? w.address ?? t('today.noStopRecorded'),
                 address: w.name ? w.address : undefined,
-                time: arriveAt ? t('home.trip.arrive', { time: formatClock(arriveAt) }) : w.windowEnd ? t('home.trip.dueBy', { time: formatClock(w.windowEnd) }) : w.plannedAt ? t('home.trip.planned', { time: formatClock(w.plannedAt) }) : undefined,
+                time: arriveAt ? t('home.trip.arrive', { time: formatClock(arriveAt) }) : current && legs[0]?.duration_s != null ? t('home.trip.away', { duration: formatDuration(Number(legs[0].duration_s)) }) : w.windowEnd ? t('home.trip.dueBy', { time: formatClock(w.windowEnd) }) : w.plannedAt ? t('home.trip.planned', { time: formatClock(w.plannedAt) }) : undefined,
                 timeNote: late == null ? undefined : late ? { text: t('home.hero.late'), tone: 'danger' as const } : { text: t('home.hero.onTime'), tone: 'success' as const },
                 legAfter: legAfterM != null && Number.isFinite(Number(legAfterM)) && index < list.length - 1 ? t('home.trip.then', { distance: formatMeters(Number(legAfterM), units) }) : undefined,
                 onPress: canOpen(w) ? () => openWaypoint(w) : undefined,
             };
         });
+        // The road to the waypoint being headed to; without a route from the server, the straight line, said as that.
         const firstLegM = legs[0]?.distance_m;
-        const firstLegS = eta.kind === 'live' ? eta.seconds : undefined;
-        const youLeg = [firstLegM != null && Number.isFinite(Number(firstLegM)) ? formatMeters(Number(firstLegM), units) : undefined, firstLegS != null ? formatDuration(firstLegS) : undefined].filter(Boolean).join(' · ');
+        const firstLegS = eta.kind === 'live' && eta.seconds != null ? eta.seconds : legs[0]?.duration_s;
+        const straightM = online && position && waypoint.point ? haversineM(position, waypoint.point) : undefined;
+        const youLeg =
+            firstLegM != null && Number.isFinite(Number(firstLegM))
+                ? [formatMeters(Number(firstLegM), units), firstLegS != null && Number.isFinite(Number(firstLegS)) ? formatDuration(Number(firstLegS)) : undefined].filter(Boolean).join(' · ')
+                : straightM != null
+                  ? t('home.trip.straightLine', { distance: formatMeters(straightM, units) })
+                  : '';
         const contact = customerContactOf(order);
         const stop = manifest?.stops?.find((candidate) => candidate.id === waypoint.stopId);
         const note = stop?.notes || deliveryInstructionsOf(order);

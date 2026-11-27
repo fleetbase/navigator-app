@@ -699,6 +699,21 @@ export function FactChips({ chips, testID }: { chips: FactChip[]; testID?: strin
     );
 }
 
+/**
+ * The rail between two waypoints still to drive: a column of dots that fills
+ * the height of the row. Drawn as dots because a dotted border on one side of a
+ * view is not drawn on iOS.
+ */
+function DottedRail() {
+    return (
+        <YStack flexGrow={1} minHeight={18} marginTop={4} marginBottom={3} overflow="hidden" alignItems="center" gap={5}>
+            {Array.from({ length: 24 }, (_, index) => (
+                <YStack key={index} width={4} height={4} borderRadius={2} backgroundColor="$textMuted" opacity={0.7} />
+            ))}
+        </YStack>
+    );
+}
+
 /* -- The trip: an order as one journey ----------------------------------------- */
 
 export interface TripPoint {
@@ -760,9 +775,9 @@ export function TripCard({
                     ) : null}
                 </YStack>
                 {status ? (
-                    <XStack flexShrink={0} alignItems="center" gap={6} height={28} paddingHorizontal={10} borderRadius={14} borderWidth={1} borderColor="$primary" backgroundColor="$primaryFill">
-                        <HomeIcon name="navigate" color={theme.primary?.val as string} size={11} />
-                        <Body fontSize={12} lineHeight={16} fontWeight="800" tone="brand" numberOfLines={1}>
+                    <XStack flexShrink={0} alignItems="center" gap={5} height={26} paddingHorizontal={9} borderRadius={13} borderWidth={1} borderColor="$primaryBorder" backgroundColor="$primaryFill">
+                        <HomeIcon name="navigate" color={theme.primary?.val as string} size={10} />
+                        <Body fontSize={11} lineHeight={15} fontWeight="800" tone="brand" numberOfLines={1}>
                             {status}
                         </Body>
                     </XStack>
@@ -788,7 +803,7 @@ export function TripCard({
                                 ) : null}
                             </XStack>
                             {you.leg ? (
-                                <XStack alignSelf="flex-start" alignItems="center" gap={7} height={28} paddingHorizontal={11} borderRadius={14} borderWidth={1} borderColor="$primary" backgroundColor="$primaryFill">
+                                <XStack alignSelf="flex-start" alignItems="center" gap={7} height={28} paddingHorizontal={11} borderRadius={14} borderWidth={1} borderColor="$primaryBorder" backgroundColor="$primaryFill">
                                     <HomeIcon name="navigate" color={theme.primary?.val as string} size={12} />
                                     <Body fontSize={14} lineHeight={18} fontWeight="800" tabular numberOfLines={1}>
                                         {you.leg}
@@ -806,7 +821,7 @@ export function TripCard({
                         <XStack key={point.key} gap={12} onPress={point.onPress} pressStyle={point.onPress ? { opacity: 0.7 } : undefined} accessibilityRole={point.onPress ? 'button' : undefined} testID={`home-trip-${point.key}`}>
                             <YStack width={RAIL} alignItems="center">
                                 <StopBadge kind={point.kind} number={point.number} color={point.color} state={point.state} />
-                                {last ? null : <YStack flexGrow={1} width={0} borderLeftWidth={3} borderStyle="dotted" borderColor="$border" marginTop={4} marginBottom={3} minHeight={16} />}
+                                {last ? null : <DottedRail />}
                             </YStack>
                             <YStack flex={1} minWidth={0} paddingTop={point.state === 'current' ? 6 : 2} paddingBottom={last ? 0 : 10} opacity={quiet ? 0.6 : 1}>
                                 <SectionLabel tone={point.state === 'current' ? 'success' : 'muted'}>{point.label}</SectionLabel>
