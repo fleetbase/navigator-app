@@ -92,6 +92,8 @@ export function SheetHeader({
     qr,
     qrLabel,
     onOpenQr,
+    onOpenStatus,
+    statusLabel,
     t,
 }: {
     eyebrow: string;

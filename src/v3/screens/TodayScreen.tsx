@@ -86,7 +86,7 @@ import { useScreenStyle } from '../ui/useScreenStyle';
 import { HomeMap } from './home/HomeMap';
 import { colorForId } from '../ui/routeColors';
 import { buildDay, firstNameOf, pickTodayManifest, secondsBetween, trackerIsFor, type HomeDay, type HomeWaypoint } from './home/homeModel';
-import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, WeekCard, Shortcuts, JobCard, FactChips, TripCard, CustomerCard, NoteCard, type TripPoint, type FactChip, type Stat, type WeekBar } from './home/parts';
+import { Card, DutyChip, EntryCard, HeroBadge, HomeIcon, OrgChip, Rise, SectionLabel, SegmentBar, StatCard, SummaryRow, WaypointRow, WeekCard, Shortcuts, JobCard, FactChips, WeekSkeleton, ShortcutsSkeleton, EntrySkeleton, HeroSkeleton, TripSkeleton, TripCard, CustomerCard, NoteCard, type TripPoint, type FactChip, type Stat, type WeekBar } from './home/parts';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 type Destination = { latitude: number; longitude: number; label?: string };
@@ -430,6 +430,8 @@ export function TodayScreen({
             <EntryCard key="vehicle" icon="vehicle" title={vehicleName ?? t('home.vehicle.yours')} body={vehicleBody} mono={vehiclePlate} onPress={onOpenVehicle} testID="home-vehicle" />
         ) : null,
     ].filter(Boolean);
+    // The vehicle comes with the driver's record; until that answers, its row is held by an outline.
+    const vehicleLoading = !vehicle && !!driverId && (driverQuery.isLoading || driverQuery.state === 'idle');
 
     /* -- What fills the sheet, by state --------------------------------------- */
 
@@ -496,7 +498,8 @@ export function TodayScreen({
         { key: 'week-driven', value: week.totals.distanceM > 0 ? formatMeters(week.totals.distanceM, units) : units === 'imperial' ? '0 mi' : '0 km', label: t('home.week.driven') },
         { key: 'week-online', value: formatDuration(week.totals.seconds + liveExtra), label: t('home.week.online') },
     ].map((stat) => (stat.key === 'week-online' ? { ...stat, value: formatOnline(week.totals.seconds + liveExtra) } : stat));
-    const weekCard = week.known ? <WeekCard title={t('home.week.title')} range={weekRange(week.from, week.to)} bars={bars} stats={weekStats} testID="home-week" /> : null;
+    // While the week is on its way its place is held by its outline, so the page does not jump when it lands.
+    const weekCard = week.known ? <WeekCard title={t('home.week.title')} range={weekRange(week.from, week.to)} bars={bars} stats={weekStats} testID="home-week" /> : week.isLoading ? <WeekSkeleton /> : null;
     const shortcuts = (
         <Shortcuts
             testID="home-shortcuts"
@@ -1081,10 +1084,12 @@ export function TodayScreen({
                     {dutyErrorBanner}
 
                     {state === 'loading' ? (
+                        // The first load: each block's outline, in the order the blocks appear.
                         <YStack gap={SHEET_GAP} testID="today-loading">
-                            <Skeleton height={92} borderRadius={CARD_RADIUS} />
-                            <Skeleton height={84} borderRadius={CARD_RADIUS} />
-                            <Skeleton height={60} borderRadius={16} />
+                            {onDuty ? <TripSkeleton /> : <HeroSkeleton />}
+                            <WeekSkeleton />
+                            <ShortcutsSkeleton />
+                            <EntrySkeleton />
                         </YStack>
                     ) : state === 'error' ? (
                         <YStack paddingVertical={space[4]} testID="today-error">
@@ -1166,6 +1171,8 @@ export function TodayScreen({
                                 <YStack gap={SHEET_GAP}>{extras}</YStack>
                             </Rise>
                         ) : null}
+
+                        {vehicleLoading && state !== 'loading' && state !== 'error' ? <EntrySkeleton testID="home-vehicle-loading" /> : null}
 
                         {rows.length ? (
                                 <Rise delay={140}>

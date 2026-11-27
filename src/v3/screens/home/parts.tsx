@@ -11,6 +11,7 @@ import { AccessibilityInfo, Animated, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Caption, Secondary } from '../../ui/Text';
+import { Skeleton } from '../../ui/Banner';
 import { space } from '../../theme/tokens';
 import { CARD_RADIUS } from '../../onboarding/AuthScaffold';
 import { formatClock } from '../../format';
@@ -954,5 +955,159 @@ export function NoteCard({ label, text, testID }: { label: string; text: string;
                 {text}
             </Body>
         </YStack>
+    );
+}
+
+/* -- Holding shapes: what is shown while a block is loading ---------------------- */
+
+/**
+ * Each block on Home has a holding shape the same size and outline as the real
+ * thing, so the page does not jump when the data arrives and a driver can see
+ * what is coming. They pulse gently (the shared `Skeleton`).
+ */
+
+/** A slow breath on a holding shape, so it reads as "loading" and not as an empty box. Still under reduced motion. */
+function Breathing({ children }: { children: React.ReactNode }) {
+    const breath = useRef(new Animated.Value(1)).current;
+    useEffect(() => {
+        let loop: Animated.CompositeAnimation | null = null;
+        let cancelled = false;
+        AccessibilityInfo.isReduceMotionEnabled()
+            .catch(() => false)
+            .then((reduced) => {
+                if (cancelled || reduced) return;
+                loop = Animated.loop(
+                    Animated.sequence([
+                        Animated.timing(breath, { toValue: 0.45, duration: 800, useNativeDriver: true }),
+                        Animated.timing(breath, { toValue: 1, duration: 800, useNativeDriver: true }),
+                    ])
+                );
+                loop.start();
+            });
+        return () => {
+            cancelled = true;
+            loop?.stop();
+        };
+    }, [breath]);
+    return <Animated.View style={{ opacity: breath }}>{children}</Animated.View>;
+}
+
+/** The week card: a title line, seven bars, three figures. */
+export function WeekSkeleton({ testID = 'home-week-loading' }: { testID?: string }) {
+    const bars = [38, 26, 50, 22, 42, 12, 12];
+    return (
+        <Breathing>
+            <Card testID={testID}>
+                <YStack gap={14}>
+                    <XStack alignItems="center" justifyContent="space-between">
+                        <Skeleton width={176} height={12} borderRadius={6} />
+                        <Skeleton width={64} height={12} borderRadius={6} />
+                    </XStack>
+                    <XStack alignItems="flex-end" gap={8}>
+                        {bars.map((height, index) => (
+                            <YStack key={index} flex={1} alignItems="center" gap={6}>
+                                <YStack height={16} />
+                                <YStack width="100%" height={64} justifyContent="flex-end">
+                                    <Skeleton height={height} borderRadius={6} />
+                                </YStack>
+                                <Skeleton width={22} height={10} borderRadius={5} />
+                            </YStack>
+                        ))}
+                    </XStack>
+                    <XStack gap={space[2]} paddingTop={12} borderTopWidth={1} borderTopColor="$border">
+                        {[0, 1, 2].map((index) => (
+                            <YStack key={index} flex={1} gap={6}>
+                                <Skeleton width={56} height={20} borderRadius={6} />
+                                <Skeleton width={72} height={10} borderRadius={5} />
+                            </YStack>
+                        ))}
+                    </XStack>
+                </YStack>
+            </Card>
+        </Breathing>
+    );
+}
+
+/** The three shortcut tiles. */
+export function ShortcutsSkeleton({ testID = 'home-shortcuts-loading' }: { testID?: string }) {
+    return (
+        <Breathing>
+            <XStack gap={10} testID={testID}>
+                {[0, 1, 2].map((index) => (
+                    <YStack key={index} flex={1} flexBasis={0} minHeight={86} alignItems="center" justifyContent="center" gap={10} borderRadius={CARD_RADIUS} borderWidth={1} borderColor="$border" backgroundColor="$surface">
+                        <Skeleton width={22} height={22} borderRadius={7} />
+                        <Skeleton width={64} height={10} borderRadius={5} />
+                    </YStack>
+                ))}
+            </XStack>
+        </Breathing>
+    );
+}
+
+/** A row that leads somewhere: the vehicle, an attention row. */
+export function EntrySkeleton({ testID = 'home-entry-loading' }: { testID?: string }) {
+    return (
+        <Breathing>
+            <Card testID={testID}>
+                <XStack alignItems="center" gap={space[3]}>
+                    <Skeleton width={36} height={36} borderRadius={10} />
+                    <YStack flex={1} gap={7}>
+                        <Skeleton width={150} height={13} borderRadius={6} />
+                        <Skeleton width={96} height={10} borderRadius={5} />
+                    </YStack>
+                    <Skeleton width={72} height={12} borderRadius={6} />
+                </XStack>
+            </Card>
+        </Breathing>
+    );
+}
+
+/** The header of the sheet: a headline with a line under it, and the chip at its right. */
+export function HeroSkeleton({ testID = 'home-hero-loading' }: { testID?: string }) {
+    return (
+        <Breathing>
+            <XStack alignItems="center" justifyContent="space-between" gap={space[3]} paddingBottom={space[3]} testID={testID}>
+                <YStack flex={1} gap={8}>
+                    <Skeleton width={170} height={24} borderRadius={8} />
+                    <Skeleton width={120} height={12} borderRadius={6} />
+                </YStack>
+                <Skeleton width={110} height={32} borderRadius={16} />
+            </XStack>
+        </Breathing>
+    );
+}
+
+/** The trip: the tracking number line, then the rail of the driver and two waypoints. */
+export function TripSkeleton({ testID = 'home-trip-loading' }: { testID?: string }) {
+    const row = (key: number, marker: number, title: number, last?: boolean) => (
+        <XStack key={key} gap={12}>
+            <YStack width={44} alignItems="center">
+                <Skeleton width={marker} height={marker} borderRadius={marker / 2} />
+                {last ? null : <YStack flexGrow={1} width={4} minHeight={26} marginVertical={4} borderRadius={2} backgroundColor="$border" />}
+            </YStack>
+            <YStack flex={1} gap={7} paddingBottom={last ? 0 : 14} paddingTop={4}>
+                <Skeleton width={64} height={10} borderRadius={5} />
+                <Skeleton width={title} height={16} borderRadius={6} />
+                <Skeleton width={title - 40} height={10} borderRadius={5} />
+            </YStack>
+        </XStack>
+    );
+    return (
+        <Breathing>
+            <YStack gap={12} testID={testID}>
+                <XStack alignItems="center" justifyContent="space-between">
+                    <YStack gap={7}>
+                        <Skeleton width={150} height={10} borderRadius={5} />
+                        <Skeleton width={190} height={17} borderRadius={6} />
+                    </YStack>
+                    <Skeleton width={132} height={28} borderRadius={14} />
+                </XStack>
+                <Card>
+                    {row(0, 22, 150)}
+                    {row(1, 32, 200)}
+                    {row(2, 32, 170, true)}
+                </Card>
+            </YStack>
+        </Breathing>
     );
 }

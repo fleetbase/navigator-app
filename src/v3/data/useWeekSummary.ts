@@ -44,6 +44,8 @@ export function useWeekSummary(driverId?: string, reloadKey: string | number = 0
     const today = dayKey();
     const { week: dates, before } = useMemo(() => weekOf(today), [today]);
     const [, setRevision] = useState(0);
+    // True until the first answer (or failure) is in, so the screen can hold the week's place while it waits.
+    const [settled, setSettled] = useState(false);
 
     useEffect(() => {
         if (!driverId || !enabled) return;
@@ -62,7 +64,9 @@ export function useWeekSummary(driverId?: string, reloadKey: string | number = 0
                 }
             })
         ).then(() => {
-            if (alive) setRevision((n) => n + 1);
+            if (!alive) return;
+            setSettled(true);
+            setRevision((n) => n + 1);
         });
         return () => {
             alive = false;
@@ -84,7 +88,7 @@ export function useWeekSummary(driverId?: string, reloadKey: string | number = 0
         { waypoints: 0, orders: 0, distanceM: 0, seconds: 0 }
     );
 
-    return { days, totals, known, yesterday, from: dates[0], to: dates[6] };
+    return { days, totals, known, yesterday, from: dates[0], to: dates[6], isLoading: !!driverId && enabled && !known && !settled };
 }
 
 export default useWeekSummary;
