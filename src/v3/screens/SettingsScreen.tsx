@@ -5,13 +5,10 @@
  * way the mockup groups them: the look, language and distance, which app opens
  * directions, and help.
  *
- * Three things the mockup shows are deliberately absent:
+ * The "Tell me about" switches are saved on the server, which sends the pushes.
  *
- *   - **"Tell me about" switches.** The store has three notification flags, but
- *     nothing reads them: push registration, the notification handler and the
- *     server all ignore them, and the server has no per-driver preference to
- *     send them to (FleetOps notification settings are per organisation, set
- *     in the console). A switch that changes nothing is worse than no switch.
+ * Two things the mockup shows are deliberately absent:
+ *
  *   - **"Switch to Night after dark."** Honest only if the app knows sunset
  *     where the driver is and re-checks as the evening goes on; the theme is
  *     resolved at the app root, outside the location provider, so today it
@@ -37,6 +34,7 @@ import { NAVIGATION_OPTIONS, availableApps, type NavigationAppId } from '../navi
 import { ACTION_HEIGHT, ACTION_RADIUS, BigButton } from '../onboarding/AuthScaffold';
 import { Button } from '../ui/Button';
 import { useQueue, useFleetbase } from '../api';
+import { useNotificationPreferences } from '../data';
 import { Card, CARD_PAD, Chevron, Icon, MenuRow, RadioMark, Rule, Screen, Section } from './me/parts';
 
 const appearance = getBuildBranding().branding.appearance;
@@ -151,9 +149,12 @@ export interface SettingsScreenProps {
     organizationName?: string;
     /** Injected in tests; defaults to the real `Linking.canOpenURL` probe. */
     probe?: (url: string) => Promise<boolean>;
+    /** The signed-in driver; with it the alert switches are shown. */
+    driverId?: string;
 }
 
-export function SettingsScreen({ trackingEnabled = true, onEnableTracking, onSendDiagnostics, onSignOut, appVersion, organizationName, probe }: SettingsScreenProps) {
+export function SettingsScreen({ trackingEnabled = true, onEnableTracking, onSendDiagnostics, onSignOut, appVersion, organizationName, probe, driverId }: SettingsScreenProps) {
+    const alerts = useNotificationPreferences(driverId);
     const settings = useSettings();
     const set = useSetSetting();
     const resolved = useResolvedScheme();
@@ -374,6 +375,27 @@ export function SettingsScreen({ trackingEnabled = true, onEnableTracking, onSen
                             );
                         })}
                     </Card>
+                </Section>
+            ) : null}
+
+            {alerts.preferences ? (
+                <Section title={t('settings.alerts.title')} testID="settings-alerts">
+                    <Card flush>
+                        {(['new_work', 'order_changes', 'messages', 'offers'] as const).map((kind, index) => (
+                            <YStack key={kind}>
+                                {index > 0 ? <Rule /> : null}
+                                <ToggleRow
+                                    label={t(`settings.alerts.${kind}`)}
+                                    hint={t(`settings.alerts.${kind}Hint`)}
+                                    value={alerts.preferences?.[kind] ?? true}
+                                    onChange={(value) => void alerts.set(kind, value)}
+                                    testID={`settings-alert-${kind}`}
+                                />
+                            </YStack>
+                        ))}
+                    </Card>
+                    {alerts.failed ? <Banner tone="danger" message={t('settings.alerts.failed')} testID="settings-alerts-failed" /> : null}
+                    <Micro>{t('settings.alerts.note')}</Micro>
                 </Section>
             ) : null}
 

@@ -18,8 +18,10 @@ const buildVersion = () => `${getVersion()} (${getBuildNumber()})`;
 
 export function Settings({ navigation }: { navigation: Nav }) {
     const signOut = useSignOut();
+    const driverId = useDriverId();
     return (
         <SettingsScreen
+            driverId={driverId}
             appVersion={buildVersion()}
             // The diagnostics go out with a written report, from Help, where the
             // driver can read what is attached before sending it.

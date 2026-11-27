@@ -70,6 +70,8 @@ const NEVER_QUEUE = [
     /change-password/,
     // A document that arrives hours after the driver thought it had gone helps no one.
     /drivers\/[^/]+\/documents/,
+    // A switch that says off must be off: saved now, or shown as not saved.
+    /notification-preferences/,
     /reset-password/,
     /*
      * Starting an order claims it. For an ad-hoc offer that is a race against

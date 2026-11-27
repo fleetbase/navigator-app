@@ -66,6 +66,8 @@ export interface CashOnDelivery {
     state?: PaymentState;
     /** The driver has money to take at the door. */
     toCollect: boolean;
+    /** When the driver recorded taking it. */
+    collectedAt?: string;
 }
 
 /**
@@ -83,8 +85,11 @@ export function cashOnDeliveryOf(order?: Partial<OrderRecord> | null): CashOnDel
     const amount = num(payload?.cod_amount) ?? num(payment?.cod_amount);
     if (!amount || amount <= 0) return undefined;
     const state = str(payment?.state);
-    const settled = state === 'paid' || state === 'refunded' || state === 'partially_refunded';
+    // The driver's own record that they took it (`POST orders/{id}/cash-collected`).
+    const taken = recordOf(recordOf(order.meta)?.cash_collected);
+    const settled = state === 'paid' || state === 'refunded' || state === 'partially_refunded' || !!taken;
     return {
+        collectedAt: str(taken?.at),
         amount,
         currency: str(payload?.cod_currency) ?? str(payment?.currency) ?? str((order as Rec).currency),
         state,

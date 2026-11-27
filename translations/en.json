@@ -1270,6 +1270,19 @@
         }
     },
     "settings": {
+        "alerts": {
+            "title": "Tell me about",
+            "new_work": "New work",
+            "new_workHint": "An order is assigned or dispatched to you",
+            "order_changes": "Changes to my orders",
+            "order_changesHint": "An order is changed, cancelled or taken off you",
+            "messages": "Messages",
+            "messagesHint": "Someone writes to you in chat",
+            "offers": "Jobs I can take",
+            "offersHint": "A job nearby is offered to you",
+            "note": "Switching one off stops the notification. The app still updates when it is open.",
+            "failed": "That did not save. Check your signal and try again."
+        },
         "appearance": "APPEARANCE",
         "notifications": "NOTIFICATIONS",
         "storage": "STORAGE & DIAGNOSTICS",

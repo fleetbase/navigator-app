@@ -221,6 +221,15 @@ export function OrderDetailScreen({
     const payload = payloadOf(order);
     const entities = useMemo(() => payload.entities ?? [], [payload.entities]);
     const cod = cashOnDeliveryOf(order);
+    /*
+     * The driver says they took the cash. Recorded on the order so the day's
+     * hand-in can be checked; sent in the background (queued without signal),
+     * because the driver is at a door and the next tap is completing the order.
+     */
+    const confirmCash = () => {
+        setCashCollected(true);
+        if (order?.id) void adapter.post(`orders/${order.id}/cash-collected`, cod ? { amount: cod.amount } : {}).catch(() => undefined);
+    };
     /** Completing an order with cash still owed needs the driver to say they took it. */
     const needsCash = (activity?: Advanceable) => Boolean(activity?.complete && cod?.toCollect && !cashCollected);
 
@@ -445,7 +454,7 @@ export function OrderDetailScreen({
 
                         <WaypointsSection points={points} started={started} onChange={onChangeDestination && hasChoiceOfStops && !finished ? onChangeDestination : undefined} t={t} />
 
-                        {cod ? <CashSection cod={cod} t={t} confirmed={cashCollected} onConfirm={finished ? undefined : () => setCashCollected(true)} /> : null}
+                        {cod ? <CashSection cod={cod} t={t} confirmed={cashCollected} onConfirm={finished ? undefined : confirmCash} /> : null}
 
                         {isBooking ? (
                             <BringChecklist entities={entities} t={t} />
