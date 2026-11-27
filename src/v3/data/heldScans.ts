@@ -46,7 +46,55 @@ const STORAGE_KEY = 'data.heldScans';
 /** A shift, roughly: scans older than this belong to a job that is long over. */
 const KEEP_MS = 12 * 60 * 60 * 1000;
 
-let store: Record<string, Entry> = readJSON<Record<string, Entry>>(STORAGE_KEY, {});
+const STATUSES: HeldStatus[] = ['ready', 'sent', 'queued', 'unsent', 'refused'];
+
+/**
+ * What was kept is read back by a screen at render, so nothing unexpected may
+ * come out of it: an entry written by an older build, or one that is not what
+ * it should be, is dropped rather than handed on. A scan stands only with the
+ * text that is sent, the label that is shown and a status the screen knows.
+ */
+function soundScans(value: unknown): Record<string, HeldScan> {
+    const scans: Record<string, HeldScan> = {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return scans;
+    for (const key of Object.keys(value as object)) {
+        const scan = (value as Record<string, unknown>)[key] as Partial<HeldScan> | null | undefined;
+        if (!scan || typeof scan !== 'object') continue;
+        if (typeof scan.code !== 'string' || !scan.code) continue;
+        if (!STATUSES.includes(scan.status as HeldStatus)) continue;
+        scans[key] = {
+            code: scan.code,
+            label: typeof scan.label === 'string' && scan.label ? scan.label : scan.code,
+            at: typeof scan.at === 'string' ? scan.at : new Date(0).toISOString(),
+            status: scan.status as HeldStatus,
+            ...(typeof scan.subjectId === 'string' ? { subjectId: scan.subjectId } : {}),
+            ...(typeof scan.proofId === 'string' ? { proofId: scan.proofId } : {}),
+        };
+    }
+    return scans;
+}
+
+function soundStore(value: unknown): Record<string, Entry> {
+    const sound: Record<string, Entry> = {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return sound;
+    for (const key of Object.keys(value as object)) {
+        const entry = (value as Record<string, unknown>)[key] as Partial<Entry> | null | undefined;
+        if (!entry || typeof entry !== 'object' || typeof entry.at !== 'number') continue;
+        const scans = soundScans(entry.scans);
+        if (Object.keys(scans).length) sound[key] = { at: entry.at, scans };
+    }
+    return sound;
+}
+
+function load(): Record<string, Entry> {
+    try {
+        return soundStore(readJSON<unknown>(STORAGE_KEY, {}));
+    } catch {
+        return {};
+    }
+}
+
+let store: Record<string, Entry> = load();
 
 const keyOf = (orderId: string, activityCode: string, subjectId?: string) => `${orderId}::${activityCode}${subjectId ? `::${subjectId}` : ''}`;
 

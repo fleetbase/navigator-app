@@ -28,7 +28,8 @@ import { isQueuedAck } from '../api/NavigatorAdapter';
 import { useLiveRefresh } from '../realtime/liveRefresh';
 import { orderStore, type OrderRecord } from './orderStore';
 
-export type AcceptOutcome = 'accepted' | 'taken' | 'failed';
+/** `taken`: another driver got it. `expired`: the driver's own offer ran out (or was withdrawn) before the accept arrived. */
+export type AcceptOutcome = 'accepted' | 'taken' | 'expired' | 'failed';
 
 /**
  * The server's own count of the seconds left (`adhoc_offer.expires_in`), turned
@@ -128,7 +129,13 @@ export function useAcceptOffer(driverId?: string) {
                 const message = (err as Error).message ?? '';
                 setError(message);
                 // The server's own words for losing the race, or for an offer that moved on.
-                return /already started|already been|taken by another|no longer offered/i.test(message) ? 'taken' : 'failed';
+                /*
+                 * The server's own words. "No longer offered to you" is not a lost race: it is
+                 * this driver's offer having run out or been withdrawn, and saying "taken by
+                 * another driver" for it was untrue when nobody else was offered the job.
+                 */
+                if (/no longer offered/i.test(message)) return 'expired';
+                return /already started|already been|taken by another/i.test(message) ? 'taken' : 'failed';
             } finally {
                 setIsAccepting(false);
             }

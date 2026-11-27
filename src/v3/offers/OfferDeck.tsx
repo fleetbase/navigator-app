@@ -357,8 +357,8 @@ export function OfferDeck({ mode, driverId, offers, reload, leadId, organization
             void reload();
             return;
         }
-        if (outcome === 'taken') {
-            setEnded({ order, kind: 'taken' });
+        if (outcome === 'taken' || outcome === 'expired') {
+            setEnded({ order, kind: outcome });
             void reload();
             return;
         }
