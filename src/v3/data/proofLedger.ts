@@ -38,7 +38,12 @@ export function recordProof(orderId: string, activityCode: string, proof: { proo
 
 export function proofFor(orderId?: string, activityCode?: string): ProofRecord | undefined {
     if (!orderId || !activityCode) return undefined;
-    return ledger[keyOf(orderId, activityCode)];
+    const entry = ledger[keyOf(orderId, activityCode)];
+    // A capture the server answered without an id cannot be handed to the step
+    // update, which the server would then refuse. It is not counted, so the
+    // driver is asked again rather than left with a step that never completes.
+    if (entry && !entry.proofId && !entry.queued) return undefined;
+    return entry;
 }
 
 /**

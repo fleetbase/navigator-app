@@ -115,6 +115,19 @@ function bodyFor(proof: ProofPayload): Record<string, unknown> {
     return { code: proof.codes[0] };
 }
 
+/**
+ * The proof record in a capture's answer. A proof has a `data` field of its own
+ * (what was captured with it — an empty list for a signature), so the record is
+ * the answer itself whenever that carries an id; only a wrapped answer is unwrapped.
+ */
+function proofRecordOf(result: unknown): { id?: unknown; subject_id?: unknown } | null {
+    if (!result || typeof result !== 'object') return null;
+    const own = result as { id?: unknown; subject_id?: unknown; data?: unknown };
+    if (typeof own.id === 'string') return own;
+    const inner = own.data;
+    return inner && typeof inner === 'object' && !Array.isArray(inner) ? (inner as { id?: unknown; subject_id?: unknown }) : own;
+}
+
 export function useProofCapture(orderId?: string) {
     const { adapter } = useFleetbase();
     const [isCapturing, setIsCapturing] = useState(false);
@@ -147,7 +160,7 @@ export function useProofCapture(orderId?: string) {
             try {
                 const result = await adapter.post(pathFor(orderId, 'scan', subjectId), bodyFor({ method: 'scan', codes: [code] }));
                 if (isQueuedAck(result)) return { outcome: 'queued', subjectId };
-                const record = ((result as { data?: unknown })?.data ?? result) as { id?: unknown; subject_id?: unknown } | null;
+                const record = proofRecordOf(result);
                 return {
                     outcome: 'sent',
                     proofId: record && typeof record.id === 'string' ? record.id : undefined,
@@ -183,7 +196,7 @@ export function useProofCapture(orderId?: string) {
                 }
                 const result = await adapter.post(pathFor(orderId, proof.method, subjectId), bodyFor(proof));
                 if (isQueuedAck(result)) return 'queued';
-                const record = ((result as { data?: unknown })?.data ?? result) as { id?: unknown } | null;
+                const record = proofRecordOf(result);
                 if (record && typeof record.id === 'string') lastProofId.current = record.id;
                 return 'sent';
             } catch (err) {
