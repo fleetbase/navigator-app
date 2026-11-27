@@ -7,7 +7,7 @@
  */
 import { StopBadge } from '../../ui/RouteMap';
 import React, { useEffect, useRef } from 'react';
-import { AccessibilityInfo, Animated } from 'react-native';
+import { AccessibilityInfo, Animated, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Caption, Secondary } from '../../ui/Text';
@@ -705,12 +705,16 @@ export function FactChips({ chips, testID }: { chips: FactChip[]; testID?: strin
  * view is not drawn on iOS.
  */
 function DottedRail() {
+    const color = useTheme().textSecondary?.val as string;
+    // The dots are laid over the slot, not in its flow, so they take the row's height and never add to it.
     return (
-        <YStack flexGrow={1} minHeight={18} marginTop={4} marginBottom={3} overflow="hidden" alignItems="center" gap={5}>
-            {Array.from({ length: 24 }, (_, index) => (
-                <YStack key={index} width={4} height={4} borderRadius={2} backgroundColor="$textMuted" opacity={0.7} />
-            ))}
-        </YStack>
+        <View style={{ flexGrow: 1, minHeight: 18, width: 4, marginTop: 4, marginBottom: 3, overflow: 'hidden' }}>
+            <View style={{ position: 'absolute', top: 0, left: 0, width: 4 }}>
+                {Array.from({ length: 60 }, (_, index) => (
+                    <View key={index} style={{ width: 4, height: 4, borderRadius: 2, marginBottom: 5, backgroundColor: color, opacity: 0.75 }} />
+                ))}
+            </View>
+        </View>
     );
 }
 
@@ -748,8 +752,11 @@ export function TripCard({
     status,
     you,
     points,
+    dark = true,
     testID,
 }: {
+    /** Whether a dark scheme is showing. */
+    dark?: boolean;
     eyebrow: string;
     tracking?: string;
     /** A short tag at the top right: "Heading to pickup". */
@@ -761,6 +768,10 @@ export function TripCard({
 }) {
     const theme = useTheme();
     const RAIL = 44;
+    // The status tag as the mockup draws it: a deep blue pill with pale blue words. In the light schemes, the brand tint.
+    const tag = dark
+        ? { fill: '#13203A', border: '#2E4F9E', ink: '#9DBBFF' }
+        : { fill: theme.primaryFill?.val as string, border: theme.primaryBorder?.val as string, ink: theme.primary?.val as string };
     return (
         <YStack gap={12} testID={testID}>
             <XStack alignItems="center" justifyContent="space-between" gap={space[3]}>
@@ -775,9 +786,9 @@ export function TripCard({
                     ) : null}
                 </YStack>
                 {status ? (
-                    <XStack flexShrink={0} alignItems="center" gap={5} height={26} paddingHorizontal={9} borderRadius={13} borderWidth={1} borderColor="$primaryBorder" backgroundColor="$primaryFill">
-                        <HomeIcon name="navigate" color={theme.primary?.val as string} size={10} />
-                        <Body fontSize={11} lineHeight={15} fontWeight="800" tone="brand" numberOfLines={1}>
+                    <XStack flexShrink={0} alignItems="center" gap={6} height={28} paddingHorizontal={10} borderRadius={14} borderWidth={1} borderColor={tag.border as never} backgroundColor={tag.fill as never}>
+                        <HomeIcon name="navigate" color={tag.ink} size={11} />
+                        <Body fontSize={12} lineHeight={16} fontWeight="800" color={tag.ink as never} numberOfLines={1}>
                             {status}
                         </Body>
                     </XStack>

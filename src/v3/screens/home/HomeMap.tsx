@@ -24,7 +24,7 @@
  */
 import { DriverPuck } from '../../ui/DriverPuck';
 import { mapLook } from '../../ui/mapLook';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { YStack, useTheme } from 'tamagui';
 import { StopBadge, markerKindOf } from '../../ui/RouteMap';
@@ -112,13 +112,36 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
     const padTop = padding?.top ?? 0;
     const padBottom = padding?.bottom ?? 0;
     const fitted = useRef(false);
+    /*
+     * A fit asked for before the map has loaded is dropped without a word. When everything
+     * is already known at the first render (a reload with the day cached) there is no later
+     * change to ask again, and the map stays at its wide opening view. So fitting waits for
+     * the map to say it is ready.
+     */
+    const [ready, setReady] = useState(false);
 
     // Fit when the set of waypoints, the route or the visible part changes, not on every position tick.
     const fitKey = `${placed.map((w) => `${w.key}${w.done ? 'd' : ''}`).join('|')}:${activeKey}:${route.length}:${position ? 1 : 0}`;
     useEffect(() => {
         // With a next waypoint the view is the leg to it; without one, the whole day.
+        if (!ready) return;
         const active = placed.find((w) => w.key === activeKey);
-        const focus = active ? [active.point, ...route, ...(position ? [position] : [])] : [];
+        // The route runs on through the waypoints after this one; the view is the part up to it,
+        // so the driver sees the road they are about to drive, not the whole order.
+        let leg = route;
+        if (active && route.length > 1) {
+            let nearest = 0;
+            let best = Infinity;
+            route.forEach((point, index) => {
+                const distance = (point.latitude - active.point.latitude) ** 2 + (point.longitude - active.point.longitude) ** 2;
+                if (distance < best) {
+                    best = distance;
+                    nearest = index;
+                }
+            });
+            leg = route.slice(0, nearest + 1);
+        }
+        const focus = active ? [active.point, ...leg, ...(position ? [position] : [])] : [];
         const coordinates = focus.length > 1 ? focus : [...placed.map((w) => w.point), ...(position ? [position] : [])];
         if (!coordinates.length) return;
         // One point has no extent to fit; a street-level region around it instead.
@@ -131,7 +154,7 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
         ref.current?.fitToCoordinates(coordinates, { edgePadding: { top: 44, right: 48, bottom: 44, left: 48 }, animated: fitted.current });
         fitted.current = true;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fitKey, padBottom, refitToken]);
+    }, [fitKey, padBottom, refitToken, ready]);
 
     const centre = placed[0]?.point ?? position;
     // Nothing to centre on yet: hold the map's place rather than show the whole world.
@@ -142,6 +165,7 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
             <MapView
                 ref={ref}
                 style={{ flex: 1 }}
+                onMapReady={() => setReady(true)}
                 mapPadding={{ top: padTop, right: 0, bottom: padBottom, left: 0 }}
                 initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.length ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : STREET) }}
                 {...mapLook(dark)}

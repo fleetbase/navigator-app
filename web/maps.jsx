@@ -66,7 +66,14 @@ function UserLocation() {
     return null;
 }
 
-const MapView = forwardRef(function MapView({ style, testID, initialRegion, userInterfaceStyle, showsUserLocation, children, onPress, onRegionChangeComplete }, ref) {
+const MapView = forwardRef(function MapView({ style, testID, initialRegion, userInterfaceStyle, showsUserLocation, children, onPress, onRegionChangeComplete, onMapReady }, ref) {
+    // The native map says when it has loaded; here it is ready once mounted.
+    const readyRef = useRef(onMapReady);
+    readyRef.current = onMapReady;
+    useEffect(() => {
+        const timer = setTimeout(() => readyRef.current?.(), 0);
+        return () => clearTimeout(timer);
+    }, []);
     const containerRef = useRef(null);
     const [map, setMap] = useState(null);
     // A screen asks for a fit from its first effect, before the map exists or has a size.

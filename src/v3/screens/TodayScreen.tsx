@@ -566,6 +566,7 @@ export function TodayScreen({
             card: (
                 <TripCard
                     testID="home-trip"
+                    dark={dark}
                     eyebrow={t('home.trip.eyebrow', { count: list.length })}
                     tracking={waypoint.trackingNumber}
                     status={online && waypoint.kind ? t(`home.trip.heading.${waypoint.kind}`) : undefined}

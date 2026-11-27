@@ -94,7 +94,7 @@ function PulseRing({ size, color }: { size: number; color: string }) {
                 borderRadius: size / 2,
                 backgroundColor: color,
                 opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
-                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }],
+                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.35] }) }],
             }}
         />
     );
@@ -121,8 +121,9 @@ export function StopBadge({ kind, number, color, state }: StopBadgeProps) {
     const current = state === 'current';
     const skipped = state === 'skipped';
     const done = state === 'done';
-    const size = current ? 40 : 32;
-    const frame = current ? 52 : hitTarget.min;
+    // Every marker is the same size. The one being headed to is told apart by its ring and its pulse, not by being bigger.
+    const size = 32;
+    const frame = hitTarget.min;
 
     return (
         <YStack width={frame} height={frame} alignItems="center" justifyContent="center">
@@ -145,7 +146,7 @@ export function StopBadge({ kind, number, color, state }: StopBadgeProps) {
                 shadowOffset={{ width: 0, height: 2 }}
                 elevation={skipped ? 1 : 4}
             >
-                <Body fontSize={current ? 16 : 13} lineHeight={current ? 20 : 16} fontWeight="700" color={(skipped ? fill : '#FFFFFF') as never} tabular>
+                <Body fontSize={13} lineHeight={16} fontWeight="700" color={(skipped ? fill : '#FFFFFF') as never} tabular>
                     {skipped ? '–' : label}
                 </Body>
             </YStack>
