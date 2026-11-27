@@ -981,6 +981,9 @@
         }
     },
     "home": {
+        "map": {
+            "recentre": "Put the map back"
+        },
         "greeting": {
             "morning": "Morning, %{name}",
             "afternoon": "Afternoon, %{name}",

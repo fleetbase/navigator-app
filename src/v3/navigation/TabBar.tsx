@@ -13,12 +13,15 @@
  */
 import { useTranslation } from '../i18n/useTranslation';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Platform, StyleSheet } from 'react-native';
+import { BlurView } from '@react-native-community/blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack, useTheme } from 'tamagui';
 import { Body, Micro } from '../ui/Text';
 import { tabIcons, type TabIconName } from '../ui/Icon';
 import { space } from '../theme/tokens';
 import { componentSlot } from '../extensions/components/component-slot';
+import { useResolvedScheme } from '../settings';
 
 export interface TabBadges {
     /** Active stops/orders outstanding. */
@@ -44,8 +47,8 @@ export function useTabBarSpace(): number {
 }
 
 /**
- * The floating tab bar — design round 3. A pill that sits over the content
- * rather than a strip under it: the active tab is a filled capsule with its
+ * The floating tab bar — design round 3. A pill of glass that sits over the
+ * content rather than a strip under it: what is behind shows through, blurred. the active tab is a filled capsule with its
  * icon and label, the others are icons alone. It is hidden once a screen is
  * pushed inside a tab, because those screens anchor their own action at the
  * bottom.
@@ -54,6 +57,16 @@ function TabBarBase({ state, descriptors, navigation, badges = {} }: BottomTabBa
     const { t } = useTranslation();
     const theme = useTheme();
     const insets = useSafeAreaInsets();
+    const scheme = useResolvedScheme();
+    const dark = scheme !== 'light' && scheme !== 'sunlight';
+    /*
+     * Glass: a blur of whatever is behind, under a thin tint that keeps the
+     * icons legible over a bright map or a white card. Android has no cheap
+     * live blur, so there the tint is heavier and stands in for it.
+     */
+    const blurs = Platform.OS !== 'android';
+    const tint = dark ? (blurs ? 'rgba(18, 24, 34, 0.42)' : 'rgba(18, 24, 34, 0.90)') : blurs ? 'rgba(255, 255, 255, 0.46)' : 'rgba(255, 255, 255, 0.92)';
+    const edge = dark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(10, 15, 23, 0.10)';
 
     // Depth inside the focused tab's own stack: anything past its first screen hides the bar.
     const focusedRoute = state.routes[state.index];
@@ -62,6 +75,7 @@ function TabBarBase({ state, descriptors, navigation, badges = {} }: BottomTabBa
 
     return (
         <YStack position="absolute" left={space[4]} right={space[4]} bottom={Math.max(insets.bottom, space[2]) + TAB_BAR_GAP - space[2]} pointerEvents="box-none">
+            <YStack borderRadius={TAB_BAR_HEIGHT / 2} shadowColor="#000000" shadowOpacity={dark ? 0.4 : 0.16} shadowRadius={18} shadowOffset={{ width: 0, height: 10 }}>
             <XStack
                 testID="tab-bar"
                 height={TAB_BAR_HEIGHT}
@@ -69,15 +83,15 @@ function TabBarBase({ state, descriptors, navigation, badges = {} }: BottomTabBa
                 justifyContent="space-between"
                 paddingHorizontal={space[2]}
                 borderRadius={TAB_BAR_HEIGHT / 2}
-                backgroundColor="$surfaceRaised"
+                overflow="hidden"
+                backgroundColor={(blurs ? 'transparent' : tint) as never}
                 borderWidth={1}
-                borderColor="$border"
-                shadowColor="#000000"
-                shadowOpacity={0.45}
-                shadowRadius={18}
-                shadowOffset={{ width: 0, height: 10 }}
+                borderColor={edge as never}
                 accessibilityRole="tablist"
             >
+                {blurs ? <BlurView style={StyleSheet.absoluteFill} blurType={dark ? 'dark' : 'light'} blurAmount={22} reducedTransparencyFallbackColor={dark ? '#121822' : '#FFFFFF'} /> : null}
+                {/* The tint sits over the blur; the tabs over both. */}
+                {blurs ? <YStack position="absolute" top={0} right={0} bottom={0} left={0} backgroundColor={tint as never} pointerEvents="none" /> : null}
                 {state.routes.map((route, index) => {
                     const focused = state.index === index;
                     const { options } = descriptors[route.key];
@@ -131,7 +145,7 @@ function TabBarBase({ state, descriptors, navigation, badges = {} }: BottomTabBa
                                         borderRadius={999}
                                         backgroundColor="$primary"
                                         borderWidth={2}
-                                        borderColor="$surfaceRaised"
+                                        borderColor="$background"
                                         alignItems="center"
                                         justifyContent="center"
                                     >
@@ -150,6 +164,7 @@ function TabBarBase({ state, descriptors, navigation, badges = {} }: BottomTabBa
                     );
                 })}
             </XStack>
+            </YStack>
         </YStack>
     );
 }

@@ -106,6 +106,7 @@ module.exports = (env = {}, argv = {}) => {
                 '@brand-fonts': fs.existsSync(root('brand', 'fonts')) ? root('brand', 'fonts') : shim('no-brand-fonts'),
                 // No browser build, so implemented here against the browser's own APIs.
                 '@gorhom/bottom-sheet': shim('bottom-sheet.jsx'),
+                '@react-native-community/blur': shim('blur.jsx'),
                 'react-native-background-fetch': shim('background-fetch.js'),
                 'react-native-background-geolocation': shim('background-geolocation.js'),
                 'react-native-config': shim('config.js'),

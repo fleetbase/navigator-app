@@ -2,9 +2,10 @@
  * Home — the signed-in dashboard, design round 3 (mockups s25 `Home` and s26
  * `HomeLight`, the same screen in the two themes).
  *
- * One layout in every state: the map is the top of the screen with the
- * organisation and the driver's status floating over it, and a sheet rides up
- * over the map's bottom edge carrying, in this order, a hero, a card of
+ * One layout in every state: the map is the whole background, showing the
+ * driver; the organisation and the driver's status are fixed over its top; and
+ * a sheet over its bottom, which can be pulled down to see more map but never
+ * up over the chips, carries, in this order, a hero, a card of
  * figures, the action row, the day's progress line, and a list of rows. What
  * changes between states is only what fills those places:
  *
@@ -32,10 +33,10 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderNotices } from './jobs/OrderNotices';
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, RefreshControl } from 'react-native';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useWindowDimensions } from 'react-native';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { XStack, YStack, useTheme } from 'tamagui';
-import { ScrollView } from '../ui/Scroll';
 import { Body, Micro, Secondary } from '../ui/Text';
 import { Banner, Skeleton } from '../ui/Banner';
 import { FailureState } from '../ui/FailureState';
@@ -99,16 +100,12 @@ export interface TodayScreenProps {
     onLogFuel?: () => void;
 }
 
-/*
- * The mockup's map is 318 tall in an 844 frame, 44 of it under the status bar.
- * The shell keeps the status bar clear above this screen, so the map here is
- * the part of the mockup's that is below it.
- */
-const MAP_HEIGHT = 280;
-/** How far the content sheet rides up over the bottom of the map. */
-const SHEET_OVERLAP = 22;
-/** Extra map drawn behind the sheet, uncovered when the page is pulled down. More than a pull can reach. */
-const MAP_PULL_ROOM = 320;
+/** How much of the map shows between the status bar and the sheet where the sheet rests. */
+const MAP_SHOWING = 250;
+/** The part of that taken by the chips floating over the map. */
+const CHIPS_ROOM = 56;
+/** What stays of the sheet when it is pulled down: its handle and the header block. */
+const PEEK_BODY = 128;
 /** The gap between the sheet's blocks. */
 const SHEET_GAP = 14;
 
@@ -157,7 +154,7 @@ export function TodayScreen({
     const tabBarSpace = useTabBarSpace();
     const { units } = useSettings();
     const scheme = useResolvedScheme();
-    const { organizationName, driverName, openDutySheet } = useShell();
+    const { organizationName, driverName, openDutySheet, openOrgSheet } = useShell();
     const { duty, isChanging, setDuty, error: dutyError } = useDuty();
     const { isOnline, queuedCount, syncState, lastSyncedCount } = useSync();
     /*
@@ -283,7 +280,6 @@ export function TodayScreen({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ordersQuery.refresh, manifestsQuery.refresh, manifestQuery.refresh, trackerQuery.retry, offersQuery.reload, driverQuery.retry, history.refresh]);
 
-    const refreshControl = <RefreshControl refreshing={pulling} onRefresh={refreshAll} tintColor={theme.textMuted?.val as string} testID="home-refresh" />;
 
 
     /* -- Pieces shared by the states ---------------------------------------- */
@@ -633,150 +629,174 @@ export function TodayScreen({
     const showProgress = (state === 'next' || state === 'before') && day.total > 0;
 
     /*
-     * How far the page has been pulled down past its top, as a negative offset
-     * (zero once it is scrolled up). The map and the chips over it are moved by
-     * this amount so they stay put while the page is pulled.
+     * The layout: the map is the whole background; the organisation and the
+     * driver's status are fixed over its top; the content is a sheet over its
+     * bottom. The sheet rests where it leaves the top of the map showing, can be
+     * pulled down to a short strip to see more map, and goes no higher than
+     * where it rests, so it never covers the chips. Content taller than the
+     * sheet scrolls inside it.
      */
-    const scrollY = useRef(new Animated.Value(0)).current;
-    const pinned = useMemo(() => scrollY.interpolate({ inputRange: [-MAP_PULL_ROOM, 0], outputRange: [-MAP_PULL_ROOM, 0], extrapolate: 'clamp' }), [scrollY]);
-    const onScroll = useMemo(() => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false }), [scrollY]);
-
-    /* -- The one layout ------------------------------------------------------ */
+    const windowHeight = useWindowDimensions().height;
+    const [layoutHeight, setLayoutHeight] = useState(0);
+    const height = layoutHeight || windowHeight;
+    const restHeight = Math.max(PEEK_BODY + tabBarSpace + 80, Math.round(height - bleed - MAP_SHOWING));
+    const peekHeight = Math.min(restHeight - 60, PEEK_BODY + tabBarSpace);
+    const snapPoints = useMemo(() => [peekHeight, restHeight], [peekHeight, restHeight]);
+    const [sheetIndex, setSheetIndex] = useState(1);
+    const [refitToken, setRefitToken] = useState(0);
+    const [mapMoved, setMapMoved] = useState(false);
+    const sheetHeight = sheetIndex === 0 ? peekHeight : restHeight;
+    const recentre = () => {
+        setMapMoved(false);
+        setRefitToken((n) => n + 1);
+    };
 
     return (
-        <ScrollView
-            style={screen}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }}
-            refreshControl={refreshControl}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-            testID="today"
-        >
-            {/*
-              * The map, full width and up to the top edge, with the organisation and
-              * the driver's status floating over it.
-              *
-              * Pulling the page down must not drag the map away from the top and
-              * show bare background above it. So the map is pinned: it moves up by
-              * exactly as much as the page is pulled down, and it is drawn taller
-              * than its slot, the extra hidden behind the sheet, so that as the sheet
-              * slides down more map is uncovered rather than a gap.
-              */}
-            <YStack height={MAP_HEIGHT + bleed}>
-                <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: MAP_HEIGHT + bleed + MAP_PULL_ROOM, transform: [{ translateY: pinned }] }}>
-                    <HomeMap
-                        waypoints={day.waypoints}
-                        // Online, the view is the leg to the next waypoint; otherwise the whole day.
-                        activeKey={state === 'next' ? next?.key : undefined}
-                        route={state === 'next' ? route : undefined}
-                        position={position}
-                        dark={dark}
-                        height={MAP_HEIGHT + bleed + MAP_PULL_ROOM}
-                        // What the map frames is still the visible slot, not the part behind the sheet.
-                        padding={{ top: 52 + bleed, bottom: SHEET_OVERLAP + MAP_PULL_ROOM }}
-                    />
-                </Animated.View>
-                <Animated.View style={{ position: 'absolute', top: bleed, left: space[3] - 2, right: space[3] - 2, transform: [{ translateY: pinned }] }}>
-                    <XStack alignItems="flex-start" justifyContent="space-between" gap={space[2]} testID="home-header">
-                        <OrgChip name={organizationName} dark={dark} onPress={onOpenOrganizations} />
-                        <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
-                    </XStack>
-                </Animated.View>
+        <YStack flex={1} backgroundColor="$mapBackground" onLayout={(event) => setLayoutHeight(Math.round(event.nativeEvent.layout.height))} testID="today">
+            <YStack position="absolute" top={0} left={0} right={0} bottom={0}>
+                <HomeMap
+                    waypoints={day.waypoints}
+                    // Online, the view is the leg to the next waypoint; otherwise the whole day.
+                    activeKey={state === 'next' ? next?.key : undefined}
+                    route={state === 'next' ? route : undefined}
+                    position={position}
+                    dark={dark}
+                    height={height}
+                    // The part of the map that can be seen: under the chips, above the sheet.
+                    padding={{ top: bleed + CHIPS_ROOM, bottom: sheetHeight }}
+                    refitToken={refitToken}
+                    onMoved={() => setMapMoved(true)}
+                />
             </YStack>
 
-            {/* The sheet: rounded at the top, riding up over the map's bottom edge, and filling the rest of the screen. */}
-            <YStack
-                flexGrow={1}
-                marginTop={-SHEET_OVERLAP}
-                borderTopLeftRadius={22}
-                borderTopRightRadius={22}
-                borderTopWidth={1}
-                borderColor="$border"
-                backgroundColor="$background"
-                paddingTop={18}
-                paddingHorizontal={space[4]}
-                gap={SHEET_GAP}
-                testID={`home-sheet-${state}`}
+            {/* Fixed over the map; the sheet never reaches them. */}
+            <XStack position="absolute" top={bleed} left={space[3] - 2} right={space[3] - 2} alignItems="flex-start" justifyContent="space-between" gap={space[2]} pointerEvents="box-none" testID="home-header">
+                <OrgChip name={organizationName} dark={dark} onPress={onOpenOrganizations ?? openOrgSheet} />
+                <DutyChip duty={duty} onPress={openDutySheet} t={t} dark={dark} since={onDutySince} />
+            </XStack>
+
+            {/* Shown once the driver has moved the map: puts the view back. */}
+            {mapMoved ? (
+                <YStack
+                    position="absolute"
+                    right={space[3]}
+                    bottom={sheetHeight + space[3]}
+                    width={46}
+                    height={46}
+                    borderRadius={23}
+                    alignItems="center"
+                    justifyContent="center"
+                    backgroundColor="$surface"
+                    borderWidth={1}
+                    borderColor="$border"
+                    onPress={recentre}
+                    pressStyle={{ opacity: 0.7 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('home.map.recentre')}
+                    testID="home-recentre"
+                >
+                    <HomeIcon name="navigate" color={theme.primary?.val as string} />
+                </YStack>
+            ) : null}
+
+            <BottomSheet
+                index={1}
+                snapPoints={snapPoints}
+                enableDynamicSizing={false}
+                enablePanDownToClose={false}
+                enableOverDrag={false}
+                animateOnMount={false}
+                onChange={(index: number) => setSheetIndex(index < 0 ? 0 : index)}
+                backgroundStyle={{ backgroundColor: theme.background?.val as string, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: theme.border?.val as string }}
+                handleIndicatorStyle={{ backgroundColor: theme.border?.val as string, width: 40, height: 5 }}
+                handleStyle={{ paddingTop: 10, paddingBottom: 8 }}
             >
-                {noticeBanners}
-                {dutyErrorBanner}
+                <BottomSheetScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: space[4], paddingTop: 6, paddingBottom: tabBarSpace + space[2], gap: SHEET_GAP }}
+                    testID={`home-sheet-${state}`}
+                >
+                    {noticeBanners}
+                    {dutyErrorBanner}
 
-                {state === 'loading' ? (
-                    <YStack gap={SHEET_GAP} testID="today-loading">
-                        <Skeleton height={92} borderRadius={CARD_RADIUS} />
-                        <Skeleton height={84} borderRadius={CARD_RADIUS} />
-                        <Skeleton height={60} borderRadius={16} />
-                    </YStack>
-                ) : state === 'error' ? (
-                    <YStack paddingVertical={space[4]} testID="today-error">
-                        <FailureState error={ordersQuery.error} isOnline={isOnline} onRetry={refreshAll} t={t} />
-                    </YStack>
-                ) : (
-                    <>
-                        <Rise>
-                            <YStack gap={SHEET_GAP} testID={state === 'next' ? 'today-next-stop' : `home-hero-${state}`}>
-                                {hero}
-                                <StatCard stats={stats} testID={statsTestID} />
-                                {notes}
-                                {actions}
-                            </YStack>
-                        </Rise>
+                    {state === 'loading' ? (
+                        <YStack gap={SHEET_GAP} testID="today-loading">
+                            <Skeleton height={92} borderRadius={CARD_RADIUS} />
+                            <Skeleton height={84} borderRadius={CARD_RADIUS} />
+                            <Skeleton height={60} borderRadius={16} />
+                        </YStack>
+                    ) : state === 'error' ? (
+                        <YStack paddingVertical={space[4]} testID="today-error">
+                            <FailureState error={ordersQuery.error} isOnline={isOnline} onRetry={refreshAll} t={t} />
+                        </YStack>
+                    ) : (
+                        <>
+                            <Rise>
+                                <YStack gap={SHEET_GAP} testID={state === 'next' ? 'today-next-stop' : `home-hero-${state}`}>
+                                    {/* Room under the header before the figures and rows. */}
+                                    <YStack paddingBottom={space[3]}>{hero}</YStack>
+                                    <StatCard stats={stats} testID={statsTestID} />
+                                    {notes}
+                                    {actions}
+                                </YStack>
+                            </Rise>
 
-                        {showProgress ? (
-                            <Rise delay={70}>
-                                <YStack gap={space[2]} testID="today-progress">
-                                    <XStack alignItems="baseline" justifyContent="space-between" gap={space[2]}>
-                                        <Body fontSize={14} lineHeight={19} fontWeight="700" tabular>
-                                            {t('home.progress.done', { done: day.done, total: day.total })}
-                                        </Body>
-                                        {finishAt ? (
-                                            <Secondary fontSize={13} lineHeight={18} tabular testID="home-finish">
-                                                {t('home.progress.finish', { time: formatClock(finishAt) })}
-                                            </Secondary>
+                            {showProgress ? (
+                                <Rise delay={70}>
+                                    <YStack gap={space[2]} testID="today-progress">
+                                        <XStack alignItems="baseline" justifyContent="space-between" gap={space[2]}>
+                                            <Body fontSize={14} lineHeight={19} fontWeight="700" tabular>
+                                                {t('home.progress.done', { done: day.done, total: day.total })}
+                                            </Body>
+                                            {finishAt ? (
+                                                <Secondary fontSize={13} lineHeight={18} tabular testID="home-finish">
+                                                    {t('home.progress.finish', { time: formatClock(finishAt) })}
+                                                </Secondary>
+                                            ) : null}
+                                        </XStack>
+                                        <SegmentBar total={day.total} done={day.done} hasCurrent={state === 'next'} />
+                                        {day.manifest?.status === 'draft' ? (
+                                            <Micro tone="warning" testID="home-draft-route">
+                                                {t('home.before.draft')}
+                                            </Micro>
                                         ) : null}
-                                    </XStack>
-                                    <SegmentBar total={day.total} done={day.done} hasCurrent={state === 'next'} />
-                                    {day.manifest?.status === 'draft' ? (
-                                        <Micro tone="warning" testID="home-draft-route">
-                                            {t('home.before.draft')}
-                                        </Micro>
-                                    ) : null}
-                                </YStack>
-                            </Rise>
-                        ) : null}
+                                    </YStack>
+                                </Rise>
+                            ) : null}
 
-                        {summaryList ? <Rise delay={70}>{summaryList}</Rise> : null}
+                            {summaryList ? <Rise delay={70}>{summaryList}</Rise> : null}
 
-                        {rows.length ? (
-                            <Rise delay={140}>
-                                <YStack gap={10} testID="home-attention">
-                                    {rows}
-                                </YStack>
-                            </Rise>
-                        ) : null}
+                            {rows.length ? (
+                                <Rise delay={140}>
+                                    <YStack gap={10} testID="home-attention">
+                                        {rows}
+                                    </YStack>
+                                </Rise>
+                            ) : null}
 
-                        {showProgress && day.upcoming.length ? (
-                            <Rise delay={200}>
-                                <YStack gap={10} testID="home-upcoming">
-                                    <SectionLabel>{t('home.upcoming.section')}</SectionLabel>
-                                    <Card padded={false}>
-                                        {day.upcoming.map((waypoint, index) => (
-                                            <WaypointRow
-                                                key={waypoint.key}
-                                                waypoint={waypoint}
-                                                first={index === 0}
-                                                time={waypoint.plannedAt ? formatClock(waypoint.plannedAt) : waypoint.windowEnd ? t('home.upcoming.by', { time: formatClock(waypoint.windowEnd) }) : undefined}
-                                                onPress={canOpen(waypoint) ? () => openWaypoint(waypoint) : undefined}
-                                            />
-                                        ))}
-                                    </Card>
-                                </YStack>
-                            </Rise>
-                        ) : null}
-                    </>
-                )}
-            </YStack>
-        </ScrollView>
+                            {showProgress && day.upcoming.length ? (
+                                <Rise delay={200}>
+                                    <YStack gap={10} testID="home-upcoming">
+                                        <SectionLabel>{t('home.upcoming.section')}</SectionLabel>
+                                        <Card padded={false}>
+                                            {day.upcoming.map((waypoint, index) => (
+                                                <WaypointRow
+                                                    key={waypoint.key}
+                                                    waypoint={waypoint}
+                                                    first={index === 0}
+                                                    time={waypoint.plannedAt ? formatClock(waypoint.plannedAt) : waypoint.windowEnd ? t('home.upcoming.by', { time: formatClock(waypoint.windowEnd) }) : undefined}
+                                                    onPress={canOpen(waypoint) ? () => openWaypoint(waypoint) : undefined}
+                                                />
+                                            ))}
+                                        </Card>
+                                    </YStack>
+                                </Rise>
+                            ) : null}
+                        </>
+                    )}
+                </BottomSheetScrollView>
+            </BottomSheet>
+        </YStack>
     );
 }
 

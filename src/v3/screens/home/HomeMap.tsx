@@ -2,9 +2,9 @@
  * The dashboard's map: the day's waypoints, the driver, and the way to the
  * next one.
  *
- * It is a picture, not a tool. Touches pass through to the page so the
- * dashboard scrolls when a thumb lands on the map; the working map with pan
- * and zoom lives on the route and order screens.
+ * It fills the screen behind the dashboard's chips and sheet, and can be
+ * panned and zoomed in the part that shows. `refitToken` puts the view back
+ * (the dashboard's re-centre button changes it).
  *
  * Lines, strongest first:
  *
@@ -40,12 +40,16 @@ export interface HomeMapProps {
     position?: LatLng | null;
     dark?: boolean;
     height: number;
-    /** Room to keep clear at the top (floating controls) and bottom (the sheet's overlap). */
+    /** The part of the map covered at the top (floating chips) and at the bottom (the sheet). */
     padding?: { top?: number; bottom?: number };
+    /** Change it to put the view back on the day (or the leg to the next waypoint). */
+    refitToken?: number;
+    /** Told when the driver moves the map by hand, so a way back can be offered. */
+    onMoved?: () => void;
     testID?: string;
 }
 
-export function HomeMap({ waypoints, activeKey, route = [], position, dark, height, padding, testID = 'home-map' }: HomeMapProps) {
+export function HomeMap({ waypoints, activeKey, route = [], position, dark, height, padding, refitToken = 0, onMoved, testID = 'home-map' }: HomeMapProps) {
     const theme = useTheme();
     const ref = useRef<MapView>(null);
     const placed = useMemo(() => waypoints.filter((w) => !!w.point) as (HomeWaypoint & { point: LatLng })[], [waypoints]);
@@ -93,7 +97,16 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
         return position ? [position, ...pending] : pending;
     }, [placed, position]);
 
-    // Fit when the set of waypoints or the route changes, not on every position tick.
+    /*
+     * The map fills the screen behind the chips and the sheet. Its padding tells
+     * it which part can be seen, so "centre on the driver" and "fit the route"
+     * land in the visible part and the driver is never hidden under the sheet.
+     */
+    const padTop = padding?.top ?? 0;
+    const padBottom = padding?.bottom ?? 0;
+    const fitted = useRef(false);
+
+    // Fit when the set of waypoints, the route or the visible part changes, not on every position tick.
     const fitKey = `${placed.map((w) => `${w.key}${w.done ? 'd' : ''}`).join('|')}:${activeKey}:${route.length}:${position ? 1 : 0}`;
     useEffect(() => {
         // With a next waypoint the view is the leg to it; without one, the whole day.
@@ -103,35 +116,35 @@ export function HomeMap({ waypoints, activeKey, route = [], position, dark, heig
         if (!coordinates.length) return;
         // One point has no extent to fit; a street-level region around it instead.
         if (coordinates.length === 1) {
-            ref.current?.animateToRegion({ ...coordinates[0], latitudeDelta: 0.02, longitudeDelta: 0.02 }, 0);
+            ref.current?.animateToRegion({ ...coordinates[0], latitudeDelta: 0.02, longitudeDelta: 0.02 }, fitted.current ? 300 : 0);
+            fitted.current = true;
             return;
         }
-        ref.current?.fitToCoordinates(coordinates, {
-            edgePadding: { top: 40 + (padding?.top ?? 0), right: 48, bottom: 40 + (padding?.bottom ?? 0), left: 48 },
-            animated: false,
-        });
+        // The room for the chips and the sheet is the map's own padding (below), so this is only breathing space.
+        ref.current?.fitToCoordinates(coordinates, { edgePadding: { top: 44, right: 48, bottom: 44, left: 48 }, animated: fitted.current });
+        fitted.current = true;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fitKey]);
+    }, [fitKey, padBottom, refitToken]);
 
     const centre = placed[0]?.point ?? position;
     // Nothing to centre on yet: hold the map's place rather than show the whole world.
     if (!centre) return <YStack height={height} backgroundColor="$mapBackground" testID={`${testID}-empty`} />;
 
     return (
-        <YStack height={height} backgroundColor="$mapBackground" pointerEvents="none" testID={testID}>
+        <YStack height={height} backgroundColor="$mapBackground" testID={testID}>
             <MapView
                 ref={ref}
                 style={{ flex: 1 }}
+                mapPadding={{ top: padTop, right: 0, bottom: padBottom, left: 0 }}
                 initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.length ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : { latitudeDelta: 0.02, longitudeDelta: 0.02 }) }}
                 userInterfaceStyle={dark ? 'dark' : 'light'}
                 showsUserLocation
                 showsMyLocationButton={false}
                 showsCompass={false}
                 toolbarEnabled={false}
-                scrollEnabled={false}
-                zoomEnabled={false}
                 pitchEnabled={false}
                 rotateEnabled={false}
+                onPanDrag={onMoved}
             >
                 {hasRoute ? (
                     <>

@@ -12,6 +12,7 @@ import { YStack } from 'tamagui';
 import { DriverTabs, type Features } from './DriverTabs';
 import type { TabBadges } from './TabBar';
 import { DutySheet, OfflineBar, useDuty, useSync } from '../shell';
+import { OrgSheet } from '../shell/OrgSheet';
 import { space } from '../theme/tokens';
 
 /**
@@ -24,6 +25,8 @@ export interface ShellValue {
     /** The driver's name, when known. */
     driverName?: string;
     openDutySheet: () => void;
+    /** Opens the organisation switcher over whatever screen is in front. */
+    openOrgSheet: () => void;
     /**
      * Lets the screen in front draw up to the very top of the display, under the
      * status bar (the dashboard's map does). The shell then stops padding for the
@@ -32,7 +35,7 @@ export interface ShellValue {
     setBleedTop: (bleed: boolean) => void;
 }
 
-const ShellContext = createContext<ShellValue>({ organizationName: '', openDutySheet: () => {}, setBleedTop: () => {} });
+const ShellContext = createContext<ShellValue>({ organizationName: '', openDutySheet: () => {}, openOrgSheet: () => {}, setBleedTop: () => {} });
 
 export function useShell(): ShellValue {
     return useContext(ShellContext);
@@ -77,7 +80,8 @@ export function DriverShell({
     );
 
     const [bleedTop, setBleedTop] = useState(false);
-    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), setBleedTop }), [organizationName, subtitle]);
+    const [orgSheetOpen, setOrgSheetOpen] = useState(false);
+    const shell = useMemo<ShellValue>(() => ({ organizationName, driverName: subtitle, openDutySheet: () => setSheetOpen(true), openOrgSheet: () => setOrgSheetOpen(true), setBleedTop }), [organizationName, subtitle]);
     // The strip about signal and syncing keeps clear of the status bar even when the screen below does not.
     const sync = useSync();
     const stripShown = sync.syncState === 'failed' || !sync.isOnline || (sync.syncState === 'syncing' && sync.queuedCount > 0) || sync.lastSyncedCount > 0;
@@ -106,6 +110,12 @@ export function DriverShell({
                         onSelect={handleSelect}
                         onDismiss={() => setSheetOpen(false)}
                     />
+                </YStack>
+            </SheetModal>
+
+            <SheetModal visible={orgSheetOpen} onClose={() => setOrgSheetOpen(false)} testID="org-modal">
+                <YStack paddingBottom={Math.max(insets.bottom, space[4])} backgroundColor="$surface" borderTopLeftRadius={26} borderTopRightRadius={26}>
+                    <OrgSheet visible={orgSheetOpen} driverId={driverId} currentOrganizationId={organizationId} onSwitched={onOrganizationSwitched} onDismiss={() => setOrgSheetOpen(false)} />
                 </YStack>
             </SheetModal>
         </YStack>
