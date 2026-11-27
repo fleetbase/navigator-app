@@ -34,7 +34,7 @@ import { routeRuns, useManifestRecord, useManifestRoute, type LatLng } from '../
 import type { HomeWaypoint } from './homeModel';
 
 /** With only the driver to show, a few streets around them: close enough to recognise where they are. */
-const STREET = { latitudeDelta: 0.004, longitudeDelta: 0.004 };
+const STREET = { latitudeDelta: 0.0025, longitudeDelta: 0.0025 };
 
 export interface HomeMapProps {
     waypoints: HomeWaypoint[];
