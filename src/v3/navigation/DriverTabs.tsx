@@ -115,14 +115,15 @@ const OrgSwitcherH = withHeader('nav.orgSwitcher', screenSlot('account.orgSwitch
 const SettingsScreenH = withHeader('nav.settings', screenSlot('account.settings'));
 const HelpH = withHeader('nav.help', screenSlot('account.help'));
 /*
- * Proof by scanning fills the screen with the camera and draws its own close
- * button over it, so it takes no title bar (as the order does not). A photo or
- * a signature keeps the title bar and its back control.
+ * Proof by scanning fills the screen with the camera, and proof by signature
+ * with the signing pad; each draws its own close button, so neither takes a
+ * title bar (as the order does not). A photo keeps the title bar and its back
+ * control.
  */
 const ProofCaptureSlot = screenSlot('order.proof');
 const ProofCaptureTitled = withHeader('nav.proofCapture', ProofCaptureSlot);
 function ProofCaptureH(props: { route?: { params?: { podMethod?: string | null } } }) {
-    const Screen: React.ComponentType<any> = proofMethodOf(props.route?.params?.podMethod) === 'scan' ? ProofCaptureSlot : ProofCaptureTitled;
+    const Screen: React.ComponentType<any> = proofMethodOf(props.route?.params?.podMethod) === 'photo' ? ProofCaptureTitled : ProofCaptureSlot;
     return <Screen {...props} />;
 }
 const DestinationH = withHeader('nav.destination', screenSlot('order.destination'));

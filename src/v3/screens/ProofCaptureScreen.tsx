@@ -8,17 +8,19 @@
  * renders the method the config named, and nothing else.
  *
  * The camera-backed methods live in the ported v2 components so
- * `react-native-vision-camera` keeps a single owner. The signature pad is a
- * WebView canvas, which is the only one of the three that works in a simulator
- * — worth knowing when reading any verification claim about this screen.
+ * `react-native-vision-camera` keeps a single owner. Scanning and signing are
+ * screens of their own (screens/proof/ProofScan, screens/proof/ProofSignature);
+ * the signature pad is drawn by the app, so it is the one that works in a
+ * simulator — worth knowing when reading any verification claim about this
+ * screen.
  *
  * Capture happens **before** the activity update, never after, so a driver is
  * never left holding an order marked delivered with no proof attached to it.
  */
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { ScrollView } from '../ui/Scroll';
-import { XStack, YStack } from 'tamagui';
+import { YStack } from 'tamagui';
 import { Body, Caption, Micro, Secondary } from '../ui/Text';
 import { Button } from '../ui/Button';
 import { Banner } from '../ui/Banner';
@@ -29,17 +31,17 @@ import { useProofCapture, proofMethodOf, type ProofMethod, type ProofOutcome } f
 import { recordProof } from '../data/proofLedger';
 import type { CapturedPhoto } from '../../components/CameraCapture';
 import { ProofScan } from './proof/ProofScan';
+import { ProofSignature } from './proof/ProofSignature';
 
 /*
- * The capture dependencies are loaded only when a config actually asks for
- * them. VisionCamera initialises its native module at import time and the
- * signature pad drags in a WebView, so importing them at module scope makes
- * every screen that merely *routes* to this one — the whole navigator —
- * depend on three native binaries. A driver whose flow needs no proof should
- * not pay for a camera, and a test of the tab bar should not need one either.
+ * The camera is loaded only when a config actually asks for it. VisionCamera
+ * initialises its native module at import time, so importing it at module
+ * scope makes every screen that merely *routes* to this one — the whole
+ * navigator — depend on a native binary. A driver whose flow needs no proof
+ * should not pay for a camera, and a test of the tab bar should not need one
+ * either.
  */
 const lazyCamera = () => require('../../components/CameraCapture').default as React.ComponentType<{ onDone?: (photos: CapturedPhoto[]) => void }>;
-const lazySignaturePad = () => require('react-native-signature-canvas').default as React.ComponentType<Record<string, unknown>>;
 
 /** One array for "no list", so the items are not rebuilt on every render. */
 const NO_EXPECTED: string[] = [];
@@ -54,7 +56,7 @@ export interface ProofCaptureScreenProps {
     expected?: string[];
     /** Proof for one entity rather than the whole order. */
     subjectId?: string;
-    /** The shell's strip about signal and syncing is showing over the top of the screen (the scan screen makes room for it). */
+    /** The shell's strip about signal and syncing is showing over the top of the screen (the scan and signature screens make room for it). */
     stripShowing?: boolean;
     onCaptured?: (outcome: ProofOutcome) => void;
     onCancel?: () => void;
@@ -77,7 +79,6 @@ export function ProofCaptureScreen({
     const { capture, isCapturing, error, lastProofId } = useProofCapture(orderId);
 
     const [photos, setPhotos] = useState<string[]>([]);
-    const signatureRef = useRef<{ readSignature: () => void } | null>(null);
 
     const send = useCallback(
         async (payload: Parameters<typeof capture>[0]) => {
@@ -97,12 +98,32 @@ export function ProofCaptureScreen({
 
     /*
      * Scanning is its own screen: the camera edge to edge, with its own close
-     * button, its drawer and its states (screens/proof/ProofScan). A photo and
-     * a signature stay as they were, below.
+     * button, its drawer and its states (screens/proof/ProofScan). A photo
+     * stays as it was, below.
      */
     if (method === 'scan') {
         return (
             <ProofScan
+                orderId={orderId}
+                activityCode={activityCode}
+                activityLabel={activityLabel}
+                expected={expected}
+                subjectId={subjectId}
+                stripShowing={stripShowing}
+                onCaptured={onCaptured}
+                onCancel={onCancel}
+            />
+        );
+    }
+
+    /*
+     * Signing is its own screen too: the pad edge to edge, upright or with the
+     * phone on its side, with its own close button and its states
+     * (screens/proof/ProofSignature).
+     */
+    if (method === 'signature') {
+        return (
+            <ProofSignature
                 orderId={orderId}
                 activityCode={activityCode}
                 activityLabel={activityLabel}
@@ -154,37 +175,6 @@ export function ProofCaptureScreen({
                 </YStack>
             ) : null}
 
-            {method === 'signature' ? (
-                <YStack gap={space[3]} testID="proof-signature">
-                    <View style={{ height: 300 }}>
-                        {(() => {
-                            const SignaturePad = lazySignaturePad();
-                            return <SignaturePad
-                            ref={signatureRef as never}
-                            onOK={(signature: string) => send({ method: 'signature', signature, remarks: activityCode })}
-                            descriptionText={t('proof.signHere')}
-                            clearText={t('proof.clear')}
-                            confirmText={t('proof.confirm')}
-                            webStyle=".m-signature-pad--footer { display: none; }"
-                        />; })()}
-                    </View>
-                    <XStack gap={space[2]}>
-                        <Button flex={1} variant="ghost" onPress={() => onCancel?.()} testID="proof-cancel">
-                            {t('common.cancel')}
-                        </Button>
-                        <Button
-                            flex={1}
-                            loading={isCapturing}
-                            // The pad answers through onOK rather than returning
-                            // a value, so this asks it to read itself.
-                            onPress={() => signatureRef.current?.readSignature()}
-                            testID="proof-submit-signature"
-                        >
-                            {t('proof.submitSignature')}
-                        </Button>
-                    </XStack>
-                </YStack>
-            ) : null}
         </ScrollView>
     );
 }

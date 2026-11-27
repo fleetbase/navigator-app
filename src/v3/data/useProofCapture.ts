@@ -125,6 +125,12 @@ export function useProofCapture(orderId?: string) {
      * ties the two together. A queued capture has none yet.
      */
     const lastProofId = useRef<string | undefined>(undefined);
+    /*
+     * Why the last capture failed: what was said, and whether it never reached
+     * the server at all (no signal, and it could not be kept to send later). A
+     * screen that shows the reason tells the two apart with this.
+     */
+    const lastFailure = useRef<{ message?: string; transport: boolean } | undefined>(undefined);
 
     /**
      * Sends one scanned code as proof.
@@ -162,6 +168,7 @@ export function useProofCapture(orderId?: string) {
             try {
                 let queued = false;
                 lastProofId.current = undefined;
+                lastFailure.current = undefined;
                 if (proof.method === 'scan') {
                     for (const code of proof.codes) {
                         const result = await sendScan(code, subjectId);
@@ -180,6 +187,8 @@ export function useProofCapture(orderId?: string) {
                 if (record && typeof record.id === 'string') lastProofId.current = record.id;
                 return 'sent';
             } catch (err) {
+                const failure = err as { message?: unknown; isTransport?: unknown } | null | undefined;
+                lastFailure.current = { message: typeof failure?.message === 'string' ? failure.message : undefined, transport: !!failure?.isTransport };
                 setError((err as Error).message);
                 return 'failed';
             } finally {
@@ -189,5 +198,5 @@ export function useProofCapture(orderId?: string) {
         [adapter, orderId, sendScan]
     );
 
-    return { capture, sendScan, isCapturing, error, lastProofId: useCallback(() => lastProofId.current, []) };
+    return { capture, sendScan, isCapturing, error, lastProofId: useCallback(() => lastProofId.current, []), lastFailure: useCallback(() => lastFailure.current, []) };
 }

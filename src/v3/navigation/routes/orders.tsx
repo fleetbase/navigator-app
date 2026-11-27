@@ -7,7 +7,7 @@ import OrderTimelineScreen from '../../screens/OrderTimelineScreen';
 import ProofCaptureScreen from '../../screens/ProofCaptureScreen';
 import DestinationScreen from '../../screens/DestinationScreen';
 import OffersScreen from '../../screens/OffersScreen';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useShell } from '../DriverShell';
 import { useSync } from '../../shell/SyncContext';
@@ -153,20 +153,30 @@ export function ProofCapture({ route, navigation }: { route: { params?: { orderI
     const p = route.params ?? {};
     useLeaveWhenRemoved(p.orderId, navigation);
     /*
-     * Proof by scanning is the camera, edge to edge and under the status bar, so
-     * the shell gives up its status-bar padding while it is in front, as it does
-     * for the order's map. A photo or a signature keeps the title bar and the
-     * padding.
+     * Proof by scanning is the camera, edge to edge and under the status bar,
+     * and proof by signature is the signing pad, as large as the screen allows:
+     * the shell gives up its status-bar padding while either is in front, as it
+     * does for the order's map. A photo keeps the title bar and the padding.
      */
-    const scanning = proofMethodOf(p.podMethod) === 'scan';
+    const method = proofMethodOf(p.podMethod);
+    const fullScreen = method !== 'photo';
     const { setBleedTop } = useShell();
     useFocusEffect(
         useCallback(() => {
-            if (!scanning) return undefined;
+            if (!fullScreen) return undefined;
             setBleedTop(true);
             return () => setBleedTop(false);
-        }, [scanning, setBleedTop])
+        }, [fullScreen, setBleedTop])
     );
+    /*
+     * While a signature is being made, the system's swipe back is off: it starts
+     * at the edge of the screen, where a signature may start too, and would take
+     * the stroke and the screen with it. The close button is the way out.
+     */
+    const signing = method === 'signature';
+    useEffect(() => {
+        if (signing) (navigation as { setOptions?: (options: object) => void }).setOptions?.({ gestureEnabled: false });
+    }, [signing, navigation]);
     // While the shell's strip about signal and syncing floats under the top buttons, the screen leaves that line to it.
     const { isOnline, queuedCount, syncState, lastSyncedCount } = useSync();
     const stripShowing = !isOnline || syncState === 'failed' || (syncState === 'syncing' && queuedCount > 0) || lastSyncedCount > 0;

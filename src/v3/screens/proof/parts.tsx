@@ -39,6 +39,10 @@ const PATHS = {
     alert: 'M12 5v9M12 18.5v.5',
     retry: 'M4 12a8 8 0 1 0 3-6.2M4 4v5h5',
     cameraOff: 'M4 8h3l2-3h6l2 3h3v11H4zM3 3l18 18',
+    // The signature screen's: a pen, a phone being turned on its side, a phone upright.
+    pencil: 'M4 20l4-1L19 8l-3-3L5 16z',
+    turn: 'M10 3h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM3 15a9 9 0 0 0 6 6.5M9.5 18.5v3h-3',
+    upright: 'M9 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM11 18h2',
 } as const;
 
 export type ProofIconName = keyof typeof PATHS;
@@ -205,8 +209,11 @@ export function GlassAction({ icon, label, onPress, disabled, testID }: { icon?:
 const CARD_SHADOW = { shadowColor: '#000000', shadowOpacity: 0.6, shadowRadius: 22, shadowOffset: { width: 0, height: 18 } } as const;
 const MESSAGE_SHADOW = { shadowColor: '#000000', shadowOpacity: 0.5, shadowRadius: 13, shadowOffset: { width: 0, height: 10 } } as const;
 
-/** The success moment: large, green, naming the item and its tracking number in full. */
-export function ScannedCard({ caption, name, code, testID }: { caption: string; name?: string; code: string; testID?: string }) {
+/**
+ * The success moment: large, green, naming the item and its tracking number in full.
+ * The signature screen uses it with a `note` (a plain line) in place of a code.
+ */
+export function ScannedCard({ caption, name, code, note, testID }: { caption: string; name?: string; code?: string; note?: string; testID?: string }) {
     return (
         <XStack
             alignItems="center"
@@ -220,7 +227,7 @@ export function ScannedCard({ caption, name, code, testID }: { caption: string; 
             {...CARD_SHADOW}
             accessible
             accessibilityLiveRegion="polite"
-            accessibilityLabel={`${caption}. ${name ? `${name}, ` : ''}${code}`}
+            accessibilityLabel={`${caption}. ${[name, code, note].filter(Boolean).join(', ')}`}
             testID={testID}
         >
             <Pop>
@@ -238,9 +245,16 @@ export function ScannedCard({ caption, name, code, testID }: { caption: string; 
                     </Body>
                 ) : null}
                 {/* In full, never cut: it is compared with the number printed under the barcode. */}
-                <Body fontFamily="$mono" fontSize={17} lineHeight={22} fontWeight="600" color={onCamera.text}>
-                    {code}
-                </Body>
+                {code ? (
+                    <Body fontFamily="$mono" fontSize={17} lineHeight={22} fontWeight="600" color={onCamera.text}>
+                        {code}
+                    </Body>
+                ) : null}
+                {note ? (
+                    <Body fontSize={14} lineHeight={19} color={onCamera.successSoft}>
+                        {note}
+                    </Body>
+                ) : null}
             </YStack>
         </XStack>
     );
