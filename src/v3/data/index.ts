@@ -29,6 +29,7 @@ export * from './useNextActivity';
 export * from './proofLedger';
 export * from './orderDetails';
 export * from './useOrderComments';
+export * from './useOrderProofs';
 export * from './useServiceQuote';
 export * from './useDaySummary';
 export * from './useDriverDocuments';

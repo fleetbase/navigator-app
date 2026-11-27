@@ -43,10 +43,12 @@ import {
     serviceQuoteIdOf,
     trackingNumberOf,
     useOrderComments,
+    useOrderProofs,
     useOrderTimeline,
     useServiceQuote,
     type OrderComment,
     type OrderConfig,
+    type OrderProof,
     type OrderRecord,
     type TrackingStatusEvent,
 } from '../../data';
@@ -135,6 +137,17 @@ function EmptyCard({ icon, text, action, testID }: { icon: HomeIconName; text: s
 
 /* -- Identifiers and type. ---------------------------------------------------- */
 
+/** How this order is proved: the method it asks for, or that it asks for none. */
+function proofMethodLabel(order: OrderRecord, t: T): string {
+    const record = order as Rec;
+    const method = (text(record.pod_method) ?? '').toLowerCase();
+    if (!record.pod_required && !method) return t('orderDetail.details.proofNone');
+    if (method.includes('sign')) return t('orderDetail.proof.method.signature');
+    if (method.includes('photo')) return t('orderDetail.proof.method.photo');
+    if (method.includes('scan') || method.includes('qr')) return t('orderDetail.proof.method.scan');
+    return record.pod_required ? (method ? humanizeStatus(method) : t('orderDetail.details.proofRequired')) : t('orderDetail.details.proofNone');
+}
+
 /** The ids a driver may be asked for, each in full, and what type of order it is. Tap an id to copy or share it. */
 export function Identifiers({ order, config, t }: { order: OrderRecord; config?: OrderConfig | null; t: T }) {
     const type = text((order as Rec).type);
@@ -147,6 +160,8 @@ export function Identifiers({ order, config, t }: { order: OrderRecord; config?:
         { key: 'internal', label: t('orderDetail.details.internalId'), value: text(order.internal_id), id: true },
         { key: 'id', label: t('orderDetail.details.orderId'), value: text(order.id), id: true },
         { key: 'type', label: t('orderDetail.details.typeShort'), value: typeName, id: false },
+        { key: 'pod', label: t('orderDetail.details.proofOfDelivery'), value: proofMethodLabel(order, t), id: false },
+        { key: 'adhoc', label: t('orderDetail.details.adhoc'), value: (order as Rec).adhoc ? t('orderDetail.details.adhocYes') : t('orderDetail.details.adhocNo'), id: false },
     ].filter((row): row is { key: string; label: string; value: string; id: boolean } => !!row.value);
     if (!rows.length) return null;
     return (
@@ -164,7 +179,7 @@ export function Identifiers({ order, config, t }: { order: OrderRecord; config?:
                         pressStyle={row.id ? { opacity: 0.7 } : undefined}
                         accessibilityRole={row.id ? 'button' : undefined}
                         accessibilityLabel={row.id ? t('orderDetail.details.copy', { what: `${row.label} ${row.value}` }) : undefined}
-                        testID={row.id ? `order-id-${row.key}-copy` : 'order-type'}
+                        testID={row.id ? `order-id-${row.key}-copy` : row.key === 'type' ? 'order-type' : `order-${row.key}`}
                     >
                         <Secondary fontSize={14}>{row.label}</Secondary>
                         {row.id ? (
@@ -174,10 +189,10 @@ export function Identifiers({ order, config, t }: { order: OrderRecord; config?:
                             </Body>
                         ) : (
                             <YStack flexShrink={1} alignItems="flex-end">
-                                <Body fontSize={14} fontWeight="700" textAlign="right" testID="order-type-name">
+                                <Body fontSize={14} fontWeight="700" textAlign="right" testID={row.key === 'type' ? 'order-type-name' : undefined}>
                                     {row.value}
                                 </Body>
-                                {typeKeyShown ? (
+                                {row.key === 'type' && typeKeyShown ? (
                                     <Body fontFamily="$mono" fontSize={12} lineHeight={16} fontWeight="500" tone="secondary" textAlign="right" testID="order-type-key">
                                         {typeKeyShown}
                                     </Body>
@@ -430,6 +445,87 @@ export function Files({ order, t, openUrl }: { order: OrderRecord; t: T; openUrl
                                         {name}
                                     </Body>
                                 </XStack>
+                                {url ? <Glyph name="chevron" size={16} strokeWidth={2.4} color={theme.textSecondary?.val as string} /> : null}
+                            </XStack>
+                        </YStack>
+                    );
+                })}
+            </Card>
+        </Section>
+    );
+}
+
+/* -- Proof captured. ---------------------------------------------------------- */
+
+const CAPTURED_ICONS: Record<'signature' | 'photo' | 'scan', HomeIconName> = { signature: 'pen', photo: 'camera', scan: 'scan' };
+
+function proofKind(proof: OrderProof): 'signature' | 'photo' | 'scan' {
+    if (proof.type === 'signature' || proof.type === 'photo' || proof.type === 'scan') return proof.type;
+    const remarks = (text(proof.remarks) ?? '').toLowerCase();
+    if (remarks.includes('signature')) return 'signature';
+    return text(proof.url) ? 'photo' : 'scan';
+}
+
+/**
+ * What has been captured on this order so far: each signature and photo with
+ * its picture, each scan with the code that was read. Absent until there is
+ * something to show; tap a picture to open it.
+ */
+export function CapturedProofs({ orderId, reloadToken, t, openUrl }: { orderId: string; reloadToken: number; t: T; openUrl: (url: string) => Promise<unknown> }) {
+    const theme = useTheme();
+    const { proofs } = useOrderProofs(orderId, reloadToken);
+    if (!proofs?.length) return null;
+    return (
+        <Section label={t('orderDetail.details.proofsCaptured', { count: proofs.length })}>
+            <Card padded={false} testID="order-proofs-captured">
+                {proofs.map((proof, index) => {
+                    const kind = proofKind(proof);
+                    const url = text(proof.url);
+                    const code = kind === 'scan' ? text(proof.raw) : undefined;
+                    const onItem = (text(proof.subject_type) ?? '').includes('entity') ? text(proof.subject_id) : undefined;
+                    const when = stamp(proof.created_at);
+                    return (
+                        <YStack key={proof.id} paddingHorizontal={14}>
+                            {index > 0 ? <Rule /> : null}
+                            <XStack
+                                alignItems="center"
+                                gap={12}
+                                paddingVertical={10}
+                                onPress={url ? () => void openUrl(url).catch(() => undefined) : undefined}
+                                pressStyle={url ? { opacity: 0.7 } : undefined}
+                                accessibilityRole={url ? 'button' : undefined}
+                                accessibilityLabel={t(`orderDetail.proof.method.${kind}`)}
+                                testID={`order-proof-captured-${proof.id}`}
+                            >
+                                {url ? (
+                                    // On white whatever the theme: a signature is dark ink with nothing behind it.
+                                    <YStack width={64} height={48} borderRadius={10} flexShrink={0} overflow="hidden" backgroundColor="#FFFFFF" borderWidth={1} borderColor="$border">
+                                        <Image source={{ uri: url }} resizeMode={kind === 'signature' ? 'contain' : 'cover'} style={{ width: '100%', height: '100%' }} />
+                                    </YStack>
+                                ) : (
+                                    <YStack width={64} height={48} borderRadius={10} flexShrink={0} alignItems="center" justifyContent="center" backgroundColor="$surfaceRaised">
+                                        <HomeIcon name={CAPTURED_ICONS[kind]} color={theme.textPrimary?.val as string} size={20} />
+                                    </YStack>
+                                )}
+                                <YStack flex={1} minWidth={0} gap={1}>
+                                    <XStack alignItems="center" gap={6}>
+                                        <Body fontSize={16} lineHeight={21} fontWeight="800" numberOfLines={1}>
+                                            {t(`orderDetail.proof.method.${kind}`)}
+                                        </Body>
+                                        <HomeIcon name="tick" color={theme.successText?.val as string} size={13} />
+                                    </XStack>
+                                    {when ? (
+                                        <Secondary fontSize={13} lineHeight={17} numberOfLines={1}>
+                                            {when}
+                                        </Secondary>
+                                    ) : null}
+                                    {code ?? onItem ? (
+                                        // In full: it is matched against a label.
+                                        <Body fontFamily="$mono" fontSize={12} lineHeight={16} fontWeight="500" tone="secondary">
+                                            {code ?? onItem}
+                                        </Body>
+                                    ) : null}
+                                </YStack>
                                 {url ? <Glyph name="chevron" size={16} strokeWidth={2.4} color={theme.textSecondary?.val as string} /> : null}
                             </XStack>
                         </YStack>

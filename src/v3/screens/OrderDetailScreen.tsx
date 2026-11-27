@@ -95,7 +95,7 @@ import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, changesDropoff } from '../realtime';
 import { BringChecklist, CashSection, ChangeBanner, ContactSection, DropoffContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
 import { SlideToConfirm } from './orderDetail/SlideToConfirm';
-import { ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
+import { CapturedProofs, ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
 import { MapButton, NowCard, ProofSection, QrSheet, ReportIssueButton, SectionPills, SheetHeader, TripSection, type NowNote, type ProofRow, type TripExtra } from './orderDetail/OrderSheetParts';
 import { ItemPagerModal } from './item/ItemPagerModal';
 import { Card, GUTTER, Section } from './jobs/parts';
@@ -1004,6 +1004,7 @@ export function OrderDetailScreen({
                     ) : null}
 
                     <View onLayout={placeSection('files')} style={{ gap: SHEET_GAP }}>
+                        <CapturedProofs orderId={order.id} reloadToken={reloadToken + revision} t={t} openUrl={openUrl} />
                         <Files order={order} t={t} openUrl={openUrl} />
                         <Comments orderId={order.id} reloadToken={reloadToken + revision} t={t} />
                     </View>
