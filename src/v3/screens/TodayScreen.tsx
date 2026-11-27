@@ -117,13 +117,23 @@ const PEEK_BODY = 128;
 /** The gap between the sheet's blocks. */
 const SHEET_GAP = 14;
 
-/** "23–29 Nov", or "30 Nov – 6 Dec" when the week crosses a month. */
+/**
+ * The week's dates: "23–29 Nov", or "30 Nov – 6 Dec" when it crosses a month
+ * (and so also a year: "29 Dec – 4 Jan").
+ *
+ * The day number and the month name are asked for separately and put together
+ * here. Asking the phone for "day and month" in one go gives each end in the
+ * phone's own order, and an American phone answers "Nov 29", which made the
+ * range read "23–Nov 29".
+ */
 function weekRange(from: string, to: string): string {
-    const day = (key: string, withMonth: boolean) => {
+    const parts = (key: string) => {
         const [y, m, d] = key.split('-').map(Number);
-        return new Date(y, m - 1, d).toLocaleDateString(undefined, withMonth ? { day: 'numeric', month: 'short' } : { day: 'numeric' });
+        return { day: String(d), month: new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short' }) };
     };
-    return from.slice(0, 7) === to.slice(0, 7) ? `${day(from, false)}–${day(to, true)}` : `${day(from, true)} – ${day(to, true)}`;
+    const a = parts(from);
+    const b = parts(to);
+    return from.slice(0, 7) === to.slice(0, 7) ? `${a.day}–${b.day} ${b.month}` : `${a.day} ${a.month} – ${b.day} ${b.month}`;
 }
 
 /** Time online in hours and minutes, without seconds: "2 h 14 min", "14 min". */
