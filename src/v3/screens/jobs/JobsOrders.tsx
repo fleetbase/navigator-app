@@ -230,7 +230,9 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
         // The order's own length and time, once for the order, when nothing says it place by place.
         totalText ? { key: 'trip', label: totalText } : null,
         !finished && cash?.toCollect ? { key: 'cash', label: t('jobs.orders.cash', { amount: formatMoney(cash.amount, cash.currency) }), tone: 'warning' as const } : null,
-    ].filter(Boolean) as { key: string; label: string; tone?: 'warning' }[];
+        // When the order reached the driver, last in the row.
+        age ? { key: 'age', label: age, icon: 'clock' as const } : null,
+    ].filter(Boolean) as { key: string; label: string; tone?: 'warning'; icon?: 'clock' }[];
 
     return (
         <YStack
@@ -254,11 +256,6 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
                     {sub ? (
                         <Secondary fontSize={13} lineHeight={17} numberOfLines={1}>
                             {sub}
-                        </Secondary>
-                    ) : null}
-                    {age ? (
-                        <Secondary fontSize={12} lineHeight={16} fontWeight="600" tabular numberOfLines={1} testID={`order-${order.id}-age`}>
-                            {age}
                         </Secondary>
                     ) : null}
                 </YStack>
@@ -321,7 +318,7 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
             {chips.length ? (
                 <XStack flexWrap="wrap" gap={6} paddingHorizontal={14} paddingVertical={10} borderTopWidth={1} borderColor="$border" backgroundColor="$background" testID={`order-${order.id}-footer`}>
                     {chips.map((chip) => (
-                        <FootChip key={chip.key} label={chip.label} tone={chip.tone} />
+                        <FootChip key={chip.key} label={chip.label} tone={chip.tone} icon={chip.icon} />
                     ))}
                 </XStack>
             ) : null}
