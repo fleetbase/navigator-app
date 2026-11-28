@@ -1108,7 +1108,8 @@ export function TodayScreen({
                                     ) : (
                                         <>
                                             <YStack paddingBottom={space[3]}>{hero}</YStack>
-                                            <StatCard stats={stats} testID={statsTestID} />
+                                            {/* At the end of the day the week chart stands where the figures would, and says more: today among the other days. */}
+                                            {state === 'end' && weekCard ? weekCard : <StatCard stats={stats} testID={statsTestID} />}
                                         </>
                                     )}
                                     <FactChips chips={facts} testID="home-facts" />
