@@ -78,7 +78,7 @@ export function useAssignedVehicle() {
     const driverId = useDriverId();
     const { driver } = useDriver(driverId);
     const vehicle = vehicleOf(driver);
-    return { driverId, driver, vehicleId: vehicle?.id, vehicleName: vehicleDescription(vehicle) ?? vehicle?.name ?? undefined, odometer: vehicle?.odometer };
+    return { driverId, driver, vehicleId: vehicle?.id, vehicleName: vehicleDescription(vehicle) ?? vehicle?.name ?? undefined, vehiclePlate: vehicle?.plate_number ?? undefined, odometer: vehicle?.odometer };
 }
 
 /**

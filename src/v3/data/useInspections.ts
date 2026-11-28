@@ -26,6 +26,7 @@ import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
 import { readJSON, writeJSON } from '../api/storage';
 import { useLiveRefresh } from '../realtime/liveRefresh';
+import { cachedGet, useCachedState } from './responseCache';
 import type { GeoPoint } from '../shell/LocationContext';
 
 /* -- Shapes --------------------------------------------------------------- */
@@ -616,12 +617,34 @@ export function isNotEnabled(error?: ApiError | null): boolean {
     return error?.status === 404;
 }
 
+/** Published forms only: a draft or archived form is not one a driver can fill in. */
+function publishedForms(raw: unknown): InspectionFormRecord[] {
+    return (rowsOf(raw) as InspectionFormRecord[]).filter((f) => f.is_published !== false && f.status !== 'archived' && f.status !== 'draft');
+}
+
+/** History, newest first. */
+function historyRows(raw: unknown): InspectionSubmissionRecord[] {
+    const rows = [...(rowsOf(raw) as InspectionSubmissionRecord[])];
+    rows.sort((a, b) => String(b.submitted_at ?? b.created_at ?? '').localeCompare(String(a.submitted_at ?? a.created_at ?? '')));
+    return rows;
+}
+
+function recordOf<T extends { id?: string }>(raw: unknown): T | undefined {
+    const body = unwrap(raw) as T | undefined;
+    return body?.id ? body : undefined;
+}
+
 export function useInspectionForms(vehicleId?: string | null, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [forms, setForms] = useState<InspectionFormRecord[] | null>(null);
+    const params = { ...(vehicleId ? { vehicle: vehicleId } : {}), limit: 30 };
+    const paramsKey = JSON.stringify(params);
+    // Opens on the forms as they were last read; the load below brings any change.
+    const [forms, setForms] = useCachedState<InspectionFormRecord[]>('inspection-forms', params, publishedForms);
     const [state, setState] = useState<InspectionLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
+    const held = useRef(forms);
+    held.current = forms;
 
     const load = useCallback(
         async (mode: 'loading' | 'refreshing' = 'loading') => {
@@ -630,9 +653,8 @@ export function useInspectionForms(vehicleId?: string | null, reloadToken = 0) {
             setState(mode);
             setError(null);
             try {
-                const raw = await adapter.get('inspection-forms', { ...(vehicleId ? { vehicle: vehicleId } : {}), limit: 30 });
-                const rows = rowsOf(raw) as InspectionFormRecord[];
-                setForms(rows.filter((f) => f.is_published !== false && f.status !== 'archived' && f.status !== 'draft'));
+                const raw = await cachedGet(adapter, 'inspection-forms', JSON.parse(paramsKey) as Record<string, unknown>);
+                setForms(publishedForms(raw));
                 setState('ready');
             } catch (err) {
                 setError(err as ApiError);
@@ -642,12 +664,11 @@ export function useInspectionForms(vehicleId?: string | null, reloadToken = 0) {
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [adapter, vehicleId, reloadToken]
+        [adapter, paramsKey, reloadToken]
     );
 
     useEffect(() => {
-        void load(forms ? 'refreshing' : 'loading');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        void load(held.current ? 'refreshing' : 'loading');
     }, [load]);
 
     return {
@@ -663,24 +684,26 @@ export function useInspectionForms(vehicleId?: string | null, reloadToken = 0) {
 
 export function useInspectionForm(formId?: string | null, seed?: InspectionFormRecord | null) {
     const { adapter } = useFleetbase();
-    const [form, setForm] = useState<InspectionFormRecord | null>(seed ?? null);
+    // The form as it was last read, else the one the list handed over.
+    const [form, setForm] = useCachedState<InspectionFormRecord>(formId ? `inspection-forms/${formId}` : undefined, undefined, (raw) => recordOf<InspectionFormRecord>(raw), { fallback: seed ?? null });
     const [state, setState] = useState<InspectionLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
+    const held = useRef(form);
+    held.current = form;
 
     const load = useCallback(async () => {
         if (!formId) return;
-        setState(form ? 'refreshing' : 'loading');
+        setState(held.current ? 'refreshing' : 'loading');
         setError(null);
         try {
-            const body = unwrap(await adapter.get(`inspection-forms/${formId}`)) as InspectionFormRecord;
-            if (body?.id) setForm(body);
+            const body = recordOf<InspectionFormRecord>(await cachedGet(adapter, `inspection-forms/${formId}`));
+            if (body) setForm(body);
             setState('ready');
         } catch (err) {
             setError(err as ApiError);
             setState('error');
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [adapter, formId]);
+    }, [adapter, formId, setForm]);
 
     useEffect(() => {
         void load();
@@ -691,23 +714,26 @@ export function useInspectionForm(formId?: string | null, seed?: InspectionFormR
 
 export function useInspectionHistory(filter: { driver?: string; vehicle?: string }, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [submissions, setSubmissions] = useState<InspectionSubmissionRecord[] | null>(null);
+    const key = JSON.stringify(filter);
+    const params = { ...(JSON.parse(key) as { driver?: string; vehicle?: string }), limit: 50, sort: '-submitted_at' };
+    const usable = Boolean(params.driver || params.vehicle);
+    // Opens on the history as it was last read; the load below brings anything since.
+    const [submissions, setSubmissions] = useCachedState<InspectionSubmissionRecord[]>(usable ? 'inspections' : undefined, params, historyRows);
     const [state, setState] = useState<InspectionLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
-    const key = JSON.stringify(filter);
+    const held = useRef(submissions);
+    held.current = submissions;
 
     const load = useCallback(
         async (mode: 'loading' | 'refreshing' = 'loading') => {
-            const params = JSON.parse(key) as { driver?: string; vehicle?: string };
-            if ((!params.driver && !params.vehicle) || inFlight.current) return;
+            const filterParams = JSON.parse(key) as { driver?: string; vehicle?: string };
+            if ((!filterParams.driver && !filterParams.vehicle) || inFlight.current) return;
             inFlight.current = true;
             setState(mode);
             setError(null);
             try {
-                const raw = await adapter.get('inspections', { ...params, limit: 50, sort: '-submitted_at' });
-                const rows = rowsOf(raw) as InspectionSubmissionRecord[];
-                rows.sort((a, b) => String(b.submitted_at ?? b.created_at ?? '').localeCompare(String(a.submitted_at ?? a.created_at ?? '')));
+                const rows = historyRows(await cachedGet(adapter, 'inspections', { ...filterParams, limit: 50, sort: '-submitted_at' }));
                 setSubmissions(rows);
                 inspectionDrafts.reconcilePending(rows);
                 setState('ready');
@@ -724,8 +750,7 @@ export function useInspectionHistory(filter: { driver?: string; vehicle?: string
 
     const revision = useLiveRefresh();
     useEffect(() => {
-        void load(submissions ? 'refreshing' : 'loading');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        void load(held.current ? 'refreshing' : 'loading');
     }, [load, revision]);
 
     return {
@@ -743,31 +768,33 @@ export function useInspectionHistory(filter: { driver?: string; vehicle?: string
 
 export function useInspectionSubmission(id?: string | null, seed?: InspectionSubmissionRecord | null) {
     const { adapter } = useFleetbase();
-    const [submission, setSubmission] = useState<InspectionSubmissionRecord | null>(seed ?? null);
+    // A queued receipt has no server record yet: nothing is kept or fetched for it.
+    const fetchable = Boolean(id) && !seed?.queued;
+    const [submission, setSubmission] = useCachedState<InspectionSubmissionRecord>(fetchable ? `inspections/${id}` : undefined, undefined, (raw) => recordOf<InspectionSubmissionRecord>(raw), { fallback: seed ?? null });
     const [state, setState] = useState<InspectionLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
+    const held = useRef(submission);
+    held.current = submission;
 
     const load = useCallback(async () => {
-        // A queued receipt has no server record yet; there is nothing to fetch.
-        if (!id || seed?.queued) return;
-        setState(submission ? 'refreshing' : 'loading');
+        if (!id || !fetchable) return;
+        setState(held.current ? 'refreshing' : 'loading');
         setError(null);
         try {
-            const body = unwrap(await adapter.get(`inspections/${id}`)) as InspectionSubmissionRecord;
-            if (body?.id) setSubmission(body);
+            const body = recordOf<InspectionSubmissionRecord>(await cachedGet(adapter, `inspections/${id}`));
+            if (body) setSubmission(body);
             setState('ready');
         } catch (err) {
             setError(err as ApiError);
             setState('error');
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [adapter, id]);
+    }, [adapter, id, fetchable, setSubmission]);
 
     useEffect(() => {
         void load();
     }, [load]);
 
-    return { submission, state, error, isLoading: state === 'loading' && !submission, failed: state === 'error', retry: load };
+    return { submission: submission ?? seed ?? null, state, error, isLoading: state === 'loading' && !submission, failed: state === 'error', retry: load };
 }
 
 /* -- Submit --------------------------------------------------------------- */

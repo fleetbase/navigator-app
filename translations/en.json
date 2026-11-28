@@ -2215,20 +2215,32 @@
     },
     "inspection": {
         "title": "Vehicle inspection",
-        "hubIntro": "Pre-trip and post-trip checks for your assigned vehicle.",
-        "afterSwapTitle": "A pre-trip inspection is required before you drive this vehicle.",
-        "afterSwapBody": "It takes a few minutes and works without signal.",
-        "dueTitle": "CHECKS FOR THIS VEHICLE",
         "noVehicle": "No vehicle is assigned to you, so there is nothing to inspect.",
         "noForms": "Your organisation has not published any inspection checklists for this vehicle.",
-        "notEnabledBody": "Inspections are not switched on for your organisation yet. Checks are done on paper or in the console.",
-        "start": "Start",
-        "resume": "Resume",
-        "startNew": "Start a new inspection",
-        "itemCount": {
-            "one": "%{count} item",
-            "other": "%{count} items"
+        "begin": {
+            "beforeDriving": "Before you drive this vehicle",
+            "walkRound": "Walk round the vehicle once.",
+            "howLong": {
+                "one": "%{count} quick check, about %{minutes} min.",
+                "other": "%{count} quick checks, about %{minutes} min."
+            },
+            "noSignal": "It works with no signal.",
+            "notThisVehicle": "Not this vehicle",
+            "odometer": "Odometer now",
+            "lastRecorded": "Last recorded %{reading} %{unit}",
+            "checkCount": {
+                "one": "%{count} check",
+                "other": "%{count} checks"
+            },
+            "partProgress": "%{answered} of %{total}",
+            "generalPart": "General checks",
+            "cta": "Start the check",
+            "carryOn": "Carry on · %{answered} of %{total} done",
+            "whichCheck": "Which check",
+            "noVehicleTitle": "No vehicle to check",
+            "chooseVehicle": "Choose a vehicle"
         },
+        "notEnabledBody": "Inspections are not switched on for your organisation yet. Checks are done on paper or in the console.",
         "frequency": {
             "daily": "Daily",
             "weekly": "Weekly",
@@ -2245,8 +2257,6 @@
             "pre_trip": "Pre-trip",
             "post_trip": "Post-trip"
         },
-        "inProgress": "In progress · %{answered} of %{total}",
-        "historyTitle": "INSPECTIONS",
         "historyCount": {
             "one": "%{count} record",
             "other": "%{count} records"
@@ -2255,98 +2265,91 @@
         "segmentPreTrip": "Pre-trip",
         "segmentPostTrip": "Post-trip",
         "segmentDefects": "Defects",
-        "resultPassed": "PASSED",
-        "resultDefects": {
-            "one": "%{count} DEFECT",
-            "other": "%{count} DEFECTS"
-        },
-        "queuedShort": "Queued · will sync",
         "unsafeShort": "Vehicle marked out of service",
-        "historyEmptyTitle": "No inspections yet",
         "historyEmptyBody": "Inspections you submit are kept here with their outcome.",
         "checklist": {
-            "template": "template “%{name}”",
-            "offline": "No signal. Every answer is saved on this device.",
-            "savedOnDevice": "Every answer is saved on this device as you go.",
-            "progress": "%{answered} / %{total}",
-            "groupProgress": "%{category} · %{answered} OF %{total}",
-            "itemOf": "ITEM %{index} OF %{total}",
-            "pass": "Pass",
-            "defect": "Defect",
-            "notApplicable": "Not applicable to this vehicle",
-            "passRecorded": "Pass",
+            "notApplicable": "Doesn't apply to this vehicle",
             "naRecorded": "Not applicable",
-            "defectRecorded": "Defect · severity %{severity}",
             "photoCount": {
                 "one": "%{count} photo",
                 "other": "%{count} photos"
             },
-            "saveAndPause": "Save and pause",
-            "nextItem": "Next item",
-            "review": "Review inspection",
-            "missingRequired": {
-                "one": "%{count} required item still needs an answer.",
-                "other": "%{count} required items still need answers."
-            },
-            "formUnavailable": "This checklist could not be loaded.",
             "empty": "This checklist has no items. Ask dispatch to check the form.",
-            "itemOfType": "ITEM %{index} OF %{total} · %{type}"
+            "partOf": "Part %{index} of %{total}",
+            "partLabel": "Part %{index}: %{name}",
+            "savedOnPhone": "Saved on phone",
+            "savedNoSignal": "No signal · saved",
+            "ok": "OK",
+            "problem": "Problem",
+            "optional": "Optional",
+            "naMarked": "Marked as not on this vehicle",
+            "edit": "Edit",
+            "answered": "%{answered} of %{total}",
+            "answerEach": "Answer each check to go on",
+            "nextPart": "Next: %{name}",
+            "nextReview": "Next: check it over and sign",
+            "goToPart": "Go to part %{index}",
+            "backToPart": "Back to part %{index}",
+            "leave": "Leave the check, it's saved"
         },
         "defect": {
-            "title": "Record defect",
-            "queued": "QUEUED",
-            "severityLabel": "SEVERITY · REQUIRED",
-            "severity": {
-                "low": "Minor",
-                "medium": "Medium",
-                "high": "High",
-                "critical": "Critical"
-            },
-            "severityHint": {
-                "low": "monitor",
-                "medium": "book in",
-                "high": "unsafe",
-                "critical": "immobilise"
-            },
-            "photoLabel": "PHOTO · REQUIRED FOR HIGH AND ABOVE",
-            "photoOptional": "PHOTO · OPTIONAL",
             "addPhoto": "Add photo",
-            "addAngle": "Add angle",
-            "photoDone": "Done with photos",
-            "autoAttached": "AUTO-ATTACHED",
-            "noPosition": "No position",
-            "notesLabel": "WHAT YOU SEE · REQUIRED",
-            "notesPlaceholder": "Describe what you see, where, and how bad.",
-            "unsafe": "Vehicle is unsafe to drive",
-            "unsafeHint": "Marks the vehicle out of service and alerts dispatch",
-            "pipeline": "This defect will open a vehicle defect record and, if the organisation has workshops enabled, a linked work order once it is sent.",
-            "save": "Save defect",
-            "incomplete": "Severity, a photo where required, and a note are needed before the defect can be saved.",
-            "notesOptional": "WHAT YOU SEE · OPTIONAL"
+            "notesPlaceholder": "Where it is and what it looks like.",
+            "eyebrow": "Problem found",
+            "back": "Back to the checklist",
+            "howBad": "How bad is it?",
+            "level": {
+                "minor": {
+                    "name": "Minor",
+                    "what": "Safe to drive. Fix when convenient."
+                },
+                "repair": {
+                    "name": "Needs repair",
+                    "what": "Safe for today. Must be fixed soon."
+                },
+                "unsafe": {
+                    "name": "Unsafe to drive",
+                    "what": "The vehicle must not leave until it is fixed."
+                }
+            },
+            "alwaysUnsafe": "A problem with this check always makes the vehicle unsafe to drive.",
+            "photosRequired": "Photos · at least 1",
+            "photosOptional": "Photos · optional",
+            "photo": "Photo %{index}",
+            "whatDidYouSee": "What did you see?",
+            "whatOptional": "What did you see? · optional",
+            "saveAndCarryOn": "Save and carry on",
+            "needLevel": "Say how bad it is to save",
+            "needPhoto": "Add a photo to save",
+            "needNote": "Say what you saw to save",
+            "cameraClose": "Close the camera"
         },
         "review": {
-            "title": "Review inspection",
-            "summary": "%{answered} of %{total} items · %{defects} defects",
-            "passed": "PASSED",
-            "defects": "DEFECTS",
-            "minutes": "MINUTES",
-            "defectsRaised": "DEFECTS RAISED",
-            "noDefects": "No defects raised.",
-            "unsafeMark": "marked unsafe",
-            "odometer": "ODOMETER",
-            "odometerHint": "Reading now, as the dash shows it.",
+            "title": "Check it over and sign",
             "odometerInvalid": "Enter the odometer as a number.",
-            "certification": "DRIVER CERTIFICATION",
-            "certify": "I certify this inspection was carried out by me and the record is accurate.",
-            "signature": "Sign to certify",
             "clearSignature": "Clear",
-            "signed": "Signed",
-            "submit": "Submit inspection",
-            "offlineNote": "Stored on device now, sent when you have signal again",
-            "incomplete": "Answer every required item before submitting.",
-            "needsCertification": "Tick the certification to submit.",
-            "needsSignature": "This checklist needs your signature to submit.",
-            "failed": "The inspection could not be sent. It is still on this device."
+            "submit": "Send the check",
+            "offlineNote": "No signal: the check is kept on this phone and goes as soon as there is signal.",
+            "failed": "The check could not be sent. It is still on this phone.",
+            "ok": "OK",
+            "problem": "Problem",
+            "skipped": "Skipped",
+            "vehicle": "Vehicle",
+            "odometerLabel": "Odometer",
+            "checked": "Checked",
+            "today": "Today",
+            "checkedAt": "%{day} %{time} · took %{minutes} min",
+            "signWithFinger": "Sign with your finger",
+            "padLabel": "Signature pad for %{name}. Sign with your finger.",
+            "confirm": "By signing, I confirm I checked this vehicle myself and what I've recorded is true. %{name}.",
+            "confirmNoName": "By signing, I confirm I checked this vehicle myself and what I've recorded is true.",
+            "signedOnChecklist": "Signed on the checklist",
+            "signOnChecklist": "Sign on the checklist first",
+            "answerFirst": "Answer every check first",
+            "enterOdometer": "Enter the odometer to send",
+            "signToSend": "Sign to send the check",
+            "confirmToSend": "Tick to confirm and send",
+            "noDriver": "Sign in again to send"
         },
         "forOrder": {
             "banner": "For order %{order} · %{step}",
@@ -2354,30 +2357,50 @@
             "blocked": "The order stays before %{step} until the vehicle is safe. Dispatch has been told.",
             "waitsToSend": "The order goes on to %{step} once this inspection has been sent.",
             "goesOn": "The order goes on to %{step} when you return to it.",
-            "backToOrder": "Back to the order"
+            "backToOrder": "Back to the order",
+            "eyebrow": "For order · %{step}",
+            "heldTitle": "The order waits",
+            "waitingTitle": "The order goes on once it's sent",
+            "goesOnTitle": "Back to the order"
         },
         "result": {
-            "unsafeTitle": "%{vehicle} is out of service",
-            "unsafeBody": "A high-severity defect means you must not drive this vehicle. Dispatch and the workshop have been notified.",
-            "defectsTitle": "Inspection submitted with defects",
-            "defectsBody": "Dispatch has the defect record. The vehicle can be driven unless dispatch says otherwise.",
-            "passedTitle": "Inspection passed",
-            "passedBody": "No defects. You are clear to drive.",
-            "record": "INSPECTION RECORD",
-            "defectRecord": "DEFECT RECORD",
-            "workOrder": "WORK ORDER",
-            "submittedAt": "Submitted %{time}",
-            "queued": "Queued · will sync",
+            "unsafeTitle": "Don't drive this vehicle",
+            "unsafeBody": "You marked a check as unsafe. Don't drive %{vehicle} until it has been fixed.",
+            "defectsTitle": {
+                "one": "Check done, %{count} problem",
+                "other": "Check done, %{count} problems"
+            },
+            "defectsBody": "Dispatch can see what you found. You can drive unless dispatch says otherwise.",
+            "passedTitle": "Good to go",
+            "passedBody": "No problems found. You're clear to drive.",
+            "record": "Check record",
+            "defectRecord": "Defect record",
             "whatNow": "What happens now",
-            "step1": "Your manifest stays assigned — it just needs a different vehicle.",
-            "step2": "Pick an available vehicle and run its pre-trip check.",
-            "step3": "Dispatch can override only with a workshop sign-off.",
             "chooseVehicle": "Choose another vehicle",
-            "messageDispatch": "Message dispatch",
-            "done": "Done"
+            "done": "Done",
+            "unsafeEyebrow": "Unsafe to drive",
+            "unsafeBodyItems": "You marked %{items} as unsafe. Don't drive %{vehicle} until it has been fixed.",
+            "defectsEyebrow": "Problems recorded",
+            "passedEyebrow": "Passed",
+            "sentTitle": "Your check was sent",
+            "sentBody": "Dispatch can see it and your photos.",
+            "keptTitle": "Your check is kept on this phone",
+            "keptBody": "It goes as soon as there is signal. Nothing more to do.",
+            "repairOpenTitle": "A repair job is open",
+            "repairOpenBody": "The workshop sees it now.",
+            "defectOpenTitle": "A defect record is open",
+            "defectOpenBody": "Dispatch sees it now.",
+            "pickTitle": "You pick another vehicle",
+            "pickBody": "Or wait until one is assigned to you.",
+            "repairOpened": "Repair job opened",
+            "withPhotos": {
+                "one": "With your photo",
+                "other": "With your %{count} photos"
+            },
+            "waypointsStay": "Your waypoints stay with you. Pick another vehicle and they follow you.",
+            "openChat": "Open chat"
         },
         "detail": {
-            "title": "Inspection",
             "itemsTitle": "ITEMS",
             "defectsTitle": "DEFECTS",
             "odometer": "Odometer",
@@ -2386,7 +2409,6 @@
             "source": "Source",
             "linkedIssue": "Defect record",
             "linkedWorkOrder": "Work order",
-            "status": "Status",
             "photos": {
                 "one": "%{count} photo",
                 "other": "%{count} photos"
@@ -2396,11 +2418,8 @@
             "files": "FILES"
         },
         "field": {
-            "pass": "Pass",
-            "fail": "Defect",
             "yes": "Yes",
             "no": "No",
-            "save": "Save answer",
             "clear": "Clear",
             "numberPlaceholder": "Enter a number",
             "textPlaceholder": "Type your answer",
@@ -2412,22 +2431,21 @@
             "takePhoto": "Take photo",
             "retakePhoto": "Retake",
             "photoTaken": "Photo captured",
-            "sign": "Sign",
             "signed": "Signed",
-            "choose": "Choose…",
-            "type": {
-                "pass-fail": "Pass / fail",
-                "input": "Text",
-                "textarea": "Notes",
-                "number": "Number",
-                "select": "Choice",
-                "radio-button": "Choice",
-                "boolean": "Yes / no",
-                "date-picker": "Date",
-                "date-time-input": "Date and time",
-                "file-upload": "Photo",
-                "signature": "Signature"
-            }
+            "signHere": "Sign here",
+            "signAgain": "Sign again",
+            "padLabel": "Signature pad. Sign with your finger."
+        },
+        "history": {
+            "title": "Past checks",
+            "passed": "Passed",
+            "problems": {
+                "one": "%{count} problem",
+                "other": "%{count} problems"
+            },
+            "unsafe": "Unsafe",
+            "waiting": "Waiting to send",
+            "noneOfThese": "No past checks of this kind."
         }
     },
     "extensions": {

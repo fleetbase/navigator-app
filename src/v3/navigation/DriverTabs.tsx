@@ -101,10 +101,11 @@ const IssueDetailH = withHeader('nav.issueDetail', screenSlot('issues.detail'));
 const IssueCreateH = withHeader('nav.issueCreate', screenSlot('issues.create'));
 const MyVehicleH = withHeader('nav.myVehicle', screenSlot('vehicle.mine'));
 const TrailerDetailH = withHeader('nav.trailerDetail', screenSlot('vehicle.trailer'));
-const InspectionH = withHeader('nav.inspection', screenSlot('inspection.start'));
-const InspectionChecklistH = withHeader('nav.inspectionChecklist', screenSlot('inspection.checklist'));
-const InspectionReviewH = withHeader('nav.inspectionReview', screenSlot('inspection.review'));
-const InspectionResultH = withHeader('nav.inspectionResult', screenSlot('inspection.result'));
+// The inspection screens draw their own header (round 3, s37–s41): a close or back button and the part or step they are on.
+const InspectionH = screenSlot('inspection.start');
+const InspectionChecklistH = screenSlot('inspection.checklist');
+const InspectionReviewH = screenSlot('inspection.review');
+const InspectionResultH = screenSlot('inspection.result');
 const InspectionDetailH = withHeader('nav.inspectionDetail', screenSlot('inspection.detail'));
 const DocumentsH = withHeader('nav.documents', screenSlot('account.documents'));
 const EarningsH = withHeader('nav.earnings', screenSlot('account.earnings'));

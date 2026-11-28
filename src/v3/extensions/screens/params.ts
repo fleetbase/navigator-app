@@ -12,7 +12,7 @@ import type {
 
 type None = Record<string, never> | undefined;
 
-type InspectionRouteParams = { formId?: string; vehicleId?: string; vehicleName?: string; form?: InspectionFormRecord; afterSwap?: boolean; order?: InspectionOrderContext };
+type InspectionRouteParams = { formId?: string; vehicleId?: string; vehicleName?: string; vehiclePlate?: string; form?: InspectionFormRecord; afterSwap?: boolean; order?: InspectionOrderContext; editField?: string; editNonce?: number };
 
 /**
  * Route params per screen id. Part of the public contract: an override reads
@@ -57,7 +57,7 @@ export type ScreenParamMap = {
     'inspection.start': InspectionRouteParams;
     'inspection.checklist': InspectionRouteParams;
     'inspection.review': InspectionRouteParams;
-    'inspection.result': { submission?: InspectionSubmissionRecord; vehicleName?: string; unsafe?: boolean; order?: InspectionOrderContext };
+    'inspection.result': { submission?: InspectionSubmissionRecord; vehicleName?: string; unsafe?: boolean; order?: InspectionOrderContext; unsafeItems?: string[]; photos?: number };
     'inspection.detail': { submissionId?: string; submission?: InspectionSubmissionRecord };
 };
 
