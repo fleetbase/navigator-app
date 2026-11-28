@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
+import { cachedGet, useCachedState } from './responseCache';
 
 export interface CommentAuthor {
     id?: string;
@@ -48,9 +49,13 @@ function rowsOf(raw: unknown): OrderComment[] {
     return Array.isArray(body) ? (body as OrderComment[]) : [];
 }
 
+/** The server sends newest first; a thread reads oldest first. */
+const threadOf = (raw: unknown): OrderComment[] => [...rowsOf(raw)].reverse();
+
 export function useOrderComments(orderId?: string, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [comments, setComments] = useState<OrderComment[] | null>(null);
+    // Opens on the comments as they were last read; the load below brings any since.
+    const [comments, setComments] = useCachedState<OrderComment[]>(orderId ? `orders/${orderId}/comments` : undefined, undefined, threadOf);
     const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const [isPosting, setIsPosting] = useState(false);
@@ -71,11 +76,10 @@ export function useOrderComments(orderId?: string, reloadToken = 0) {
         setState('loading');
         setError(null);
         try {
-            const rows = rowsOf(await adapter.get(`orders/${orderId}/comments`));
+            const rows = threadOf(await cachedGet(adapter, `orders/${orderId}/comments`));
             if (!alive.current) return;
-            // The server sends newest first; a thread reads oldest first. Anything
-            // still queued on this device stays at the end until it lands.
-            setComments((previous) => [...rows].reverse().concat((previous ?? []).filter((c) => c.pending)));
+            // Anything still queued on this device stays at the end until it lands.
+            setComments((previous) => rows.concat((previous ?? []).filter((c) => c.pending)));
             setState('ready');
         } catch (err) {
             if (!alive.current) return;
@@ -84,7 +88,7 @@ export function useOrderComments(orderId?: string, reloadToken = 0) {
         } finally {
             inFlight.current = false;
         }
-    }, [adapter, orderId]);
+    }, [adapter, orderId, setComments]);
 
     useEffect(() => {
         void load();
@@ -120,7 +124,7 @@ export function useOrderComments(orderId?: string, reloadToken = 0) {
                 if (alive.current) setIsPosting(false);
             }
         },
-        [adapter, orderId]
+        [adapter, orderId, setComments]
     );
 
     return {

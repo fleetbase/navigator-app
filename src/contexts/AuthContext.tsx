@@ -8,6 +8,7 @@ import useStorage, { storage } from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useLanguage } from './LanguageContext';
 import { useNotification } from './NotificationContext';
+import { clearResponseCache } from '../v3/data/responseCache';
 
 const AuthContext = createContext();
 
@@ -355,6 +356,8 @@ export const AuthProvider = ({ children }) => {
 
         // Clear storage/ cache
         clearSessionData();
+        // The v3 screens' kept answers belong to this driver; the next person on the phone must not open on them.
+        clearResponseCache();
         setSessionEpoch((epoch) => epoch + 1);
 
         // Reset locale

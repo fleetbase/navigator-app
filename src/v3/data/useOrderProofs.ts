@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase } from '../api';
+import { cachedGet, useCachedState } from './responseCache';
 
 export interface OrderProof {
     id: string;
@@ -28,9 +29,15 @@ function rowsOf(raw: unknown): OrderProof[] {
     return Array.isArray(body) ? (body as OrderProof[]).filter((row) => row && typeof row.id === 'string') : [];
 }
 
+/** Oldest first: the order they were captured in. */
+function inCaptureOrder(raw: unknown): OrderProof[] {
+    return rowsOf(raw).sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')));
+}
+
 export function useOrderProofs(orderId?: string, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [proofs, setProofs] = useState<OrderProof[] | null>(null);
+    // Opens on the proofs as last read (the same answer the item scans keep); the load below refreshes them.
+    const [proofs, setProofs] = useCachedState<OrderProof[]>(orderId ? `orders/${orderId}/proofs` : undefined, undefined, inCaptureOrder);
     const [isLoading, setIsLoading] = useState(false);
     const inFlight = useRef(false);
     const alive = useRef(true);
@@ -47,9 +54,7 @@ export function useOrderProofs(orderId?: string, reloadToken = 0) {
         inFlight.current = true;
         setIsLoading(true);
         try {
-            const rows = rowsOf(await adapter.get(`orders/${orderId}/proofs`));
-            // Oldest first: the order they were captured in.
-            rows.sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')));
+            const rows = inCaptureOrder(await cachedGet(adapter, `orders/${orderId}/proofs`));
             if (alive.current) setProofs(rows);
         } catch {
             // Left as it was: what is already shown stays, and the next reload tries again.
@@ -57,7 +62,7 @@ export function useOrderProofs(orderId?: string, reloadToken = 0) {
             inFlight.current = false;
             if (alive.current) setIsLoading(false);
         }
-    }, [adapter, orderId]);
+    }, [adapter, orderId, setProofs]);
 
     useEffect(() => {
         void load();

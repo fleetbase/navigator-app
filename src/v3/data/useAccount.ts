@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
+import { cachedGet, useCachedState } from './responseCache';
 
 export interface VehicleSummary {
     id?: string;
@@ -75,9 +76,18 @@ export function vehicleDescription(vehicle?: Pick<VehicleSummary, 'make' | 'mode
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
+function recordOf<T>(raw: unknown): T | null {
+    return (((raw as { data?: unknown })?.data ?? raw) ?? null) as T | null;
+}
+
+function rowsOf<T>(raw: unknown): T[] {
+    return (Array.isArray(raw) ? raw : ((raw as { data?: unknown[] })?.data ?? [])) as T[];
+}
+
 export function useDriver(driverId?: string, seed?: DriverRecord | null, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [driver, setDriver] = useState<DriverRecord | null>(seed ?? null);
+    // A seed the caller holds comes first; otherwise the record as last read, so the screen does not open blank.
+    const [driver, setDriver] = useCachedState<DriverRecord>(driverId ? `drivers/${driverId}` : undefined, undefined, (raw) => seed ?? recordOf<DriverRecord>(raw), { fallback: seed ?? null });
     const [state, setState] = useState<LoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
@@ -88,8 +98,7 @@ export function useDriver(driverId?: string, seed?: DriverRecord | null, reloadT
         setState('loading');
         setError(null);
         try {
-            const raw = await adapter.get(`drivers/${driverId}`);
-            setDriver((((raw as { data?: unknown })?.data ?? raw) ?? null) as DriverRecord | null);
+            setDriver(recordOf<DriverRecord>(await cachedGet(adapter, `drivers/${driverId}`)));
             setState('ready');
         } catch (err) {
             setError(err as ApiError);
@@ -97,7 +106,7 @@ export function useDriver(driverId?: string, seed?: DriverRecord | null, reloadT
         } finally {
             inFlight.current = false;
         }
-    }, [adapter, driverId]);
+    }, [adapter, driverId, setDriver]);
 
     useEffect(() => {
         void load();
@@ -117,29 +126,29 @@ export function useDriver(driverId?: string, seed?: DriverRecord | null, reloadT
 
 export function useCurrentOrganization(reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [organization, setOrganization] = useState<OrganizationRecord | null>(null);
+    // Opens on the organisation as last read for this session (the cache is scoped by organisation).
+    const [organization, setOrganization] = useCachedState<OrganizationRecord>('organizations/current', undefined, (raw) => recordOf<OrganizationRecord>(raw));
     const [state, setState] = useState<LoadState>('idle');
 
     const load = useCallback(async () => {
         setState('loading');
         try {
-            const raw = await adapter.get('organizations/current');
-            setOrganization((((raw as { data?: unknown })?.data ?? raw) ?? null) as OrganizationRecord | null);
+            setOrganization(recordOf<OrganizationRecord>(await cachedGet(adapter, 'organizations/current')));
             setState('ready');
         } catch {
             // Supporting detail: the header already names the organisation, so a
-            // failure here must not take the account screen down.
-            setOrganization(null);
+            // failure here must not take the account screen down. What was
+            // shown, kept or fresh, stays.
             setState('error');
         }
-    }, [adapter]);
+    }, [adapter, setOrganization]);
 
     useEffect(() => {
         void load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [load, reloadToken]);
 
-    return { organization, isLoading: state === 'loading', failed: state === 'error', retry: load };
+    return { organization, isLoading: state === 'loading' && !organization, failed: state === 'error', retry: load };
 }
 
 /**
@@ -151,7 +160,8 @@ export function useCurrentOrganization(reloadToken = 0) {
  */
 export function useDriverOrganizations(driverId?: string, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [organizations, setOrganizations] = useState<OrganizationRecord[] | null>(null);
+    // Opens on the list as last read; the switcher can be shown, and the load below refreshes it.
+    const [organizations, setOrganizations] = useCachedState<OrganizationRecord[]>(driverId ? `drivers/${driverId}/organizations` : undefined, undefined, (raw) => rowsOf<OrganizationRecord>(raw));
     const [state, setState] = useState<LoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
 
@@ -160,15 +170,13 @@ export function useDriverOrganizations(driverId?: string, reloadToken = 0) {
         setState('loading');
         setError(null);
         try {
-            const raw = (await adapter.get(`drivers/${driverId}/organizations`)) as unknown;
-            const rows = Array.isArray(raw) ? raw : ((raw as { data?: unknown[] })?.data ?? []);
-            setOrganizations(rows as OrganizationRecord[]);
+            setOrganizations(rowsOf<OrganizationRecord>(await cachedGet(adapter, `drivers/${driverId}/organizations`)));
             setState('ready');
         } catch (err) {
             setError(err as ApiError);
             setState('error');
         }
-    }, [adapter, driverId]);
+    }, [adapter, driverId, setOrganizations]);
 
     useEffect(() => {
         void load();

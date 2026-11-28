@@ -20,6 +20,9 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useSyncEx
 import Fleetbase from '@fleetbase/sdk';
 import { NavigatorAdapter } from './NavigatorAdapter';
 import { mutationQueue, type MutationQueue, type QueueSnapshot } from './queue';
+import { clearResponseCache, setCacheScope } from '../data/responseCache';
+import { orderStore } from '../data/orderStore';
+import { manifestStore } from '../data/manifestStore';
 
 export interface FleetbaseContextValue {
     fleetbase: Fleetbase;
@@ -42,6 +45,8 @@ export interface FleetbaseProviderProps {
      * work as another's.
      */
     driverId?: string;
+    /** The organisation the driver is working in. Scopes the response cache with the host and the driver. */
+    organizationId?: string;
     onUnauthorized?: () => void;
     queue?: MutationQueue;
     /** Flush the queue when connectivity returns. */
@@ -55,10 +60,39 @@ export function FleetbaseProvider({
     platformToken,
     userToken,
     driverId,
+    organizationId,
     onUnauthorized,
     queue = mutationQueue,
     isConnected = true,
 }: FleetbaseProviderProps) {
+    /*
+     * The response cache answers for one session at a time. Set while
+     * rendering rather than in an effect: effects run children first, and the
+     * screens under this provider seed their first render from the cache, so
+     * by the time they read it the scope has to be the one they belong to.
+     * Setting it is idempotent and touches nothing React holds.
+     */
+    setCacheScope({ host, organizationId, driverId });
+
+    /*
+     * A driver going away is a sign-out (asked for, forced by a 401, or part
+     * of linking to another server): everything kept for them goes, so the
+     * next person on this phone starts from nothing. A different driver
+     * arriving in their place (an organisation switch makes a new driver)
+     * keeps the response cache, which is keyed by driver, but empties the
+     * order and route stores, which are not, so one organisation's jobs are
+     * never listed under another.
+     */
+    const lastDriver = useRef(driverId);
+    useEffect(() => {
+        const previous = lastDriver.current;
+        lastDriver.current = driverId;
+        if (!previous || previous === driverId) return;
+        if (!driverId) clearResponseCache();
+        orderStore.clear();
+        manifestStore.clear();
+    }, [driverId]);
+
     // Kept in a ref so the callback the adapter holds always sees the current
     // handler without the adapter itself having to be rebuilt.
     const unauthorizedRef = useRef(onUnauthorized);

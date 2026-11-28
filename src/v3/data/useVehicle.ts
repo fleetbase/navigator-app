@@ -12,6 +12,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
+import { cachedGet, putCache, useCachedState } from './responseCache';
 
 export interface VehicleRecord {
     id: string;
@@ -102,10 +103,17 @@ export function vehicleTitle(vehicle?: VehicleRecord | null): string | undefined
     return parts.length ? parts.join(' ') : undefined;
 }
 
+const vehicleOfAnswer = (raw: unknown): VehicleRecord | null => ((raw as { data?: unknown })?.data ?? raw) as VehicleRecord | null;
+
 export function useVehicle(vehicleId?: string, seed?: VehicleRecord | null, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [vehicle, setVehicle] = useState<VehicleRecord | null>(seed ?? null);
-    const [isLoading, setIsLoading] = useState(!seed);
+    /*
+     * The full record as last read comes first: the seed is the copy embedded
+     * in the driver, which lacks fields the screen draws (whether a photo was
+     * uploaded, for one). The seed is the fallback for a vehicle never opened.
+     */
+    const [vehicle, setVehicle] = useCachedState<VehicleRecord>(vehicleId ? `vehicles/${vehicleId}` : undefined, undefined, vehicleOfAnswer, { fallback: seed ?? null });
+    const [isLoading, setIsLoading] = useState(!vehicle);
     const [error, setError] = useState<unknown>(null);
 
     const load = useCallback(async () => {
@@ -115,15 +123,13 @@ export function useVehicle(vehicleId?: string, seed?: VehicleRecord | null, relo
         }
         setError(null);
         try {
-            const result = await adapter.get(`vehicles/${vehicleId}`);
-            const data = (result as { data?: unknown })?.data ?? result;
-            setVehicle(data as VehicleRecord);
+            setVehicle(vehicleOfAnswer(await cachedGet(adapter, `vehicles/${vehicleId}`)));
         } catch (err) {
             setError(err);
         } finally {
             setIsLoading(false);
         }
-    }, [adapter, vehicleId]);
+    }, [adapter, vehicleId, setVehicle]);
 
     useEffect(() => {
         void load();
@@ -167,6 +173,8 @@ export function useUpdateOdometer(vehicleId?: string) {
                     return null;
                 }
                 setOutcome('saved');
+                // The server's own record, reading included: the vehicle screen reopens on it.
+                putCache(`vehicles/${vehicleId}`, undefined, raw);
                 return vehicle;
             } catch {
                 setOutcome('failed');

@@ -17,8 +17,9 @@
  *   - `cash_on_delivery_due`: what completed orders asked for in cash, in minor
  *     units. Nothing records the cash being handed over, hence "due".
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useFleetbase } from '../api';
+import { cachedGet, useCachedState } from './responseCache';
 
 export interface DaySummaryCash {
     currency?: string | null;
@@ -75,34 +76,53 @@ function deviceTimezone(): string | undefined {
  *
  * `reloadKey` refetches when it changes: a pull to refresh, going on or off duty.
  */
+/** Anything that is not a summary (a queued ack, an older server's error body) is no answer. */
+function summaryOf(raw: unknown): DaySummary | undefined {
+    const body = ((raw as { data?: unknown })?.data ?? raw) as DaySummary | null;
+    return body && typeof body === 'object' && typeof body.date === 'string' ? body : undefined;
+}
+
+/*
+ * A kept summary opens the home screen with the day's figures while the
+ * server is asked again. Its time on duty is carried forward from when it
+ * arrived (see `secondsOnDuty`), so one from much earlier in the day is not
+ * shown: the driver may have gone off duty since, and the figure would run on.
+ */
+const DAY_SUMMARY_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
 export function useDaySummary(driverId?: string, reloadKey: string | number = 0, date?: string) {
     const { adapter } = useFleetbase();
-    const [summary, setSummary] = useState<DaySummary | null>(null);
-    const [fetchedAt, setFetchedAt] = useState<number | undefined>(undefined);
+    const timezone = deviceTimezone();
+    const params = date && timezone ? { date, timezone } : undefined;
+    const [kept, setKept] = useCachedState<{ summary: DaySummary; fetchedAt: number }>(
+        driverId ? `drivers/${driverId}/day-summary` : undefined,
+        params,
+        (raw, at) => {
+            const summary = summaryOf(raw);
+            return summary ? { summary, fetchedAt: at } : undefined;
+        },
+        { maxAgeMs: DAY_SUMMARY_MAX_AGE_MS }
+    );
     const inFlight = useRef(false);
+    const paramsKey = JSON.stringify(params ?? null);
 
     const load = useCallback(async () => {
         if (!driverId || inFlight.current) return;
         inFlight.current = true;
         try {
-            const timezone = deviceTimezone();
-            const raw = (await adapter.get(`drivers/${driverId}/day-summary`, date && timezone ? { date, timezone } : undefined)) as unknown;
-            const body = ((raw as { data?: unknown })?.data ?? raw) as DaySummary | null;
-            // Anything that is not a summary (a queued ack, an older server's error body) is no answer.
-            if (body && typeof body === 'object' && typeof body.date === 'string') {
-                setSummary(body);
-                setFetchedAt(Date.now());
-            }
+            const query = JSON.parse(paramsKey) as Record<string, unknown> | null;
+            const body = summaryOf(await cachedGet(adapter, `drivers/${driverId}/day-summary`, query ?? undefined));
+            if (body) setKept({ summary: body, fetchedAt: Date.now() });
         } catch {
             // An older server, or no signal: the last answer stands, and the screen has its own figures.
         } finally {
             inFlight.current = false;
         }
-    }, [adapter, driverId, date]);
+    }, [adapter, driverId, paramsKey, setKept]);
 
     useEffect(() => {
         void load();
     }, [load, reloadKey]);
 
-    return { summary, fetchedAt, refresh: load };
+    return { summary: kept?.summary ?? null, fetchedAt: kept?.fetchedAt, refresh: load };
 }

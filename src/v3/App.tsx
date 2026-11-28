@@ -297,6 +297,7 @@ export function V3App({
                                     platformToken={platformToken}
                                     userToken={userToken}
                                     driverId={driverId}
+                                    organizationId={organizationId}
                                     onUnauthorized={onUnauthorized}
                                     queue={queue}
                                     isConnected={isConnected}

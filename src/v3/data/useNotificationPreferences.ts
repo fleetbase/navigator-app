@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useFleetbase } from '../api';
+import { cachedGet, putCache, useCachedState } from './responseCache';
 
 export type AlertKind = 'new_work' | 'order_changes' | 'messages' | 'offers';
 export type AlertPreferences = Record<AlertKind, boolean>;
@@ -24,22 +25,24 @@ function read(raw: unknown): AlertPreferences | null {
 
 export function useNotificationPreferences(driverId?: string | null) {
     const { adapter } = useFleetbase();
-    const [preferences, setPreferences] = useState<AlertPreferences | null>(null);
+    const path = driverId ? `drivers/${driverId}/notification-preferences` : undefined;
+    // The switches as last read, so the settings screen does not open without them; the request below says how they stand now.
+    const [preferences, setPreferences] = useCachedState<AlertPreferences>(path, undefined, read);
     const [failed, setFailed] = useState<AlertKind | null>(null);
 
     useEffect(() => {
         if (!driverId) return;
         let alive = true;
-        adapter
-            .get(`drivers/${driverId}/notification-preferences`)
+        cachedGet(adapter, `drivers/${driverId}/notification-preferences`)
             .then((raw) => {
                 if (alive) setPreferences(read(raw));
             })
+            // No answer: the switches as last read stay.
             .catch(() => undefined);
         return () => {
             alive = false;
         };
-    }, [adapter, driverId]);
+    }, [adapter, driverId, setPreferences]);
 
     const set = useCallback(
         async (kind: AlertKind, value: boolean) => {
@@ -49,14 +52,19 @@ export function useNotificationPreferences(driverId?: string | null) {
             // The switch moves at once; it moves back if the server does not take it.
             setPreferences({ ...before, [kind]: value });
             try {
-                const saved = read(await adapter.put(`drivers/${driverId}/notification-preferences`, { [kind]: value }));
-                if (saved) setPreferences(saved);
+                const answer = await adapter.put(`drivers/${driverId}/notification-preferences`, { [kind]: value });
+                const saved = read(answer);
+                if (saved) {
+                    setPreferences(saved);
+                    // What the server now holds is what the screen reopens on.
+                    putCache(`drivers/${driverId}/notification-preferences`, undefined, answer);
+                }
             } catch {
                 setPreferences(before);
                 setFailed(kind);
             }
         },
-        [adapter, driverId, preferences]
+        [adapter, driverId, preferences, setPreferences]
     );
 
     return { preferences, set, failed };

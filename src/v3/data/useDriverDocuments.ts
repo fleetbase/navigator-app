@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
+import { cachedGet, peekCache, putCache } from './responseCache';
 
 export type DocumentStatus = 'missing' | 'submitted' | 'approved' | 'rejected';
 
@@ -48,10 +49,22 @@ export type SendDocumentOutcome = { kind: 'sent' } | { kind: 'needs-connection' 
 
 const unwrap = (raw: unknown): Payload => ((raw as { data?: unknown })?.data ?? raw ?? {}) as Payload;
 
+const documentsPath = (driverId: string) => `drivers/${driverId}/documents`;
+
+/** The documents as last read, for the screen to open on. */
+function keptPayload(driverId?: string | null): Payload | undefined {
+    const raw = driverId ? peekCache(documentsPath(driverId)) : undefined;
+    return raw === undefined ? undefined : unwrap(raw);
+}
+
 export function useDriverDocuments(driverId?: string | null, reloadToken?: unknown) {
     const { adapter } = useFleetbase();
-    const [documents, setDocuments] = useState<DriverDocument[] | null>(null);
-    const [summary, setSummary] = useState<DocumentsSummary | null>(null);
+    // Seeded from the last answer: the list and the account screen's summary line show at once, and the load below refreshes them.
+    const [documents, setDocuments] = useState<DriverDocument[] | null>(() => {
+        const kept = keptPayload(driverId)?.documents;
+        return Array.isArray(kept) ? kept : null;
+    });
+    const [summary, setSummary] = useState<DocumentsSummary | null>(() => keptPayload(driverId)?.summary ?? null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(false);
     const [sending, setSending] = useState<string | null>(null);
@@ -65,7 +78,7 @@ export function useDriverDocuments(driverId?: string | null, reloadToken?: unkno
         if (!driverId) return;
         setIsLoading(true);
         try {
-            apply(unwrap(await adapter.get(`drivers/${driverId}/documents`)));
+            apply(unwrap(await cachedGet(adapter, documentsPath(driverId))));
             setError(false);
         } catch {
             setError(true);
@@ -90,7 +103,10 @@ export function useDriverDocuments(driverId?: string | null, reloadToken?: unkno
                     file_name: file.fileName,
                 });
                 if (isQueuedAck(result)) return { kind: 'needs-connection' };
-                apply(unwrap(result));
+                const payload = unwrap(result);
+                apply(payload);
+                // The answer is the whole list again; kept, so the screen reopens on the document as sent.
+                if (Array.isArray(payload.documents)) putCache(documentsPath(driverId), undefined, result);
                 return { kind: 'sent' };
             } catch (err) {
                 if ((err as ApiError).isTransport) return { kind: 'needs-connection' };

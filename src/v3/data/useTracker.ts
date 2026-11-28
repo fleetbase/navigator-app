@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
+import { cachedGet, useCachedState } from './responseCache';
 
 export interface TrackerStop {
     uuid?: string;
@@ -154,9 +155,18 @@ export function currentStop(tracker?: TrackerRecord | null): TrackerStop | undef
     return tracker?.active_stop ?? tracker?.next_stop ?? tracker?.stops?.find((s) => !s.completed);
 }
 
+/*
+ * A kept tracker is shown only while it is recent: its ETAs are counted from
+ * when it was asked, and an hour on they describe a drive that is over.
+ */
+const TRACKER_MAX_AGE_MS = 60 * 60 * 1000;
+
+const trackerOf = (raw: unknown): TrackerRecord | null => (((raw as { data?: unknown })?.data ?? raw) ?? null) as TrackerRecord | null;
+
 export function useTracker(orderId?: string, reloadToken = 0) {
     const { adapter } = useFleetbase();
-    const [tracker, setTracker] = useState<TrackerRecord | null>(null);
+    // Opens on the last answer for this order, when it is recent; the load below replaces it.
+    const [tracker, setTracker] = useCachedState<TrackerRecord>(orderId ? `orders/${orderId}/tracker` : undefined, undefined, trackerOf, { maxAgeMs: TRACKER_MAX_AGE_MS });
     const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
@@ -167,8 +177,7 @@ export function useTracker(orderId?: string, reloadToken = 0) {
         setState('loading');
         setError(null);
         try {
-            const raw = await adapter.get(`orders/${orderId}/tracker`);
-            setTracker((((raw as { data?: unknown })?.data ?? raw) ?? null) as TrackerRecord | null);
+            setTracker(trackerOf(await cachedGet(adapter, `orders/${orderId}/tracker`)));
             setState('ready');
         } catch (err) {
             setError(err as ApiError);
@@ -176,7 +185,7 @@ export function useTracker(orderId?: string, reloadToken = 0) {
         } finally {
             inFlight.current = false;
         }
-    }, [adapter, orderId]);
+    }, [adapter, orderId, setTracker]);
 
     useEffect(() => {
         void load();
@@ -188,6 +197,7 @@ export function useTracker(orderId?: string, reloadToken = 0) {
         state,
         error,
         isLoading: state === 'loading' && !tracker,
+        isRefreshing: state === 'loading' && !!tracker,
         failed: state === 'error',
         retry: load,
     };

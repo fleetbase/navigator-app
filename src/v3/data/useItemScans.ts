@@ -26,6 +26,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFleetbase } from '../api';
 import { readJSON, writeJSON } from '../api/storage';
+import { cachedGet, useCachedState } from './responseCache';
 import { useProofCapture, type ProofOutcome, type ScanFailure } from './useProofCapture';
 
 export interface ItemScan {
@@ -108,6 +109,11 @@ export function entityScanIdOf(entity?: Record<string, unknown> | null): string 
     return undefined;
 }
 
+function proofRowsOf(raw: unknown): ProofRow[] {
+    const rows = ((raw as { data?: unknown })?.data ?? raw) as unknown;
+    return Array.isArray(rows) ? (rows as ProofRow[]) : [];
+}
+
 /** A proof made by a scan, rather than a photo or a signature (which carry a file). */
 function isScanProof(proof: ProofRow): boolean {
     if (typeof proof.remarks === 'string' && /qr|scan/i.test(proof.remarks)) return true;
@@ -116,7 +122,8 @@ function isScanProof(proof: ProofRow): boolean {
 
 export function useItemScans(orderId?: string) {
     const { adapter } = useFleetbase();
-    const [proofs, setProofs] = useState<ProofRow[] | null>(null);
+    // Opens on the order's proofs as last read (shared with useOrderProofs); the load below refreshes them.
+    const [proofs, setProofs] = useCachedState<ProofRow[]>(orderId ? `orders/${orderId}/proofs` : undefined, undefined, proofRowsOf);
     const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
     const [localVersion, setLocalVersion] = useState(0);
     const inFlight = useRef(false);
@@ -140,10 +147,9 @@ export function useItemScans(orderId?: string) {
         inFlight.current = true;
         if (alive.current) setState((previous) => (previous === 'ready' ? previous : 'loading'));
         try {
-            const raw = await adapter.get(`orders/${orderId}/proofs`);
-            const rows = ((raw as { data?: unknown })?.data ?? raw) as unknown;
+            const rows = proofRowsOf(await cachedGet(adapter, `orders/${orderId}/proofs`));
             if (alive.current) {
-                setProofs(Array.isArray(rows) ? (rows as ProofRow[]) : []);
+                setProofs(rows);
                 setState('ready');
             }
         } catch {
@@ -152,7 +158,7 @@ export function useItemScans(orderId?: string) {
         } finally {
             inFlight.current = false;
         }
-    }, [adapter, orderId]);
+    }, [adapter, orderId, setProofs]);
 
     useEffect(() => {
         void load();
@@ -208,8 +214,8 @@ export function useItemScans(orderId?: string) {
         scan,
         isScanning: isSending,
         scanError: sendFailure,
-        /** The server's list has not answered yet. */
-        isLoading: state === 'idle' || state === 'loading',
+        /** The server's list has not answered yet, and none was kept from before. */
+        isLoading: (state === 'idle' || state === 'loading') && !proofs,
         /** The server's list could not be read: only this phone's scans are known. */
         failed: state === 'error',
         reload: load,

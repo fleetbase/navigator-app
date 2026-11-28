@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useFleetbase, isQueuedAck } from '../api';
 import type { ApiError } from '../api/NavigatorAdapter';
 import { bumpChatRefresh, useChatRefresh } from '../realtime/liveRefresh';
+import { cachedGet, peekCache, putCache } from './responseCache';
 
 export interface ChatParticipant {
     id: string;
@@ -264,11 +265,74 @@ function unwrap(raw: unknown): unknown[] {
     return Array.isArray(data) ? data : [];
 }
 
+/*
+ * What the inbox keeps between visits. A conversation is worth showing even
+ * when it is old, so chat keeps its answers for longer than the default; the
+ * request that follows says what has changed since.
+ */
+const CHAT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const CHANNELS_PATH = 'chat-channels';
+const CHANNELS_PARAMS = { limit: 50 };
+/** How many of a conversation's latest entries are kept for it to open on. */
+const KEPT_FEED_ENTRIES = 100;
+
+/** Most recently active first — `updated_at` moves with each message. */
+function byActivity(rows: ChatChannelRecord[]): ChatChannelRecord[] {
+    return [...rows].sort((a, b) => String(b.updated_at ?? '').localeCompare(String(a.updated_at ?? '')));
+}
+
+/** The channel list as last read, for the inbox to open on. */
+function keptChannels(): ChatChannelRecord[] | null {
+    const raw = peekCache(CHANNELS_PATH, CHANNELS_PARAMS, { maxAgeMs: CHAT_MAX_AGE_MS });
+    return raw === undefined ? null : byActivity(unwrap(raw) as ChatChannelRecord[]);
+}
+
+const channelPath = (channelId: string) => `chat-channels/${channelId}`;
+
+/**
+ * A channel cut to its latest entries for keeping. A long conversation's whole
+ * feed would crowd every other answer out of the cache, and opening on its last
+ * hundred entries is what matters; the fetch that follows brings the rest.
+ */
+function forKeeping(channel: ChatChannelRecord | null | undefined): ChatChannelRecord | null {
+    if (!channel || typeof channel !== 'object' || typeof channel.id !== 'string') return null;
+    const feed = channel.feed ?? [];
+    if (feed.length <= KEPT_FEED_ENTRIES) return channel;
+    const latest = [...feed].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? ''))).slice(-KEPT_FEED_ENTRIES);
+    return { ...channel, feed: latest, feed_truncated: true };
+}
+
+/**
+ * Brings the kept copy of each conversation up to date from the channel list.
+ *
+ * The list is asked for again whenever a message lands anywhere (the socket
+ * bumps the chat refresh), and each row carries its channel's latest entries.
+ * Folding those into the kept conversation means one the driver opened before
+ * reopens with the messages that arrived since, without a request per
+ * channel. Only conversations already kept are touched; deleted messages are
+ * corrected by the fetch the conversation makes when it opens.
+ */
+function foldIntoKeptConversations(rows: ChatChannelRecord[]): void {
+    for (const row of rows) {
+        if (!row?.id || !row.feed?.length) continue;
+        const kept = peekCache<ChatChannelRecord>(channelPath(row.id), undefined, { maxAgeMs: CHAT_MAX_AGE_MS });
+        if (!kept || (kept.updated_at && row.updated_at && String(row.updated_at) <= String(kept.updated_at))) continue;
+        const seen = new Set((kept.feed ?? []).map((entry) => `${entry.type}:${entry.data?.id}`));
+        const fresh = row.feed.filter((entry) => !!entry.data?.id && !seen.has(`${entry.type}:${entry.data.id}`));
+        // The row's own fields (title, unread count, participants) are newer; its feed is the cut one, so the kept feed carries on.
+        const merged = forKeeping({ ...kept, ...row, feed: [...(kept.feed ?? []), ...fresh], feed_truncated: kept.feed_truncated });
+        if (merged) putCache(channelPath(row.id), undefined, merged);
+    }
+}
+
+const channelOf = (raw: unknown): ChatChannelRecord | null => (((raw as { data?: unknown })?.data ?? raw) ?? null) as ChatChannelRecord | null;
+
 export function useChatChannels(reloadToken = 0, { enabled = true }: { enabled?: boolean } = {}) {
     const { adapter } = useFleetbase();
     // A message anywhere moves the list's unread counts and order.
     const chatRevision = useChatRefresh();
-    const [channels, setChannels] = useState<ChatChannelRecord[] | null>(null);
+    // Opens on the list as it was last read; the load below refreshes it.
+    const [channels, setChannels] = useState<ChatChannelRecord[] | null>(keptChannels);
     const [state, setState] = useState<ChatLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
@@ -280,11 +344,12 @@ export function useChatChannels(reloadToken = 0, { enabled = true }: { enabled?:
             setState(mode);
             setError(null);
             try {
-                const rows = unwrap(await adapter.get('chat-channels', { limit: 50 })) as ChatChannelRecord[];
-                // Most recently active first — `updated_at` moves with each message.
-                setChannels([...rows].sort((a, b) => String(b.updated_at ?? '').localeCompare(String(a.updated_at ?? ''))));
+                const rows = unwrap(await cachedGet(adapter, CHANNELS_PATH, CHANNELS_PARAMS)) as ChatChannelRecord[];
+                setChannels(byActivity(rows));
+                foldIntoKeptConversations(rows);
                 setState('ready');
             } catch (err) {
+                // The list on screen, kept or fresh, stays; only the state says the refresh failed.
                 setError(err as ApiError);
                 setState('error');
             } finally {
@@ -321,10 +386,27 @@ export function useChatChannels(reloadToken = 0, { enabled = true }: { enabled?:
 export function useChatChannel(channelId?: string, seed?: ChatChannelRecord | null) {
     const { adapter } = useFleetbase();
     const chatRevision = useChatRefresh();
-    const [channel, setChannel] = useState<ChatChannelRecord | null>(seed ?? null);
+    /*
+     * The conversation as it was last read opens first: it carries its latest
+     * messages, where the list's seed carries only the last one or two. The
+     * seed is the fallback for a conversation never opened on this phone.
+     */
+    const [channel, setChannelState] = useState<ChatChannelRecord | null>(
+        () => (channelId ? peekCache<ChatChannelRecord>(channelPath(channelId), undefined, { maxAgeMs: CHAT_MAX_AGE_MS }) : undefined) ?? seed ?? null
+    );
     const [state, setState] = useState<ChatLoadState>('idle');
     const [error, setError] = useState<ApiError | null>(null);
     const inFlight = useRef(false);
+
+    /** Anything a caller sets is kept too, so reopening the conversation shows it. */
+    const setChannel = useCallback(
+        (next: ChatChannelRecord | null) => {
+            setChannelState(next);
+            const kept = forKeeping(next);
+            if (channelId && kept) putCache(channelPath(channelId), undefined, kept);
+        },
+        [channelId]
+    );
 
     const load = useCallback(async () => {
         if (!channelId || inFlight.current) return;
@@ -332,8 +414,9 @@ export function useChatChannel(channelId?: string, seed?: ChatChannelRecord | nu
         setState('loading');
         setError(null);
         try {
-            const raw = await adapter.get(`chat-channels/${channelId}`);
-            setChannel((((raw as { data?: unknown })?.data ?? raw) ?? null) as ChatChannelRecord | null);
+            // Every reload goes through here, the ones a socket message sets off included, so the kept copy follows the conversation.
+            const raw = await cachedGet(adapter, channelPath(channelId), undefined, { keep: (answer) => forKeeping(channelOf(answer)) });
+            setChannelState(channelOf(raw));
             setState('ready');
         } catch (err) {
             setError(err as ApiError);
@@ -351,8 +434,9 @@ export function useChatChannel(channelId?: string, seed?: ChatChannelRecord | nu
         channel,
         state,
         error,
-        // The seed from the list is enough to paint the header immediately.
+        // The seed from the list, or the kept conversation, is enough to paint immediately.
         isLoading: state === 'loading' && !channel,
+        isRefreshing: state === 'loading' && !!channel,
         isBlocked: state === 'error' && !channel,
         reload: load,
         setChannel,

@@ -9,6 +9,7 @@ import { Toasts } from '@backpackapp-io/react-native-toast';
 import V3App from './src/v3/App';
 import { isInstanceLinkUrl, parseInstanceLink, type InstanceLink } from './src/v3/connection/instanceLink';
 import useStorage from './src/hooks/use-storage';
+import { clearResponseCache } from './src/v3/data/responseCache';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { ChatProvider } from './src/contexts/ChatContext';
@@ -120,6 +121,8 @@ function DriverBridge(): React.JSX.Element {
             setInstanceLinkConfig('SOCKETCLUSTER_PORT', link.socketPort);
             setInstanceLinkConfig('SOCKETCLUSTER_SECURE', link.socketSecure === undefined ? undefined : String(link.socketSecure));
             setOpenedLink(null);
+            // What was kept for the old server is no use on the new one. Signing out clears it too; this covers a driver who was not signed in.
+            clearResponseCache();
             if (isAuthenticated) logout();
         },
         [setInstanceLinkConfig, isAuthenticated, logout]
@@ -127,6 +130,7 @@ function DriverBridge(): React.JSX.Element {
     const unlinkInstance = React.useCallback(() => {
         clearInstanceLinkConfig();
         setOpenedLink(null);
+        clearResponseCache();
         if (isAuthenticated) logout();
     }, [clearInstanceLinkConfig, isAuthenticated, logout]);
     const linkedHost = (instanceLinkConfig?.FLEETBASE_HOST as string | undefined) || undefined;
