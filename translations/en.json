@@ -270,6 +270,13 @@
                 "other": "%{count} orders"
             },
             "doneAt": "Done %{time}",
+            "age": {
+                "dispatched": "Dispatched %{when}",
+                "created": "Created %{when}",
+                "now": "just now",
+                "minutes": "%{count} min ago",
+                "hours": "%{count} h ago"
+            },
             "moreWaypoints": {
                 "one": "+%{count} more waypoint",
                 "other": "+%{count} more waypoints"

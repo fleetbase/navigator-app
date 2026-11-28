@@ -26,7 +26,7 @@ import { StopBadge } from '../../ui/RouteMap';
 import { colorForId, describeWaypoint } from '../../ui/routeColors';
 import { describeStatus } from '../../theme/status';
 import { useTranslation } from '../../i18n/useTranslation';
-import { formatClock, formatDuration, formatMeters, formatMoney } from '../../format';
+import { formatDateTime, formatClock, formatDuration, formatMeters, formatMoney } from '../../format';
 import {
     cashOnDeliveryOf,
     customerNameOf,
@@ -162,6 +162,24 @@ export interface OrderCardProps {
  * The order card, option B (CardOptions.dc.html): the tracking number and who it
  * is for, the order's places as an itinerary, and a footer of what it carries.
  */
+/**
+ * One time for the card, so the driver can place the order: when it was
+ * dispatched, or when it was created if it has not been. Said as how long ago
+ * within the day, and as the date and time after that.
+ */
+function orderAgeText(order: OrderRecord, t: T, now: number = Date.now()): string | undefined {
+    const record = order as Record<string, unknown>;
+    const dispatched = typeof record.dispatched_at === 'string' && record.dispatched_at ? record.dispatched_at : undefined;
+    const created = typeof record.created_at === 'string' && record.created_at ? record.created_at : undefined;
+    const iso = dispatched ?? created;
+    if (!iso) return undefined;
+    const at = new Date(iso).getTime();
+    if (!Number.isFinite(at)) return undefined;
+    const minutes = Math.max(0, Math.floor((now - at) / 60000));
+    const when = minutes < 1 ? t('jobs.orders.age.now') : minutes < 60 ? t('jobs.orders.age.minutes', { count: minutes }) : minutes < 24 * 60 ? t('jobs.orders.age.hours', { count: Math.floor(minutes / 60) }) : formatDateTime(iso);
+    return t(dispatched ? 'jobs.orders.age.dispatched' : 'jobs.orders.age.created', { when });
+}
+
 export const OrderCard = memo(function OrderCard({ order, times, showDay, onPress, t }: OrderCardProps) {
     const points = orderPoints(order);
     const started = isOrderStarted(order);
@@ -175,6 +193,7 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
     const { units } = useSettings();
     const { legs, total } = usePlaceLegs(order, points, times);
     const totalText = legText(total, units);
+    const age = orderAgeText(order, t);
 
     // The place the eye should land on: the one being headed to, else the first still to do.
     const nextIndex = finished ? -1 : points.findIndex((p) => p.state === 'current') >= 0 ? points.findIndex((p) => p.state === 'current') : points.findIndex((p) => p.state === 'later');
@@ -230,6 +249,11 @@ export const OrderCard = memo(function OrderCard({ order, times, showDay, onPres
                     {sub ? (
                         <Secondary fontSize={13} lineHeight={17} numberOfLines={1}>
                             {sub}
+                        </Secondary>
+                    ) : null}
+                    {age ? (
+                        <Secondary fontSize={12} lineHeight={16} fontWeight="600" tabular numberOfLines={1} testID={`order-${order.id}-age`}>
+                            {age}
                         </Secondary>
                     ) : null}
                 </YStack>
