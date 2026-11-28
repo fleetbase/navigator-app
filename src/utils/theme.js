@@ -12,7 +12,7 @@
  * re-exporting would put the import straight back.
  */
 import { getString } from './storage';
-import { themes } from '../../tamagui.config';
+import { themes } from '../../tamagui.themes';
 import { APP_THEME_KEY } from '../hooks/use-app-theme';
 
 export function getTheme(key = null) {

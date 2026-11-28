@@ -18,10 +18,18 @@ import React from 'react';
 
 import { isV3Enabled } from './src/v3/flag';
 import AppV3 from './App.v3';
-import { V2App } from './App.v2';
 
+/*
+ * The v2 app is loaded only when it is the one running. Importing it creates the
+ * v2 Tamagui config, and Tamagui keeps a single global config, the last one
+ * created: with both loaded, a Fast Refresh that re-ran the v2 config swapped
+ * it in under the v3 app, whose themes it lacks ("No theme and no parent?").
+ */
 function App(): React.JSX.Element {
-    return isV3Enabled() ? <AppV3 /> : <V2App />;
+    if (isV3Enabled()) return <AppV3 />;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { V2App } = require('./App.v2') as typeof import('./App.v2');
+    return <V2App />;
 }
 
 export default App;
