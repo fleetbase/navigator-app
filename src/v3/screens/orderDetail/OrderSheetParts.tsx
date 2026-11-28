@@ -94,6 +94,7 @@ export function SheetHeader({
     onOpenQr,
     onOpenStatus,
     statusLabel,
+    adhoc,
     t,
 }: {
     eyebrow: string;
@@ -107,6 +108,7 @@ export function SheetHeader({
     onOpenStatus?: () => void;
     /** Spoken for the status when it is a button. */
     statusLabel?: string;
+    adhoc?: boolean;
     t: T;
 }) {
     const theme = useTheme();
@@ -145,8 +147,16 @@ export function SheetHeader({
                     {trackingNumber}
                 </Body>
             </YStack>
-            <YStack flexShrink={0} alignSelf="flex-start">
+            <YStack flexShrink={0} alignSelf="flex-start" alignItems="flex-end" gap={6}>
                 <StatusPill status={status} t={(k, fb) => t(k, { defaultValue: fb })} onPress={onOpenStatus} accessibilityLabel={onOpenStatus ? statusLabel : undefined} testID="order-status" />
+                {/* An order offered to nearby drivers rather than assigned, said the way the console says it. */}
+                {adhoc ? (
+                    <XStack height={22} alignItems="center" paddingHorizontal={8} borderRadius={11} backgroundColor="$surfaceRaised" borderWidth={1} borderColor="$border" testID="order-adhoc">
+                        <Body fontSize={11} lineHeight={14} fontWeight="800" letterSpacing={0.3} numberOfLines={1}>
+                            {t('orderDetail.adhocBadge')}
+                        </Body>
+                    </XStack>
+                ) : null}
             </YStack>
         </XStack>
     );

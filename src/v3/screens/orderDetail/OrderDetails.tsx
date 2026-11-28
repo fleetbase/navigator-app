@@ -161,7 +161,6 @@ export function Identifiers({ order, config, t }: { order: OrderRecord; config?:
         { key: 'id', label: t('orderDetail.details.orderId'), value: text(order.id), id: true },
         { key: 'type', label: t('orderDetail.details.typeShort'), value: typeName, id: false },
         { key: 'pod', label: t('orderDetail.details.proofOfDelivery'), value: proofMethodLabel(order, t), id: false },
-        { key: 'adhoc', label: t('orderDetail.details.adhoc'), value: (order as Rec).adhoc ? t('orderDetail.details.adhocYes') : t('orderDetail.details.adhocNo'), id: false },
     ].filter((row): row is { key: string; label: string; value: string; id: boolean } => !!row.value);
     if (!rows.length) return null;
     return (

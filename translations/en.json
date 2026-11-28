@@ -272,6 +272,7 @@
             "doneAt": "Done %{time}",
             "age": {
                 "dispatched": "Dispatched %{when}",
+                "assigned": "Assigned %{when}",
                 "created": "Created %{when}",
                 "now": "just now",
                 "minutes": "%{count} min ago",
@@ -528,9 +529,6 @@
             "proofOfDelivery": "Proof of delivery",
             "proofNone": "Not required",
             "proofRequired": "Required",
-            "adhoc": "Ad-hoc order",
-            "adhocYes": "Yes",
-            "adhocNo": "No",
             "proofsCaptured": "Proof captured · %{count}",
             "documents": "Documents · %{count}",
             "commentAdd": "Add a comment",
@@ -615,6 +613,7 @@
                 "signature": "Signature"
             }
         },
+        "adhocBadge": "Ad-hoc",
         "reportIssue": "Report an issue"
     },
     "editPayloadItem": {

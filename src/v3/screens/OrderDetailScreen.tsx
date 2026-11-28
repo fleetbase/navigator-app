@@ -879,6 +879,7 @@ export function OrderDetailScreen({
                         onOpenQr={() => setQrOpen(true)}
                         // The status opens what has happened to the order.
                         onOpenStatus={openActivity}
+                        adhoc={Boolean((order as Record<string, unknown>).adhoc)}
                         statusLabel={t('orderDetail.activity.statusOpen', { status: order.status ? labelFor({ code: order.status }) : '' })}
                         t={t}
                     />
