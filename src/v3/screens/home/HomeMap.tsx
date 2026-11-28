@@ -142,7 +142,9 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
             leg = route.slice(0, nearest + 1);
         }
         const focus = active ? [active.point, ...leg, ...(position ? [position] : [])] : [];
-        const coordinates = focus.length > 1 ? focus : [...placed.map((w) => w.point), ...(position ? [position] : [])];
+        // Nothing left to drive to: the day's done waypoints are history, so the view is the driver, close up.
+        const nothingAhead = !active && placed.every((w) => w.done || w.skipped);
+        const coordinates = nothingAhead && position ? [position] : focus.length > 1 ? focus : [...placed.map((w) => w.point), ...(position ? [position] : [])];
         if (!coordinates.length) return;
         // One point has no extent to fit; a street-level region around it instead.
         if (coordinates.length === 1) {
@@ -156,7 +158,7 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fitKey, padBottom, refitToken, ready]);
 
-    const centre = placed[0]?.point ?? position;
+    const centre = (placed.every((w) => w.done || w.skipped) ? position : undefined) ?? placed[0]?.point ?? position;
     // Nothing to centre on yet: hold the map's place rather than show the whole world.
     if (!centre) return <YStack height={height} backgroundColor="$mapBackground" testID={`${testID}-empty`} />;
 
@@ -167,7 +169,7 @@ export function HomeMap({ waypoints, activeKey, route = [], position, offline, d
                 style={{ flex: 1 }}
                 onMapReady={() => setReady(true)}
                 mapPadding={{ top: padTop, right: 0, bottom: padBottom, left: 0 }}
-                initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.length ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : STREET) }}
+                initialRegion={{ latitude: centre.latitude, longitude: centre.longitude, ...(placed.some((w) => !w.done && !w.skipped) ? { latitudeDelta: 0.08, longitudeDelta: 0.08 } : STREET) }}
                 {...mapLook(dark)}
                 showsMyLocationButton={false}
                 showsCompass={false}
