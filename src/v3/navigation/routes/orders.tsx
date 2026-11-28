@@ -12,7 +12,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useShell } from '../DriverShell';
 import { useSync } from '../../shell/SyncContext';
 import { proofMethodOf } from '../../data/useProofCapture';
-import { useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
+import { useAssignedVehicle, useDriverId, useFocusCount, useLeaveWhenRemoved, type Nav } from '../session';
+import type { InspectionOrderContext } from '../../data';
 import { useNavigationHandoffSheet } from '../../navigate/useNavigationHandoffSheet';
 
 export function OrdersHome({ navigation, route }: { navigation: Nav; route?: { params?: { mode?: 'orders' | 'route' | 'map' | 'schedule' } } }) {
@@ -74,6 +75,24 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
         },
         [navigation]
     );
+    /*
+     * A step that needs an inspection opens its checklist, of the driver's
+     * assigned vehicle, with the order and step as its context. Let go twice
+     * in a row for the same reason as proof: one checklist, not two.
+     */
+    const { vehicleId, vehicleName } = useAssignedVehicle();
+    const inspectionOpenedAt = useRef(0);
+    const openInspection = useCallback(
+        (request: InspectionOrderContext & { formId: string }) => {
+            const now = Date.now();
+            const focused = (navigation as { isFocused?: () => boolean }).isFocused?.() ?? true;
+            if (!focused || now - inspectionOpenedAt.current < 1000) return;
+            inspectionOpenedAt.current = now;
+            const { formId, ...order } = request;
+            navigation.navigate('InspectionChecklist', { formId, vehicleId, vehicleName, order });
+        },
+        [navigation, vehicleId, vehicleName]
+    );
     return (
         <>
         <OrderDetailScreen
@@ -91,6 +110,7 @@ export function OrderDetail({ route, navigation }: { route: { params?: { orderId
             // the same edge of the screen as the slide) is off, so the slide is not taken for it.
             onConfirmingChange={(confirming) => (navigation as { setOptions?: (options: object) => void }).setOptions?.({ gestureEnabled: !confirming })}
             onCaptureProof={openProof}
+            onStartInspection={openInspection}
             onChangeDestination={() => navigation.navigate('Destination', { orderId })}
             // The order's activity history opens in a sheet over the order now, so there is no timeline to navigate to from here.
             // The order's chat with dispatch (asked for from the server, which starts it when needed) and the customer's thread open here.

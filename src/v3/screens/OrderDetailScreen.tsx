@@ -76,6 +76,11 @@ import {
     proofFor,
     takeAutoAdvance,
     clearProof,
+    inspectionFor,
+    takeInspectionAutoAdvance,
+    clearInspection,
+    useOrderInspection,
+    type InspectionOrderContext,
     type ChatChannelRecord,
     type RemovalReason,
     type TrackerRecord,
@@ -127,6 +132,7 @@ export function OrderDetailScreen({
     onBack,
     onNavigate,
     onCaptureProof,
+    onStartInspection,
     onChangeDestination,
     onRemoved,
     onOpenChannel,
@@ -158,6 +164,8 @@ export function OrderDetailScreen({
     onChangeDestination?: () => void;
     /** Opens proof capture for an activity whose config demands it. */
     onCaptureProof?: (request: { orderId: string; activityCode: string; activityLabel: string; podMethod?: string | null; expected?: string[] }) => void;
+    /** Opens the inspection checklist for an activity whose config needs an inspection filed, with the order and step as its context. */
+    onStartInspection?: (request: InspectionOrderContext & { formId: string }) => void;
     /** The order was taken off this driver; the host leaves the screen. */
     onRemoved?: (reason: RemovalReason) => void;
     /** Opens an order-linked chat thread: the order's chat with dispatch, or the customer's. */
@@ -281,6 +289,8 @@ export function OrderDetailScreen({
     const candidates = useMemo<Advanceable[]>(() => (waitingForDispatch ? [] : offered), [waitingForDispatch, offered]);
     const next = candidates[0];
     const ambiguous = useMemo(() => source !== 'server' && unresolvedLogic(flow, order?.status), [source, flow, order?.status]);
+    // The inspection the next step needs, if it needs one: filed, waiting to send, or holding the step.
+    const nextInspection = useOrderInspection(order?.id, next?.require_inspection ? next.code : undefined);
 
     const payload = payloadOf(order);
     const entities = useMemo(() => payload.entities ?? [], [payload.entities]);
@@ -296,10 +306,53 @@ export function OrderDetailScreen({
     };
     /** Completing an order with cash still owed needs the driver to say they took it. */
     const needsCash = (activity?: Advanceable) => Boolean(activity?.complete && cod?.toCollect && !cashCollected);
+    /** The step's inspection holds it: the vehicle was found unsafe, or the inspection has not reached the server. */
+    const inspectionHolds = (activity?: Advanceable) => {
+        if (!activity?.require_inspection || !order) return false;
+        const record = inspectionFor(order.id, activity.code);
+        return Boolean(record && (record.unsafe || !record.submissionId));
+    };
+
+    /** Opens the checklist the step needs, with the order and step as its context. */
+    const startInspection = useCallback(
+        (activity: Advanceable) => {
+            if (!order || !onStartInspection) return;
+            if (!activity.inspection_form) {
+                // A step that needs an inspection but names no form cannot be filed from here.
+                setAdvanceError(t('orderDetail.inspection.noForm'));
+                return;
+            }
+            onStartInspection({ orderId: order.id, activityCode: activity.code, activityLabel: labelFor(activity), trackingNumber: displayIdOf(order), formId: activity.inspection_form });
+        },
+        [order, onStartInspection, labelFor, t]
+    );
+    /** The inspection recorded for the step is set aside and the checklist opens again: one that did not send, or a vehicle that has been fixed or changed. */
+    const redoInspection = (activity?: Advanceable) => {
+        if (!activity || !order) return;
+        clearInspection(order.id, activity.code);
+        setAdvanceError(null);
+        startInspection(activity);
+    };
 
     const advance = useCallback(
         async (activity?: Advanceable) => {
             if (!activity || !order) return;
+            /*
+             * The inspection comes first, before any proof. Without one the
+             * checklist opens; one that found the vehicle unsafe holds the
+             * step; one queued without signal has no id yet, and the step
+             * waits for it to send (the footer says which). A host without
+             * the inspection screens sends the step as it is, and the server's
+             * refusal is what the driver reads.
+             */
+            const inspection = inspectionFor(order.id, activity.code);
+            if (activity.require_inspection && onStartInspection) {
+                if (!inspection) {
+                    startInspection(activity);
+                    return;
+                }
+                if (inspection.unsafe || !inspection.submissionId) return;
+            }
             /*
              * Proof first, always — but only once. A capture is recorded
              * against this order and activity (`proofLedger`), so coming back
@@ -320,8 +373,10 @@ export function OrderDetailScreen({
                     // client-side sequencer has. Both resolve server-side.
                     activity: source === 'server' ? activity : activity.code,
                     ...(proof?.proofId ? { proof: proof.proofId } : {}),
+                    ...(inspection?.submissionId ? { inspection: inspection.submissionId } : {}),
                 });
                 clearProof(order.id, activity.code);
+                clearInspection(order.id, activity.code);
                 if (isQueuedAck(result)) {
                     // Optimistic: reflect the new status locally so the driver can
                     // carry on. The queue replays it with the original key.
@@ -338,22 +393,27 @@ export function OrderDetailScreen({
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [adapter, onCaptureProof, order, labelFor, entities, source, cod?.toCollect, cashCollected]
+        [adapter, onCaptureProof, onStartInspection, startInspection, order, labelFor, entities, source, cod?.toCollect, cashCollected]
     );
 
     /*
-     * Back from a successful capture: advance into the activity it was for,
-     * once. Not when cash is still to be confirmed — that is the driver's tap.
+     * Back from a successful capture or inspection: advance into the activity
+     * it was for, once. After an inspection that is either the update or, when
+     * the step needs proof too, the proof screen. A queued inspection advances
+     * here when its id arrives. Not when cash is still to be confirmed — that
+     * is the driver's tap.
      */
     useEffect(() => {
-        if (!order || !next?.require_pod || needsCash(next)) return;
-        if (takeAutoAdvance(order.id, next.code)) void advance(next);
+        if (!order || !next || needsCash(next)) return;
+        const afterInspection = !!next.require_inspection && takeInspectionAutoAdvance(order.id, next.code);
+        const afterProof = !afterInspection && !!next.require_pod && takeAutoAdvance(order.id, next.code);
+        if (afterInspection || afterProof) void advance(next);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [order?.id, next?.code, reloadToken]);
+    }, [order?.id, next?.code, reloadToken, nextInspection.record?.submissionId]);
 
     /** Pressing a step asks first: the foot of the screen becomes the question, with its slide to confirm. */
     const askToAdvance = (activity?: Advanceable) => {
-        if (!activity || isAdvancing || needsCash(activity)) return;
+        if (!activity || isAdvancing || needsCash(activity) || inspectionHolds(activity)) return;
         setConfirming(activity);
     };
     /** The slide was carried to the end: now the step is taken, exactly as a press used to take it. */
@@ -697,7 +757,7 @@ export function OrderDetailScreen({
             variant="primary"
             elevated
             loading={isAdvancing}
-            disabled={isAdvancing || needsCash(primary)}
+            disabled={isAdvancing || needsCash(primary) || inspectionHolds(primary)}
             icon={
                 primary.complete ? (
                     <HomeIcon name="tick" color={onPrimaryInk} size={18} />
@@ -761,7 +821,35 @@ export function OrderDetailScreen({
     ) : null;
     const proofWanted = Boolean(primary?.require_pod);
     const proofTaken = proofWanted && !!primary && !!proofFor(order.id, primary.code);
-    const hasFooter = Boolean(advanceButton || confirmFooter || queued || advanceError || proofWanted || blockedOnCash);
+    /*
+     * The step's inspection, said above the button as proof is: needed (with
+     * the form's name), waiting to send, not sent, filed, or holding the step
+     * because the vehicle was found unsafe.
+     */
+    const inspectionWanted = Boolean(primary?.require_inspection);
+    const inspectionState = inspectionWanted ? nextInspection.state : 'none';
+    const inspectionStep = primary ? labelFor(primary) : '';
+    const inspectionNote = !inspectionWanted ? null : inspectionState === 'none' ? (
+        <ProofRequiredHint
+            label={primary?.inspection_form_name ? t('orderDetail.inspection.requiredNamed', { form: primary.inspection_form_name }) : t('orderDetail.inspection.required')}
+            testID="inspection-required"
+        />
+    ) : inspectionState === 'sending' ? (
+        <Banner tone="neutral" message={t('orderDetail.inspection.sending')} testID="inspection-sending" />
+    ) : inspectionState === 'notSent' ? (
+        <Banner tone="warning" message={t('orderDetail.inspection.notSent')} action={onStartInspection ? { label: t('orderDetail.inspection.fileAgain'), onPress: () => redoInspection(primary) } : undefined} testID="inspection-not-sent" />
+    ) : inspectionState === 'unsafe' ? (
+        <Banner tone="danger" message={t('orderDetail.inspection.blocked', { step: inspectionStep })} action={onStartInspection ? { label: t('orderDetail.inspection.inspectAgain'), onPress: () => redoInspection(primary) } : undefined} testID="inspection-blocked" />
+    ) : (
+        <Banner
+            tone="success"
+            message={t('orderDetail.inspection.filed')}
+            // The server refused the step with this inspection: it can be filed again.
+            action={advanceError && onStartInspection ? { label: t('orderDetail.inspection.fileAgain'), onPress: () => redoInspection(primary) } : undefined}
+            testID="inspection-filed"
+        />
+    );
+    const hasFooter = Boolean(advanceButton || confirmFooter || queued || advanceError || proofWanted || inspectionWanted || blockedOnCash);
     const footerSpace = hasFooter ? footerHeight : Math.max(insets.bottom, space[3]);
 
     // What the order's flow has to say when there is no plain next step.
@@ -827,7 +915,15 @@ export function OrderDetailScreen({
     const nowEyebrow = statusIndex >= 0 ? t('orderDetail.now.stepOf', { step: statusIndex + 1, total: sequenced.steps.length }) : t('orderDetail.now.label');
     const nowTitle = order.status ? labelFor({ code: order.status }) : undefined;
     const nowNext = primary ? { label: t(primary.complete ? 'orderDetail.step.final' : 'orderDetail.step.next'), text: labelFor(primary) } : undefined;
-    const nowWaiting = waitingForDispatch ? { title: t('orderDetail.waitingDispatch.title'), body: t('orderDetail.waitingDispatch.body') } : undefined;
+    const nowWaiting = waitingForDispatch
+        ? { title: t('orderDetail.waitingDispatch.title'), body: t('orderDetail.waitingDispatch.body') }
+        : inspectionState === 'unsafe'
+          ? { title: t('orderDetail.inspection.blockedTitle'), body: t('orderDetail.inspection.blockedBody', { step: inspectionStep }) }
+          : inspectionState === 'sending' || inspectionState === 'notSent'
+            ? { title: t('orderDetail.inspection.waitingTitle'), body: t('orderDetail.inspection.waitingBody', { step: inspectionStep }) }
+            : inspectionState === 'none' && inspectionWanted
+              ? { title: t('orderDetail.inspection.neededTitle'), body: primary?.inspection_form_name ? t('orderDetail.inspection.neededBodyNamed', { form: primary.inspection_form_name, step: inspectionStep }) : t('orderDetail.inspection.neededBody', { step: inspectionStep }) }
+              : undefined;
 
     return (
         <YStack flex={1} backgroundColor="$mapBackground" onLayout={(event) => setLayoutHeight(Math.round(event.nativeEvent.layout.height))} testID="order-detail">
@@ -1050,6 +1146,7 @@ export function OrderDetailScreen({
                     onLayout={(event) => setFooterHeight(Math.round(event.nativeEvent.layout.height))}
                     testID="order-actions"
                 >
+                    {inspectionNote}
                     {proofWanted && !proofTaken ? <ProofRequiredHint label={t('orderDetail.proofRequired')} testID="proof-required" /> : null}
                     {proofTaken ? <Banner tone="success" message={t('orderDetail.proofCaptured')} testID="proof-captured" /> : null}
                     {blockedOnCash ? <Banner tone="warning" message={t('orderDetail.cod.confirmFirst')} testID="cod-confirm-first" /> : null}

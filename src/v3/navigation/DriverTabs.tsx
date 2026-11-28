@@ -187,6 +187,10 @@ function OrdersStack() {
             <Stack.Screen name="NavigationHandoff" component={NavigationHandoffH} />
             <Stack.Screen name="OrderTimeline" component={OrderTimelineH} />
             <Stack.Screen name="ProofCapture" component={ProofCaptureH} />
+            {/* A step of an order can need an inspection: its checklist opens over the order, and returns to it. */}
+            <Stack.Screen name="InspectionChecklist" component={InspectionChecklistH} />
+            <Stack.Screen name="InspectionReview" component={InspectionReviewH} />
+            <Stack.Screen name="InspectionResult" component={InspectionResultH} />
             <Stack.Screen name="Destination" component={DestinationH} />
             {ORDERS_ROUTES.map((route) => (
                 <Stack.Screen key={route.name} name={route.name} component={route.component} options={route.options} />

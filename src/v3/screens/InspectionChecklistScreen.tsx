@@ -46,6 +46,8 @@ import {
     type FieldValue,
     type Severity,
 } from '../data';
+import type { InspectionOrderContext } from '../data/inspectionLedger';
+import { InspectionOrderBanner } from './inspection/OrderBanner';
 import { toBareBase64 } from '../data/useProofCapture';
 import type { CapturedPhoto } from '../../components/CameraCapture';
 import { formatClock } from '../format';
@@ -60,6 +62,8 @@ export interface InspectionChecklistScreenProps {
     vehicleId?: string;
     vehicleName?: string;
     seedForm?: InspectionFormRecord | null;
+    /** The order and step the inspection is for, when a step of an order needs it. */
+    orderContext?: InspectionOrderContext | null;
     /** Save and pause — the draft persists; just leave. */
     onPause?: () => void;
     onReview?: (formId: string, vehicleId?: string) => void;
@@ -370,7 +374,7 @@ function FieldControl({ field, value, onCommit, t }: { field: InspectionField; v
     }
 }
 
-export function InspectionChecklistScreen({ formId, vehicleId, vehicleName, seedForm, onPause, onReview }: InspectionChecklistScreenProps) {
+export function InspectionChecklistScreen({ formId, vehicleId, vehicleName, seedForm, orderContext, onPause, onReview }: InspectionChecklistScreenProps) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const { isOnline } = useSync();
@@ -448,6 +452,8 @@ export function InspectionChecklistScreen({ formId, vehicleId, vehicleName, seed
                     <Heading fontSize={20}>{form.name ?? t('inspection.title')}</Heading>
                     <Micro>{[vehicleName, t('inspection.checklist.template', { name: form.name ?? form.id })].filter(Boolean).join(' · ')}</Micro>
                 </YStack>
+
+                <InspectionOrderBanner order={orderContext} t={t} />
 
                 <Banner tone="neutral" message={isOnline ? t('inspection.checklist.savedOnDevice') : t('inspection.checklist.offline')} meta={t('inspection.checklist.progress', { answered: progress.answered, total: progress.total })} testID="checklist-progress" />
 

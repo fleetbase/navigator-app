@@ -451,6 +451,24 @@
             "emailWho": "Email %{name}"
         },
         "reassigned": "This order is no longer assigned to you.",
+        "inspection": {
+            "required": "Inspection needed first",
+            "requiredNamed": "Inspection needed first: %{form}",
+            "neededTitle": "This step needs an inspection",
+            "neededBody": "Fill in the inspection checklist before %{step}. The order goes on once it is filed.",
+            "neededBodyNamed": "Fill in %{form} before %{step}. The order goes on once it is filed.",
+            "sending": "Inspection saved on this phone. The step goes ahead once it has been sent.",
+            "notSent": "The inspection could not be sent, so the step is waiting. Retry it from the sync queue, or file it again.",
+            "waitingTitle": "Waiting for the inspection to send",
+            "waitingBody": "It was filed without signal. %{step} goes ahead once the inspection reaches dispatch.",
+            "filed": "Inspection filed",
+            "blocked": "The inspection found the vehicle unsafe. %{step} is blocked; dispatch has been told.",
+            "blockedTitle": "Step blocked by the inspection",
+            "blockedBody": "The inspection found the vehicle unsafe, so %{step} cannot go ahead. Dispatch has been told.",
+            "inspectAgain": "Inspect again",
+            "fileAgain": "File again",
+            "noForm": "This step needs an inspection, but no inspection form is set for it. Ask dispatch."
+        },
         "proofCaptured": "Proof captured",
         "noNextActivity": "There is no next step for this order yet. Ask dispatch to move it on.",
         "tabsLabel": "Order sections",
@@ -2329,6 +2347,14 @@
             "needsCertification": "Tick the certification to submit.",
             "needsSignature": "This checklist needs your signature to submit.",
             "failed": "The inspection could not be sent. It is still on this device."
+        },
+        "forOrder": {
+            "banner": "For order %{order} · %{step}",
+            "offlineNote": "No signal: the inspection is stored on this phone. The order goes on once it has been sent.",
+            "blocked": "The order stays before %{step} until the vehicle is safe. Dispatch has been told.",
+            "waitsToSend": "The order goes on to %{step} once this inspection has been sent.",
+            "goesOn": "The order goes on to %{step} when you return to it.",
+            "backToOrder": "Back to the order"
         },
         "result": {
             "unsafeTitle": "%{vehicle} is out of service",

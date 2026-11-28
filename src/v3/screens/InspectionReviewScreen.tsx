@@ -37,6 +37,8 @@ import {
     type SubmitOutcome,
 } from '../data';
 import { toBareBase64 } from '../data/useProofCapture';
+import { recordInspection, type InspectionOrderContext } from '../data/inspectionLedger';
+import { InspectionOrderBanner } from './inspection/OrderBanner';
 import { formatDateTime, formatDuration } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
@@ -51,6 +53,12 @@ export interface InspectionReviewScreenProps {
     seedForm?: InspectionFormRecord | null;
     /** Prefill from the vehicle's last reading; the driver confirms it. */
     odometerSeed?: number;
+    /**
+     * The order and step the inspection is for, when a step of an order needs
+     * it. The submission carries the link, and once it has landed or queued it
+     * is recorded against the step (`inspectionLedger`) so the order goes on.
+     */
+    orderContext?: InspectionOrderContext | null;
     onSubmitted?: (outcome: SubmitOutcome, form: InspectionFormRecord, unsafe: boolean) => void;
     /** Injected in tests so the certification time is stable. */
     now?: () => Date;
@@ -67,7 +75,7 @@ function Stat({ value, label, tone, testID }: { value: string; label: string; to
     );
 }
 
-export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverId, driverName, seedForm, odometerSeed, onSubmitted, now = () => new Date() }: InspectionReviewScreenProps) {
+export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverId, driverName, seedForm, odometerSeed, orderContext, onSubmitted, now = () => new Date() }: InspectionReviewScreenProps) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const { isOnline } = useSync();
@@ -116,14 +124,42 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
             vehicleId,
             location: toGeoPoint(position),
             signature: signature || driverName ? { image: signature ?? undefined, name: driverName, signed_at: now().toISOString() } : null,
+            order: orderContext ? { orderId: orderContext.orderId, activityCode: orderContext.activityCode } : null,
             now,
         });
         if (outcome.kind === 'failed') {
             setFailedMessage(outcome.message);
             return;
         }
+        if (orderContext) {
+            /*
+             * Sent: its id goes with the step. Queued: there is no id until the
+             * queue has sent it, so the queue entry is kept instead and the
+             * order screen waits for it, saying so.
+             */
+            const serverUnsafe = outcome.kind === 'sent' ? outcome.submission.meta?.unsafe : undefined;
+            recordInspection(orderContext.orderId, orderContext.activityCode, {
+                submissionId: outcome.kind === 'sent' ? outcome.submission.id : undefined,
+                queued: outcome.kind === 'queued',
+                queueId: outcome.kind === 'queued' ? outcome.queueId : undefined,
+                idempotencyKey: outcome.kind === 'queued' ? outcome.idempotencyKey : undefined,
+                formId,
+                /*
+                 * The server's own finding when it gave one, which is what the
+                 * step is checked against. A checklist the server could not
+                 * read that from counts a failed result as unsafe, there and
+                 * here; queued, the draft's reading is all there is.
+                 */
+                unsafe:
+                    typeof serverUnsafe === 'boolean'
+                        ? serverUnsafe
+                        : outcome.kind === 'sent'
+                          ? unsafe || outcome.submission.result === 'failed'
+                          : unsafe,
+            });
+        }
         onSubmitted?.(outcome, form, unsafe);
-    }, [draft, driverId, driverName, form, now, odometer, onSubmitted, position, signature, submit, unsafe, vehicleId]);
+    }, [draft, driverId, driverName, form, formId, now, odometer, onSubmitted, orderContext, position, signature, submit, unsafe, vehicleId]);
 
     if (isLoading && !form) {
         return (
@@ -148,6 +184,8 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
                     <Heading fontSize={20}>{t('inspection.review.title')}</Heading>
                     <Micro>{[vehicleName, t('inspection.review.summary', { answered: progress.answered, total: progress.total, defects: progress.defects })].filter(Boolean).join(' · ')}</Micro>
                 </YStack>
+
+                <InspectionOrderBanner order={orderContext} t={t} />
 
                 {!isOnline ? <Banner tone="neutral" message={t('ui.offline')} testID="review-offline" /> : null}
 
@@ -288,7 +326,7 @@ export function InspectionReviewScreen({ formId, vehicleId, vehicleName, driverI
                 <Button onPress={() => void send()} disabled={!canSubmit} loading={isSubmitting} testID="review-submit">
                     {t('inspection.review.submit')}
                 </Button>
-                {!isOnline ? <Micro center>{t('inspection.review.offlineNote')}</Micro> : null}
+                {!isOnline ? <Micro center>{orderContext ? t('inspection.forOrder.offlineNote') : t('inspection.review.offlineNote')}</Micro> : null}
             </YStack>
         </YStack>
     );

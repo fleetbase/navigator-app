@@ -33,6 +33,11 @@ export interface FlowActivity {
     complete?: boolean;
     require_pod?: boolean;
     pod_method?: string | null;
+    /** The step needs an inspection filed first (before any proof). */
+    require_inspection?: boolean;
+    /** The inspection form's public id, and its name. */
+    inspection_form?: string | null;
+    inspection_form_name?: string | null;
     /** Codes this activity can transition to. Absent on the public payload. */
     activities?: string[] | null;
     /** Orders siblings reachable from the same parent. */

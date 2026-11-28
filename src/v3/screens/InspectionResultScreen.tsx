@@ -16,6 +16,8 @@ import { Banner } from '../ui/Banner';
 import { space } from '../theme/tokens';
 import { useTranslation } from '../i18n/useTranslation';
 import type { InspectionSubmissionRecord } from '../data';
+import type { InspectionOrderContext } from '../data/inspectionLedger';
+import { InspectionOrderBanner } from './inspection/OrderBanner';
 import { formatClock } from '../format';
 import { useScreenStyle } from '../ui/useScreenStyle';
 
@@ -24,12 +26,18 @@ export interface InspectionResultScreenProps {
     vehicleName?: string;
     /** Decided at review time from the draft; the server's own flag agrees once it answers. */
     unsafe?: boolean;
+    /**
+     * The order and step the inspection was for. Done goes back to the order,
+     * which takes the step by itself, unless the vehicle was found unsafe: then
+     * the step is held, and this screen says so.
+     */
+    orderContext?: InspectionOrderContext | null;
     onChooseVehicle?: () => void;
     onMessageDispatch?: () => void;
     onDone?: () => void;
 }
 
-export function InspectionResultScreen({ submission, vehicleName, unsafe, onChooseVehicle, onMessageDispatch, onDone }: InspectionResultScreenProps) {
+export function InspectionResultScreen({ submission, vehicleName, unsafe, orderContext, onChooseVehicle, onMessageDispatch, onDone }: InspectionResultScreenProps) {
     const { t } = useTranslation();
     const screen = useScreenStyle();
     const failures = Number(submission.failed_items ?? 0) || 0;
@@ -76,7 +84,15 @@ export function InspectionResultScreen({ submission, vehicleName, unsafe, onChoo
                     </YStack>
                 </Surface>
 
-                {submission.queued ? <Banner tone="neutral" message={t('inspection.review.offlineNote')} /> : null}
+                <InspectionOrderBanner order={orderContext} t={t} />
+                {orderContext && kind === 'unsafe' ? (
+                    <Banner tone="danger" message={t('inspection.forOrder.blocked', { step: orderContext.activityLabel || orderContext.activityCode })} testID="result-order-blocked" />
+                ) : orderContext && submission.queued ? (
+                    <Banner tone="neutral" message={t('inspection.forOrder.waitsToSend', { step: orderContext.activityLabel || orderContext.activityCode })} testID="result-order-waiting" />
+                ) : orderContext ? (
+                    <Banner tone="success" message={t('inspection.forOrder.goesOn', { step: orderContext.activityLabel || orderContext.activityCode })} testID="result-order-goes-on" />
+                ) : null}
+                {submission.queued && !orderContext ? <Banner tone="neutral" message={t('inspection.review.offlineNote')} /> : null}
 
                 {kind === 'unsafe' ? (
                     <YStack gap={space[2]} testID="result-what-now">
@@ -107,7 +123,7 @@ export function InspectionResultScreen({ submission, vehicleName, unsafe, onChoo
                     </Button>
                 ) : null}
                 <Button variant={kind === 'unsafe' ? 'ghost' : 'primary'} onPress={onDone} testID="result-done">
-                    {t('inspection.result.done')}
+                    {orderContext ? t('inspection.forOrder.backToOrder') : t('inspection.result.done')}
                 </Button>
             </YStack>
         </YStack>

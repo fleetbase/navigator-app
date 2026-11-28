@@ -493,6 +493,8 @@ export interface SubmissionContext {
     vehicleId?: string;
     location?: GeoPoint | null;
     signature?: { image?: string; name?: string; signed_at: string } | null;
+    /** The order and its step the inspection is filed for, when a step needs one. */
+    order?: { orderId: string; activityCode: string } | null;
     now?: () => Date;
 }
 
@@ -586,6 +588,8 @@ export function buildSubmission(form: InspectionFormRecord, draft: InspectionDra
         location: ctx.location ?? null,
         signature,
         attachments: [],
+        // The server records these on the submission; the step's update is checked against them.
+        ...(ctx.order?.orderId ? { order: ctx.order.orderId, activity: ctx.order.activityCode } : {}),
         meta: {
             source_app: 'navigator',
             client_key: draftKey(form.id, ctx.vehicleId ?? draft.vehicleId),
@@ -770,7 +774,8 @@ export function useInspectionSubmission(id?: string | null, seed?: InspectionSub
 
 export type SubmitOutcome =
     | { kind: 'sent'; submission: InspectionSubmissionRecord }
-    | { kind: 'queued'; receipt: InspectionSubmissionRecord }
+    /** `queueId` and `idempotencyKey` find the submission once the queue has sent it. */
+    | { kind: 'queued'; receipt: InspectionSubmissionRecord; queueId?: string; idempotencyKey?: string }
     | { kind: 'failed'; message: string };
 
 export function useSubmitInspection() {
@@ -804,7 +809,7 @@ export function useSubmitInspection() {
                     };
                     inspectionDrafts.addPending(receipt);
                     inspectionDrafts.discard(form.id, ctx.vehicleId ?? draft.vehicleId);
-                    return { kind: 'queued', receipt };
+                    return { kind: 'queued', receipt, queueId: result.id, idempotencyKey: result.idempotencyKey };
                 }
                 const payload = unwrap(result) as { submission?: InspectionSubmissionRecord } | InspectionSubmissionRecord;
                 const submission = ((payload as { submission?: InspectionSubmissionRecord }).submission ?? payload) as InspectionSubmissionRecord;
