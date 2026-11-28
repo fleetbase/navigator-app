@@ -413,7 +413,9 @@
             "unavailable": "Unavailable — not in this order",
             "substituteFor": "Substitute for %{name}",
             "note": "Note: %{note}",
-            "hint": "Tap for details"
+            "hint": "Tap for details",
+            "scannedAt": "Scanned %{time}",
+            "scanQueued": "Scanned · waiting for signal"
         },
         "booking": {
             "jobLabel": "JOB",

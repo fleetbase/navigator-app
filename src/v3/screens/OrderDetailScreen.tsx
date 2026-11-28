@@ -93,6 +93,7 @@ import { colorForId } from '../ui/routeColors';
 import { formatClock, formatDuration, formatMeters } from '../format';
 import { fromGeoPoint, type Destination } from '../navigate/handoff';
 import { useLiveRefresh, useOrderChannel, useOrderChange, dismissOrderChange, changesDropoff } from '../realtime';
+import { useItemScans, entityScanIdOf } from '../data/useItemScans';
 import { BringChecklist, CashSection, ChangeBanner, ContactSection, DropoffContactSection, ItemRow, scheduleLabel, totalWeightLabel } from './orderDetail/OrderSections';
 import { SlideToConfirm } from './orderDetail/SlideToConfirm';
 import { CapturedProofs, ActivitySection, ActivitySheet, Comments, Facilitator, Files, OrderReference, orderCodesOf, type ActivityStep } from './orderDetail/OrderDetails';
@@ -197,6 +198,12 @@ export function OrderDetailScreen({
      * from a tracker that may not have loaded. Reloaded with the order.
      */
     const { tracker: live } = useTracker(orderId, reloadToken + revision);
+    // Which items have been scanned, from the server's proofs and this phone's own record.
+    const itemScans = useItemScans(orderId);
+    useEffect(() => {
+        if (reloadToken + revision > 0) void itemScans.reload();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reloadToken, revision]);
     const { activities: serverNext, source } = useNextActivity(orderId, order?.status, reloadToken + revision);
 
     const [isAdvancing, setIsAdvancing] = useState(false);
@@ -968,6 +975,7 @@ export function OrderDetailScreen({
                                                     {i > 0 ? <YStack height={1} backgroundColor="$border" /> : null}
                                                     <ItemRow
                                                         entity={e}
+                                                        scan={itemScans.scanOf(entityScanIdOf(e))}
                                                         entities={entities}
                                                         t={t}
                                                         testID={`entity-${rowId ?? i}`}

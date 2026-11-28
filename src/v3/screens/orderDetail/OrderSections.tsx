@@ -112,10 +112,13 @@ export function ItemRow({
     t,
     onPress,
     testID,
+    scan,
 }: {
     entity: Record<string, unknown>;
     entities: unknown[];
     t: T;
+    /** The item's latest scan, when it has one (see data/useItemScans). */
+    scan?: { at: string; queued?: boolean };
     onPress?: () => void;
     testID?: string;
 }) {
@@ -143,6 +146,12 @@ export function ItemRow({
         >
             <YStack width={40} height={40} borderRadius={12} flexShrink={0} alignItems="center" justifyContent="center" backgroundColor="$surfaceRaised" borderWidth={1} borderColor="$border">
                 <Glyph name="box" size={20} strokeWidth={2} color={theme.textSecondary?.val as string} />
+                {/* Scanned: a tick on the item's box, and the word under its code. */}
+                {scan ? (
+                    <YStack position="absolute" right={-5} bottom={-5} width={20} height={20} borderRadius={10} alignItems="center" justifyContent="center" backgroundColor={scan.queued ? '$warning' : '$success'} borderWidth={2} borderColor="$surface" testID={testID ? `${testID}-scanned-mark` : undefined}>
+                        <Glyph name="check" size={11} strokeWidth={3.2} color="#FFFFFF" />
+                    </YStack>
+                ) : null}
             </YStack>
             <YStack flex={1} minWidth={0}>
                 {/* The count leads: "2 ×" is what the driver checks against the bag. */}
@@ -156,6 +165,11 @@ export function ItemRow({
                     <Body fontFamily="$mono" fontSize={13} lineHeight={17} fontWeight="500" tone="secondary" selectable>
                         {code}
                     </Body>
+                ) : null}
+                {scan ? (
+                    <Micro tone={scan.queued ? 'warning' : 'success'} testID={testID ? `${testID}-scanned` : undefined}>
+                        {scan.queued ? t('orderDetail.items.scanQueued') : t('orderDetail.items.scannedAt', { time: formatClock(scan.at) })}
+                    </Micro>
                 ) : null}
                 {unavailable ? (
                     <Micro tone="danger" testID={testID ? `${testID}-unavailable` : undefined}>
