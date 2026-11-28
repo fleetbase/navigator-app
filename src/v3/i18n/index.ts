@@ -91,7 +91,9 @@ export interface TranslateOptions {
 export function t(key: string, options: TranslateOptions = {}): string {
     const { defaultValue, ...rest } = options;
     const result = I18n.t(key, rest);
-    if (result === undefined || result === null || String(result).includes('missing')) {
+    // i18n-js says a key is absent as "[missing "en.key" translation]"; a real
+    // string may well contain the word "missing" ("Send the ones still missing").
+    if (result === undefined || result === null || /^\[missing ".*" translation\]$/.test(String(result))) {
         return defaultValue ?? key;
     }
     return String(result);
